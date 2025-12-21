@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  workspaces    WorkspaceMember[]
+  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
+  debtsFrom     Debt[]         @relation("DebtFrom")
+  debtsTo       Debt[]         @relation("DebtTo")
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  slug      String   @unique
+  ownerId   String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner       User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members     WorkspaceMember[]
+  accounts    Account[]
+  categories  Category[]
+  transactions Transaction[]
+  debts      Debt[]
+  invites    WorkspaceInvite[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String    @db.ObjectId
+  userId      String    @db.ObjectId
+  role        String    @default("member")
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Account {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String       @db.ObjectId
+  name        String
+  type        String
+  balance     String       @default("0")
+  currency    String       @default("USD")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  transactions Transaction[]
+
+  @@map("accounts")
+}
+
+model Category {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String       @db.ObjectId
+  name        String
+  type        String
+  color       String?
+  icon        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  transactions Transaction[]
+
+  @@map("categories")
+}
+
+model Transaction {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String    @db.ObjectId
+  accountId   String    @db.ObjectId
+  amount      String
+  type        String
+  description String?
+  date        DateTime  @default(now())
+  categoryId  String?   @db.ObjectId
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  account   Account   @relation(fields: [accountId], references: [id])
+  category  Category? @relation(fields: [categoryId], references: [id])
+
+  transferFrom Transfer? @relation("TransferFrom")
+  transferTo   Transfer? @relation("TransferTo")
+
+  @@map("transactions")
+}
+
+model Transfer {
+  id                 String      @id @default(auto()) @map("_id") @db.ObjectId
+  fromTransactionId String      @unique @db.ObjectId
+  toTransactionId   String      @unique @db.ObjectId
+  amount             String
+  createdAt          DateTime    @default(now())
+
+  fromTransaction Transaction @relation("TransferFrom", fields: [fromTransactionId], references: [id])
+  toTransaction   Transaction @relation("TransferTo", fields: [toTransactionId], references: [id])
+
+  @@map("transfers")
+}
+
+model Debt {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String    @db.ObjectId
+  fromUserId  String    @db.ObjectId
+  toUserId    String    @db.ObjectId
+  amount      String
+  description String?
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  fromUser  User     @relation("DebtFrom", fields: [fromUserId], references: [id])
+  toUser    User     @relation("DebtTo", fields: [toUserId], references: [id])
+
+  @@map("debts")
+}
+
+model WorkspaceInvite {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String    @db.ObjectId
+  email       String
+  token       String    @unique
+  expiresAt  DateTime
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@map("workspace_invites")
+}
+
