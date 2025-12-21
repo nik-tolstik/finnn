@@ -9,11 +9,16 @@ First, set up your environment variables:
 cp .env.example .env
 ```
 
-2. Update the `.env` file with your MongoDB connection string and NextAuth secret:
+2. Generate a NextAuth secret (required for production):
+```bash
+openssl rand -base64 32
+```
+
+3. Update the `.env` file with your MongoDB connection string and NextAuth secret:
 ```env
 MONGODB_URI="mongodb://localhost:27017/finhub"
 NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-secret-key-here"
+NEXTAUTH_SECRET="paste-generated-secret-here"
 ```
 
 3. Generate Prisma client and push the schema:
