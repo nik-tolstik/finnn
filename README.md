@@ -2,7 +2,27 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+First, set up your environment variables:
+
+1. Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+
+2. Update the `.env` file with your MongoDB connection string and NextAuth secret:
+```env
+MONGODB_URI="mongodb://localhost:27017/finhub"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key-here"
+```
+
+3. Generate Prisma client and push the schema:
+```bash
+npm run db:generate
+npm run db:push
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
