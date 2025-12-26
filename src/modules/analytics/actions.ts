@@ -13,7 +13,7 @@ export async function getAccountBalanceHistory(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const account = await prisma.account.findFirst({
@@ -30,7 +30,7 @@ export async function getAccountBalanceHistory(
     });
 
     if (!account) {
-      return { error: "Account not found or access denied" };
+      return { error: "Счёт не найден или доступ запрещён" };
     }
 
     const transactions = await prisma.transaction.findMany({
@@ -65,7 +65,7 @@ export async function getAccountBalanceHistory(
       data: balanceHistory,
     };
   } catch (error: any) {
-    return { error: error.message || "Failed to fetch balance history" };
+    return { error: error.message || "Не удалось загрузить историю баланса" };
   }
 }
 

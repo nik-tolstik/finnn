@@ -5,10 +5,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 import { prisma } from "./prisma";
 
-console.log({
-  NEXT_AUTH_SECRET: process.env.NEXTAUTH_SECRET,
-});
-
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(prisma) as any,

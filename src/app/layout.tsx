@@ -1,22 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
-import { Providers } from "./providers";
 import { Toaster } from "@/shared/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "FinHub - Financial Tracking",
-  description: "Track your finances with ease",
+  title: "FinHub - Учёт финансов",
+  description: "Ведите учёт своих финансов с лёгкостью",
 };
 
 export default function RootLayout({
@@ -25,10 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="ru" suppressHydrationWarning>
+      <body className="font-sans antialiased">
         <Providers>
           {children}
           <Toaster />

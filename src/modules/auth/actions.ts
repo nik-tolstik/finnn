@@ -13,7 +13,7 @@ export async function registerAction(input: RegisterInput) {
     });
 
     if (existingUser) {
-      return { error: "User with this email already exists" };
+      return { error: "Пользователь с таким email уже существует" };
     }
 
     const hashedPassword = await bcrypt.hash(validated.password, 10);
@@ -28,7 +28,7 @@ export async function registerAction(input: RegisterInput) {
 
     return { success: true, userId: user.id };
   } catch (error: any) {
-    return { error: error.message || "Failed to register" };
+    return { error: error.message || "Не удалось зарегистрироваться" };
   }
 }
 

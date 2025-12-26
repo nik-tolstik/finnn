@@ -18,7 +18,7 @@ export async function createCategory(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const member = await prisma.workspaceMember.findFirst({
@@ -29,7 +29,7 @@ export async function createCategory(
     });
 
     if (!member) {
-      return { error: "Access denied" };
+      return { error: "Доступ запрещён" };
     }
 
     const validated = createCategorySchema.parse(input);
@@ -44,7 +44,7 @@ export async function createCategory(
     revalidatePath("/categories");
     return { data: category };
   } catch (error: any) {
-    return { error: error.message || "Failed to create category" };
+    return { error: error.message || "Не удалось создать категорию" };
   }
 }
 
@@ -52,7 +52,7 @@ export async function updateCategory(id: string, input: UpdateCategoryInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const category = await prisma.category.findFirst({
@@ -69,7 +69,7 @@ export async function updateCategory(id: string, input: UpdateCategoryInput) {
     });
 
     if (!category) {
-      return { error: "Category not found or access denied" };
+      return { error: "Категория не найдена или доступ запрещён" };
     }
 
     const validated = updateCategorySchema.parse(input);
@@ -82,7 +82,7 @@ export async function updateCategory(id: string, input: UpdateCategoryInput) {
     revalidatePath("/categories");
     return { data: updated };
   } catch (error: any) {
-    return { error: error.message || "Failed to update category" };
+    return { error: error.message || "Не удалось обновить категорию" };
   }
 }
 
@@ -90,7 +90,7 @@ export async function deleteCategory(id: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const category = await prisma.category.findFirst({
@@ -107,7 +107,7 @@ export async function deleteCategory(id: string) {
     });
 
     if (!category) {
-      return { error: "Category not found or access denied" };
+      return { error: "Категория не найдена или доступ запрещён" };
     }
 
     await prisma.category.delete({
@@ -117,7 +117,7 @@ export async function deleteCategory(id: string) {
     revalidatePath("/categories");
     return { success: true };
   } catch (error: any) {
-    return { error: error.message || "Failed to delete category" };
+    return { error: error.message || "Не удалось удалить категорию" };
   }
 }
 
@@ -125,7 +125,7 @@ export async function getCategories(workspaceId: string, type?: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const member = await prisma.workspaceMember.findFirst({
@@ -136,7 +136,7 @@ export async function getCategories(workspaceId: string, type?: string) {
     });
 
     if (!member) {
-      return { error: "Access denied" };
+      return { error: "Доступ запрещён" };
     }
 
     const categories = await prisma.category.findMany({
@@ -149,7 +149,7 @@ export async function getCategories(workspaceId: string, type?: string) {
 
     return { data: categories };
   } catch (error: any) {
-    return { error: error.message || "Failed to fetch categories" };
+    return { error: error.message || "Не удалось загрузить категории" };
   }
 }
 

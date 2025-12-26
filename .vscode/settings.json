@@ -1,0 +1,11 @@
+{
+  "tailwindCSS.experimental.classRegex": [
+    ["tv\\(([^)]*)\\)", "[\"']([^\"']*)[\"'`]"],
+    ["cn\\(([^)]*)\\)", "[\"']([^\"']*)[\"'`]"],
+    ["cva\\(([^)]*)\\)", "[\"']([^\"']*)[\"'`]"]
+  ],
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  }
+}

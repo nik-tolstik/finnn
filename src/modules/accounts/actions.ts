@@ -15,7 +15,7 @@ export async function createAccount(workspaceId: string, input: CreateAccountInp
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const member = await prisma.workspaceMember.findFirst({
@@ -26,7 +26,7 @@ export async function createAccount(workspaceId: string, input: CreateAccountInp
     });
 
     if (!member) {
-      return { error: "Access denied" };
+      return { error: "Доступ запрещён" };
     }
 
     const validated = createAccountSchema.parse(input);
@@ -41,7 +41,7 @@ export async function createAccount(workspaceId: string, input: CreateAccountInp
     revalidatePath("/accounts");
     return { data: account };
   } catch (error: any) {
-    return { error: error.message || "Failed to create account" };
+    return { error: error.message || "Не удалось создать счёт" };
   }
 }
 
@@ -49,7 +49,7 @@ export async function updateAccount(id: string, input: UpdateAccountInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const account = await prisma.account.findFirst({
@@ -66,7 +66,7 @@ export async function updateAccount(id: string, input: UpdateAccountInput) {
     });
 
     if (!account) {
-      return { error: "Account not found or access denied" };
+      return { error: "Счёт не найден или доступ запрещён" };
     }
 
     const validated = updateAccountSchema.parse(input);
@@ -79,15 +79,15 @@ export async function updateAccount(id: string, input: UpdateAccountInput) {
     revalidatePath("/accounts");
     return { data: updated };
   } catch (error: any) {
-    return { error: error.message || "Failed to update account" };
+    return { error: error.message || "Не удалось обновить счёт" };
   }
 }
 
-export async function deleteAccount(id: string) {
+export async function archiveAccount(id: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const account = await prisma.account.findFirst({
@@ -104,17 +104,23 @@ export async function deleteAccount(id: string) {
     });
 
     if (!account) {
-      return { error: "Account not found or access denied" };
+      return { error: "Счёт не найден или доступ запрещён" };
     }
 
-    await prisma.account.delete({
+    if (account.archived) {
+      revalidatePath("/accounts");
+      return { success: true };
+    }
+
+    await prisma.account.update({
       where: { id },
+      data: { archived: true },
     });
 
     revalidatePath("/accounts");
     return { success: true };
   } catch (error: any) {
-    return { error: error.message || "Failed to delete account" };
+    return { error: error.message || "Не удалось архивировать счёт" };
   }
 }
 
@@ -122,7 +128,7 @@ export async function getAccounts(workspaceId: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const member = await prisma.workspaceMember.findFirst({
@@ -133,17 +139,20 @@ export async function getAccounts(workspaceId: string) {
     });
 
     if (!member) {
-      return { error: "Access denied" };
+      return { error: "Доступ запрещён" };
     }
 
     const accounts = await prisma.account.findMany({
-      where: { workspaceId },
+      where: {
+        workspaceId,
+        archived: false,
+      },
       orderBy: { createdAt: "desc" },
     });
 
     return { data: accounts };
   } catch (error: any) {
-    return { error: error.message || "Failed to fetch accounts" };
+    return { error: error.message || "Не удалось загрузить счета" };
   }
 }
 
@@ -151,7 +160,7 @@ export async function getAccount(id: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const account = await prisma.account.findFirst({
@@ -168,12 +177,12 @@ export async function getAccount(id: string) {
     });
 
     if (!account) {
-      return { error: "Account not found" };
+      return { error: "Счёт не найден" };
     }
 
     return { data: account };
   } catch (error: any) {
-    return { error: error.message || "Failed to fetch account" };
+    return { error: error.message || "Не удалось загрузить счёт" };
   }
 }
 

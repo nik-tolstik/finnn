@@ -19,8 +19,6 @@ model User {
 
   workspaces    WorkspaceMember[]
   ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
-  debtsFrom     Debt[]         @relation("DebtFrom")
-  debtsTo       Debt[]         @relation("DebtTo")
 
   @@map("users")
 }
@@ -65,11 +63,14 @@ model Account {
   type        String
   balance     String       @default("0")
   currency    String       @default("USD")
+  description String?
+  archived    Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
   workspace    Workspace     @relation(fields: [workspaceId], references: [id])
   transactions Transaction[]
+  debts        Debt[]
 
   @@map("accounts")
 }
@@ -128,17 +129,18 @@ model Transfer {
 model Debt {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   workspaceId String    @db.ObjectId
-  fromUserId  String    @db.ObjectId
-  toUserId    String    @db.ObjectId
+  accountId   String    @db.ObjectId
+  type        String    // "lent" (одалживаю) или "borrowed" (занимаю)
+  debtorName  String    // Имя должника/кредитора
   amount      String
   description String?
+  dueDate     DateTime? // Дата возврата
   status      String    @default("pending")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
-  fromUser  User     @relation("DebtFrom", fields: [fromUserId], references: [id])
-  toUser    User     @relation("DebtTo", fields: [toUserId], references: [id])
+  account   Account   @relation(fields: [accountId], references: [id])
 
   @@map("debts")
 }

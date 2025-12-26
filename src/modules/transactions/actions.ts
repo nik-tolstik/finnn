@@ -21,7 +21,7 @@ export async function createTransaction(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const member = await prisma.workspaceMember.findFirst({
@@ -32,7 +32,7 @@ export async function createTransaction(
     });
 
     if (!member) {
-      return { error: "Access denied" };
+      return { error: "Доступ запрещён" };
     }
 
     const validated = createTransactionSchema.parse(input);
@@ -45,7 +45,7 @@ export async function createTransaction(
     });
 
     if (!account) {
-      return { error: "Account not found" };
+      return { error: "Счёт не найден" };
     }
 
     const transaction = await prisma.transaction.create({
@@ -76,7 +76,7 @@ export async function createTransaction(
     revalidatePath("/accounts");
     return { data: transaction };
   } catch (error: any) {
-    return { error: error.message || "Failed to create transaction" };
+    return { error: error.message || "Не удалось создать транзакцию" };
   }
 }
 
@@ -87,7 +87,7 @@ export async function createTransfer(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const member = await prisma.workspaceMember.findFirst({
@@ -98,7 +98,7 @@ export async function createTransfer(
     });
 
     if (!member) {
-      return { error: "Access denied" };
+      return { error: "Доступ запрещён" };
     }
 
     const validated = createTransferSchema.parse(input);
@@ -118,11 +118,11 @@ export async function createTransfer(
     });
 
     if (!fromAccount || !toAccount) {
-      return { error: "Account not found" };
+      return { error: "Счёт не найден" };
     }
 
     if (fromAccount.id === toAccount.id) {
-      return { error: "Cannot transfer to the same account" };
+      return { error: "Нельзя перевести на тот же счёт" };
     }
 
     const fromTransaction = await prisma.transaction.create({
@@ -131,7 +131,7 @@ export async function createTransfer(
         accountId: validated.fromAccountId,
         amount: validated.amount,
         type: "transfer",
-        description: validated.description || `Transfer to ${toAccount.name}`,
+        description: validated.description || `Перевод на ${toAccount.name}`,
         date: validated.date,
       },
     });
@@ -142,7 +142,7 @@ export async function createTransfer(
         accountId: validated.toAccountId,
         amount: validated.amount,
         type: "transfer",
-        description: validated.description || `Transfer from ${fromAccount.name}`,
+        description: validated.description || `Перевод с ${fromAccount.name}`,
         date: validated.date,
       },
     });
@@ -169,7 +169,7 @@ export async function createTransfer(
     revalidatePath("/accounts");
     return { data: { fromTransaction, toTransaction } };
   } catch (error: any) {
-    return { error: error.message || "Failed to create transfer" };
+    return { error: error.message || "Не удалось создать перевод" };
   }
 }
 
@@ -180,7 +180,7 @@ export async function updateTransaction(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const transaction = await prisma.transaction.findFirst({
@@ -198,7 +198,7 @@ export async function updateTransaction(
     });
 
     if (!transaction) {
-      return { error: "Transaction not found or access denied" };
+      return { error: "Транзакция не найдена или доступ запрещён" };
     }
 
     const validated = updateTransactionSchema.parse(input);
@@ -211,7 +211,7 @@ export async function updateTransaction(
     revalidatePath("/transactions");
     return { data: updated };
   } catch (error: any) {
-    return { error: error.message || "Failed to update transaction" };
+    return { error: error.message || "Не удалось обновить транзакцию" };
   }
 }
 
@@ -219,7 +219,7 @@ export async function deleteTransaction(id: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const transaction = await prisma.transaction.findFirst({
@@ -237,11 +237,11 @@ export async function deleteTransaction(id: string) {
     });
 
     if (!transaction) {
-      return { error: "Transaction not found or access denied" };
+      return { error: "Транзакция не найдена или доступ запрещён" };
     }
 
     if (transaction.transferFrom || transaction.transferTo) {
-      return { error: "Cannot delete transfer transaction directly" };
+      return { error: "Нельзя удалить транзакцию перевода напрямую" };
     }
 
     const account = transaction.account;
@@ -266,7 +266,7 @@ export async function deleteTransaction(id: string) {
     revalidatePath("/accounts");
     return { success: true };
   } catch (error: any) {
-    return { error: error.message || "Failed to delete transaction" };
+    return { error: error.message || "Не удалось удалить транзакцию" };
   }
 }
 
@@ -274,7 +274,7 @@ export async function getTransactions(workspaceId: string, accountId?: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const member = await prisma.workspaceMember.findFirst({
@@ -285,7 +285,7 @@ export async function getTransactions(workspaceId: string, accountId?: string) {
     });
 
     if (!member) {
-      return { error: "Access denied" };
+      return { error: "Доступ запрещён" };
     }
 
     const transactions = await prisma.transaction.findMany({
@@ -313,7 +313,7 @@ export async function getTransactions(workspaceId: string, accountId?: string) {
 
     return { data: transactions };
   } catch (error: any) {
-    return { error: error.message || "Failed to fetch transactions" };
+    return { error: error.message || "Не удалось загрузить транзакции" };
   }
 }
 

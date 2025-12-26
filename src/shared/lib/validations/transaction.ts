@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const createTransactionSchema = z.object({
-  accountId: z.string().min(1, "Account is required"),
-  amount: z.string().min(1, "Amount is required"),
+  accountId: z.string().min(1, "Счёт обязателен"),
+  amount: z.string().min(1, "Сумма обязательна"),
   type: z.enum(["income", "expense", "transfer"]),
   description: z.string().optional(),
   date: z.date().default(new Date()),
@@ -10,9 +10,9 @@ export const createTransactionSchema = z.object({
 });
 
 export const createTransferSchema = z.object({
-  fromAccountId: z.string().min(1, "From account is required"),
-  toAccountId: z.string().min(1, "To account is required"),
-  amount: z.string().min(1, "Amount is required"),
+  fromAccountId: z.string().min(1, "Счёт отправителя обязателен"),
+  toAccountId: z.string().min(1, "Счёт получателя обязателен"),
+  amount: z.string().min(1, "Сумма обязательна"),
   description: z.string().optional(),
   date: z.date().default(new Date()),
 });

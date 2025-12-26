@@ -1,26 +1,28 @@
 "use server";
 
+import { randomBytes } from "crypto";
+
+import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
+
 import { authOptions } from "@/shared/lib/auth";
 import { prisma } from "@/shared/lib/prisma";
+import {
+  createInviteSchema,
+  type CreateInviteInput,
+} from "@/shared/lib/validations/invite";
 import {
   createWorkspaceSchema,
   updateWorkspaceSchema,
   type CreateWorkspaceInput,
   type UpdateWorkspaceInput,
 } from "@/shared/lib/validations/workspace";
-import {
-  createInviteSchema,
-  type CreateInviteInput,
-} from "@/shared/lib/validations/invite";
-import { revalidatePath } from "next/cache";
-import { randomBytes } from "crypto";
 
 export async function createWorkspace(input: CreateWorkspaceInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const validated = createWorkspaceSchema.parse(input);
@@ -30,7 +32,7 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
     });
 
     if (existing) {
-      return { error: "Workspace with this slug already exists" };
+      return { error: "Рабочий стол с таким идентификатором уже существует" };
     }
 
     const workspace = await prisma.workspace.create({
@@ -50,18 +52,15 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
     revalidatePath("/dashboard");
     return { data: workspace };
   } catch (error: any) {
-    return { error: error.message || "Failed to create workspace" };
+    return { error: error.message || "Не удалось создать рабочий стол" };
   }
 }
 
-export async function updateWorkspace(
-  id: string,
-  input: UpdateWorkspaceInput
-) {
+export async function updateWorkspace(id: string, input: UpdateWorkspaceInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const workspace = await prisma.workspace.findFirst({
@@ -77,7 +76,7 @@ export async function updateWorkspace(
     });
 
     if (!workspace) {
-      return { error: "Workspace not found or access denied" };
+      return { error: "Рабочий стол не найден или доступ запрещён" };
     }
 
     const validated = updateWorkspaceSchema.parse(input);
@@ -90,7 +89,7 @@ export async function updateWorkspace(
     revalidatePath("/dashboard");
     return { data: updated };
   } catch (error: any) {
-    return { error: error.message || "Failed to update workspace" };
+    return { error: error.message || "Не удалось обновить рабочий стол" };
   }
 }
 
@@ -98,7 +97,7 @@ export async function deleteWorkspace(id: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const workspace = await prisma.workspace.findFirst({
@@ -109,7 +108,7 @@ export async function deleteWorkspace(id: string) {
     });
 
     if (!workspace) {
-      return { error: "Workspace not found or access denied" };
+      return { error: "Рабочий стол не найден или доступ запрещён" };
     }
 
     await prisma.workspace.delete({
@@ -119,7 +118,7 @@ export async function deleteWorkspace(id: string) {
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error: any) {
-    return { error: error.message || "Failed to delete workspace" };
+    return { error: error.message || "Не удалось удалить рабочий стол" };
   }
 }
 
@@ -127,7 +126,7 @@ export async function getWorkspaces() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const workspaces = await prisma.workspace.findMany({
@@ -159,7 +158,7 @@ export async function getWorkspaces() {
 
     return { data: workspaces };
   } catch (error: any) {
-    return { error: error.message || "Failed to fetch workspaces" };
+    return { error: error.message || "Не удалось загрузить рабочие столы" };
   }
 }
 
@@ -167,7 +166,7 @@ export async function getWorkspace(id: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const workspace = await prisma.workspace.findFirst({
@@ -203,20 +202,23 @@ export async function getWorkspace(id: string) {
     });
 
     if (!workspace) {
-      return { error: "Workspace not found" };
+      return { error: "Рабочий стол не найден" };
     }
 
     return { data: workspace };
   } catch (error: any) {
-    return { error: error.message || "Failed to fetch workspace" };
+    return { error: error.message || "Не удалось загрузить рабочий стол" };
   }
 }
 
-export async function createInvite(workspaceId: string, input: CreateInviteInput) {
+export async function createInvite(
+  workspaceId: string,
+  input: CreateInviteInput
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const workspace = await prisma.workspace.findFirst({
@@ -232,7 +234,7 @@ export async function createInvite(workspaceId: string, input: CreateInviteInput
     });
 
     if (!workspace) {
-      return { error: "Workspace not found or access denied" };
+      return { error: "Рабочий стол не найден или доступ запрещён" };
     }
 
     const validated = createInviteSchema.parse(input);
@@ -252,7 +254,7 @@ export async function createInvite(workspaceId: string, input: CreateInviteInput
     revalidatePath("/dashboard");
     return { data: invite };
   } catch (error: any) {
-    return { error: error.message || "Failed to create invite" };
+    return { error: error.message || "Не удалось создать приглашение" };
   }
 }
 
@@ -260,7 +262,7 @@ export async function acceptInvite(token: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { error: "Unauthorized" };
+      return { error: "Не авторизован" };
     }
 
     const invite = await prisma.workspaceInvite.findUnique({
@@ -269,15 +271,15 @@ export async function acceptInvite(token: string) {
     });
 
     if (!invite) {
-      return { error: "Invalid invite token" };
+      return { error: "Неверный токен приглашения" };
     }
 
     if (invite.expiresAt < new Date()) {
-      return { error: "Invite has expired" };
+      return { error: "Приглашение истекло" };
     }
 
     if (invite.email !== session.user.email) {
-      return { error: "Invite email does not match your account" };
+      return { error: "Email приглашения не совпадает с вашим аккаунтом" };
     }
 
     const existingMember = await prisma.workspaceMember.findUnique({
@@ -290,7 +292,7 @@ export async function acceptInvite(token: string) {
     });
 
     if (existingMember) {
-      return { error: "You are already a member of this workspace" };
+      return { error: "Вы уже являетесь участником этого рабочего стола" };
     }
 
     await prisma.workspaceMember.create({
@@ -308,6 +310,6 @@ export async function acceptInvite(token: string) {
     revalidatePath("/dashboard");
     return { success: true, workspaceId: invite.workspaceId };
   } catch (error: any) {
-    return { error: error.message || "Failed to accept invite" };
+    return { error: error.message || "Не удалось принять приглашение" };
   }
 }
