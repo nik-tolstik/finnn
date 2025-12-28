@@ -7,21 +7,21 @@ const globalForPrisma = globalThis as unknown as {
 function getDatabaseUrl(): string {
   const mongoUri = process.env.MONGODB_URI || "";
   const dbName = "finhub";
-  
+
   if (!mongoUri) return mongoUri;
-  
+
   if (mongoUri.includes(`/${dbName}`) || mongoUri.includes(`/${dbName}?`)) {
     return mongoUri;
   }
-  
+
   const hasQuery = mongoUri.includes("?");
-  
+
   if (hasQuery) {
     const [base, query] = mongoUri.split("?");
     const separator = base.endsWith("/") ? "" : "/";
     return `${base}${separator}${dbName}?${query}`;
   }
-  
+
   const separator = mongoUri.endsWith("/") ? "" : "/";
   return `${mongoUri}${separator}${dbName}`;
 }

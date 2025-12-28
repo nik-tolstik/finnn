@@ -132,12 +132,19 @@ export async function updateWorkspace(id: string, input: UpdateWorkspaceInput) {
     const workspace = await prisma.workspace.findFirst({
       where: {
         id,
-        members: {
-          some: {
-            userId: session.user.id,
-            role: { in: ["owner", "admin"] },
+        OR: [
+          {
+            ownerId: session.user.id,
           },
-        },
+          {
+            members: {
+              some: {
+                userId: session.user.id,
+                role: { in: ["owner", "admin"] },
+              },
+            },
+          },
+        ],
       },
     });
 
@@ -197,11 +204,18 @@ export async function getWorkspaces() {
 
     const workspaces = await prisma.workspace.findMany({
       where: {
-        members: {
-          some: {
-            userId: session.user.id,
+        OR: [
+          {
+            ownerId: session.user.id,
           },
-        },
+          {
+            members: {
+              some: {
+                userId: session.user.id,
+              },
+            },
+          },
+        ],
       },
       include: {
         owner: {
@@ -238,11 +252,18 @@ export async function getWorkspace(id: string) {
     const workspace = await prisma.workspace.findFirst({
       where: {
         id,
-        members: {
-          some: {
-            userId: session.user.id,
+        OR: [
+          {
+            ownerId: session.user.id,
           },
-        },
+          {
+            members: {
+              some: {
+                userId: session.user.id,
+              },
+            },
+          },
+        ],
       },
       include: {
         owner: {
@@ -284,6 +305,16 @@ export async function getWorkspaceMembers(workspaceId: string) {
       return { error: "Не авторизован" };
     }
 
+    const workspaceCheck = await prisma.workspace.findFirst({
+      where: { id: workspaceId },
+      select: { ownerId: true },
+    });
+
+    if (!workspaceCheck) {
+      return { error: "Рабочий стол не найден" };
+    }
+
+    const isOwner = workspaceCheck.ownerId === session.user.id;
     const member = await prisma.workspaceMember.findFirst({
       where: {
         workspaceId,
@@ -291,7 +322,7 @@ export async function getWorkspaceMembers(workspaceId: string) {
       },
     });
 
-    if (!member) {
+    if (!isOwner && !member) {
       return { error: "Доступ запрещён" };
     }
 

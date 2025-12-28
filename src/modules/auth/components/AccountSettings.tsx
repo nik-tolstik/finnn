@@ -13,7 +13,7 @@ import { updateUserSchema, type UpdateUserInput } from "../auth.validations";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { UploadButton } from "@/lib/uploadthing";
+import { useUploadThing } from "@/lib/uploadthing";
 
 export function AccountSettings() {
   const { data: session, update: updateSession } = useSession();
@@ -22,6 +22,21 @@ export function AccountSettings() {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [useUploadthing, setUseUploadthing] = useState(false);
+
+  const { startUpload, isUploading } = useUploadThing("avatarUploader", {
+    onClientUploadComplete: (res) => {
+      if (res?.[0]?.url) {
+        setValue("image", res[0].url, { shouldDirty: true });
+        setPreview(res[0].url);
+        toast.success("Аватар загружен");
+      }
+      setUploading(false);
+    },
+    onUploadError: (error: Error) => {
+      toast.error(`Ошибка загрузки: ${error.message}`);
+      setUploading(false);
+    },
+  });
 
   const {
     register,
@@ -73,36 +88,42 @@ export function AccountSettings() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Размер файла не должен превышать 5MB");
+    const maxSize = useUploadthing ? 4 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error(`Размер файла не должен превышать ${maxSize / 1024 / 1024}MB`);
       return;
     }
 
     setUploading(true);
 
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
+    if (useUploadthing) {
+      await startUpload([file]);
+    } else {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      const response = await fetch("/api/upload/avatar", {
-        method: "POST",
-        body: formData,
-      });
+        const response = await fetch("/api/upload/avatar", {
+          method: "POST",
+          body: formData,
+        });
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (result.error) {
-        toast.error(result.error);
-        return;
+        if (result.error) {
+          toast.error(result.error);
+          setUploading(false);
+          return;
+        }
+
+        setValue("image", result.url, { shouldDirty: true });
+        setPreview(result.url);
+        toast.success("Аватар загружен");
+        setUploading(false);
+      } catch (error: any) {
+        toast.error(error.message || "Не удалось загрузить аватар");
+        setUploading(false);
       }
-
-      setValue("image", result.url, { shouldDirty: true });
-      setPreview(result.url);
-      toast.success("Аватар загружен");
-    } catch (error: any) {
-      toast.error(error.message || "Не удалось загрузить аватар");
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -203,45 +224,27 @@ export function AccountSettings() {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            {useUploadthing ? (
-              <UploadButton
-                endpoint="avatarUploader"
-                onClientUploadComplete={(res) => {
-                  if (res?.[0]?.url) {
-                    setValue("image", res[0].url, { shouldDirty: true });
-                    setPreview(res[0].url);
-                    toast.success("Аватар загружен");
-                  }
-                }}
-                onUploadError={(error: Error) => {
-                  toast.error(`Ошибка загрузки: ${error.message}`);
-                }}
-              />
-            ) : (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  {uploading
-                    ? "Загрузка..."
-                    : displayImage
-                      ? "Изменить"
-                      : "Загрузить"}
-                </Button>
-              </>
-            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || isUploading}
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              {uploading || isUploading
+                ? "Загрузка..."
+                : displayImage
+                  ? "Изменить"
+                  : "Загрузить"}
+            </Button>
             {displayImage && (
               <Button
                 type="button"

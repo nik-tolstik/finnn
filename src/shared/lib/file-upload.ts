@@ -2,13 +2,13 @@ import { unlink } from "fs/promises";
 import { join } from "path";
 import { UTApi } from "uploadthing/server";
 
-const isProduction = process.env.NODE_ENV === "production";
+const hasUploadthingToken = !!process.env.UPLOADTHING_TOKEN;
 
 export async function deleteAvatar(url: string | null | undefined) {
   if (!url) return;
 
   try {
-    if (isProduction) {
+    if (hasUploadthingToken) {
       const utapi = new UTApi();
       if (url.includes("uploadthing.com") || url.includes("utfs.io")) {
         const fileKey = url.split("/").pop()?.split("?")[0];
@@ -34,6 +34,6 @@ export async function deleteAvatar(url: string | null | undefined) {
 }
 
 export function isLocalStorage(): boolean {
-  return !isProduction;
+  return !hasUploadthingToken;
 }
 

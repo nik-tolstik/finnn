@@ -13,7 +13,7 @@ export function Header() {
 
   return (
     <header className="border-b bg-background">
-      <div className="flex h-16 items-center justify-between px-8">
+      <div className="flex h-16 items-center justify-between px-4 sm:px-8">
         <div className="flex items-center gap-4">
           <WorkspaceDropdown currentWorkspaceId={workspaceId} />
         </div>

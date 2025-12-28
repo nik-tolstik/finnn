@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -28,6 +28,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -50,7 +51,9 @@ export function LoginForm() {
 
       if (result?.error) {
         if (result.error.includes("Email не подтвержден")) {
-          toast.error("Email не подтвержден. Пожалуйста, проверьте вашу почту и подтвердите email.");
+          toast.error(
+            "Email не подтвержден. Пожалуйста, проверьте вашу почту и подтвердите email."
+          );
         } else {
           toast.error("Неверный email или пароль");
         }
@@ -109,12 +112,24 @@ export function LoginForm() {
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Введите пароль"
-                className="pl-9"
+                className="pl-9 pr-9"
                 {...register("password")}
                 aria-invalid={errors.password ? "true" : "false"}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
             </div>
             {errors.password && (
               <p className="text-sm text-destructive">

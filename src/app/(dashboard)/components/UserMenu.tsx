@@ -41,7 +41,7 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="h-auto gap-2 px-2 py-1.5 hover:bg-accent"
+          className="h-auto gap-2 p-0 hover:bg-accent"
         >
           {image ? (
             <img

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const isProduction = process.env.NODE_ENV === "production";
-  return NextResponse.json({ useUploadthing: isProduction });
+  const hasUploadthingToken = !!process.env.UPLOADTHING_TOKEN;
+  return NextResponse.json({ useUploadthing: hasUploadthingToken });
 }
 
