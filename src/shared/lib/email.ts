@@ -12,6 +12,19 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+function getBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  throw new Error("APP_URL не установлен. Установите NEXT_PUBLIC_APP_URL или NEXTAUTH_URL в .env");
+}
+
 export async function sendInviteEmail(
   email: string,
   token: string,
@@ -23,7 +36,8 @@ export async function sendInviteEmail(
       return { error: "Email сервис не настроен. Обратитесь к администратору." };
     }
 
-    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/invite/${token}`;
+    const baseUrl = getBaseUrl();
+    const inviteUrl = `${baseUrl}/invite/${token}`;
 
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
@@ -65,7 +79,8 @@ export async function sendVerificationEmail(
       return { error: "Email сервис не настроен. Обратитесь к администратору." };
     }
 
-    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/verify-email/${token}`;
+    const baseUrl = getBaseUrl();
+    const verifyUrl = `${baseUrl}/verify-email/${token}`;
 
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,

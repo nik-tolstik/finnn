@@ -81,12 +81,11 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1">
+    <Card className="w-screen h-screen sm:h-auto sm:w-full sm:max-w-md m-0 sm:m-0 rounded-none sm:rounded-lg flex flex-col justify-center gap-6">
+      <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-2xl font-bold">Вход</CardTitle>
-        <CardDescription>Введите ваш email и пароль для входа</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Электронная почта</Label>
