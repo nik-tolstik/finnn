@@ -1,5 +1,5 @@
-import { create } from "zustand";
 import type { Account } from "@prisma/client";
+import { create } from "zustand";
 
 interface AccountState {
   accounts: Account[];

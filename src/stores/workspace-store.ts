@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { WorkspaceWithOwner } from "@/modules/workspace/types";
+
+import type { WorkspaceWithOwner } from "@/modules/workspace/workspace.types";
 
 interface WorkspaceState {
   currentWorkspace: WorkspaceWithOwner | null;
@@ -35,4 +36,3 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
         state.currentWorkspace?.id === id ? null : state.currentWorkspace,
     })),
 }));
-

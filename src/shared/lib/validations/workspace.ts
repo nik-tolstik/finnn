@@ -20,6 +20,7 @@ export const updateWorkspaceSchema = z.object({
     .max(50)
     .regex(/^[a-z0-9-]+$/)
     .optional(),
+  icon: z.string().optional().nullable(),
 });
 
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;

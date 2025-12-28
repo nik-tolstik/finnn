@@ -1,16 +1,21 @@
 "use client";
 
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Wallet } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useState, useEffect, useMemo } from "react";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { toast } from "sonner";
+
+import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
 import {
   createAccountSchema,
   type CreateAccountInput,
 } from "@/shared/lib/validations/account";
-import { createAccount } from "../actions";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
-import { Textarea } from "@/shared/ui/textarea";
+import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +25,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/shared/ui/dialog";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,10 +34,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { toast } from "sonner";
-import { Plus, Wallet } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
+import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
+import { cn } from "@/shared/utils/cn";
+
+import { createAccount } from "../account.service";
 
 interface CreateAccountFormProps {
   workspaceId: string;
@@ -39,29 +47,77 @@ interface CreateAccountFormProps {
 export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { data: session } = useSession();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
     setValue,
-    watch,
+    control,
   } = useForm<CreateAccountInput>({
     resolver: zodResolver(createAccountSchema),
     defaultValues: {
       name: "",
-      type: "cash",
       balance: "0",
       currency: "USD",
-      description: "",
+      ownerId: "",
+      color: undefined,
+      icon: "Wallet",
+      createdAt: (() => {
+        const date = new Date();
+        date.setHours(0, 0, 0, 0);
+        return date;
+      })(),
     },
   });
 
-  const currency = watch("currency");
-  const accountType = watch("type");
+  const { data: membersData } = useQuery({
+    queryKey: ["workspace-members", workspaceId],
+    queryFn: () => getWorkspaceMembers(workspaceId),
+    enabled: open,
+  });
+
+  const members = useMemo(() => {
+    return membersData?.data || [];
+  }, [membersData?.data]);
+
+  const currentUserId = useMemo(() => {
+    if (!session?.user?.id) return undefined;
+    const currentUser = members.find((m) => m.id === session.user.id);
+    return currentUser?.id;
+  }, [session, members]);
+
+  const currency = useWatch({ control, name: "currency" });
+  const selectedColor = useWatch({ control, name: "color" });
+  const selectedIcon = useWatch({ control, name: "icon" });
+
+  useEffect(() => {
+    if (open && currentUserId) {
+      setValue("ownerId", currentUserId);
+    }
+  }, [open, currentUserId, setValue]);
+
+  useEffect(() => {
+    if (open) {
+      reset({
+        name: "",
+        balance: "0",
+        currency: "USD",
+        ownerId: currentUserId || "",
+        color: undefined,
+        icon: "Wallet",
+        createdAt: (() => {
+          const date = new Date();
+          date.setHours(0, 0, 0, 0);
+          return date;
+        })(),
+      });
+    }
+  }, [open, reset, currentUserId]);
 
   const onSubmit = async (data: CreateAccountInput) => {
-    const result = await createAccount(workspaceId, data);
+      const result = await createAccount(workspaceId, data);
     if (result.error) {
       toast.error(result.error);
     } else {
@@ -104,30 +160,6 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
             </div>
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="type">
-              Тип <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={accountType}
-              onValueChange={(value) => setValue("type", value)}
-            >
-              <SelectTrigger id="type" className="w-full">
-                <SelectValue placeholder="Выберите тип" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cash">Наличные</SelectItem>
-                <SelectItem value="bank">Банковский счёт</SelectItem>
-                <SelectItem value="card">Банковская карта</SelectItem>
-                <SelectItem value="investment">Инвестиционный счёт</SelectItem>
-                <SelectItem value="other">Другое</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.type && (
-              <p className="text-sm text-destructive">{errors.type.message}</p>
             )}
           </div>
 
@@ -179,17 +211,103 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Описание</Label>
-            <Textarea
-              id="description"
-              {...register("description")}
-              placeholder="Описание счёта (необязательно)"
-              rows={3}
-              aria-invalid={errors.description ? "true" : "false"}
+            <Label htmlFor="ownerId">
+              Владелец <span className="text-destructive">*</span>
+            </Label>
+            <Controller
+              control={control}
+              name="ownerId"
+              render={({ field }) => (
+                <Select
+                  value={field.value || ""}
+                  onValueChange={(value) => field.onChange(value)}
+                >
+                  <SelectTrigger id="ownerId" className="w-full">
+                    <SelectValue placeholder="Выберите владельца" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {members.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name || member.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             />
-            {errors.description && (
+            {errors.ownerId && (
               <p className="text-sm text-destructive">
-                {errors.description.message}
+                {errors.ownerId.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Цвет</Label>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORY_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setValue("color", color)}
+                  className={cn(
+                    "h-8 w-8 rounded-md border-2 transition-all",
+                    selectedColor === color
+                      ? "border-primary scale-110"
+                      : "border-border hover:border-primary/50"
+                  )}
+                  style={{ backgroundColor: color }}
+                  title={color}
+                />
+              ))}
+            </div>
+            {errors.color && (
+              <p className="text-sm text-destructive">{errors.color.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Иконка</Label>
+            <div className="flex gap-2">
+              {Object.entries(ACCOUNT_ICONS).map(([name, Icon]) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setValue("icon", name)}
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-all",
+                    selectedIcon === name
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
+                  )}
+                  title={name}
+                >
+                  <Icon className="h-5 w-5" />
+                </button>
+              ))}
+            </div>
+            {errors.icon && (
+              <p className="text-sm text-destructive">{errors.icon.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="createdAt">
+              Дата открытия счета <span className="text-destructive">*</span>
+            </Label>
+            <Controller
+              control={control}
+              name="createdAt"
+              render={({ field }) => (
+                <DatePicker
+                  date={field.value}
+                  onSelect={field.onChange}
+                />
+              )}
+            />
+            {errors.createdAt && (
+              <p className="text-sm text-destructive">
+                {errors.createdAt.message}
               </p>
             )}
           </div>
@@ -214,4 +332,3 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
     </Dialog>
   );
 }
-

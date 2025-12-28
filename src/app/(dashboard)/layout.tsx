@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+
 import { authOptions } from "@/shared/lib/auth";
-import { Sidebar } from "./components/Sidebar";
+
+import { Header } from "./components/Header";
 
 export default async function DashboardLayout({
   children,
@@ -15,10 +17,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <main className="flex-1 p-8">{children}</main>
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="flex-1 p-4 md:p-8">{children}</main>
     </div>
   );
 }
-

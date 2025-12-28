@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Wallet,
   Receipt,
-  CreditCard,
   Tag,
   LogOut,
 } from "lucide-react";
@@ -19,7 +18,6 @@ const navigation = [
   { name: "Панель", href: "/dashboard", icon: LayoutDashboard },
   { name: "Счета", href: "/accounts", icon: Wallet },
   { name: "Транзакции", href: "/transactions", icon: Receipt },
-  { name: "Долги", href: "/debts", icon: CreditCard },
   { name: "Категории", href: "/categories", icon: Tag },
 ];
 

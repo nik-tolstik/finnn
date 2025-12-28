@@ -1,14 +1,17 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Mail, Lock } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { loginSchema, type LoginInput } from "../validations";
+import { toast } from "sonner";
+
+import { acceptInvite } from "@/modules/workspace/workspace.service";
+
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import {
   Card,
   CardContent,
@@ -16,12 +19,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import Link from "next/link";
-import { toast } from "sonner";
-import { Mail, Lock } from "lucide-react";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+
+import { loginSchema, type LoginInput } from "../auth.validations";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -31,6 +36,8 @@ export function LoginForm() {
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   });
+
+  const inviteToken = searchParams.get("inviteToken");
 
   const onSubmit = async (data: LoginInput) => {
     setIsLoading(true);
@@ -42,14 +49,28 @@ export function LoginForm() {
       });
 
       if (result?.error) {
-        toast.error("Неверный email или пароль");
+        if (result.error.includes("Email не подтвержден")) {
+          toast.error("Email не подтвержден. Пожалуйста, проверьте вашу почту и подтвердите email.");
+        } else {
+          toast.error("Неверный email или пароль");
+        }
         return;
       }
 
-      toast.success("Успешный вход");
+      if (inviteToken) {
+        const acceptResult = await acceptInvite(inviteToken);
+        if (acceptResult.error) {
+          toast.error(acceptResult.error);
+        } else {
+          toast.success("Приглашение принято");
+        }
+      } else {
+        toast.success("Успешный вход");
+      }
+
       router.push("/dashboard");
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Что-то пошло не так");
     } finally {
       setIsLoading(false);

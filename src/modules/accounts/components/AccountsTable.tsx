@@ -1,5 +1,14 @@
 "use client";
 
+import type { Account } from "@prisma/client";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { Archive, Pencil, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { CreateTransactionDialog } from "@/modules/transactions/components/CreateTransactionDialog";
+import { Button } from "@/shared/ui/button";
 import {
   Table,
   TableBody,
@@ -8,26 +17,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
-import { Button } from "@/shared/ui/button";
-import type { Account } from "@prisma/client";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
-import { Archive, Pencil } from "lucide-react";
-import { useState } from "react";
+
 import { ArchiveAccountDialog } from "./ArchiveAccountDialog";
 import { EditAccountDialog } from "./EditAccountDialog";
 
 interface AccountsTableProps {
   accounts: Account[];
+  workspaceId: string;
 }
-
-const accountTypeLabels: Record<string, string> = {
-  cash: "Наличные",
-  bank: "Банковский счёт",
-  card: "Банковская карта",
-  investment: "Инвестиционный счёт",
-  other: "Другое",
-};
 
 const currencySymbols: Record<string, string> = {
   USD: "$",
@@ -48,11 +45,18 @@ function formatBalance(balance: string, currency: string): string {
   })} ${symbol}`;
 }
 
-export function AccountsTable({ accounts }: AccountsTableProps) {
+export function AccountsTable({
+  accounts,
+  workspaceId,
+}: AccountsTableProps) {
+  const router = useRouter();
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
+  const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
+  const [accountForTransaction, setAccountForTransaction] =
+    useState<Account | null>(null);
 
   if (accounts.length === 0) {
     return (
@@ -68,7 +72,6 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
         <TableHeader>
           <TableRow>
             <TableHead>Название</TableHead>
-            <TableHead>Тип</TableHead>
             <TableHead>Валюта</TableHead>
             <TableHead className="text-right">Баланс</TableHead>
             <TableHead>Описание</TableHead>
@@ -78,11 +81,12 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
         </TableHeader>
         <TableBody>
           {accounts.map((account) => (
-            <TableRow key={account.id}>
+            <TableRow
+              key={account.id}
+              className="cursor-pointer"
+              onClick={() => router.push(`/accounts/${account.id}`)}
+            >
               <TableCell className="font-medium">{account.name}</TableCell>
-              <TableCell>
-                {accountTypeLabels[account.type] || account.type}
-              </TableCell>
               <TableCell>{account.currency}</TableCell>
               <TableCell className="text-right">
                 {formatBalance(account.balance, account.currency)}
@@ -96,7 +100,21 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
                 })}
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
+                <div
+                  className="flex items-center gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setAccountForTransaction(account);
+                      setTransactionDialogOpen(true);
+                    }}
+                    title="Добавить транзакцию"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -104,6 +122,7 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
                       setAccountToEdit(account);
                       setEditDialogOpen(true);
                     }}
+                    title="Редактировать"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -114,6 +133,7 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
                       setSelectedAccount(account);
                       setArchiveDialogOpen(true);
                     }}
+                    title="Архивировать"
                   >
                     <Archive className="h-4 w-4" />
                   </Button>
@@ -137,6 +157,15 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
           account={accountToEdit}
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
+        />
+      )}
+
+      {accountForTransaction && (
+        <CreateTransactionDialog
+          account={accountForTransaction}
+          workspaceId={workspaceId}
+          open={transactionDialogOpen}
+          onOpenChange={setTransactionDialogOpen}
         />
       )}
     </>

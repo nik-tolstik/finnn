@@ -1,18 +1,17 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Building2, Hash } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
 import {
   createWorkspaceSchema,
   type CreateWorkspaceInput,
 } from "@/shared/lib/validations/workspace";
-import { createWorkspace } from "../actions";
-import { generateSlug } from "../utils";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import {
   Card,
   CardContent,
@@ -20,8 +19,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import { toast } from "sonner";
-import { Building2, Hash } from "lucide-react";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+
+import { createWorkspace } from "../workspace.service";
+import { generateSlug } from "../workspace.utils";
 
 export function CreateWorkspacePrompt() {
   const router = useRouter();
@@ -62,7 +64,7 @@ export function CreateWorkspacePrompt() {
 
       toast.success("Рабочий стол успешно создан!");
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Что-то пошло не так");
     } finally {
       setIsLoading(false);

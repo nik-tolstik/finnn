@@ -1,5 +1,10 @@
 "use client";
 
+import type { Account } from "@prisma/client";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,11 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-import { archiveAccount } from "../actions";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
-import type { Account } from "@prisma/client";
+
+import { archiveAccount } from "../account.service";
 
 interface ArchiveAccountDialogProps {
   account: Account;
@@ -45,7 +47,7 @@ export function ArchiveAccountDialog({
     setIsArchiving(true);
     try {
       const result = await archiveAccount(account.id);
-      
+
       if (result.error) {
         toast.error(result.error);
         hasArchivedRef.current = false;
@@ -54,7 +56,7 @@ export function ArchiveAccountDialog({
         onOpenChange(false);
         router.refresh();
       }
-    } catch (error) {
+    } catch {
       hasArchivedRef.current = false;
       toast.error("Произошла ошибка при архивировании");
     } finally {
@@ -68,8 +70,8 @@ export function ArchiveAccountDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Архивировать счёт?</AlertDialogTitle>
           <AlertDialogDescription>
-            Вы уверены, что хотите архивировать счёт "{account.name}"? Счёт
-            будет скрыт из списка, но не будет удалён из базы данных. Вы
+            Вы уверены, что хотите архивировать счёт &quot;{account.name}&quot;?
+            Счёт будет скрыт из списка, но не будет удалён из базы данных. Вы
             сможете восстановить его позже.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -87,4 +89,3 @@ export function ArchiveAccountDialog({
     </AlertDialog>
   );
 }
-

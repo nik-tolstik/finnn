@@ -1,14 +1,14 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { User, Mail, Lock } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { registerSchema, type RegisterInput } from "../validations";
-import { registerAction } from "../actions";
+import { toast } from "sonner";
+
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import {
   Card,
   CardContent,
@@ -16,9 +16,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import Link from "next/link";
-import { toast } from "sonner";
-import { User, Mail, Lock } from "lucide-react";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+
+import { registerSchema, type RegisterInput } from "../auth.validations";
+import { registerAction } from "../auth.service";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -42,9 +44,11 @@ export function RegisterForm() {
         return;
       }
 
-      toast.success("Аккаунт успешно создан! Пожалуйста, войдите.");
+      toast.success(
+        "Аккаунт создан! Письмо с подтверждением отправлено на ваш email."
+      );
       router.push("/login");
-    } catch (error) {
+    } catch {
       toast.error("Что-то пошло не так");
     } finally {
       setIsLoading(false);
@@ -120,11 +124,17 @@ export function RegisterForm() {
           </Button>
         </form>
 
-        <div className="mt-4 text-center text-sm">
-          <span className="text-muted-foreground">Уже есть аккаунт? </span>
-          <Link href="/login" className="text-primary hover:underline">
-            Войти
-          </Link>
+        <div className="mt-4 space-y-2">
+          <p className="text-xs text-center text-muted-foreground">
+            После регистрации вам будет отправлено письмо с подтверждением email.
+            Пожалуйста, проверьте вашу почту и перейдите по ссылке для активации аккаунта.
+          </p>
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">Уже есть аккаунт? </span>
+            <Link href="/login" className="text-primary hover:underline">
+              Войти
+            </Link>
+          </div>
         </div>
       </CardContent>
     </Card>

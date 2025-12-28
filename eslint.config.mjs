@@ -14,6 +14,13 @@ const eslintConfig = defineConfig([
       "unused-imports": unusedImports,
       react: reactPlugin,
     },
+    settings: {
+      "import/resolver": {
+        typescript: {
+          alwaysTryTypes: true,
+        },
+      },
+    },
     rules: {
       "unused-imports/no-unused-imports": "warn",
       "import/order": [
