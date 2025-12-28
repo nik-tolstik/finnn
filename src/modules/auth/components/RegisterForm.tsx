@@ -19,11 +19,11 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
-import { registerSchema, type RegisterInput } from "../auth.validations";
+import { registerFormSchema } from "../auth.validations";
 import { registerAction } from "../auth.service";
 import { z } from "zod";
 
-type RegisterFormInput = z.infer<typeof registerSchema>;
+type RegisterFormInput = z.infer<typeof registerFormSchema>;
 
 export function RegisterForm() {
   const router = useRouter();
@@ -36,7 +36,7 @@ export function RegisterForm() {
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterFormInput>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerFormSchema),
   });
 
   const onSubmit = async (data: RegisterFormInput) => {
