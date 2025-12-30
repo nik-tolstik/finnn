@@ -1,11 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import { User, UserPlus } from "lucide-react";
-import { useState } from "react";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
 
-import { getWorkspace, getWorkspaceMembers } from "@/modules/workspace/workspace.service";
+import {
+  getWorkspace,
+  getWorkspaceMembers,
+} from "@/modules/workspace/workspace.service";
+import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 
 import { InviteMemberDialog } from "./InviteMemberDialog";
@@ -16,7 +20,10 @@ interface MembersManagementProps {
 
 export function MembersManagement({ workspaceId }: MembersManagementProps) {
   const { data: session } = useSession();
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const inviteDialog = useDialogState<{
+    workspaceId: string;
+    workspaceName: string;
+  }>();
 
   const { data: membersData } = useQuery({
     queryKey: ["workspace-members", workspaceId],
@@ -40,7 +47,14 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
           {isOwner && (
             <Button
               size="sm"
-              onClick={() => setInviteDialogOpen(true)}
+              onClick={() => {
+                if (workspace) {
+                  inviteDialog.openDialog({
+                    workspaceId,
+                    workspaceName: workspace.name,
+                  });
+                }
+              }}
             >
               <UserPlus className="h-4 w-4 mr-2" />
               Пригласить
@@ -57,10 +71,13 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
                 className="flex items-center gap-3 p-2 border rounded-md"
               >
                 {member.image ? (
-                  <img
+                  <Image
                     src={member.image}
                     alt={member.name || member.email}
+                    width={32}
+                    height={32}
                     className="h-8 w-8 rounded-full"
+                    unoptimized
                   />
                 ) : (
                   <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -81,15 +98,14 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
         )}
       </div>
 
-      {workspace && (
+      {inviteDialog.mounted && workspace && (
         <InviteMemberDialog
-          workspaceId={workspaceId}
-          workspaceName={workspace.name}
-          open={inviteDialogOpen}
-          onOpenChange={setInviteDialogOpen}
+          workspaceId={inviteDialog.data.workspaceId}
+          workspaceName={inviteDialog.data.workspaceName}
+          open={inviteDialog.open}
+          onOpenChange={inviteDialog.closeDialog}
         />
       )}
     </div>
   );
 }
-

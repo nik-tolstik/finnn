@@ -1,5 +1,6 @@
 import { unlink } from "fs/promises";
 import { join } from "path";
+
 import { UTApi } from "uploadthing/server";
 
 const hasUploadthingToken = !!process.env.UPLOADTHING_TOKEN;
@@ -36,4 +37,3 @@ export async function deleteAvatar(url: string | null | undefined) {
 export function isLocalStorage(): boolean {
   return !hasUploadthingToken;
 }
-

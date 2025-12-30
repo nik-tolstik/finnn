@@ -22,12 +22,14 @@ interface ArchiveAccountDialogProps {
   account: Account;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCloseComplete: () => void;
 }
 
 export function ArchiveAccountDialog({
   account,
   open,
   onOpenChange,
+  onCloseComplete,
 }: ArchiveAccountDialogProps) {
   const router = useRouter();
   const [isArchiving, setIsArchiving] = useState(false);
@@ -66,7 +68,7 @@ export function ArchiveAccountDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent onCloseComplete={onCloseComplete}>
         <AlertDialogHeader>
           <AlertDialogTitle>Архивировать счёт?</AlertDialogTitle>
           <AlertDialogDescription>

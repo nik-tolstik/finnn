@@ -2,25 +2,15 @@
 
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import {
-  ArrowDownIcon,
-  ArrowLeftRightIcon,
-  ArrowRightIcon,
-  ArrowUp,
-  ArrowUpIcon,
-  ChevronsRightIcon,
-  CircleArrowRightIcon,
-  Icon,
-  LucideIcon,
-} from "lucide-react";
+import { ArrowRightIcon, LucideIcon } from "lucide-react";
 
 import { Card } from "@/shared/ui/card";
+import { IconWithBg } from "@/shared/ui/icon-with-bg";
 import { getAccountIcon } from "@/shared/utils/account-icons";
+import { cn } from "@/shared/utils/cn";
+import { formatMoney } from "@/shared/utils/money";
 
 import type { TransactionWithRelations } from "../transaction.types";
-import { formatMoney } from "@/shared/utils/money";
-import { IconWithBg } from "@/shared/ui/icon-with-bg";
-import { cn } from "@/shared/utils/cn";
 
 interface TransferAccount {
   id: string;

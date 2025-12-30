@@ -12,6 +12,7 @@ import {
   getCategoryTransactionCount,
   updateCategory,
 } from "@/modules/categories/category.service";
+import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
@@ -26,11 +27,15 @@ interface CategoryManagementProps {
 export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   const queryClient = useQueryClient();
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
-  const [deleteCategoryCount, setDeleteCategoryCount] = useState<number>(0);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [createCategoryDialogOpen, setCreateCategoryDialogOpen] = useState(false);
-  const [createCategoryType, setCreateCategoryType] = useState<"income" | "expense">("expense");
+  const deleteDialog = useDialogState<{
+    categoryId: string;
+    categoryName: string;
+    transactionCount: number;
+  }>();
+  const createCategoryDialog = useDialogState<{
+    workspaceId: string;
+    type: "income" | "expense";
+  }>();
   const [editingName, setEditingName] = useState("");
   const [editingColor, setEditingColor] = useState("");
 
@@ -68,8 +73,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
         toast.success("Категория удалена");
         queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
       }
-      setDeleteDialogOpen(false);
-      setDeleteCategoryId(null);
+      deleteDialog.closeDialog();
     },
   });
 
@@ -102,20 +106,24 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       toast.error(countResult.error);
       return;
     }
-    setDeleteCategoryId(category.id);
-    setDeleteCategoryCount(countResult.data || 0);
-    setDeleteDialogOpen(true);
+    deleteDialog.openDialog({
+      categoryId: category.id,
+      categoryName: category.name,
+      transactionCount: countResult.data || 0,
+    });
   };
 
   const handleConfirmDelete = () => {
-    if (deleteCategoryId) {
-      deleteMutation.mutate(deleteCategoryId);
+    if (deleteDialog.mounted) {
+      deleteMutation.mutate(deleteDialog.data.categoryId);
     }
   };
 
   const handleOpenCreateDialog = (type: "income" | "expense") => {
-    setCreateCategoryType(type);
-    setCreateCategoryDialogOpen(true);
+    createCategoryDialog.openDialog({
+      workspaceId,
+      type,
+    });
   };
 
   const renderCategoryList = (
@@ -220,21 +228,21 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
         </Button>
       </div>
 
-      <CreateCategoryDialog
-        workspaceId={workspaceId}
-        type={createCategoryType}
-        open={createCategoryDialogOpen}
-        onOpenChange={setCreateCategoryDialogOpen}
-      />
+      {createCategoryDialog.mounted && (
+        <CreateCategoryDialog
+          workspaceId={createCategoryDialog.data.workspaceId}
+          type={createCategoryDialog.data.type}
+          open={createCategoryDialog.open}
+          onOpenChange={createCategoryDialog.closeDialog}
+        />
+      )}
 
-      {deleteCategoryId && (
+      {deleteDialog.mounted && (
         <DeleteCategoryDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          categoryName={
-            categories.find((c) => c.id === deleteCategoryId)?.name || ""
-          }
-          transactionCount={deleteCategoryCount}
+          open={deleteDialog.open}
+          onOpenChange={deleteDialog.closeDialog}
+          categoryName={deleteDialog.data.categoryName}
+          transactionCount={deleteDialog.data.transactionCount}
           onConfirm={handleConfirmDelete}
           isDeleting={deleteMutation.isPending}
         />

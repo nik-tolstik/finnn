@@ -10,15 +10,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { acceptInvite } from "@/modules/workspace/workspace.service";
-
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 

@@ -1,17 +1,29 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, X } from "lucide-react";
+import { Filter, X } from "lucide-react";
+import { Check } from "lucide-react";
+import { useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { getCategories } from "@/modules/categories/category.service";
+import { useIsMobile } from "@/shared/hooks/useIsMobile";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { cn } from "@/shared/utils/cn";
+import { Select } from "@/shared/ui/select/select";
+import { type SelectOption } from "@/shared/ui/select/types";
+import { RenderOption } from "@/shared/ui/select/types";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/shared/ui/sheet";
+import { getAccountIcon } from "@/shared/utils/account-icons";
+
 import type { TransactionFilters } from "../transaction.service";
 
 interface TransactionsFiltersProps {
@@ -25,6 +37,9 @@ export function TransactionsFilters({
   filters,
   onFiltersChange,
 }: TransactionsFiltersProps) {
+  const isMobile = useIsMobile();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
   const { data: accountsData } = useQuery({
     queryKey: ["accounts", workspaceId],
     queryFn: () => getAccounts(workspaceId),
@@ -53,32 +68,54 @@ export function TransactionsFilters({
     });
   };
 
-  const toggleAccount = (accountId: string) => {
-    const newIds = selectedAccountIds.includes(accountId)
-      ? selectedAccountIds.filter((id) => id !== accountId)
-      : [...selectedAccountIds, accountId];
-    updateFilter("accountIds", newIds.length > 0 ? newIds : undefined);
+  const typeOptions: SelectOption[] = [
+    { value: "income", label: "Доход" },
+    { value: "expense", label: "Расход" },
+    { value: "transfer", label: "Перевод" },
+  ];
+
+  const accountOptions: SelectOption[] = accounts.map((account) => ({
+    value: account.id,
+    label: account.name,
+  }));
+
+  const renderAccountOption: RenderOption<string> = ({
+    option,
+    selected,
+    props: { multiple },
+  }) => {
+    const account = accounts.find((acc) => acc.id === option.value);
+    if (!account) return null;
+
+    const AccountIcon = getAccountIcon(account.icon);
+
+    return (
+      <>
+        {multiple && (
+          <Checkbox
+            checked={selected}
+            className="shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
+        {account.icon && (
+          <AccountIcon
+            className="h-4 w-4 text-primary"
+            style={{ color: account.color || undefined }}
+          />
+        )}
+        <span className="flex-1 text-sm">{option.label}</span>
+        {!multiple && selected && (
+          <Check className="h-4 w-4 shrink-0 text-primary" />
+        )}
+      </>
+    );
   };
 
-  const toggleCategory = (categoryId: string) => {
-    const newIds = selectedCategoryIds.includes(categoryId)
-      ? selectedCategoryIds.filter((id) => id !== categoryId)
-      : [...selectedCategoryIds, categoryId];
-    updateFilter("categoryIds", newIds.length > 0 ? newIds : undefined);
-  };
-
-  const toggleType = (type: "income" | "expense" | "transfer") => {
-    const newTypes: ("income" | "expense" | "transfer")[] =
-      selectedTypes.includes(type)
-        ? selectedTypes.filter((t) => t !== type)
-        : [...selectedTypes, type];
-    onFiltersChange({
-      ...filters,
-      types: (newTypes.length > 0
-        ? newTypes
-        : undefined) as TransactionFilters["types"],
-    });
-  };
+  const categoryOptions: SelectOption[] = categories.map((category) => ({
+    value: category.id,
+    label: category.name,
+  }));
 
   const clearFilter = (key: keyof TransactionFilters) => {
     const newFilters = { ...filters };
@@ -99,6 +136,238 @@ export function TransactionsFilters({
     filters.dateTo ||
     filters.search ||
     (filters.types?.length || 0) > 0;
+
+  const filtersContent = (
+    <div className="flex flex-col gap-4 pt-2">
+      <div className="space-y-2">
+        <Label htmlFor="search" className="text-sm font-medium">
+          Поиск
+        </Label>
+        <div className="relative">
+          <Input
+            id="search"
+            placeholder="Поиск..."
+            value={filters.search || ""}
+            onChange={(e) =>
+              updateFilter("search", e.target.value || undefined)
+            }
+            className="pr-8"
+          />
+          {filters.search && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => clearFilter("search")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-transparent"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Тип транзакции</Label>
+        <Select
+          options={typeOptions}
+          value={selectedTypes}
+          onChange={(newValue) => {
+            updateFilter(
+              "types",
+              (Array.isArray(newValue) && newValue.length > 0
+                ? newValue
+                : undefined) as TransactionFilters["types"]
+            );
+          }}
+          placeholder="Все типы"
+          label="Тип транзакции"
+          multiple
+          allowClear
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Счета</Label>
+        <Select
+          options={accountOptions}
+          value={selectedAccountIds}
+          onChange={(newValue) => {
+            updateFilter(
+              "accountIds",
+              Array.isArray(newValue) && newValue.length > 0
+                ? newValue
+                : undefined
+            );
+          }}
+          placeholder="Все счета"
+          label="Счета"
+          multiple
+          allowClear
+          renderOption={renderAccountOption}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Категории</Label>
+        <Select
+          options={categoryOptions}
+          value={selectedCategoryIds}
+          onChange={(newValue) => {
+            updateFilter(
+              "categoryIds",
+              Array.isArray(newValue) && newValue.length > 0
+                ? newValue
+                : undefined
+            );
+          }}
+          placeholder="Все категории"
+          label="Категории"
+          multiple
+          allowClear
+          renderOption={({ props, option, selected }) => {
+            const category = categories.find((cat) => cat.id === option.value)!;
+
+            return (
+              <>
+                {props.multiple && (
+                  <Checkbox checked={selected} className="shrink-0" />
+                )}
+                <div
+                  style={{ backgroundColor: category.color || undefined }}
+                  className="size-4 rounded-full"
+                />
+                <span className="flex-1 text-sm">{option.label}</span>
+              </>
+            );
+          }}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Сумма</Label>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Input
+              id="minAmount"
+              type="number"
+              step="0.01"
+              placeholder="От"
+              value={filters.minAmount || ""}
+              onChange={(e) =>
+                updateFilter("minAmount", e.target.value || undefined)
+              }
+              className="pr-8"
+            />
+            {filters.minAmount && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => clearFilter("minAmount")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-transparent"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <div className="relative flex-1">
+            <Input
+              id="maxAmount"
+              type="number"
+              step="0.01"
+              placeholder="До"
+              value={filters.maxAmount || ""}
+              onChange={(e) =>
+                updateFilter("maxAmount", e.target.value || undefined)
+              }
+              className="pr-8"
+            />
+            {filters.maxAmount && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => clearFilter("maxAmount")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-transparent"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Дата</Label>
+        <div className="flex gap-2">
+          <DatePicker
+            date={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
+            onSelect={(date) => {
+              updateFilter("dateFrom", date);
+            }}
+            placeholder="От"
+            className="flex-1"
+          />
+          <DatePicker
+            date={filters.dateTo ? new Date(filters.dateTo) : undefined}
+            onSelect={(date) => {
+              updateFilter("dateTo", date);
+            }}
+            placeholder="До"
+            className="flex-1"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          variant="outline"
+          onClick={() => setSheetOpen(true)}
+          className="justify-start"
+        >
+          <Filter className="mr-2 h-4 w-4" />
+          Фильтры
+          {hasActiveFilters && (
+            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+              Активно
+            </span>
+          )}
+        </Button>
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetContent
+            side="bottom"
+            className="max-h-[90vh] p-0 flex flex-col"
+          >
+            <SheetHeader className="px-4 pt-4 pb-2">
+              <SheetTitle>Фильтры</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto px-4 pb-4">
+              {filtersContent}
+            </div>
+            <div className="border-t px-4 py-3 flex flex-col gap-2">
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    clearAllFilters();
+                    setSheetOpen(false);
+                  }}
+                  className="w-full"
+                >
+                  Очистить
+                </Button>
+              )}
+              <Button onClick={() => setSheetOpen(false)} className="w-full">
+                Применить
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
 
   return (
     <div className="flex flex-wrap lg:flex-col lg:items-stretch items-end gap-2">
@@ -137,211 +406,63 @@ export function TransactionsFilters({
         <Label className="hidden lg:block text-sm font-medium">
           Тип транзакции
         </Label>
-        <div className="relative">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-between",
-                  selectedTypes.length > 0 && "bg-accent"
-                )}
-              >
-                <span className="truncate">
-                  {selectedTypes.length === 0
-                    ? "Все типы"
-                    : selectedTypes.length === 3
-                      ? "Все типы"
-                      : selectedTypes.length === 2
-                        ? `${selectedTypes.length} типа`
-                        : selectedTypes[0] === "income"
-                          ? "Доход"
-                          : selectedTypes[0] === "expense"
-                            ? "Расход"
-                            : "Перевод"}
-                </span>
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[140px] p-2" align="start">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="type-income"
-                    checked={selectedTypes.includes("income")}
-                    onCheckedChange={() => toggleType("income")}
-                  />
-                  <Label
-                    htmlFor="type-income"
-                    className="cursor-pointer text-sm font-normal"
-                  >
-                    Доход
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="type-expense"
-                    checked={selectedTypes.includes("expense")}
-                    onCheckedChange={() => toggleType("expense")}
-                  />
-                  <Label
-                    htmlFor="type-expense"
-                    className="cursor-pointer text-sm font-normal"
-                  >
-                    Расход
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="type-transfer"
-                    checked={selectedTypes.includes("transfer")}
-                    onCheckedChange={() => toggleType("transfer")}
-                  />
-                  <Label
-                    htmlFor="type-transfer"
-                    className="cursor-pointer text-sm font-normal"
-                  >
-                    Перевод
-                  </Label>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-          {selectedTypes.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateFilter("types", undefined);
-              }}
-              className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-transparent"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        <Select
+          options={typeOptions}
+          value={selectedTypes}
+          onChange={(newValue) => {
+            updateFilter(
+              "types",
+              (Array.isArray(newValue) && newValue.length > 0
+                ? newValue
+                : undefined) as TransactionFilters["types"]
+            );
+          }}
+          placeholder="Все типы"
+          label="Тип транзакции"
+          multiple
+          allowClear
+        />
       </div>
 
       <div className="w-[160px] lg:w-full lg:space-y-2">
         <Label className="hidden lg:block text-sm font-medium">Счета</Label>
-        <div className="relative">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-between",
-                  selectedAccountIds.length > 0 && "bg-accent"
-                )}
-              >
-                <span className="truncate">
-                  {selectedAccountIds.length === 0
-                    ? "Все счета"
-                    : selectedAccountIds.length === 1
-                      ? accounts.find((a) => a.id === selectedAccountIds[0])
-                          ?.name || "Выбрано"
-                      : `Выбрано: ${selectedAccountIds.length}`}
-                </span>
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-2" align="start">
-              <div className="max-h-[200px] space-y-2 overflow-y-auto">
-                {accounts.map((account) => (
-                  <div key={account.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`account-${account.id}`}
-                      checked={selectedAccountIds.includes(account.id)}
-                      onCheckedChange={() => toggleAccount(account.id)}
-                    />
-                    <Label
-                      htmlFor={`account-${account.id}`}
-                      className="cursor-pointer text-sm font-normal"
-                    >
-                      {account.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-          {selectedAccountIds.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateFilter("accountIds", undefined);
-              }}
-              className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-transparent"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        <Select
+          options={accountOptions}
+          value={selectedAccountIds}
+          onChange={(newValue) => {
+            updateFilter(
+              "accountIds",
+              Array.isArray(newValue) && newValue.length > 0
+                ? newValue
+                : undefined
+            );
+          }}
+          placeholder="Все счета"
+          label="Счета"
+          multiple
+          allowClear
+          renderOption={renderAccountOption}
+        />
       </div>
 
       <div className="w-[160px] lg:w-full lg:space-y-2">
         <Label className="hidden lg:block text-sm font-medium">Категории</Label>
-        <div className="relative">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-between",
-                  selectedCategoryIds.length > 0 && "bg-accent"
-                )}
-              >
-                <span className="truncate">
-                  {selectedCategoryIds.length === 0
-                    ? "Все категории"
-                    : selectedCategoryIds.length === 1
-                      ? categories.find((c) => c.id === selectedCategoryIds[0])
-                          ?.name || "Выбрано"
-                      : `Выбрано: ${selectedCategoryIds.length}`}
-                </span>
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-2" align="start">
-              <div className="max-h-[200px] space-y-2 overflow-y-auto">
-                {categories.map((category) => (
-                  <div
-                    key={category.id}
-                    className="flex items-center space-x-2"
-                  >
-                    <Checkbox
-                      id={`category-${category.id}`}
-                      checked={selectedCategoryIds.includes(category.id)}
-                      onCheckedChange={() => toggleCategory(category.id)}
-                    />
-                    <Label
-                      htmlFor={`category-${category.id}`}
-                      className="cursor-pointer text-sm font-normal"
-                    >
-                      {category.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-          {selectedCategoryIds.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateFilter("categoryIds", undefined);
-              }}
-              className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-transparent"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        <Select
+          options={categoryOptions}
+          value={selectedCategoryIds}
+          onChange={(newValue) => {
+            updateFilter(
+              "categoryIds",
+              Array.isArray(newValue) && newValue.length > 0
+                ? newValue
+                : undefined
+            );
+          }}
+          placeholder="Все категории"
+          label="Категории"
+          multiple
+          allowClear
+        />
       </div>
 
       <div className="w-[120px] lg:w-full lg:space-y-2">

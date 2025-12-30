@@ -34,7 +34,7 @@ export function DeleteCategoryDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Удалить категорию?</AlertDialogTitle>
           <AlertDialogDescription>
-            Вы уверены, что хотите удалить категорию "{categoryName}"?
+            Вы уверены, что хотите удалить категорию &quot;{categoryName}&quot;?
             {transactionCount > 0 && (
               <span className="block mt-2 font-medium text-foreground">
                 Эта категория используется в {transactionCount}{" "}
@@ -62,4 +62,3 @@ export function DeleteCategoryDialog({
     </AlertDialog>
   );
 }
-

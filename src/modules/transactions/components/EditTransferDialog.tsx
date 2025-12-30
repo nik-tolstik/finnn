@@ -25,13 +25,8 @@ import {
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
+import { Select } from "@/shared/ui/select/select";
+import { SelectOption } from "@/shared/ui/select/types";
 import { Textarea } from "@/shared/ui/textarea";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
@@ -132,12 +127,10 @@ export function EditTransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Редактировать перевод</DialogTitle>
-          <DialogDescription>
-            Измените параметры перевода
-          </DialogDescription>
+          <DialogDescription>Измените параметры перевода</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="flex items-center gap-4">
@@ -149,30 +142,28 @@ export function EditTransferDialog({
                 <Controller
                   control={control}
                   name="fromAccountId"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || ""}
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        if (value === toAccountId) {
-                          setValue("toAccountId", "");
-                        }
-                      }}
-                    >
-                      <SelectTrigger id="fromAccountId" className="w-full">
-                        <SelectValue placeholder="Выберите счёт" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts
-                          .filter((acc) => acc.id !== toAccountId)
-                          .map((account) => (
-                            <SelectItem key={account.id} value={account.id}>
-                              {account.name} ({account.currency})
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                  render={({ field }) => {
+                    const accountOptions: SelectOption[] = accounts
+                      .filter((acc) => acc.id !== toAccountId)
+                      .map((account) => ({
+                        value: account.id,
+                        label: `${account.name} (${account.currency})`,
+                      }));
+                    return (
+                      <Select
+                        options={accountOptions}
+                        value={field.value || undefined}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          if (value === toAccountId) {
+                            setValue("toAccountId", "");
+                          }
+                        }}
+                        placeholder="Выберите счёт"
+                        multiple={false}
+                      />
+                    );
+                  }}
                 />
                 {errors.fromAccountId && (
                   <p className="text-sm text-destructive">
@@ -252,30 +243,28 @@ export function EditTransferDialog({
                 <Controller
                   control={control}
                   name="toAccountId"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || ""}
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        if (value === fromAccountId) {
-                          setValue("fromAccountId", "");
-                        }
-                      }}
-                    >
-                      <SelectTrigger id="toAccountId" className="w-full">
-                        <SelectValue placeholder="Выберите счёт" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts
-                          .filter((acc) => acc.id !== fromAccountId)
-                          .map((account) => (
-                            <SelectItem key={account.id} value={account.id}>
-                              {account.name} ({account.currency})
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                  render={({ field }) => {
+                    const accountOptions: SelectOption[] = accounts
+                      .filter((acc) => acc.id !== fromAccountId)
+                      .map((account) => ({
+                        value: account.id,
+                        label: `${account.name} (${account.currency})`,
+                      }));
+                    return (
+                      <Select
+                        options={accountOptions}
+                        value={field.value || undefined}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          if (value === fromAccountId) {
+                            setValue("fromAccountId", "");
+                          }
+                        }}
+                        placeholder="Выберите счёт"
+                        multiple={false}
+                      />
+                    );
+                  }}
                 />
                 {errors.toAccountId && (
                   <p className="text-sm text-destructive">
@@ -374,4 +363,3 @@ export function EditTransferDialog({
     </Dialog>
   );
 }
-

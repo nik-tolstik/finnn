@@ -2,18 +2,20 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Camera, X } from "lucide-react";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { Camera, X } from "lucide-react";
 
-import { updateUser } from "../auth.service";
-import { updateUserSchema, type UpdateUserInput } from "../auth.validations";
+import { useUploadThing } from "@/lib/uploadthing";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { useUploadThing } from "@/lib/uploadthing";
+
+import { updateUser } from "../auth.service";
+import { updateUserSchema, type UpdateUserInput } from "../auth.validations";
 
 export function AccountSettings() {
   const { data: session, update: updateSession } = useSession();
@@ -44,7 +46,7 @@ export function AccountSettings() {
     formState: { errors, isSubmitting, isDirty },
     reset,
     setValue,
-    watch,
+    control,
   } = useForm<UpdateUserInput>({
     resolver: zodResolver(updateUserSchema) as any,
     defaultValues: {
@@ -53,7 +55,7 @@ export function AccountSettings() {
     },
   });
 
-  const currentImage = watch("image");
+  const currentImage = useWatch({ control, name: "image" });
 
   useEffect(() => {
     const checkUploadMethod = async () => {
@@ -90,7 +92,9 @@ export function AccountSettings() {
 
     const maxSize = useUploadthing ? 4 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error(`Размер файла не должен превышать ${maxSize / 1024 / 1024}MB`);
+      toast.error(
+        `Размер файла не должен превышать ${maxSize / 1024 / 1024}MB`
+      );
       return;
     }
 
@@ -201,10 +205,13 @@ export function AccountSettings() {
         <div className="flex items-center gap-4">
           <div className="relative">
             {displayImage ? (
-              <img
+              <Image
                 src={displayImage}
                 alt="Аватар"
+                width={80}
+                height={80}
                 className="h-20 w-20 rounded-full object-cover border-2 border-border"
+                unoptimized
               />
             ) : (
               <div className="h-20 w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-medium border-2 border-border">

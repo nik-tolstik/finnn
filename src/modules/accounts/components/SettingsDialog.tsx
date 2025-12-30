@@ -38,7 +38,7 @@ export function SettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-screen max-h-screen w-screen max-w-screen m-0 p-0 flex flex-col rounded-none sm:h-[600px] sm:max-h-[600px] sm:w-auto sm:max-w-[900px] sm:m-4 sm:rounded-lg">
+      <DialogContent className="h-screen max-h-screen w-screen max-w-screen m-0 p-0 flex flex-col rounded-none sm:h-[600px] sm:max-h-[600px] sm:w-auto sm:w-[500px] sm:m-4 sm:rounded-lg">
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0 border-b">
           <DialogTitle className="mb-4">Настройки</DialogTitle>
           <div className="flex gap-1 border-b -mb-px">

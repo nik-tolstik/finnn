@@ -5,20 +5,22 @@ import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useState, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getCategories } from "@/modules/categories/category.service";
+import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import {
   createTransactionSchema,
   type CreateTransactionInput,
 } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
+import { type ComboboxOption } from "@/shared/ui/combobox";
 import { DatePicker } from "@/shared/ui/date-picker";
-import { Combobox, type ComboboxOption } from "@/shared/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -29,16 +31,9 @@ import {
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
+import { Select } from "@/shared/ui/select/select";
 import { Textarea } from "@/shared/ui/textarea";
 import { generateRandomColor } from "@/shared/utils/category-colors";
-import { cn } from "@/shared/utils/cn";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
 import { createTransaction } from "../transaction.service";
@@ -89,6 +84,7 @@ export function CreateTransactionDialog({
   const [temporaryCategories, setTemporaryCategories] = useState<
     TemporaryCategory[]
   >([]);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const { data: categoriesData } = useQuery({
     queryKey: ["categories", workspaceId],
@@ -127,6 +123,10 @@ export function CreateTransactionDialog({
 
     return [...existingOptions, ...tempOptions];
   }, [filteredCategories, temporaryCategories, transactionType]);
+
+  const selectedCategory = useMemo(() => {
+    return comboboxOptions.find((opt) => opt.value === categoryId);
+  }, [comboboxOptions, categoryId]);
 
   useEffect(() => {
     if (open) {
@@ -252,7 +252,7 @@ export function CreateTransactionDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         key={open ? account.id : "closed"}
-        className="sm:max-w-[500px]"
+        className="sm:w-[500px]"
       >
         <DialogHeader>
           <DialogTitle>Добавить транзакцию</DialogTitle>
@@ -265,20 +265,18 @@ export function CreateTransactionDialog({
             <Label htmlFor="type">
               Тип транзакции <span className="text-destructive">*</span>
             </Label>
-            <Select
+            <Select<"income" | "expense" | "transfer">
+              options={[
+                { value: "income", label: "Доход" },
+                { value: "expense", label: "Расход" },
+              ]}
               value={transactionType}
-              onValueChange={(value) =>
+              onChange={(value) =>
                 setValue("type", value as "income" | "expense" | "transfer")
               }
-            >
-              <SelectTrigger id="type" className="w-full">
-                <SelectValue placeholder="Выберите тип" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="income">Доход</SelectItem>
-                <SelectItem value="expense">Расход</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Выберите тип"
+              multiple={false}
+            />
             {errors.type && (
               <p className="text-sm text-destructive">{errors.type.message}</p>
             )}
@@ -286,22 +284,54 @@ export function CreateTransactionDialog({
 
           <div className="space-y-2">
             <Label htmlFor="categoryId">Категория</Label>
-            <Combobox
+            <div className="relative">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => setCategoryModalOpen(true)}
+              >
+                {selectedCategory ? (
+                  <div className="flex items-center gap-2">
+                    {selectedCategory.color && (
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: selectedCategory.color }}
+                      />
+                    )}
+                    <span className="truncate">{selectedCategory.label}</span>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">
+                    Выберите или создайте категорию
+                  </span>
+                )}
+              </Button>
+              {selectedCategory && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setValue("categoryId", undefined);
+                    setValue("newCategory", undefined);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <CategorySelectModal
+              open={categoryModalOpen}
+              onOpenChange={setCategoryModalOpen}
               options={comboboxOptions}
               value={categoryId}
-              onValueChange={(value) => {
-                if (!value) {
-                  setValue("categoryId", undefined);
-                  setValue("newCategory", undefined);
-                }
-              }}
-              onSelectOption={handleCategorySelect}
+              onSelect={handleCategorySelect}
               onSearchChange={handleCategorySearch}
               placeholder="Выберите или создайте категорию"
               searchPlaceholder="Поиск или создание категории..."
               emptyText="Введите название для создания новой категории"
               createText="Создать"
-              className="w-full"
             />
             {(errors.categoryId || errors.newCategory) && (
               <p className="text-sm text-destructive">

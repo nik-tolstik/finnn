@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { createCategory } from "@/modules/categories/category.service";
@@ -47,7 +47,7 @@ export function CreateCategoryDialog({
     formState: { errors, isSubmitting },
     reset,
     setValue,
-    watch,
+    control,
   } = useForm<CreateCategoryInput>({
     resolver: zodResolver(createCategorySchema),
     defaultValues: {
@@ -57,7 +57,7 @@ export function CreateCategoryDialog({
     },
   });
 
-  const selectedColor = watch("color");
+  const selectedColor = useWatch({ control, name: "color" });
 
   useEffect(() => {
     if (open) {
@@ -77,7 +77,9 @@ export function CreateCategoryDialog({
         toast.error(result.error);
       } else {
         toast.success("Категория создана");
-        queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
+        queryClient.invalidateQueries({
+          queryKey: ["categories", workspaceId],
+        });
         reset();
         onOpenChange(false);
         router.refresh();
@@ -91,13 +93,14 @@ export function CreateCategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>
             Добавить категорию {type === "income" ? "дохода" : "расхода"}
           </DialogTitle>
           <DialogDescription>
-            Создайте новую категорию для {type === "income" ? "доходов" : "расходов"}.
+            Создайте новую категорию для{" "}
+            {type === "income" ? "доходов" : "расходов"}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -149,7 +152,10 @@ export function CreateCategoryDialog({
             >
               Отмена
             </Button>
-            <Button type="submit" disabled={isSubmitting || createMutation.isPending}>
+            <Button
+              type="submit"
+              disabled={isSubmitting || createMutation.isPending}
+            >
               {isSubmitting || createMutation.isPending
                 ? "Создание..."
                 : "Создать"}
@@ -160,4 +166,3 @@ export function CreateCategoryDialog({
     </Dialog>
   );
 }
-

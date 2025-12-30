@@ -80,7 +80,9 @@ export function InviteMemberDialog({
     },
     onSuccess: () => {
       toast.success("Приглашение отправлено");
-      queryClient.invalidateQueries({ queryKey: ["workspace-members", workspaceId] });
+      queryClient.invalidateQueries({
+        queryKey: ["workspace-members", workspaceId],
+      });
       reset();
       onOpenChange(false);
       router.refresh();
@@ -96,11 +98,12 @@ export function InviteMemberDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Пригласить участника</DialogTitle>
           <DialogDescription>
-            Введите email пользователя, которого хотите пригласить в рабочий стол "{workspaceName}".
+            Введите email пользователя, которого хотите пригласить в рабочий
+            стол &quot;{workspaceName}&quot;.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -142,6 +145,3 @@ export function InviteMemberDialog({
     </Dialog>
   );
 }
-
-
-

@@ -2,14 +2,24 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Wallet, HandCoins, CreditCard, Landmark, type LucideIcon } from "lucide-react";
+import {
+  Building2,
+  Wallet,
+  HandCoins,
+  CreditCard,
+  Landmark,
+  type LucideIcon,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { getWorkspace, updateWorkspace } from "@/modules/workspace/workspace.service";
+import {
+  getWorkspace,
+  updateWorkspace,
+} from "@/modules/workspace/workspace.service";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -51,7 +61,7 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-    watch,
+    control,
     reset,
     formState: { isDirty },
   } = useForm<WorkspaceSettingsInput>({
@@ -71,8 +81,8 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
     }
   }, [workspace, reset]);
 
-  const selectedIcon = watch("icon");
-  const currentName = watch("name");
+  const selectedIcon = useWatch({ control, name: "icon" });
+  const currentName = useWatch({ control, name: "name" });
 
   const updateMutation = useMutation({
     mutationFn: (data: WorkspaceSettingsInput) =>
@@ -136,7 +146,11 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
             <button
               key={name}
               type="button"
-              onClick={() => setValue("icon", selectedIcon === name ? null : name, { shouldDirty: true })}
+              onClick={() =>
+                setValue("icon", selectedIcon === name ? null : name, {
+                  shouldDirty: true,
+                })
+              }
               disabled={!isOwner}
               className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-all",
@@ -173,11 +187,12 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
             type="submit"
             disabled={isSubmitting || updateMutation.isPending}
           >
-            {isSubmitting || updateMutation.isPending ? "Сохранение..." : "Сохранить"}
+            {isSubmitting || updateMutation.isPending
+              ? "Сохранение..."
+              : "Сохранить"}
           </Button>
         </div>
       )}
     </form>
   );
 }
-

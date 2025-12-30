@@ -2,8 +2,9 @@
 
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
-import { getServerSession } from "next-auth";
+
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/shared/lib/auth";
 
@@ -58,4 +59,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -7,21 +7,15 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
-import { registerFormSchema } from "../auth.validations";
 import { registerAction } from "../auth.service";
-import { z } from "zod";
+import { registerFormSchema } from "../auth.validations";
 
 type RegisterFormInput = z.infer<typeof registerFormSchema>;
 

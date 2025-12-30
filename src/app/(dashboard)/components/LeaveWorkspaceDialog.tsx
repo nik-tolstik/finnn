@@ -60,7 +60,8 @@ export function LeaveWorkspaceDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Покинуть рабочий стол?</AlertDialogTitle>
           <AlertDialogDescription>
-            Вы уверены, что хотите покинуть "{workspaceName}"? Вы потеряете доступ ко всем данным этого рабочего стола.
+            Вы уверены, что хотите покинуть &quot;{workspaceName}&quot;? Вы
+            потеряете доступ ко всем данным этого рабочего стола.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -79,4 +80,3 @@ export function LeaveWorkspaceDialog({
     </AlertDialog>
   );
 }
-

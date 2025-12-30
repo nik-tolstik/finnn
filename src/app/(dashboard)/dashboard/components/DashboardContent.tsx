@@ -5,8 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { AccountsCards } from "@/modules/accounts/components/AccountsCards";
-import { TransactionsList } from "@/modules/transactions/components/TransactionsList";
 import { TransactionsFilters } from "@/modules/transactions/components/TransactionsFilters";
+import { TransactionsList } from "@/modules/transactions/components/TransactionsList";
+import { TransactionsListSkeleton } from "@/modules/transactions/components/TransactionsListSkeleton";
 import {
   getTransactions,
   type TransactionFilters,
@@ -38,7 +39,7 @@ export function DashboardContent({
     return () => clearTimeout(timer);
   }, [localFilters]);
 
-  const { data: allTransactionsData } = useQuery({
+  const { data: allTransactionsData, isLoading } = useQuery({
     queryKey: ["transactions", workspaceId, debouncedFilters],
     queryFn: () => getTransactions(workspaceId, debouncedFilters),
   });
@@ -59,7 +60,9 @@ export function DashboardContent({
           <h2 className="mb-4 text-2xl font-semibold">Последние транзакции</h2>
           <div className="flex flex-col lg:flex-row lg:items-start gap-4">
             <div className="flex-1 min-w-0 order-2 lg:order-1">
-              {displayedTransactions.length > 0 ? (
+              {isLoading ? (
+                <TransactionsListSkeleton />
+              ) : displayedTransactions.length > 0 ? (
                 <TransactionsList
                   transactions={displayedTransactions}
                   showLoadMore={hasMore}

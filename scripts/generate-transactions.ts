@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+
 import { addMoney, subtractMoney } from "../src/shared/utils/money";
 
 const prisma = new PrismaClient();
@@ -100,8 +101,7 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
     }
 
     const description =
-      descriptions[randomInt(0, descriptions.length - 1)] +
-      ` #${i + 1}`;
+      descriptions[randomInt(0, descriptions.length - 1)] + ` #${i + 1}`;
 
     const currentBalance = accountBalances.get(account.id) || "0";
     let newBalance: string;
@@ -150,7 +150,9 @@ async function main() {
   const count = parseInt(process.argv[3] || "100", 10);
 
   if (!workspaceId) {
-    console.error("Использование: tsx scripts/generate-transactions.ts <workspaceId> [count]");
+    console.error(
+      "Использование: tsx scripts/generate-transactions.ts <workspaceId> [count]"
+    );
     process.exit(1);
   }
 
@@ -165,4 +167,3 @@ async function main() {
 }
 
 main();
-

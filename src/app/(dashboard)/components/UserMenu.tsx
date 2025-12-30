@@ -1,16 +1,13 @@
 "use client";
 
 import { LogOut, Settings } from "lucide-react";
+import Image from "next/image";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 
 import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog";
 import { Button } from "@/shared/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
 interface UserMenuProps {
@@ -39,15 +36,15 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          className="h-auto gap-2 p-0 hover:bg-accent"
-        >
+        <Button variant="ghost" className="h-auto gap-2 p-0 hover:bg-accent">
           {image ? (
-            <img
+            <Image
               src={image}
               alt={displayName}
+              width={32}
+              height={32}
               className="h-8 w-8 rounded-full"
+              unoptimized
             />
           ) : (
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
@@ -101,4 +98,3 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
     </Popover>
   );
 }
-

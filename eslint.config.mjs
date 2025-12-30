@@ -1,18 +1,15 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
-import importPlugin from "eslint-plugin-import";
-import reactPlugin from "eslint-plugin-react";
 import unusedImports from "eslint-plugin-unused-imports";
+import "eslint-plugin-only-warn";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
     plugins: {
-      import: importPlugin,
       "unused-imports": unusedImports,
-      react: reactPlugin,
     },
     settings: {
       "import/resolver": {
@@ -22,7 +19,15 @@ const eslintConfig = defineConfig([
       },
     },
     rules: {
-      "unused-imports/no-unused-imports": "warn",
+      "unused-imports/no-unused-imports": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
       "import/order": [
         "warn",
         {
@@ -41,6 +46,8 @@ const eslintConfig = defineConfig([
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
       "@typescript-eslint/no-explicit-any": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/static-components": "off",
     },
   },
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),

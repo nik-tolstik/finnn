@@ -2,19 +2,21 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getCategories } from "@/modules/categories/category.service";
+import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import {
   updateTransactionSchema,
   type UpdateTransactionInput,
 } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
+import { type ComboboxOption } from "@/shared/ui/combobox";
 import { DatePicker } from "@/shared/ui/date-picker";
-import { Combobox, type ComboboxOption } from "@/shared/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -90,6 +92,11 @@ export function EditTransactionDialog({
   }, [filteredCategories]);
 
   const categoryId = useWatch({ control, name: "categoryId" });
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+
+  const selectedCategory = useMemo(() => {
+    return comboboxOptions.find((opt) => opt.value === categoryId);
+  }, [comboboxOptions, categoryId]);
 
   useEffect(() => {
     if (open) {
@@ -134,7 +141,7 @@ export function EditTransactionDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         key={open ? transaction.id : "closed"}
-        className="sm:max-w-[500px]"
+        className="sm:w-[500px]"
       >
         <DialogHeader>
           <DialogTitle>Редактировать транзакцию</DialogTitle>
@@ -191,17 +198,51 @@ export function EditTransactionDialog({
 
           <div className="space-y-2">
             <Label htmlFor="categoryId">Категория</Label>
-            <Combobox
+            <div className="relative">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => setCategoryModalOpen(true)}
+              >
+                {selectedCategory ? (
+                  <div className="flex items-center gap-2">
+                    {selectedCategory.color && (
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: selectedCategory.color }}
+                      />
+                    )}
+                    <span className="truncate">{selectedCategory.label}</span>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">
+                    Выберите категорию
+                  </span>
+                )}
+              </Button>
+              {selectedCategory && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setValue("categoryId", null);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <CategorySelectModal
+              open={categoryModalOpen}
+              onOpenChange={setCategoryModalOpen}
               options={comboboxOptions}
               value={categoryId || undefined}
-              onValueChange={(value) => {
-                setValue("categoryId", value || null);
-              }}
-              onSelectOption={handleCategorySelect}
+              onSelect={handleCategorySelect}
               placeholder="Выберите категорию"
               searchPlaceholder="Поиск категории..."
               emptyText="Категории не найдены"
-              className="w-full"
             />
             {errors.categoryId && (
               <p className="text-sm text-destructive">

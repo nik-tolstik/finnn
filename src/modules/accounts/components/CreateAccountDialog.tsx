@@ -26,13 +26,8 @@ import {
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
+import { Select } from "@/shared/ui/select/select";
+import { SelectOption } from "@/shared/ui/select/types";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
 import { cn } from "@/shared/utils/cn";
@@ -43,12 +38,14 @@ interface CreateAccountDialogProps {
   workspaceId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCloseComplete?: () => void;
 }
 
 export function CreateAccountDialog({
   workspaceId,
   open,
   onOpenChange,
+  onCloseComplete,
 }: CreateAccountDialogProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -139,8 +136,9 @@ export function CreateAccountDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        onCloseComplete={onCloseComplete}
         key={open ? "open" : "closed"}
-        className="sm:max-w-[500px]"
+        className="sm:w-[500px]"
       >
         <DialogHeader>
           <DialogTitle>Создать новый счёт</DialogTitle>
@@ -173,22 +171,20 @@ export function CreateAccountDialog({
               Валюта <span className="text-destructive">*</span>
             </Label>
             <Select
+              options={[
+                { value: "USD", label: "USD ($)" },
+                { value: "EUR", label: "EUR (€)" },
+                { value: "RUB", label: "RUB (₽)" },
+                { value: "BYN", label: "BYN (Br)" },
+                { value: "GBP", label: "GBP (£)" },
+                { value: "JPY", label: "JPY (¥)" },
+                { value: "CNY", label: "CNY (¥)" },
+              ]}
               value={currency}
-              onValueChange={(value) => setValue("currency", value)}
-            >
-              <SelectTrigger id="currency" className="w-full">
-                <SelectValue placeholder="Выберите валюту" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD ($)</SelectItem>
-                <SelectItem value="EUR">EUR (€)</SelectItem>
-                <SelectItem value="RUB">RUB (₽)</SelectItem>
-                <SelectItem value="BYN">BYN (Br)</SelectItem>
-                <SelectItem value="GBP">GBP (£)</SelectItem>
-                <SelectItem value="JPY">JPY (¥)</SelectItem>
-                <SelectItem value="CNY">CNY (¥)</SelectItem>
-              </SelectContent>
-            </Select>
+              onChange={(value) => setValue("currency", value)}
+              placeholder="Выберите валюту"
+              multiple={false}
+            />
             {errors.currency && (
               <p className="text-sm text-destructive">
                 {errors.currency.message}
@@ -222,23 +218,21 @@ export function CreateAccountDialog({
             <Controller
               control={control}
               name="ownerId"
-              render={({ field }) => (
-                <Select
-                  value={field.value || ""}
-                  onValueChange={(value) => field.onChange(value)}
-                >
-                  <SelectTrigger id="ownerId" className="w-full">
-                    <SelectValue placeholder="Выберите владельца" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {members.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.name || member.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              render={({ field }) => {
+                const ownerOptions: SelectOption[] = members.map((member) => ({
+                  value: member.id,
+                  label: member.name || member.email,
+                }));
+                return (
+                  <Select
+                    options={ownerOptions}
+                    value={field.value || undefined}
+                    onChange={(value) => field.onChange(value)}
+                    placeholder="Выберите владельца"
+                    multiple={false}
+                  />
+                );
+              }}
             />
             {errors.ownerId && (
               <p className="text-sm text-destructive">

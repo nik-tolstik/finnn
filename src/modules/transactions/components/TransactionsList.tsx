@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 import { ContextMenu, ContextMenuItem } from "@/shared/ui/context-menu";
 
@@ -32,10 +33,14 @@ export function TransactionsList({
 }: TransactionsListProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [editingTransaction, setEditingTransaction] =
-    useState<TransactionWithRelations | null>(null);
-  const [editingTransfer, setEditingTransfer] =
-    useState<TransactionWithRelations | null>(null);
+  const editTransactionDialog = useDialogState<{
+    transaction: TransactionWithRelations;
+    workspaceId: string;
+  }>();
+  const editTransferDialog = useDialogState<{
+    transaction: TransactionWithRelations;
+    workspaceId: string;
+  }>();
   const [contextMenu, setContextMenu] = useState<{
     transaction: TransactionWithRelations;
     x: number;
@@ -98,7 +103,7 @@ export function TransactionsList({
     <div className="space-y-3">
       {transactions.map((transaction) => {
         const isTransfer = transaction.type === "transfer";
-        
+
         if (isTransfer) {
           if (transaction.transferTo) {
             return null;
@@ -108,23 +113,27 @@ export function TransactionsList({
             return null;
           }
 
-          let transferInfo: {
-            account: {
-              id: string;
-              name: string;
-              currency: string;
-              color: string | null;
-              icon: string | null;
-            };
-            amount: string;
-          } | undefined;
+          let transferInfo:
+            | {
+                account: {
+                  id: string;
+                  name: string;
+                  currency: string;
+                  color: string | null;
+                  icon: string | null;
+                };
+                amount: string;
+              }
+            | undefined;
 
           if (transaction.transferFrom) {
             transferInfo = {
               account: transaction.transferFrom.toTransaction.account,
               amount: transaction.transferFrom.toAmount,
             };
-            processedTransactionIds.add(transaction.transferFrom.toTransaction.id);
+            processedTransactionIds.add(
+              transaction.transferFrom.toTransaction.id
+            );
           }
 
           if (!transferInfo) {
@@ -173,9 +182,15 @@ export function TransactionsList({
           <ContextMenuItem
             onClick={() => {
               if (contextMenu.transaction.type === "transfer") {
-                setEditingTransfer(contextMenu.transaction);
+                editTransferDialog.openDialog({
+                  transaction: contextMenu.transaction,
+                  workspaceId,
+                });
               } else {
-                setEditingTransaction(contextMenu.transaction);
+                editTransactionDialog.openDialog({
+                  transaction: contextMenu.transaction,
+                  workspaceId,
+                });
               }
               setContextMenu(null);
             }}
@@ -194,22 +209,23 @@ export function TransactionsList({
           </ContextMenuItem>
         </ContextMenu>
       )}
-      {editingTransaction && (
+      {editTransactionDialog.mounted && (
         <EditTransactionDialog
-          transaction={editingTransaction}
-          workspaceId={workspaceId}
-          open={!!editingTransaction}
-          onOpenChange={(open: boolean) => !open && setEditingTransaction(null)}
+          transaction={editTransactionDialog.data.transaction}
+          workspaceId={editTransactionDialog.data.workspaceId}
+          open={editTransactionDialog.open}
+          onOpenChange={editTransactionDialog.closeDialog}
         />
       )}
-      {editingTransfer && editingTransfer.transferFrom && (
-        <EditTransferDialog
-          transaction={editingTransfer}
-          workspaceId={workspaceId}
-          open={!!editingTransfer}
-          onOpenChange={(open: boolean) => !open && setEditingTransfer(null)}
-        />
-      )}
+      {editTransferDialog.mounted &&
+        editTransferDialog.data.transaction.transferFrom && (
+          <EditTransferDialog
+            transaction={editTransferDialog.data.transaction}
+            workspaceId={editTransferDialog.data.workspaceId}
+            open={editTransferDialog.open}
+            onOpenChange={editTransferDialog.closeDialog}
+          />
+        )}
       {showLoadMore && onLoadMore && (
         <div className="flex justify-center">
           <Button variant="outline" onClick={onLoadMore}>

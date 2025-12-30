@@ -4,8 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, Hash } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import {
@@ -42,7 +42,7 @@ export function CreateWorkspaceDialog({
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     reset,
     formState: { errors, isSubmitting },
@@ -54,7 +54,7 @@ export function CreateWorkspaceDialog({
     },
   });
 
-  const nameValue = watch("name");
+  const nameValue = useWatch({ control, name: "name" });
 
   useEffect(() => {
     if (nameValue) {
@@ -87,7 +87,7 @@ export function CreateWorkspaceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать новый рабочий стол</DialogTitle>
           <DialogDescription>
@@ -157,7 +157,3 @@ export function CreateWorkspaceDialog({
     </Dialog>
   );
 }
-
-
-
-

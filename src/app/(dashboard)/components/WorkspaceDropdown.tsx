@@ -14,16 +14,16 @@ import {
   ArrowRight,
   type LucideIcon,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useRef, useState } from "react";
 
 import { SettingsDialog } from "@/modules/accounts/components/SettingsDialog";
 import { CreateWorkspaceDialog } from "@/modules/workspace/components/CreateWorkspaceDialog";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
+import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { cn } from "@/shared/utils/cn";
 
 import { LeaveWorkspaceDialog } from "./LeaveWorkspaceDialog";
 
@@ -53,9 +53,12 @@ export function WorkspaceDropdown({
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const createDialog = useDialogState();
+  const settingsDialog = useDialogState<{ workspaceId: string }>();
+  const leaveDialog = useDialogState<{
+    workspaceId: string;
+    workspaceName: string;
+  }>();
   const switchCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: workspacesData } = useQuery({
@@ -80,7 +83,7 @@ export function WorkspaceDropdown({
   const handleCreateWorkspace = () => {
     setOpen(false);
     setSwitchOpen(false);
-    setCreateDialogOpen(true);
+    createDialog.openDialog(null);
   };
 
   const handleSwitchMouseEnter = () => {
@@ -127,7 +130,11 @@ export function WorkspaceDropdown({
                 <button
                   onClick={() => {
                     setOpen(false);
-                    setSettingsDialogOpen(true);
+                    if (currentWorkspaceId) {
+                      settingsDialog.openDialog({
+                        workspaceId: currentWorkspaceId,
+                      });
+                    }
                   }}
                   className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
                 >
@@ -198,7 +205,12 @@ export function WorkspaceDropdown({
                 <button
                   onClick={() => {
                     setOpen(false);
-                    setLeaveDialogOpen(true);
+                    if (currentWorkspaceId && currentWorkspace) {
+                      leaveDialog.openDialog({
+                        workspaceId: currentWorkspaceId,
+                        workspaceName: currentWorkspace.name,
+                      });
+                    }
                   }}
                   className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2 text-destructive"
                 >
@@ -210,24 +222,26 @@ export function WorkspaceDropdown({
           </div>
         </PopoverContent>
       </Popover>
-      <CreateWorkspaceDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-      />
-      {currentWorkspaceId && (
-        <>
-          <SettingsDialog
-            workspaceId={currentWorkspaceId}
-            open={settingsDialogOpen}
-            onOpenChange={setSettingsDialogOpen}
-          />
-          <LeaveWorkspaceDialog
-            workspaceId={currentWorkspaceId}
-            workspaceName={currentWorkspace?.name || ""}
-            open={leaveDialogOpen}
-            onOpenChange={setLeaveDialogOpen}
-          />
-        </>
+      {createDialog.mounted && (
+        <CreateWorkspaceDialog
+          open={createDialog.open}
+          onOpenChange={createDialog.closeDialog}
+        />
+      )}
+      {settingsDialog.mounted && currentWorkspaceId && (
+        <SettingsDialog
+          workspaceId={settingsDialog.data.workspaceId}
+          open={settingsDialog.open}
+          onOpenChange={settingsDialog.closeDialog}
+        />
+      )}
+      {leaveDialog.mounted && (
+        <LeaveWorkspaceDialog
+          workspaceId={leaveDialog.data.workspaceId}
+          workspaceName={leaveDialog.data.workspaceName}
+          open={leaveDialog.open}
+          onOpenChange={leaveDialog.closeDialog}
+        />
       )}
     </>
   );

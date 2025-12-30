@@ -3,12 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Account } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { AccountCard } from "@/shared/components/AccountCard";
 import {
   updateAccountSchema,
   type UpdateAccountInput,
@@ -25,13 +26,6 @@ import {
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
 import { cn } from "@/shared/utils/cn";
@@ -42,12 +36,14 @@ interface EditAccountDialogProps {
   account: Account;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCloseComplete: () => void;
 }
 
 export function EditAccountDialog({
   account,
   open,
   onOpenChange,
+  onCloseComplete,
 }: EditAccountDialogProps) {
   const router = useRouter();
   const {
@@ -69,6 +65,7 @@ export function EditAccountDialog({
 
   const selectedColor = useWatch({ control, name: "color" });
   const selectedIcon = useWatch({ control, name: "icon" });
+  const accountName = useWatch({ control, name: "name" });
 
   useEffect(() => {
     if (open) {
@@ -107,15 +104,20 @@ export function EditAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        key={open ? account.id : "closed"}
-        className="sm:max-w-[500px]"
-      >
+      <DialogContent className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Редактировать счёт</DialogTitle>
           <DialogDescription>Измените параметры счёта.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <AccountCard
+            account={{
+              ...account,
+              name: accountName || account.name,
+              color: selectedColor || account.color,
+              icon: selectedIcon || account.icon || "Wallet",
+            }}
+          />
           <div className="space-y-2">
             <Label htmlFor="name">
               Название <span className="text-destructive">*</span>

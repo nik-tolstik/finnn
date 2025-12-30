@@ -17,7 +17,7 @@ openssl rand -base64 32
 3. Update the `.env` file with your MongoDB connection string and NextAuth secret:
 ```env
 MONGODB_URI="mongodb://localhost:27017/finhub"
-NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="http://localhost:9999"
 NEXTAUTH_SECRET="paste-generated-secret-here"
 UPLOADTHING_SECRET="your-uploadthing-secret-here"
 ```
@@ -42,7 +42,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:9999](http://localhost:9999) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

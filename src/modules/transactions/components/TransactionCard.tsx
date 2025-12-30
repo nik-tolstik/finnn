@@ -2,20 +2,16 @@
 
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ArrowDown, ArrowUp, Icon } from "lucide-react";
 
 import { Badge } from "@/shared/ui/badge";
 import { Card } from "@/shared/ui/card";
 import { IconWithBg } from "@/shared/ui/icon-with-bg";
 import { getAccountIcon } from "@/shared/utils/account-icons";
+import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
+import { TRANSACTION_TYPE_LABELS } from "../transaction.constants";
 import type { TransactionWithRelations } from "../transaction.types";
-import {
-  TRANSACTION_TYPE_LABELS,
-  TRANSACTION_TYPES,
-} from "../transaction.constants";
-import { cn } from "@/shared/utils/cn";
 
 interface TransactionCardProps {
   transaction: TransactionWithRelations;

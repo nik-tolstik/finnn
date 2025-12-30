@@ -1,5 +1,5 @@
-import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { getServerSession } from "next-auth";
+import { createUploadthing, type FileRouter } from "uploadthing/next";
 
 import { authOptions } from "@/shared/lib/auth";
 
@@ -20,4 +20,3 @@ export const ourFileRouter = {
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;
-

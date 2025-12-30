@@ -1,7 +1,7 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 import { UserMenu } from "./UserMenu";
 import { WorkspaceDropdown } from "./WorkspaceDropdown";
@@ -30,4 +30,3 @@ export function Header() {
     </header>
   );
 }
-
