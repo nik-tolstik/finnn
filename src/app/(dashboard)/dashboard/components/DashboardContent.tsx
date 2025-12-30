@@ -4,6 +4,7 @@ import type { Account } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountsCards } from "@/modules/accounts/components/AccountsCards";
 import { TransactionsFilters } from "@/modules/transactions/components/TransactionsFilters";
 import { TransactionsList } from "@/modules/transactions/components/TransactionsList";
@@ -39,11 +40,18 @@ export function DashboardContent({
     return () => clearTimeout(timer);
   }, [localFilters]);
 
+  const { data: accountsData, isLoading: isLoadingAccounts } = useQuery({
+    queryKey: ["accounts", workspaceId],
+    queryFn: () => getAccounts(workspaceId),
+    initialData: { data: accounts },
+  });
+
   const { data: allTransactionsData, isLoading } = useQuery({
     queryKey: ["transactions", workspaceId, debouncedFilters],
     queryFn: () => getTransactions(workspaceId, debouncedFilters),
   });
 
+  const displayAccounts = accountsData?.data || accounts;
   const allTransactions = allTransactionsData?.data || [];
   const displayedTransactions = allTransactions.slice(0, displayedCount);
   const hasMore = allTransactions.length > displayedCount;
@@ -53,7 +61,11 @@ export function DashboardContent({
       <div className="space-y-8">
         <div>
           <h2 className="mb-4 text-2xl font-semibold">Счета</h2>
-          <AccountsCards accounts={accounts} workspaceId={workspaceId} />
+          <AccountsCards
+            accounts={displayAccounts}
+            workspaceId={workspaceId}
+            isLoading={isLoadingAccounts}
+          />
         </div>
 
         <div>

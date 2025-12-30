@@ -82,7 +82,6 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
   }, [workspace, reset]);
 
   const selectedIcon = useWatch({ control, name: "icon" });
-  const currentName = useWatch({ control, name: "name" });
 
   const updateMutation = useMutation({
     mutationFn: (data: WorkspaceSettingsInput) =>

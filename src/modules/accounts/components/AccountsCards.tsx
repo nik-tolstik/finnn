@@ -11,6 +11,7 @@ import { Card } from "@/shared/ui/card";
 import { cn } from "@/shared/utils/cn";
 
 import { AccountActionsDialog } from "./AccountActionsDialog";
+import { AccountsCardsSkeleton } from "./AccountsCardsSkeleton";
 import { ArchiveAccountDialog } from "./ArchiveAccountDialog";
 import { CreateAccountDialog } from "./CreateAccountDialog";
 import { EditAccountDialog } from "./EditAccountDialog";
@@ -18,9 +19,14 @@ import { EditAccountDialog } from "./EditAccountDialog";
 interface AccountsCardsProps {
   accounts: Account[];
   workspaceId: string;
+  isLoading?: boolean;
 }
 
-export function AccountsCards({ accounts, workspaceId }: AccountsCardsProps) {
+export function AccountsCards({
+  accounts,
+  workspaceId,
+  isLoading,
+}: AccountsCardsProps) {
   const accountActionsDialog = useDialogState<{ account: Account }>();
   const editDialog = useDialogState<{ account: Account }>();
   const archiveDialog = useDialogState<{ account: Account }>();
@@ -31,6 +37,10 @@ export function AccountsCards({ accounts, workspaceId }: AccountsCardsProps) {
     defaultAccountId?: string;
     defaultTab?: "expense" | "income" | "transfer";
   }>();
+
+  if (isLoading) {
+    return <AccountsCardsSkeleton />;
+  }
 
   return (
     <>
