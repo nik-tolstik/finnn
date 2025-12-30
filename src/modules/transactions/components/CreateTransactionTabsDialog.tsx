@@ -231,7 +231,7 @@ export function CreateTransactionTabsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="h-screen max-h-screen w-screen max-w-screen m-0 p-0 flex flex-col rounded-none sm:h-auto sm:max-h-[90vh] sm:w-[500px] sm:m-4 sm:rounded-lg sm:p-6"
+        className="h-dvh max-h-dvh w-screen max-w-screen m-0 p-0 flex flex-col rounded-none top-0 left-0 translate-x-0 translate-y-0 sm:h-auto sm:max-h-[90vh] sm:w-[500px] sm:m-4 sm:rounded-lg sm:p-6 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%]"
         onCloseComplete={onCloseComplete}
       >
         <DialogHeader className="px-4 sm:px-0 pt-4 sm:pt-0 pb-0 border-b shrink-0">
