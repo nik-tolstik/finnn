@@ -15,19 +15,19 @@ import type { TransactionWithRelations } from "../transaction.types";
 
 interface TransactionCardProps {
   transaction: TransactionWithRelations;
-  onContextMenu?: (e: React.MouseEvent) => void;
+  onClick?: () => void;
 }
 
 export function TransactionCard({
   transaction,
-  onContextMenu,
+  onClick,
 }: TransactionCardProps) {
   const AccountIcon = getAccountIcon(transaction.account.icon);
 
   return (
     <Card
       className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer"
-      onContextMenu={onContextMenu}
+      onClick={onClick}
     >
       <div className="flex flex-col text-sm">
         <div className="flex items-center justify-between">

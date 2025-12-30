@@ -26,7 +26,7 @@ interface TransferCardProps {
     account: TransferAccount;
     amount: string;
   };
-  onContextMenu?: (e: React.MouseEvent) => void;
+  onClick?: () => void;
 }
 
 function AccountName({
@@ -77,7 +77,7 @@ function AccountWithAmount({
 export function TransferCard({
   transaction,
   transferTo,
-  onContextMenu,
+  onClick,
 }: TransferCardProps) {
   const FromAccountIcon = getAccountIcon(transaction.account.icon);
   const ToAccountIcon = getAccountIcon(transferTo.account.icon);
@@ -91,7 +91,7 @@ export function TransferCard({
   return (
     <Card
       className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer text-sm"
-      onContextMenu={onContextMenu}
+      onClick={onClick}
     >
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2">
         <div className="flex flex-col gap-2 sm:gap-3 flex-1 min-w-0">

@@ -1,20 +1,18 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "sonner";
 
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
-import { ContextMenu, ContextMenuItem } from "@/shared/ui/context-menu";
 
 import { deleteTransaction } from "../transaction.service";
 import type { TransactionWithRelations } from "../transaction.types";
 
 import { EditTransactionDialog } from "./EditTransactionDialog";
 import { EditTransferDialog } from "./EditTransferDialog";
+import { TransactionActionsDialog } from "./TransactionActionsDialog";
 import { TransactionCard } from "./TransactionCard";
 import { TransferCard } from "./TransferCard";
 
@@ -41,14 +39,12 @@ export function TransactionsList({
     transaction: TransactionWithRelations;
     workspaceId: string;
   }>();
-  const [contextMenu, setContextMenu] = useState<{
+  const actionsDialog = useDialogState<{
     transaction: TransactionWithRelations;
-    x: number;
-    y: number;
-  } | null>(null);
+  }>();
 
   const handleDelete = async (transaction: TransactionWithRelations) => {
-    setContextMenu(null);
+    actionsDialog.closeDialog();
 
     const previousTransactions = queryClient.getQueryData<{
       data: TransactionWithRelations[];
@@ -145,13 +141,8 @@ export function TransactionsList({
               key={transaction.id}
               transaction={transaction}
               transferTo={transferInfo}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setContextMenu({
-                  transaction,
-                  x: e.clientX,
-                  y: e.clientY,
-                });
+              onClick={() => {
+                actionsDialog.openDialog({ transaction });
               }}
             />
           );
@@ -161,53 +152,36 @@ export function TransactionsList({
           <TransactionCard
             key={transaction.id}
             transaction={transaction}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setContextMenu({
-                transaction,
-                x: e.clientX,
-                y: e.clientY,
-              });
+            onClick={() => {
+              actionsDialog.openDialog({ transaction });
             }}
           />
         );
       })}
-      {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          open={!!contextMenu}
-          onOpenChange={(open) => !open && setContextMenu(null)}
-        >
-          <ContextMenuItem
-            onClick={() => {
-              if (contextMenu.transaction.type === "transfer") {
-                editTransferDialog.openDialog({
-                  transaction: contextMenu.transaction,
-                  workspaceId,
-                });
-              } else {
-                editTransactionDialog.openDialog({
-                  transaction: contextMenu.transaction,
-                  workspaceId,
-                });
-              }
-              setContextMenu(null);
-            }}
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Редактировать
-          </ContextMenuItem>
-          <ContextMenuItem
-            variant="destructive"
-            onClick={() => {
-              handleDelete(contextMenu.transaction);
-            }}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Удалить
-          </ContextMenuItem>
-        </ContextMenu>
+      {actionsDialog.mounted && actionsDialog.data && (
+        <TransactionActionsDialog
+          transaction={actionsDialog.data.transaction}
+          open={actionsDialog.open}
+          onOpenChange={actionsDialog.closeDialog}
+          onCloseComplete={actionsDialog.closeDialog}
+          onEdit={() => {
+            actionsDialog.closeDialog();
+            if (actionsDialog.data.transaction.type === "transfer") {
+              editTransferDialog.openDialog({
+                transaction: actionsDialog.data.transaction,
+                workspaceId,
+              });
+            } else {
+              editTransactionDialog.openDialog({
+                transaction: actionsDialog.data.transaction,
+                workspaceId,
+              });
+            }
+          }}
+          onDelete={() => {
+            handleDelete(actionsDialog.data.transaction);
+          }}
+        />
       )}
       {editTransactionDialog.mounted && (
         <EditTransactionDialog
