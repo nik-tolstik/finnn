@@ -4,6 +4,7 @@ import { Pencil, Trash2 } from "lucide-react";
 
 import { ActionsDialog } from "@/shared/ui/actions-dialog";
 
+import { TransactionType } from "../transaction.constants";
 import type { TransactionWithRelations } from "../transaction.types";
 
 interface TransactionActionsDialogProps {
@@ -24,9 +25,9 @@ export function TransactionActionsDialog({
   onDelete,
 }: TransactionActionsDialogProps) {
   const transactionType =
-    transaction.type === "transfer" ? "перевода" : "транзакции";
+    transaction.type === TransactionType.TRANSFER ? "перевода" : "транзакции";
   const transactionLabel =
-    transaction.type === "transfer" ? "Перевод" : "Транзакция";
+    transaction.type === TransactionType.TRANSFER ? "Перевод" : "Транзакция";
 
   return (
     <ActionsDialog

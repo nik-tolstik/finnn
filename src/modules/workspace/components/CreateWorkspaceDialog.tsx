@@ -15,7 +15,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -87,7 +87,7 @@ export function CreateWorkspaceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:w-[500px]">
+      <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать новый рабочий стол</DialogTitle>
           <DialogDescription>
@@ -153,7 +153,7 @@ export function CreateWorkspaceDialog({
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

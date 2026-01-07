@@ -41,10 +41,12 @@ export type TransactionWithRelations = Transaction & {
   } | null;
 };
 
+import { TransactionType } from "./transaction.constants";
+
 export type TemporaryCategory = {
-  id: string; // временный ID (например, `temp-${Date.now()}`)
+  id: string;
   name: string;
   color: string;
-  type: "income" | "expense";
+  type: TransactionType.INCOME | TransactionType.EXPENSE;
   isTemporary: true;
 };

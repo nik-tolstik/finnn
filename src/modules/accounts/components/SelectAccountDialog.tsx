@@ -7,7 +7,7 @@ import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/AccountCard";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -51,7 +51,7 @@ export function SelectAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
+      <DialogWindow
         className="sm:max-w-[400px]"
         onCloseComplete={onCloseComplete}
       >
@@ -74,7 +74,7 @@ export function SelectAccountDialog({
             ))
           )}
         </div>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

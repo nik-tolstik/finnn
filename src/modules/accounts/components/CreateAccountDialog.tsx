@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -18,11 +18,12 @@ import { Button } from "@/shared/ui/button";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogContent,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -48,6 +49,7 @@ export function CreateAccountDialog({
   onCloseComplete,
 }: CreateAccountDialogProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: session } = useSession();
   const {
     register,
@@ -129,13 +131,16 @@ export function CreateAccountDialog({
       toast.success("Счёт успешно создан");
       reset();
       onOpenChange(false);
+      await queryClient.invalidateQueries({
+        queryKey: ["accounts", workspaceId],
+      });
       router.refresh();
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
+      <DialogWindow
         onCloseComplete={onCloseComplete}
         key={open ? "open" : "closed"}
         className="sm:w-[500px]"
@@ -146,182 +151,195 @@ export function CreateAccountDialog({
             Добавьте новый счёт для отслеживания ваших финансов
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">
-              Название <span className="text-destructive">*</span>
-            </Label>
-            <div className="relative">
-              <Wallet className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="name"
-                {...register("name")}
-                placeholder="Название счёта"
-                className="pl-9"
-                aria-invalid={errors.name ? "true" : "false"}
-              />
-            </div>
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="currency">
-              Валюта <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              options={[
-                { value: "USD", label: "USD ($)" },
-                { value: "EUR", label: "EUR (€)" },
-                { value: "RUB", label: "RUB (₽)" },
-                { value: "BYN", label: "BYN (Br)" },
-                { value: "GBP", label: "GBP (£)" },
-                { value: "JPY", label: "JPY (¥)" },
-                { value: "CNY", label: "CNY (¥)" },
-              ]}
-              value={currency}
-              onChange={(value) => setValue("currency", value)}
-              placeholder="Выберите валюту"
-              multiple={false}
-            />
-            {errors.currency && (
-              <p className="text-sm text-destructive">
-                {errors.currency.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="balance">
-              Начальный баланс <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="balance"
-              type="number"
-              step="0.01"
-              {...register("balance")}
-              placeholder="0.00"
-              aria-invalid={errors.balance ? "true" : "false"}
-            />
-            {errors.balance && (
-              <p className="text-sm text-destructive">
-                {errors.balance.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ownerId">
-              Владелец <span className="text-destructive">*</span>
-            </Label>
-            <Controller
-              control={control}
-              name="ownerId"
-              render={({ field }) => {
-                const ownerOptions: SelectOption[] = members.map((member) => ({
-                  value: member.id,
-                  label: member.name || member.email,
-                }));
-                return (
-                  <Select
-                    options={ownerOptions}
-                    value={field.value || undefined}
-                    onChange={(value) => field.onChange(value)}
-                    placeholder="Выберите владельца"
-                    multiple={false}
-                  />
-                );
-              }}
-            />
-            {errors.ownerId && (
-              <p className="text-sm text-destructive">
-                {errors.ownerId.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Цвет</Label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORY_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => setValue("color", color)}
-                  className={cn(
-                    "h-8 w-8 rounded-md border-2 transition-all",
-                    selectedColor === color
-                      ? "border-primary scale-110"
-                      : "border-border hover:border-primary/50"
-                  )}
-                  style={{ backgroundColor: color }}
-                  title={color}
+        <DialogContent>
+          <form className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Название <span className="text-destructive">*</span>
+              </Label>
+              <div className="relative">
+                <Wallet className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="name"
+                  {...register("name")}
+                  placeholder="Название счёта"
+                  className="pl-9"
+                  aria-invalid={errors.name ? "true" : "false"}
                 />
-              ))}
-            </div>
-            {errors.color && (
-              <p className="text-sm text-destructive">{errors.color.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Иконка</Label>
-            <div className="flex gap-2">
-              {Object.entries(ACCOUNT_ICONS).map(([name, Icon]) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => setValue("icon", name)}
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-all",
-                    selectedIcon === name
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
-                  )}
-                  title={name}
-                >
-                  <Icon className="h-5 w-5" />
-                </button>
-              ))}
-            </div>
-            {errors.icon && (
-              <p className="text-sm text-destructive">{errors.icon.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="createdAt">
-              Дата открытия счета <span className="text-destructive">*</span>
-            </Label>
-            <Controller
-              control={control}
-              name="createdAt"
-              render={({ field }) => (
-                <DatePicker date={field.value} onSelect={field.onChange} />
+              </div>
+              {errors.name && (
+                <p className="text-sm text-destructive">
+                  {errors.name.message}
+                </p>
               )}
-            />
-            {errors.createdAt && (
-              <p className="text-sm text-destructive">
-                {errors.createdAt.message}
-              </p>
-            )}
-          </div>
+            </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Отмена
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Создание..." : "Создать"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
+            <div className="space-y-2">
+              <Label htmlFor="currency">
+                Валюта <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                options={[
+                  { value: "USD", label: "USD ($)" },
+                  { value: "EUR", label: "EUR (€)" },
+                  { value: "RUB", label: "RUB (₽)" },
+                  { value: "BYN", label: "BYN (Br)" },
+                  { value: "GBP", label: "GBP (£)" },
+                  { value: "JPY", label: "JPY (¥)" },
+                  { value: "CNY", label: "CNY (¥)" },
+                ]}
+                value={currency}
+                onChange={(value) => setValue("currency", value)}
+                placeholder="Выберите валюту"
+                multiple={false}
+              />
+              {errors.currency && (
+                <p className="text-sm text-destructive">
+                  {errors.currency.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="balance">
+                Начальный баланс <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="balance"
+                type="number"
+                step="0.01"
+                {...register("balance")}
+                placeholder="0.00"
+                aria-invalid={errors.balance ? "true" : "false"}
+              />
+              {errors.balance && (
+                <p className="text-sm text-destructive">
+                  {errors.balance.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ownerId">
+                Владелец <span className="text-destructive">*</span>
+              </Label>
+              <Controller
+                control={control}
+                name="ownerId"
+                render={({ field }) => {
+                  const ownerOptions: SelectOption[] = members.map(
+                    (member) => ({
+                      value: member.id,
+                      label: member.name || member.email,
+                    })
+                  );
+                  return (
+                    <Select
+                      options={ownerOptions}
+                      value={field.value || undefined}
+                      onChange={(value) => field.onChange(value)}
+                      placeholder="Выберите владельца"
+                      multiple={false}
+                    />
+                  );
+                }}
+              />
+              {errors.ownerId && (
+                <p className="text-sm text-destructive">
+                  {errors.ownerId.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Цвет</Label>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORY_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setValue("color", color)}
+                    className={cn(
+                      "h-8 w-8 rounded-md border-2 transition-all",
+                      selectedColor === color
+                        ? "border-primary scale-110"
+                        : "border-border hover:border-primary/50"
+                    )}
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+              {errors.color && (
+                <p className="text-sm text-destructive">
+                  {errors.color.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Иконка</Label>
+              <div className="flex gap-2">
+                {Object.entries(ACCOUNT_ICONS).map(([name, Icon]) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setValue("icon", name)}
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-all",
+                      selectedIcon === name
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    )}
+                    title={name}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </button>
+                ))}
+              </div>
+              {errors.icon && (
+                <p className="text-sm text-destructive">
+                  {errors.icon.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="createdAt">
+                Дата открытия счета <span className="text-destructive">*</span>
+              </Label>
+              <Controller
+                control={control}
+                name="createdAt"
+                render={({ field }) => (
+                  <DatePicker date={field.value} onSelect={field.onChange} />
+                )}
+              />
+              {errors.createdAt && (
+                <p className="text-sm text-destructive">
+                  {errors.createdAt.message}
+                </p>
+              )}
+            </div>
+          </form>
+        </DialogContent>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Отмена
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Создание..." : "Создать"}
+          </Button>
+        </DialogFooter>
+      </DialogWindow>
     </Dialog>
   );
 }

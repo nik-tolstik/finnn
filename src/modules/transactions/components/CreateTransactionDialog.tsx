@@ -12,6 +12,7 @@ import { useState, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { CategoryType } from "@/modules/categories/category.constants";
 import { getCategories } from "@/modules/categories/category.service";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import {
@@ -23,7 +24,7 @@ import { type ComboboxOption } from "@/shared/ui/combobox";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -36,6 +37,7 @@ import { Textarea } from "@/shared/ui/textarea";
 import { generateRandomColor } from "@/shared/utils/category-colors";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
+import { TransactionType } from "../transaction.constants";
 import { createTransaction } from "../transaction.service";
 import type { TemporaryCategory } from "../transaction.types";
 
@@ -66,7 +68,7 @@ export function CreateTransactionDialog({
     defaultValues: {
       accountId: account.id,
       amount: "",
-      type: "expense" as const,
+      type: TransactionType.EXPENSE,
       description: "",
       date: (() => {
         const accountCreatedDate = new Date(account.createdAt);
@@ -99,7 +101,9 @@ export function CreateTransactionDialog({
   // Фильтруем категории по типу транзакции
   const filteredCategories = useMemo(() => {
     return allCategories.filter(
-      (cat) => cat.type === transactionType || transactionType === "transfer"
+      (cat) =>
+        cat.type === transactionType ||
+        transactionType === TransactionType.TRANSFER
     );
   }, [allCategories, transactionType]);
 
@@ -138,7 +142,7 @@ export function CreateTransactionDialog({
       reset({
         accountId: account.id,
         amount: "",
-        type: "expense" as const,
+        type: TransactionType.EXPENSE,
         description: "",
         date: defaultDate,
         categoryId: undefined,
@@ -206,9 +210,12 @@ export function CreateTransactionDialog({
         setValue("newCategory", {
           name: tempCategory.name,
           color: tempCategory.color,
-          type: tempCategory.type,
+          type:
+            tempCategory.type === TransactionType.INCOME
+              ? CategoryType.INCOME
+              : CategoryType.EXPENSE,
         });
-        setValue("categoryId", option.value); // Используем временный ID для отображения
+        setValue("categoryId", option.value);
       }
     } else {
       // Если выбрана существующая категория, используем её ID
@@ -241,7 +248,9 @@ export function CreateTransactionDialog({
         id: `temp-${Date.now()}-${Math.random()}`,
         name: searchValue.trim(),
         color: generateRandomColor(),
-        type: transactionType as "income" | "expense",
+        type: transactionType as
+          | TransactionType.INCOME
+          | TransactionType.EXPENSE,
         isTemporary: true,
       };
       setTemporaryCategories((prev) => [...prev, newTempCategory]);
@@ -250,10 +259,7 @@ export function CreateTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        key={open ? account.id : "closed"}
-        className="sm:w-[500px]"
-      >
+      <DialogWindow key={open ? account.id : "closed"} className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Добавить транзакцию</DialogTitle>
           <DialogDescription>
@@ -265,15 +271,13 @@ export function CreateTransactionDialog({
             <Label htmlFor="type">
               Тип транзакции <span className="text-destructive">*</span>
             </Label>
-            <Select<"income" | "expense" | "transfer">
+            <Select<TransactionType>
               options={[
-                { value: "income", label: "Доход" },
-                { value: "expense", label: "Расход" },
+                { value: TransactionType.INCOME, label: "Доход" },
+                { value: TransactionType.EXPENSE, label: "Расход" },
               ]}
               value={transactionType}
-              onChange={(value) =>
-                setValue("type", value as "income" | "expense" | "transfer")
-              }
+              onChange={(value) => setValue("type", value)}
               placeholder="Выберите тип"
               multiple={false}
             />
@@ -431,7 +435,7 @@ export function CreateTransactionDialog({
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

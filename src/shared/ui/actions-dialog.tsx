@@ -2,10 +2,11 @@
 
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogContent,
 } from "@/shared/ui/dialog";
 
 import { cn } from "../utils/cn";
@@ -73,12 +74,12 @@ export function ActionsDialog({
 }: ActionsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:w-[400px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow className="sm:w-[400px]" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col">
+        <DialogContent className="flex flex-col">
           {actions.map((action, index) => (
             <ActionButton
               key={index}
@@ -93,8 +94,8 @@ export function ActionsDialog({
               {action.label}
             </ActionButton>
           ))}
-        </div>
-      </DialogContent>
+        </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

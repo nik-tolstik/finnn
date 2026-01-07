@@ -1,37 +1,43 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowLeftRight, ArrowUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
+import { CategoryType } from "@/modules/categories/category.constants";
 import { getCategories } from "@/modules/categories/category.service";
-import {
-  createTransactionSchema,
-  createTransferSchema,
-  type CreateTransactionInput,
-  type CreateTransferInput,
+import type {
+  CreateTransactionInput,
+  CreateTransferInput,
 } from "@/shared/lib/validations/transaction";
+import { Button } from "@/shared/ui/button";
 import { type ComboboxOption } from "@/shared/ui/combobox";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogContent,
 } from "@/shared/ui/dialog";
 import { generateRandomColor } from "@/shared/utils/category-colors";
 import { cn } from "@/shared/utils/cn";
 
+import { TransactionType } from "../transaction.constants";
 import { createTransaction, createTransfer } from "../transaction.service";
 import type { TemporaryCategory } from "../transaction.types";
 
 import { TransactionForm } from "./TransactionForm";
+import { TransactionFormSubmitButton } from "./TransactionFormSubmitButton";
 import { TransferForm } from "./TransferForm";
+import { TransferFormSubmitButton } from "./TransferFormSubmitButton";
+import { useTransactionForm } from "./useTransactionForm";
+import { useTransferForm } from "./useTransferForm";
 
 interface CreateTransactionTabsDialogProps {
   workspaceId: string;
@@ -39,7 +45,7 @@ interface CreateTransactionTabsDialogProps {
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
   defaultAccountId?: string;
-  defaultTab?: "expense" | "income" | "transfer";
+  defaultTab?: TransactionType;
 }
 
 export function CreateTransactionTabsDialog({
@@ -48,13 +54,11 @@ export function CreateTransactionTabsDialog({
   onOpenChange,
   onCloseComplete,
   defaultAccountId,
-  defaultTab = "expense",
+  defaultTab = TransactionType.EXPENSE,
 }: CreateTransactionTabsDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"expense" | "income" | "transfer">(
-    defaultTab
-  );
+  const [activeTab, setActiveTab] = useState<TransactionType>(defaultTab);
   const [temporaryCategories, setTemporaryCategories] = useState<
     TemporaryCategory[]
   >([]);
@@ -80,29 +84,8 @@ export function CreateTransactionTabsDialog({
     return categoriesData?.data || [];
   }, [categoriesData?.data]);
 
-  const transactionForm = useForm<CreateTransactionInput>({
-    resolver: zodResolver(createTransactionSchema),
-    defaultValues: {
-      accountId: defaultAccountId || "",
-      amount: "",
-      type: "expense" as const,
-      description: "",
-      date: new Date(),
-      categoryId: undefined,
-    },
-  });
-
-  const transferForm = useForm<CreateTransferInput>({
-    resolver: zodResolver(createTransferSchema),
-    defaultValues: {
-      fromAccountId: defaultAccountId || "",
-      toAccountId: "",
-      amount: "",
-      toAmount: "",
-      description: "",
-      date: new Date(),
-    },
-  });
+  const transactionForm = useTransactionForm({ defaultAccountId });
+  const transferForm = useTransferForm({ defaultAccountId });
 
   const transactionType = useWatch({
     control: transactionForm.control,
@@ -115,7 +98,10 @@ export function CreateTransactionTabsDialog({
       transactionForm.reset({
         accountId: defaultAccountId || "",
         amount: "",
-        type: defaultTab === "transfer" ? "expense" : defaultTab,
+        type:
+          defaultTab === TransactionType.TRANSFER
+            ? TransactionType.EXPENSE
+            : defaultTab,
         description: "",
         date: new Date(),
         categoryId: undefined,
@@ -134,7 +120,7 @@ export function CreateTransactionTabsDialog({
   }, [open, defaultAccountId, defaultTab, transactionForm, transferForm]);
 
   useEffect(() => {
-    if (activeTab !== "transfer") {
+    if (activeTab !== TransactionType.TRANSFER) {
       transactionForm.setValue("type", activeTab);
     }
   }, [activeTab, transactionForm]);
@@ -190,7 +176,10 @@ export function CreateTransactionTabsDialog({
         transactionForm.setValue("newCategory", {
           name: tempCategory.name,
           color: tempCategory.color,
-          type: tempCategory.type,
+          type:
+            tempCategory.type === TransactionType.INCOME
+              ? CategoryType.INCOME
+              : CategoryType.EXPENSE,
         });
         transactionForm.setValue("categoryId", option.value);
       }
@@ -221,7 +210,9 @@ export function CreateTransactionTabsDialog({
         id: `temp-${Date.now()}-${Math.random()}`,
         name: searchValue.trim(),
         color: generateRandomColor(),
-        type: transactionType as "income" | "expense",
+        type: transactionType as
+          | TransactionType.INCOME
+          | TransactionType.EXPENSE,
         isTemporary: true,
       };
       setTemporaryCategories((prev) => [...prev, newTempCategory]);
@@ -230,8 +221,8 @@ export function CreateTransactionTabsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="h-dvh max-h-dvh w-screen max-w-screen m-0 p-0 flex flex-col rounded-none sm:h-auto sm:max-h-[90vh] sm:w-[500px] sm:m-4 sm:rounded-lg sm:p-6"
+      <DialogWindow
+        className="h-dvh max-h-dvh w-screen max-w-screen flex flex-col rounded-none sm:h-auto sm:max-h-[90vh] sm:w-[500px] sm:m-4 sm:rounded-lg sm:p-6"
         onCloseComplete={onCloseComplete}
       >
         <DialogHeader className="px-4 sm:px-0 pt-4 sm:pt-0 pb-0 border-b shrink-0">
@@ -241,10 +232,10 @@ export function CreateTransactionTabsDialog({
           </DialogDescription>
           <div className="flex gap-1 border-b">
             <button
-              onClick={() => setActiveTab("expense")}
+              onClick={() => setActiveTab(TransactionType.EXPENSE)}
               className={cn(
                 "px-3 sm:px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px flex items-center gap-2 shrink-0",
-                activeTab === "expense"
+                activeTab === TransactionType.EXPENSE
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
@@ -253,10 +244,10 @@ export function CreateTransactionTabsDialog({
               <span className="whitespace-nowrap">Расход</span>
             </button>
             <button
-              onClick={() => setActiveTab("income")}
+              onClick={() => setActiveTab(TransactionType.INCOME)}
               className={cn(
                 "px-3 sm:px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px flex items-center gap-2 shrink-0",
-                activeTab === "income"
+                activeTab === TransactionType.INCOME
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
@@ -265,10 +256,10 @@ export function CreateTransactionTabsDialog({
               <span className="whitespace-nowrap">Доход</span>
             </button>
             <button
-              onClick={() => setActiveTab("transfer")}
+              onClick={() => setActiveTab(TransactionType.TRANSFER)}
               className={cn(
                 "px-3 sm:px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px flex items-center gap-2 shrink-0",
-                activeTab === "transfer"
+                activeTab === TransactionType.TRANSFER
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
@@ -278,8 +269,8 @@ export function CreateTransactionTabsDialog({
             </button>
           </div>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-0 pt-4 pb-4 sm:pb-0 min-h-0">
-          {activeTab === "expense" && (
+        <DialogContent>
+          {activeTab === TransactionType.EXPENSE && (
             <TransactionForm
               workspaceId={workspaceId}
               form={transactionForm}
@@ -291,11 +282,10 @@ export function CreateTransactionTabsDialog({
               onCategorySelect={handleCategorySelect}
               onCategorySearch={handleCategorySearch}
               onSubmit={handleTransactionSubmit}
-              onCancel={() => onOpenChange(false)}
-              type="expense"
+              type={TransactionType.EXPENSE}
             />
           )}
-          {activeTab === "income" && (
+          {activeTab === TransactionType.INCOME && (
             <TransactionForm
               workspaceId={workspaceId}
               form={transactionForm}
@@ -307,21 +297,41 @@ export function CreateTransactionTabsDialog({
               onCategorySelect={handleCategorySelect}
               onCategorySearch={handleCategorySearch}
               onSubmit={handleTransactionSubmit}
-              onCancel={() => onOpenChange(false)}
-              type="income"
+              type={TransactionType.INCOME}
             />
           )}
-          {activeTab === "transfer" && (
+          {activeTab === TransactionType.TRANSFER && (
             <TransferForm
               workspaceId={workspaceId}
               form={transferForm}
               accounts={accounts}
               onSubmit={handleTransferSubmit}
-              onCancel={() => onOpenChange(false)}
             />
           )}
-        </div>
-      </DialogContent>
+        </DialogContent>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Отмена
+          </Button>
+          {activeTab === TransactionType.TRANSFER && (
+            <TransferFormSubmitButton
+              form={transferForm}
+              onSubmit={handleTransferSubmit}
+            />
+          )}
+          {activeTab !== TransactionType.TRANSFER && (
+            <TransactionFormSubmitButton
+              form={transactionForm}
+              type={activeTab}
+              onSubmit={handleTransactionSubmit}
+            />
+          )}
+        </DialogFooter>
+      </DialogWindow>
     </Dialog>
   );
 }

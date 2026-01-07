@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -66,7 +66,7 @@ export function CategorySelectModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogWindow className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Выберите категорию</DialogTitle>
           <DialogDescription>
@@ -125,7 +125,7 @@ export function CategorySelectModal({
             )}
           </div>
         </div>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

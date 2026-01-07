@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { CategoryType } from "@/modules/categories/category.constants";
 import { createCategory } from "@/modules/categories/category.service";
 import {
   createCategorySchema,
@@ -15,7 +16,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -28,7 +29,7 @@ import { cn } from "@/shared/utils/cn";
 
 interface CreateCategoryDialogProps {
   workspaceId: string;
-  type: "income" | "expense";
+  type: CategoryType;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -93,14 +94,14 @@ export function CreateCategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:w-[500px]">
+      <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            Добавить категорию {type === "income" ? "дохода" : "расхода"}
+            Добавить категорию {type === CategoryType.INCOME ? "дохода" : "расхода"}
           </DialogTitle>
           <DialogDescription>
             Создайте новую категорию для{" "}
-            {type === "income" ? "доходов" : "расходов"}.
+            {type === CategoryType.INCOME ? "доходов" : "расходов"}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -162,7 +163,7 @@ export function CreateCategoryDialog({
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

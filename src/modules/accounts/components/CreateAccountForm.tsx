@@ -18,7 +18,7 @@ import { Button } from "@/shared/ui/button";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -131,7 +131,7 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
           Создать счёт
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:w-[500px]">
+      <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать новый счёт</DialogTitle>
           <DialogDescription>
@@ -316,7 +316,7 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

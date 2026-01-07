@@ -1,5 +1,6 @@
 "use client";
 
+import type { Account } from "@prisma/client";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { X } from "lucide-react";
@@ -18,24 +19,26 @@ import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
-import type { Account } from "@prisma/client";
+import { TransactionType } from "../transaction.constants";
 import type { TemporaryCategory } from "../transaction.types";
 
 interface TransactionFormProps {
   workspaceId: string;
   form: UseFormReturn<CreateTransactionInput>;
   accounts: Account[];
-  allCategories: Array<{ id: string; name: string; color: string | null; type: string }>;
+  allCategories: Array<{
+    id: string;
+    name: string;
+    color: string | null;
+    type: string;
+  }>;
   temporaryCategories: TemporaryCategory[];
   categoryModalOpen: boolean;
   onCategoryModalOpenChange: (open: boolean) => void;
   onCategorySelect: (option: ComboboxOption) => void;
   onCategorySearch: (searchValue: string) => void;
   onSubmit: (data: CreateTransactionInput) => Promise<void>;
-  onCancel: () => void;
-  type: "expense" | "income";
-  submitLabel?: string;
-  submittingLabel?: string;
+  type: TransactionType.INCOME | TransactionType.EXPENSE;
 }
 
 export function TransactionForm({
@@ -49,10 +52,7 @@ export function TransactionForm({
   onCategorySelect,
   onCategorySearch,
   onSubmit,
-  onCancel,
   type,
-  submitLabel,
-  submittingLabel,
 }: TransactionFormProps) {
   const transactionAccountId = form.watch("accountId");
   const categoryId = form.watch("categoryId");
@@ -64,7 +64,9 @@ export function TransactionForm({
 
   const filteredCategories = useMemo(() => {
     return allCategories.filter(
-      (cat) => cat.type === transactionType || transactionType === "transfer"
+      (cat) =>
+        cat.type === transactionType ||
+        transactionType === TransactionType.TRANSFER
     );
   }, [allCategories, transactionType]);
 
@@ -113,10 +115,6 @@ export function TransactionForm({
 
     await onSubmit(data);
   };
-
-  const defaultSubmitLabel =
-    type === "expense" ? "Создать расход" : "Создать доход";
-  const defaultSubmittingLabel = "Создание...";
 
   return (
     <form
@@ -272,18 +270,6 @@ export function TransactionForm({
           )}
         />
       </div>
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Отмена
-        </Button>
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting
-            ? submittingLabel || defaultSubmittingLabel
-            : submitLabel || defaultSubmitLabel}
-        </Button>
-      </div>
     </form>
   );
 }
-

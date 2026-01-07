@@ -1,8 +1,42 @@
 import { PrismaClient } from "@prisma/client";
 
-import { addMoney, subtractMoney } from "../src/shared/utils/money";
+import {
+  addMoney,
+  subtractMoney,
+  compareMoney,
+} from "../src/shared/utils/money";
 
-const prisma = new PrismaClient();
+function getDatabaseUrl(): string {
+  const mongoUri = process.env.MONGODB_URI || "";
+  const dbName = "finhub";
+
+  if (!mongoUri) return mongoUri;
+
+  if (mongoUri.includes(`/${dbName}`) || mongoUri.includes(`/${dbName}?`)) {
+    return mongoUri;
+  }
+
+  const hasQuery = mongoUri.includes("?");
+
+  if (hasQuery) {
+    const [base, query] = mongoUri.split("?");
+    const separator = base.endsWith("/") ? "" : "/";
+    return `${base}${separator}${dbName}?${query}`;
+  }
+
+  const separator = mongoUri.endsWith("/") ? "" : "/";
+  return `${mongoUri}${separator}${dbName}`;
+}
+
+const databaseUrl = getDatabaseUrl();
+
+if (databaseUrl && !process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = databaseUrl;
+}
+
+const prisma = new PrismaClient({
+  datasourceUrl: databaseUrl,
+});
 
 const descriptions = [
   "Покупка продуктов",
@@ -37,8 +71,66 @@ function randomDate(start: Date, end: Date): Date {
   );
 }
 
+async function clearTransactions(workspaceId: string) {
+  console.log("Очистка существующих транзакций...");
+
+  const transactions = await prisma.transaction.findMany({
+    where: { workspaceId },
+    select: { id: true },
+  });
+
+  if (transactions.length === 0) {
+    console.log("Нет транзакций для удаления");
+    return;
+  }
+
+  const transactionIds = transactions.map((t) => t.id);
+
+  const transfers = await prisma.transfer.findMany({
+    where: {
+      OR: [
+        { fromTransactionId: { in: transactionIds } },
+        { toTransactionId: { in: transactionIds } },
+      ],
+    },
+  });
+
+  if (transfers.length > 0) {
+    console.log(`Удаление ${transfers.length} переводов...`);
+    await prisma.transfer.deleteMany({
+      where: {
+        OR: [
+          { fromTransactionId: { in: transactionIds } },
+          { toTransactionId: { in: transactionIds } },
+        ],
+      },
+    });
+  }
+
+  console.log(`Удаление ${transactions.length} транзакций...`);
+  await prisma.transaction.deleteMany({
+    where: { workspaceId },
+  });
+
+  const accounts = await prisma.account.findMany({
+    where: { workspaceId },
+  });
+
+  console.log("Сброс балансов счетов...");
+  for (const account of accounts) {
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { balance: "0" },
+    });
+  }
+
+  console.log("✅ Очистка завершена");
+}
+
 async function generateTransactions(workspaceId: string, count: number = 100) {
   console.log(`Генерация ${count} транзакций для workspace: ${workspaceId}`);
+
+  await clearTransactions(workspaceId);
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -74,10 +166,13 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
   const accountBalances = new Map<string, string>();
 
   for (const account of accounts) {
-    accountBalances.set(account.id, account.balance);
+    accountBalances.set(account.id, "0");
   }
 
-  for (let i = 0; i < count; i++) {
+  const incomeCount = Math.floor(count * 0.4);
+  const expenseCount = count - incomeCount;
+
+  for (let i = 0; i < incomeCount; i++) {
     const account = accounts[randomInt(0, accounts.length - 1)];
     const accountCreatedDate = new Date(account.createdAt);
     accountCreatedDate.setHours(0, 0, 0, 0);
@@ -88,41 +183,78 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
     );
     transactionDate.setHours(0, 0, 0, 0);
 
-    const type = Math.random() > 0.3 ? "expense" : "income";
-    const amount = randomFloat(10, 5000);
-
-    let categoryId: string | undefined;
-    if (type === "income" && incomeCategories.length > 0) {
-      categoryId =
-        incomeCategories[randomInt(0, incomeCategories.length - 1)].id;
-    } else if (type === "expense" && expenseCategories.length > 0) {
-      categoryId =
-        expenseCategories[randomInt(0, expenseCategories.length - 1)].id;
-    }
+    const amount = randomFloat(100, 10000);
+    const categoryId =
+      incomeCategories.length > 0
+        ? incomeCategories[randomInt(0, incomeCategories.length - 1)].id
+        : undefined;
 
     const description =
       descriptions[randomInt(0, descriptions.length - 1)] + ` #${i + 1}`;
 
     const currentBalance = accountBalances.get(account.id) || "0";
-    let newBalance: string;
-
-    if (type === "income") {
-      newBalance = addMoney(currentBalance, amount);
-    } else {
-      newBalance = subtractMoney(currentBalance, amount);
-    }
-
+    const newBalance = addMoney(currentBalance, amount);
     accountBalances.set(account.id, newBalance);
 
     transactions.push({
       workspaceId,
       accountId: account.id,
       amount,
-      type,
+      type: "income",
       description,
       date: transactionDate,
       categoryId: categoryId || null,
     });
+  }
+
+  let expenseAttempts = 0;
+  const maxExpenseAttempts = expenseCount * 3;
+
+  for (
+    let i = 0;
+    i < expenseCount && expenseAttempts < maxExpenseAttempts;
+    expenseAttempts++
+  ) {
+    const account = accounts[randomInt(0, accounts.length - 1)];
+    const accountCreatedDate = new Date(account.createdAt);
+    accountCreatedDate.setHours(0, 0, 0, 0);
+
+    const transactionDate = randomDate(
+      accountCreatedDate > startDate ? accountCreatedDate : startDate,
+      endDate
+    );
+    transactionDate.setHours(0, 0, 0, 0);
+
+    const amount = randomFloat(10, 5000);
+    const currentBalance = accountBalances.get(account.id) || "0";
+
+    if (compareMoney(currentBalance, amount) < 0) {
+      continue;
+    }
+
+    const categoryId =
+      expenseCategories.length > 0
+        ? expenseCategories[randomInt(0, expenseCategories.length - 1)].id
+        : undefined;
+
+    const description =
+      descriptions[randomInt(0, descriptions.length - 1)] +
+      ` #${incomeCount + i + 1}`;
+
+    const newBalance = subtractMoney(currentBalance, amount);
+    accountBalances.set(account.id, newBalance);
+
+    transactions.push({
+      workspaceId,
+      accountId: account.id,
+      amount,
+      type: "expense",
+      description,
+      date: transactionDate,
+      categoryId: categoryId || null,
+    });
+
+    i++;
   }
 
   console.log("Создание транзакций...");
@@ -142,7 +274,9 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
     });
   }
 
-  console.log(`✅ Успешно создано ${count} транзакций`);
+  console.log(
+    `✅ Успешно создано ${transactions.length} транзакций (${incomeCount} доходов, ${transactions.length - incomeCount} расходов)`
+  );
 }
 
 async function main() {

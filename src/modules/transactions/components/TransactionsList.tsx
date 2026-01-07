@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 
+import { TransactionType } from "../transaction.constants";
 import { deleteTransaction } from "../transaction.service";
 import type { TransactionWithRelations } from "../transaction.types";
 
@@ -98,7 +99,7 @@ export function TransactionsList({
   return (
     <div className="space-y-3">
       {transactions.map((transaction) => {
-        const isTransfer = transaction.type === "transfer";
+        const isTransfer = transaction.type === TransactionType.TRANSFER;
 
         if (isTransfer) {
           if (transaction.transferTo) {
@@ -166,7 +167,7 @@ export function TransactionsList({
           onCloseComplete={actionsDialog.closeDialog}
           onEdit={() => {
             actionsDialog.closeDialog();
-            if (actionsDialog.data.transaction.type === "transfer") {
+            if (actionsDialog.data.transaction.type === TransactionType.TRANSFER) {
               editTransferDialog.openDialog({
                 transaction: actionsDialog.data.transaction,
                 workspaceId,

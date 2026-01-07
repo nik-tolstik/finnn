@@ -12,11 +12,12 @@ import { sendInviteEmail } from "@/shared/lib/email";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogContent,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -98,7 +99,7 @@ export function InviteMemberDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:w-[500px]">
+      <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Пригласить участника</DialogTitle>
           <DialogDescription>
@@ -106,42 +107,46 @@ export function InviteMemberDialog({
             стол &quot;{workspaceName}&quot;.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">
-              Email <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              {...register("email")}
-              placeholder="user@example.com"
-              aria-invalid={errors.email ? "true" : "false"}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
+        <DialogContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">
+                Email <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                {...register("email")}
+                placeholder="user@example.com"
+                aria-invalid={errors.email ? "true" : "false"}
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+          </form>
+        </DialogContent>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Отмена
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || inviteMutation.isPending}
-            >
-              {isSubmitting || inviteMutation.isPending
-                ? "Отправка..."
-                : "Отправить приглашение"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Отмена
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting || inviteMutation.isPending}
+          >
+            {isSubmitting || inviteMutation.isPending
+              ? "Отправка..."
+              : "Отправить приглашение"}
+          </Button>
+        </DialogFooter>
+      </DialogWindow>
     </Dialog>
   );
 }

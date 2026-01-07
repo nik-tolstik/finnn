@@ -12,17 +12,20 @@ import {
   createTransferSchema,
   type CreateTransferInput,
 } from "@/shared/lib/validations/transaction";
+import { Button } from "@/shared/ui/button";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/shared/ui/dialog";
 
 import { createTransfer } from "../transaction.service";
 
 import { TransferForm } from "./TransferForm";
+import { TransferFormSubmitButton } from "./TransferFormSubmitButton";
 
 interface CreateTransferDialogProps {
   workspaceId: string;
@@ -98,7 +101,7 @@ export function CreateTransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:w-[500px]">
+      <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать перевод</DialogTitle>
           <DialogDescription>
@@ -110,9 +113,18 @@ export function CreateTransferDialog({
           form={form}
           accounts={accounts}
           onSubmit={onSubmit}
-          onCancel={() => handleOpenChange(false)}
         />
-      </DialogContent>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+          >
+            Отмена
+          </Button>
+          <TransferFormSubmitButton form={form} onSubmit={onSubmit} />
+        </DialogFooter>
+      </DialogWindow>
     </Dialog>
   );
 }

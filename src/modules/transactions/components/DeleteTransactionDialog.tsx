@@ -7,16 +7,16 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/shared/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/shared/ui/alert-dialog";
+  Dialog,
+  DialogClose,
+  DialogWindow,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import { formatMoney } from "@/shared/utils/money";
 
 import { deleteTransaction } from "../transaction.service";
@@ -66,30 +66,34 @@ export function DeleteTransactionDialog({
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Удалить транзакцию?</AlertDialogTitle>
-          <AlertDialogDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Удалить транзакцию?</DialogTitle>
+          <DialogDescription>
             Вы уверены, что хотите удалить транзакцию от{" "}
             {format(new Date(transaction.date), "dd.MM.yyyy", { locale: ru })}{" "}
             на сумму{" "}
             {formatMoney(transaction.amount, transaction.account.currency)}? Это
             действие нельзя отменить.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Отмена</AlertDialogCancel>
-          <AlertDialogAction
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" disabled={isDeleting}>
+              Отмена
+            </Button>
+          </DialogClose>
+          <Button
             onClick={handleDelete}
             disabled={isDeleting}
             type="button"
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isDeleting ? "Удаление..." : "Удалить"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogWindow>
+    </Dialog>
   );
 }

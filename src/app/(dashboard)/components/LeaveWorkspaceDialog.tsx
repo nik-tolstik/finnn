@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { leaveWorkspace } from "@/modules/workspace/workspace.service";
+import { Button } from "@/shared/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/shared/ui/alert-dialog";
+  Dialog,
+  DialogClose,
+  DialogWindow,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 
 interface LeaveWorkspaceDialogProps {
   workspaceId: string;
@@ -55,28 +55,30 @@ export function LeaveWorkspaceDialog({
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Покинуть рабочий стол?</AlertDialogTitle>
-          <AlertDialogDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Покинуть рабочий стол?</DialogTitle>
+          <DialogDescription>
             Вы уверены, что хотите покинуть &quot;{workspaceName}&quot;? Вы
             потеряете доступ ко всем данным этого рабочего стола.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={leaveMutation.isPending}>
-            Отмена
-          </AlertDialogCancel>
-          <AlertDialogAction
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" disabled={leaveMutation.isPending}>
+              Отмена
+            </Button>
+          </DialogClose>
+          <Button
             onClick={handleLeave}
             disabled={leaveMutation.isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {leaveMutation.isPending ? "Покидание..." : "Покинуть"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogWindow>
+    </Dialog>
   );
 }

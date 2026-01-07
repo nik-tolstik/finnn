@@ -3,6 +3,7 @@
 import type { Account } from "@prisma/client";
 import { Plus } from "lucide-react";
 
+import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { CreateTransactionTabsDialog } from "@/modules/transactions/components/CreateTransactionTabsDialog";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
@@ -22,21 +23,29 @@ interface AccountsCardsProps {
   isLoading?: boolean;
 }
 
+type ActionDialogData = {
+  account: Account;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+};
+
 export function AccountsCards({
   accounts,
   workspaceId,
   isLoading,
 }: AccountsCardsProps) {
   const accountActionsDialog = useDialogState<{ account: Account }>();
-  const editDialog = useDialogState<{ account: Account }>();
-  const archiveDialog = useDialogState<{ account: Account }>();
-
-  const createAccountDialog = useDialogState();
   const transactionTabsDialog = useDialogState<{
     workspaceId: string;
     defaultAccountId?: string;
-    defaultTab?: "expense" | "income" | "transfer";
+    defaultTab?: TransactionType;
+    onSuccess?: () => void;
+    onCancel?: () => void;
   }>();
+  const editDialog = useDialogState<ActionDialogData>();
+  const archiveDialog = useDialogState<ActionDialogData>();
+
+  const createAccountDialog = useDialogState();
 
   if (isLoading) {
     return <AccountsCardsSkeleton />;
@@ -73,7 +82,10 @@ export function AccountsCards({
           onClick={() =>
             transactionTabsDialog.openDialog({
               workspaceId,
-              defaultTab: "expense",
+              defaultTab: TransactionType.EXPENSE,
+              onSuccess: () => {
+                accountActionsDialog.closeDialog();
+              },
             })
           }
         >
@@ -89,11 +101,17 @@ export function AccountsCards({
           onEdit={() => {
             editDialog.openDialog({
               account: accountActionsDialog.data.account,
+              onSuccess: () => {
+                accountActionsDialog.closeDialog();
+              },
             });
           }}
           onArchive={() => {
             archiveDialog.openDialog({
               account: accountActionsDialog.data.account,
+              onSuccess: () => {
+                accountActionsDialog.closeDialog();
+              },
             });
           }}
           onOpenChange={accountActionsDialog.closeDialog}
@@ -101,7 +119,10 @@ export function AccountsCards({
             transactionTabsDialog.openDialog({
               workspaceId,
               defaultAccountId: accountActionsDialog.data.account.id,
-              defaultTab: "expense",
+              defaultTab: TransactionType.EXPENSE,
+              onSuccess: () => {
+                accountActionsDialog.closeDialog();
+              },
             });
           }}
         />

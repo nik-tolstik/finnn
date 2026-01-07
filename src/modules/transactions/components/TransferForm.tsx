@@ -10,7 +10,6 @@ import type {
   CreateTransferInput,
   UpdateTransferInput,
 } from "@/shared/lib/validations/transaction";
-import { Button } from "@/shared/ui/button";
 import { DatePicker } from "@/shared/ui/date-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -26,10 +25,6 @@ interface TransferFormProps {
   form: UseFormReturn<TransferFormData>;
   accounts: Account[];
   onSubmit: (data: TransferFormData) => Promise<void>;
-  onCancel: () => void;
-  submitLabel?: string;
-  submittingLabel?: string;
-  showSwapButton?: boolean;
 }
 
 export function TransferForm({
@@ -37,9 +32,6 @@ export function TransferForm({
   form,
   accounts,
   onSubmit,
-  onCancel,
-  submitLabel = "Создать перевод",
-  submittingLabel = "Создание...",
 }: TransferFormProps) {
   const fromAccountId = useWatch({
     control: form.control,
@@ -229,15 +221,6 @@ export function TransferForm({
             {form.formState.errors.date.message}
           </p>
         )}
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Отмена
-        </Button>
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? submittingLabel : submitLabel}
-        </Button>
       </div>
     </form>
   );

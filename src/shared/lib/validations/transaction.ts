@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { TransactionType } from "@/modules/transactions/transaction.constants";
+import { CategoryType } from "@/modules/categories/category.constants";
+
 export const createTransactionSchema = z.object({
   accountId: z.string().min(1, "Счёт обязателен"),
   amount: z
@@ -12,7 +15,7 @@ export const createTransactionSchema = z.object({
       },
       { message: "Сумма должна быть больше 0" }
     ),
-  type: z.enum(["income", "expense", "transfer"]),
+  type: z.nativeEnum(TransactionType),
   description: z.string().optional(),
   date: z.date(),
   categoryId: z.string().optional(),
@@ -20,7 +23,7 @@ export const createTransactionSchema = z.object({
     .object({
       name: z.string().min(1, "Название категории обязательно"),
       color: z.string(),
-      type: z.enum(["income", "expense"]),
+      type: z.nativeEnum(CategoryType),
     })
     .optional(),
 });

@@ -135,6 +135,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.19.27
+      '@types/prompts':
+        specifier: ^2.4.9
+        version: 2.4.9
       '@types/react':
         specifier: ^19
         version: 19.2.7
@@ -168,6 +171,9 @@ importers:
       prisma:
         specifier: ^6.19.1
         version: 6.19.1(typescript@5.9.3)
+      prompts:
+        specifier: ^2.4.2
+        version: 2.4.2
       tailwindcss:
         specifier: ^4
         version: 4.1.18
@@ -1532,6 +1538,9 @@ packages:
   '@types/nodemailer@7.0.4':
     resolution: {integrity: sha512-ee8fxWqOchH+Hv6MDDNNy028kwvVnLplrStm4Zf/3uHWw5zzo8FoYYeffpJtGs2wWysEumMH0ZIdMGMY1eMAow==}
 
+  '@types/prompts@2.4.9':
+    resolution: {integrity: sha512-qTxFi6Buiu8+50/+3DGIWLHM6QuWsEKugJnnP6iv2Mc4ncxE4A/OJkjuVOA+5X0X1S/nq5VJRa8Lu+nwcvbrKA==}
+
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
     peerDependencies:
@@ -2618,6 +2627,10 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
+  kleur@3.0.3:
+    resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
+    engines: {node: '>=6'}
+
   language-subtag-registry@0.3.23:
     resolution: {integrity: sha512-0K65Lea881pHotoGEa5gDlMxt3pctLi2RplBb7Ezh4rRdLEOtgi7n4EwK9lamnUCkKBqaeKRVebTq6BAxSkpXQ==}
 
@@ -3020,6 +3033,10 @@ packages:
       typescript:
         optional: true
 
+  prompts@2.4.2:
+    resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
+    engines: {node: '>= 6'}
+
   prop-types@15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
 
@@ -3238,6 +3255,9 @@ packages:
   side-channel@1.1.0:
     resolution: {integrity: sha512-ZX99e6tRweoUXqR+VBrslhda51Nh5MTQwou5tnUDgbtyM0dBgmhEDtWGP/xbKn6hqfPRHujUNwz5fy/wbbhnpw==}
     engines: {node: '>= 0.4'}
+
+  sisteransi@1.0.5:
+    resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
   sonner@2.0.7:
     resolution: {integrity: sha512-W6ZN4p58k8aDKA4XPcx2hpIQXBRAgyiWVkYhT7CvK6D3iAu7xjvVyhQHg2/iaKJZ1XVJ4r7XuwGL+WGEK37i9w==}
@@ -5205,6 +5225,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
+  '@types/prompts@2.4.9':
+    dependencies:
+      '@types/node': 20.19.27
+      kleur: 3.0.3
+
   '@types/react-dom@19.2.3(@types/react@19.2.7)':
     dependencies:
       '@types/react': 19.2.7
@@ -6473,6 +6498,8 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
+  kleur@3.0.3: {}
+
   language-subtag-registry@0.3.23: {}
 
   language-tags@1.0.9:
@@ -6832,6 +6859,11 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
+  prompts@2.4.2:
+    dependencies:
+      kleur: 3.0.3
+      sisteransi: 1.0.5
+
   prop-types@15.8.1:
     dependencies:
       loose-envify: 1.4.0
@@ -7099,6 +7131,8 @@ snapshots:
       side-channel-list: 1.0.0
       side-channel-map: 1.0.1
       side-channel-weakmap: 1.0.2
+
+  sisteransi@1.0.5: {}
 
   sonner@2.0.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:

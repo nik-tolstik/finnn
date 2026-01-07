@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 
+import { CategoryType } from "@/modules/categories/category.constants";
 import { authOptions } from "@/shared/lib/auth";
 import { prisma } from "@/shared/lib/prisma";
 import {
@@ -96,7 +97,7 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
         data: {
           workspaceId: workspace.id,
           name: categoryName,
-          type: "expense",
+          type: CategoryType.EXPENSE,
           color,
         },
       });
@@ -108,7 +109,7 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
         data: {
           workspaceId: workspace.id,
           name: categoryName,
-          type: "income",
+          type: CategoryType.INCOME,
           color: CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length],
         },
       });
@@ -223,6 +224,7 @@ export async function getWorkspaces() {
             id: true,
             name: true,
             email: true,
+            image: true,
           },
         },
         _count: {
@@ -271,6 +273,7 @@ export async function getWorkspace(id: string) {
             id: true,
             name: true,
             email: true,
+            image: true,
           },
         },
         members: {
@@ -334,6 +337,7 @@ export async function getWorkspaceMembers(workspaceId: string) {
             id: true,
             name: true,
             email: true,
+            image: true,
           },
         },
         members: {
@@ -360,7 +364,7 @@ export async function getWorkspaceMembers(workspaceId: string) {
         id: workspace.owner.id,
         name: workspace.owner.name,
         email: workspace.owner.email,
-        image: null,
+        image: workspace.owner.image,
       },
       ...workspace.members.map((m) => ({
         id: m.user.id,

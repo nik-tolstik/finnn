@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { getCategories } from "@/modules/categories/category.service";
+import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { useIsMobile } from "@/shared/hooks/useIsMobile";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -55,8 +56,7 @@ export function TransactionsFilters({
 
   const selectedAccountIds = filters.accountIds || [];
   const selectedCategoryIds = filters.categoryIds || [];
-  const selectedTypes: ("income" | "expense" | "transfer")[] =
-    filters.types || [];
+  const selectedTypes: TransactionType[] = filters.types || [];
 
   const updateFilter = <K extends keyof TransactionFilters>(
     key: K,
@@ -69,9 +69,9 @@ export function TransactionsFilters({
   };
 
   const typeOptions: SelectOption[] = [
-    { value: "income", label: "Доход" },
-    { value: "expense", label: "Расход" },
-    { value: "transfer", label: "Перевод" },
+    { value: TransactionType.INCOME, label: "Доход" },
+    { value: TransactionType.EXPENSE, label: "Расход" },
+    { value: TransactionType.TRANSFER, label: "Перевод" },
   ];
 
   const accountOptions: SelectOption[] = accounts.map((account) => ({
@@ -340,10 +340,10 @@ export function TransactionsFilters({
             side="bottom"
             className="max-h-[90vh] p-0 flex flex-col"
           >
-            <SheetHeader className="px-4 pt-4 pb-2">
+            <SheetHeader>
               <SheetTitle>Фильтры</SheetTitle>
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6">
               {filtersContent}
             </div>
             <div className="border-t px-4 py-3 flex flex-col gap-2">

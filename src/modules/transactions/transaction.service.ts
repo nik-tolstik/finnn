@@ -17,6 +17,8 @@ import {
 } from "@/shared/lib/validations/transaction";
 import { addMoney, subtractMoney } from "@/shared/utils/money";
 
+import { TransactionType } from "./transaction.constants";
+
 export async function createTransaction(
   workspaceId: string,
   input: CreateTransactionInput
@@ -91,9 +93,9 @@ export async function createTransaction(
     });
 
     let newBalance = account.balance;
-    if (validated.type === "income") {
+    if (validated.type === TransactionType.INCOME) {
       newBalance = addMoney(account.balance, validated.amount);
-    } else if (validated.type === "expense") {
+    } else if (validated.type === TransactionType.EXPENSE) {
       newBalance = subtractMoney(account.balance, validated.amount);
     }
 
@@ -160,7 +162,7 @@ export async function createTransfer(
         workspaceId,
         accountId: validated.fromAccountId,
         amount: validated.amount,
-        type: "transfer",
+        type: TransactionType.TRANSFER,
         description: validated.description || `Перевод на ${toAccount.name}`,
         date: validated.date,
       },
@@ -171,7 +173,7 @@ export async function createTransfer(
         workspaceId,
         accountId: validated.toAccountId,
         amount: validated.toAmount,
-        type: "transfer",
+        type: TransactionType.TRANSFER,
         description: validated.description || `Перевод с ${fromAccount.name}`,
         date: validated.date,
       },
@@ -468,9 +470,9 @@ export async function deleteTransaction(id: string) {
     const account = transaction.account;
     let newBalance = account.balance;
 
-    if (transaction.type === "income") {
+    if (transaction.type === TransactionType.INCOME) {
       newBalance = subtractMoney(account.balance, transaction.amount);
-    } else if (transaction.type === "expense") {
+    } else if (transaction.type === TransactionType.EXPENSE) {
       newBalance = addMoney(account.balance, transaction.amount);
     }
 
@@ -499,7 +501,7 @@ export interface TransactionFilters {
   dateFrom?: Date;
   dateTo?: Date;
   search?: string;
-  types?: ("income" | "expense" | "transfer")[];
+  types?: TransactionType[];
 }
 
 export async function getTransactions(

@@ -34,34 +34,42 @@ const prisma = new PrismaClient({
   datasourceUrl: databaseUrl,
 });
 
-async function changePassword(email: string, newPassword: string) {
-  console.log(`Поиск пользователя с email: ${email}`);
+async function createUser(email: string, name: string, password: string) {
+  console.log(`Проверка существования пользователя с email: ${email}`);
 
-  const user = await prisma.user.findUnique({
+  const existingUser = await prisma.user.findUnique({
     where: { email },
   });
 
-  if (!user) {
-    throw new Error(`Пользователь с email ${email} не найден`);
+  if (existingUser) {
+    throw new Error(`Пользователь с email ${email} уже существует`);
   }
 
-  console.log(`Хеширование нового пароля...`);
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  console.log(`Хеширование пароля...`);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  console.log(`Обновление пароля для пользователя ${user.email}...`);
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { password: hashedPassword },
+  console.log(`Создание пользователя...`);
+  const user = await prisma.user.create({
+    data: {
+      email,
+      name,
+      password: hashedPassword,
+      emailVerified: new Date(),
+    },
   });
 
-  console.log(`✅ Пароль успешно изменен для пользователя ${user.email}`);
+  console.log(`✅ Пользователь успешно создан:`);
+  console.log(`   ID: ${user.id}`);
+  console.log(`   Email: ${user.email}`);
+  console.log(`   Имя: ${user.name}`);
 }
 
 async function main() {
   let email = process.argv[2];
-  let newPassword = process.argv[3];
+  let name = process.argv[3];
+  let password = process.argv[4];
 
-  if (!email || !newPassword) {
+  if (!email || !name || !password) {
     const response = await prompts([
       {
         type: "text",
@@ -73,25 +81,31 @@ async function main() {
             : "Введите корректный email",
       },
       {
+        type: "text",
+        name: "name",
+        message: "Имя пользователя:",
+        validate: (value: string) => (value ? true : "Имя не может быть пустым"),
+      },
+      {
         type: "password",
-        name: "newPassword",
-        message: "Новый пароль:",
-        validate: (value: string) =>
-          value ? true : "Пароль не может быть пустым",
+        name: "password",
+        message: "Пароль:",
+        validate: (value: string) => (value ? true : "Пароль не может быть пустым"),
       },
     ]);
 
-    if (!response.email || !response.newPassword) {
+    if (!response.email || !response.name || !response.password) {
       console.error("Операция отменена");
       process.exit(1);
     }
 
     email = response.email;
-    newPassword = response.newPassword;
+    name = response.name;
+    password = response.password;
   }
 
   try {
-    await changePassword(email, newPassword);
+    await createUser(email, name, password);
   } catch (error) {
     console.error("Ошибка:", error instanceof Error ? error.message : error);
     process.exit(1);
@@ -101,3 +115,4 @@ async function main() {
 }
 
 main();
+

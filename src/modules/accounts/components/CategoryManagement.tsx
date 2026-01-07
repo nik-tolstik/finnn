@@ -6,6 +6,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { CategoryType } from "@/modules/categories/category.constants";
 import {
   deleteCategory,
   getCategories,
@@ -34,7 +35,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   }>();
   const createCategoryDialog = useDialogState<{
     workspaceId: string;
-    type: "income" | "expense";
+    type: CategoryType;
   }>();
   const [editingName, setEditingName] = useState("");
   const [editingColor, setEditingColor] = useState("");
@@ -45,8 +46,8 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   });
 
   const categories = categoriesData?.data || [];
-  const incomeCategories = categories.filter((c) => c.type === "income");
-  const expenseCategories = categories.filter((c) => c.type === "expense");
+  const incomeCategories = categories.filter((c) => c.type === CategoryType.INCOME);
+  const expenseCategories = categories.filter((c) => c.type === CategoryType.EXPENSE);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: { name?: string; color?: string } }) =>
@@ -119,7 +120,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     }
   };
 
-  const handleOpenCreateDialog = (type: "income" | "expense") => {
+  const handleOpenCreateDialog = (type: CategoryType) => {
     createCategoryDialog.openDialog({
       workspaceId,
       type,
@@ -128,7 +129,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
   const renderCategoryList = (
     categoryList: Category[],
-    type: "income" | "expense"
+    type: CategoryType
   ) => (
     <div className="space-y-1.5">
       {categoryList.map((category) => (
@@ -204,11 +205,11 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-4">Доходы</h3>
-        {renderCategoryList(incomeCategories, "income")}
+        {renderCategoryList(incomeCategories, CategoryType.INCOME)}
         <Button
           variant="outline"
           className="mt-4"
-          onClick={() => handleOpenCreateDialog("income")}
+          onClick={() => handleOpenCreateDialog(CategoryType.INCOME)}
         >
           <Plus className="h-4 w-4 mr-2" />
           Добавить категорию
@@ -217,11 +218,11 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
       <div>
         <h3 className="text-lg font-semibold mb-4">Расходы</h3>
-        {renderCategoryList(expenseCategories, "expense")}
+        {renderCategoryList(expenseCategories, CategoryType.EXPENSE)}
         <Button
           variant="outline"
           className="mt-4"
-          onClick={() => handleOpenCreateDialog("expense")}
+          onClick={() => handleOpenCreateDialog(CategoryType.EXPENSE)}
         >
           <Plus className="h-4 w-4 mr-2" />
           Добавить категорию

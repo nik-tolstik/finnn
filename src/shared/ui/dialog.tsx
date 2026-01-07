@@ -46,7 +46,7 @@ function DialogOverlay({
   );
 }
 
-function DialogContent({
+function DialogWindow({
   className,
   children,
   showCloseButton = true,
@@ -70,11 +70,14 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed z-50 rounded-lg border p-6 shadow-lg duration-200 outline-none overflow-y-auto",
-          "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]",
-          "sm:w-[500px] sm:h-auto w-dvw h-dvh max-h-dvh max-w-dvw",
+          "flex flex-col gap-4",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed z-50 rounded-lg border p-6 shadow-lg duration-200 outline-none",
+          "bottom-0 left-0 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%]",
+          "sm:w-[500px] sm:h-fit w-dvw h-dvh max-h-dvh max-w-dvw",
+          "m-0 py-6 px-0",
           className
         )}
+        onOpenAutoFocus={(e) => e.preventDefault()}
         onAnimationEnd={handleAnimationEnd}
         {...props}
       >
@@ -93,12 +96,18 @@ function DialogContent({
   );
 }
 
+function DialogContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div className={cn("px-6 overflow-y-auto flex-1", className)} {...props} />
+  );
+}
+
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
       className={cn(
-        "flex flex-col gap-2 text-center sm:text-left mb-4",
+        "flex flex-col gap-2 text-center sm:text-left px-6",
         className
       )}
       {...props}
@@ -111,7 +120,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end px-6",
         className
       )}
       {...props}
@@ -148,7 +157,7 @@ function DialogDescription({
 export {
   Dialog,
   DialogClose,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -156,4 +165,5 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  DialogContent,
 };

@@ -10,7 +10,7 @@ import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
-import { TRANSACTION_TYPE_LABELS } from "../transaction.constants";
+import { TransactionType, TRANSACTION_TYPE_LABELS } from "../transaction.constants";
 import type { TransactionWithRelations } from "../transaction.types";
 
 interface TransactionCardProps {
@@ -69,10 +69,10 @@ export function TransactionCard({
           </div>
           <div
             className={cn(
-              transaction.type === "income" ? "text-lime-500" : "text-pink-500"
+              transaction.type === TransactionType.INCOME ? "text-lime-500" : "text-pink-500"
             )}
           >
-            {transaction.type === "income" ? "+" : "-"}
+            {transaction.type === TransactionType.INCOME ? "+" : "-"}
             {formatMoney(transaction.amount, transaction.account.currency)}
           </div>
         </div>

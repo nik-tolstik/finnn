@@ -1,15 +1,15 @@
 "use client";
 
+import { Button } from "@/shared/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/shared/ui/alert-dialog";
+  Dialog,
+  DialogClose,
+  DialogWindow,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 
 interface DeleteCategoryDialogProps {
   open: boolean;
@@ -29,11 +29,11 @@ export function DeleteCategoryDialog({
   isDeleting,
 }: DeleteCategoryDialogProps) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Удалить категорию?</AlertDialogTitle>
-          <AlertDialogDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Удалить категорию?</DialogTitle>
+          <DialogDescription>
             Вы уверены, что хотите удалить категорию &quot;{categoryName}&quot;?
             {transactionCount > 0 && (
               <span className="block mt-2 font-medium text-foreground">
@@ -46,19 +46,23 @@ export function DeleteCategoryDialog({
                 .
               </span>
             )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Отмена</AlertDialogCancel>
-          <AlertDialogAction
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" disabled={isDeleting}>
+              Отмена
+            </Button>
+          </DialogClose>
+          <Button
             onClick={onConfirm}
             disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isDeleting ? "Удаление..." : "Удалить"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogWindow>
+    </Dialog>
   );
 }

@@ -12,18 +12,22 @@ import {
   updateTransferSchema,
   type UpdateTransferInput,
 } from "@/shared/lib/validations/transaction";
+import { Button } from "@/shared/ui/button";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogContent,
+  DialogFooter,
 } from "@/shared/ui/dialog";
 
 import { updateTransfer } from "../transaction.service";
 import type { TransactionWithRelations } from "../transaction.types";
 
 import { TransferForm } from "./TransferForm";
+import { TransferFormSubmitButton } from "./TransferFormSubmitButton";
 
 interface EditTransferDialogProps {
   transaction: TransactionWithRelations;
@@ -99,21 +103,35 @@ export function EditTransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:w-[500px]">
+      <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Редактировать перевод</DialogTitle>
           <DialogDescription>Измените параметры перевода</DialogDescription>
         </DialogHeader>
-        <TransferForm
-          workspaceId={workspaceId}
-          form={form}
-          accounts={accounts}
-          onSubmit={onSubmit}
-          onCancel={() => handleOpenChange(false)}
-          submitLabel="Сохранить"
-          submittingLabel="Сохранение..."
-        />
-      </DialogContent>
+        <DialogContent>
+          <TransferForm
+            workspaceId={workspaceId}
+            form={form}
+            accounts={accounts}
+            onSubmit={onSubmit}
+          />
+        </DialogContent>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+          >
+            Отмена
+          </Button>
+          <TransferFormSubmitButton
+            form={form}
+            onSubmit={onSubmit}
+            submitLabel="Сохранить"
+            submittingLabel="Сохранение..."
+          />
+        </DialogFooter>
+      </DialogWindow>
     </Dialog>
   );
 }

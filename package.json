@@ -12,7 +12,10 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "generate:transactions": "tsx scripts/generate-transactions.ts"
+    "generate:transactions": "tsx scripts/generate-transactions.ts",
+    "script:create-user": "tsx scripts/create-user.ts",
+    "script:add-user-to-workspace": "tsx scripts/add-user-to-workspace.ts",
+    "script:change-password": "tsx scripts/change-password.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -59,6 +62,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/big.js": "^6.2.2",
     "@types/node": "^20",
+    "@types/prompts": "^2.4.9",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
@@ -70,6 +74,7 @@
     "eslint-plugin-unused-imports": "^4.3.0",
     "prettier": "^3.7.4",
     "prisma": "^6.19.1",
+    "prompts": "^2.4.2",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5"

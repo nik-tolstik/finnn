@@ -1,20 +1,21 @@
 "use client";
 
 import type { Account } from "@prisma/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/shared/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/shared/ui/alert-dialog";
+  Dialog,
+  DialogClose,
+  DialogWindow,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 
 import { archiveAccount } from "../account.service";
 
@@ -32,6 +33,7 @@ export function ArchiveAccountDialog({
   onCloseComplete,
 }: ArchiveAccountDialogProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isArchiving, setIsArchiving] = useState(false);
   const hasArchivedRef = useRef(false);
 
@@ -56,6 +58,9 @@ export function ArchiveAccountDialog({
       } else {
         toast.success("Счёт успешно архивирован");
         onOpenChange(false);
+        await queryClient.invalidateQueries({
+          queryKey: ["accounts", account.workspaceId],
+        });
         router.refresh();
       }
     } catch {
@@ -67,27 +72,27 @@ export function ArchiveAccountDialog({
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent onCloseComplete={onCloseComplete}>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Архивировать счёт?</AlertDialogTitle>
-          <AlertDialogDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow showCloseButton={false} onCloseComplete={onCloseComplete}>
+        <DialogHeader>
+          <DialogTitle>Архивировать счёт?</DialogTitle>
+          <DialogDescription>
             Вы уверены, что хотите архивировать счёт &quot;{account.name}&quot;?
             Счёт будет скрыт из списка, но не будет удалён из базы данных. Вы
             сможете восстановить его позже.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isArchiving}>Отмена</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleArchive}
-            disabled={isArchiving}
-            type="button"
-          >
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" disabled={isArchiving}>
+              Отмена
+            </Button>
+          </DialogClose>
+          <Button onClick={handleArchive} disabled={isArchiving} type="button">
             {isArchiving ? "Архивирование..." : "Архивировать"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogWindow>
+    </Dialog>
   );
 }

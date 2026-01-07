@@ -9,6 +9,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getCategories } from "@/modules/categories/category.service";
+import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import {
   updateTransactionSchema,
@@ -19,11 +20,12 @@ import { type ComboboxOption } from "@/shared/ui/combobox";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
-  DialogContent,
+  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogContent,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -77,7 +79,7 @@ export function EditTransactionDialog({
   // Фильтруем категории по типу транзакции
   const filteredCategories = useMemo(() => {
     return allCategories.filter(
-      (cat) => cat.type === transaction.type || transaction.type === "transfer"
+      (cat) => cat.type === transaction.type || transaction.type === TransactionType.TRANSFER
     );
   }, [allCategories, transaction.type]);
 
@@ -139,7 +141,7 @@ export function EditTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
+      <DialogWindow
         key={open ? transaction.id : "closed"}
         className="sm:w-[500px]"
       >
@@ -147,138 +149,141 @@ export function EditTransactionDialog({
           <DialogTitle>Редактировать транзакцию</DialogTitle>
           <DialogDescription>Измените данные транзакции.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="amount">
-              Сумма <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0.01"
-              placeholder="0.00"
-              {...register("amount", {
-                onChange: (e) => {
-                  const value = e.target.value;
-                  if (value && parseFloat(value) < 0) {
-                    e.target.value = "";
+        <DialogContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="amount">
+                Сумма <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                {...register("amount", {
+                  onChange: (e) => {
+                    const value = e.target.value;
+                    if (value && parseFloat(value) < 0) {
+                      e.target.value = "";
+                    }
+                  },
+                })}
+                onKeyDown={(e) => {
+                  if (e.key === "-" || e.key === "e" || e.key === "E") {
+                    e.preventDefault();
                   }
-                },
-              })}
-              onKeyDown={(e) => {
-                if (e.key === "-" || e.key === "e" || e.key === "E") {
-                  e.preventDefault();
-                }
-              }}
-              aria-invalid={errors.amount ? "true" : "false"}
-            />
-            {errors.amount && (
-              <p className="text-sm text-destructive">
-                {errors.amount.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Описание</Label>
-            <Textarea
-              id="description"
-              placeholder="Описание транзакции"
-              rows={3}
-              {...register("description")}
-              aria-invalid={errors.description ? "true" : "false"}
-            />
-            {errors.description && (
-              <p className="text-sm text-destructive">
-                {errors.description.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="categoryId">Категория</Label>
-            <div className="relative">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full justify-between"
-                onClick={() => setCategoryModalOpen(true)}
-              >
-                {selectedCategory ? (
-                  <div className="flex items-center gap-2">
-                    {selectedCategory.color && (
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: selectedCategory.color }}
-                      />
-                    )}
-                    <span className="truncate">{selectedCategory.label}</span>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">
-                    Выберите категорию
-                  </span>
-                )}
-              </Button>
-              {selectedCategory && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setValue("categoryId", null);
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                }}
+                aria-invalid={errors.amount ? "true" : "false"}
+              />
+              {errors.amount && (
+                <p className="text-sm text-destructive">
+                  {errors.amount.message}
+                </p>
               )}
             </div>
-            <CategorySelectModal
-              open={categoryModalOpen}
-              onOpenChange={setCategoryModalOpen}
-              options={comboboxOptions}
-              value={categoryId || undefined}
-              onSelect={handleCategorySelect}
-              placeholder="Выберите категорию"
-              searchPlaceholder="Поиск категории..."
-              emptyText="Категории не найдены"
-            />
-            {errors.categoryId && (
-              <p className="text-sm text-destructive">
-                {errors.categoryId.message}
-              </p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label>Дата</Label>
-            <Controller
-              control={control}
-              name="date"
-              render={({ field }) => (
-                <DatePicker date={field.value} onSelect={field.onChange} />
+            <div className="space-y-2">
+              <Label htmlFor="description">Описание</Label>
+              <Textarea
+                id="description"
+                placeholder="Описание транзакции"
+                rows={3}
+                {...register("description")}
+                aria-invalid={errors.description ? "true" : "false"}
+              />
+              {errors.description && (
+                <p className="text-sm text-destructive">
+                  {errors.description.message}
+                </p>
               )}
-            />
-            {errors.date && (
-              <p className="text-sm text-destructive">{errors.date.message}</p>
-            )}
-          </div>
+            </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-            >
-              Отмена
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Сохранение..." : "Сохранить"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
+            <div className="space-y-2">
+              <Label htmlFor="categoryId">Категория</Label>
+              <div className="relative">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-between"
+                  onClick={() => setCategoryModalOpen(true)}
+                >
+                  {selectedCategory ? (
+                    <div className="flex items-center gap-2">
+                      {selectedCategory.color && (
+                        <div
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: selectedCategory.color }}
+                        />
+                      )}
+                      <span className="truncate">{selectedCategory.label}</span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Выберите категорию
+                    </span>
+                  )}
+                </Button>
+                {selectedCategory && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setValue("categoryId", null);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <CategorySelectModal
+                open={categoryModalOpen}
+                onOpenChange={setCategoryModalOpen}
+                options={comboboxOptions}
+                value={categoryId || undefined}
+                onSelect={handleCategorySelect}
+                placeholder="Выберите категорию"
+                searchPlaceholder="Поиск категории..."
+                emptyText="Категории не найдены"
+              />
+              {errors.categoryId && (
+                <p className="text-sm text-destructive">
+                  {errors.categoryId.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Дата</Label>
+              <Controller
+                control={control}
+                name="date"
+                render={({ field }) => (
+                  <DatePicker date={field.value} onSelect={field.onChange} />
+                )}
+              />
+              {errors.date && (
+                <p className="text-sm text-destructive">
+                  {errors.date.message}
+                </p>
+              )}
+            </div>
+          </form>
+        </DialogContent>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+          >
+            Отмена
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Сохранение..." : "Сохранить"}
+          </Button>
+        </DialogFooter>
+      </DialogWindow>
     </Dialog>
   );
 }
