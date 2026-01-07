@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import "./globals.css";
 import { Toaster } from "@/shared/ui/sonner";
@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   title: "FinHub - Учёт финансов",
   description: "Ведите учёт своих финансов с лёгкостью",
   manifest: "/manifest.json",
-  themeColor: "#000000",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -19,13 +18,15 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/icon-192.png",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({

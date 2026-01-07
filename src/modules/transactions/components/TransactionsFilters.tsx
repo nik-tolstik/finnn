@@ -8,7 +8,7 @@ import { useState } from "react";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { getCategories } from "@/modules/categories/category.service";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
-import { useIsMobile } from "@/shared/hooks/useIsMobile";
+import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
@@ -38,7 +38,7 @@ export function TransactionsFilters({
   filters,
   onFiltersChange,
 }: TransactionsFiltersProps) {
-  const isMobile = useIsMobile();
+  const { isMobile } = useBreakpoints();
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const { data: accountsData } = useQuery({

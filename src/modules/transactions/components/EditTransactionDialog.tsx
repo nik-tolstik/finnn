@@ -39,6 +39,8 @@ interface EditTransactionDialogProps {
   workspaceId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCloseComplete?: () => void;
+  onSuccess?: () => void;
 }
 
 export function EditTransactionDialog({
@@ -46,6 +48,8 @@ export function EditTransactionDialog({
   workspaceId,
   open,
   onOpenChange,
+  onCloseComplete,
+  onSuccess,
 }: EditTransactionDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -79,7 +83,9 @@ export function EditTransactionDialog({
   // Фильтруем категории по типу транзакции
   const filteredCategories = useMemo(() => {
     return allCategories.filter(
-      (cat) => cat.type === transaction.type || transaction.type === TransactionType.TRANSFER
+      (cat) =>
+        cat.type === transaction.type ||
+        transaction.type === TransactionType.TRANSFER
     );
   }, [allCategories, transaction.type]);
 
@@ -111,10 +117,6 @@ export function EditTransactionDialog({
     }
   }, [transaction, open, reset]);
 
-  const handleOpenChange = (newOpen: boolean) => {
-    onOpenChange(newOpen);
-  };
-
   const onSubmit = async (data: UpdateTransactionInput) => {
     const result = await updateTransaction(transaction.id, data);
     if (result.error) {
@@ -132,6 +134,7 @@ export function EditTransactionDialog({
         queryKey: ["accounts", workspaceId],
       });
       router.refresh();
+      onSuccess?.();
     }
   };
 
@@ -140,17 +143,14 @@ export function EditTransactionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogWindow
-        key={open ? transaction.id : "closed"}
-        className="sm:w-[500px]"
-      >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Редактировать транзакцию</DialogTitle>
           <DialogDescription>Измените данные транзакции.</DialogDescription>
         </DialogHeader>
         <DialogContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="amount">
                 Сумма <span className="text-destructive">*</span>
@@ -275,11 +275,15 @@ export function EditTransactionDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => handleOpenChange(false)}
+            onClick={() => onOpenChange(false)}
           >
             Отмена
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="button"
+            onClick={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Сохранение..." : "Сохранить"}
           </Button>
         </DialogFooter>

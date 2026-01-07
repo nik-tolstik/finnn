@@ -6,7 +6,7 @@ import * as React from "react";
 
 import { cn } from "@/shared/utils/cn";
 
-import { useIsMobile } from "../hooks/useIsMobile";
+import { useBreakpoints } from "../hooks/useBreakpoints";
 
 function Dialog({
   ...props
@@ -60,10 +60,21 @@ function DialogWindow({
   onCloseComplete?: () => void;
   mobilePosition?: "center" | "bottom";
 }) {
-  const isMobile = useIsMobile();
+  const { isMobile } = useBreakpoints();
 
   const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
+
+    console.log("DialogWindow", {
+      isMobile,
+      mobilePosition,
+      className,
+      props,
+      target,
+      targetState: target.getAttribute("data-state"),
+      onCloseComplete,
+    });
+
     if (target.getAttribute("data-state") === "closed" && onCloseComplete) {
       onCloseComplete();
     }
@@ -85,7 +96,7 @@ function DialogWindow({
           isMobile &&
             mobilePosition === "center" &&
             "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-dvh",
-          isMobile && mobilePosition === "bottom" && "bottom-0 left-0 h-fit",
+          isMobile && mobilePosition === "bottom" && "bottom-0 left-0 h-auto",
           className
         )}
         onOpenAutoFocus={(e) => e.preventDefault()}

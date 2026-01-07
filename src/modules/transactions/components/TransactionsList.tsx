@@ -45,8 +45,6 @@ export function TransactionsList({
   }>();
 
   const handleDelete = async (transaction: TransactionWithRelations) => {
-    actionsDialog.closeDialog();
-
     const previousTransactions = queryClient.getQueryData<{
       data: TransactionWithRelations[];
     }>(["transactions", workspaceId]);
@@ -75,6 +73,7 @@ export function TransactionsList({
           queryKey: ["accounts", workspaceId],
         });
         router.refresh();
+        actionsDialog.closeDialog();
       }
     } catch {
       toast.error("Не удалось удалить транзакцию");
@@ -159,24 +158,27 @@ export function TransactionsList({
           />
         );
       })}
-      {actionsDialog.mounted && actionsDialog.data && (
+      {actionsDialog.mounted && (
         <TransactionActionsDialog
           transaction={actionsDialog.data.transaction}
           open={actionsDialog.open}
           onOpenChange={actionsDialog.closeDialog}
-          onCloseComplete={actionsDialog.closeDialog}
+          onCloseComplete={actionsDialog.unmountDialog}
           onEdit={() => {
-            actionsDialog.closeDialog();
-            if (actionsDialog.data.transaction.type === TransactionType.TRANSFER) {
+            if (
+              actionsDialog.data.transaction.type === TransactionType.TRANSFER
+            ) {
               editTransferDialog.openDialog({
                 transaction: actionsDialog.data.transaction,
                 workspaceId,
               });
+              actionsDialog.closeDialog();
             } else {
               editTransactionDialog.openDialog({
                 transaction: actionsDialog.data.transaction,
                 workspaceId,
               });
+              actionsDialog.closeDialog();
             }
           }}
           onDelete={() => {
@@ -190,17 +192,21 @@ export function TransactionsList({
           workspaceId={editTransactionDialog.data.workspaceId}
           open={editTransactionDialog.open}
           onOpenChange={editTransactionDialog.closeDialog}
+          onCloseComplete={() => {
+            console.log(111);
+            editTransactionDialog.unmountDialog();
+          }}
         />
       )}
-      {editTransferDialog.mounted &&
-        editTransferDialog.data.transaction.transferFrom && (
-          <EditTransferDialog
-            transaction={editTransferDialog.data.transaction}
-            workspaceId={editTransferDialog.data.workspaceId}
-            open={editTransferDialog.open}
-            onOpenChange={editTransferDialog.closeDialog}
-          />
-        )}
+      {editTransferDialog.mounted && (
+        <EditTransferDialog
+          transaction={editTransferDialog.data.transaction}
+          workspaceId={editTransferDialog.data.workspaceId}
+          open={editTransferDialog.open}
+          onOpenChange={editTransferDialog.closeDialog}
+          onCloseComplete={editTransferDialog.unmountDialog}
+        />
+      )}
       {showLoadMore && onLoadMore && (
         <div className="flex justify-center">
           <Button variant="outline" onClick={onLoadMore}>

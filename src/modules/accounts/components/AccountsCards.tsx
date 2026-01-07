@@ -48,8 +48,6 @@ interface AccountsCardsProps {
 
 type ActionDialogData = {
   account: Account;
-  onSuccess?: () => void;
-  onCancel?: () => void;
 };
 
 interface SortableAccountCardProps {
@@ -129,8 +127,6 @@ export function AccountsCards({
     workspaceId: string;
     defaultAccountId?: string;
     defaultTab?: TransactionType;
-    onSuccess?: () => void;
-    onCancel?: () => void;
   }>();
   const editDialog = useDialogState<ActionDialogData>();
   const archiveDialog = useDialogState<ActionDialogData>();
@@ -263,15 +259,14 @@ export function AccountsCards({
           <Button
             size="icon"
             className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
-            onClick={() =>
+            onClick={() => {
               transactionTabsDialog.openDialog({
                 workspaceId,
                 defaultTab: TransactionType.EXPENSE,
-                onSuccess: () => {
-                  accountActionsDialog.closeDialog();
-                },
-              })
-            }
+              });
+
+              accountActionsDialog.closeDialog();
+            }}
           >
             <Plus className="h-6 w-6" />
           </Button>
@@ -286,18 +281,14 @@ export function AccountsCards({
           onEdit={() => {
             editDialog.openDialog({
               account: accountActionsDialog.data.account,
-              onSuccess: () => {
-                accountActionsDialog.closeDialog();
-              },
             });
+            accountActionsDialog.closeDialog();
           }}
           onArchive={() => {
             archiveDialog.openDialog({
               account: accountActionsDialog.data.account,
-              onSuccess: () => {
-                accountActionsDialog.closeDialog();
-              },
             });
+            accountActionsDialog.closeDialog();
           }}
           onOpenChange={accountActionsDialog.closeDialog}
           onCreateTransaction={() => {
@@ -305,10 +296,8 @@ export function AccountsCards({
               workspaceId,
               defaultAccountId: accountActionsDialog.data.account.id,
               defaultTab: TransactionType.EXPENSE,
-              onSuccess: () => {
-                accountActionsDialog.closeDialog();
-              },
             });
+            accountActionsDialog.closeDialog();
           }}
         />
       )}
@@ -319,7 +308,6 @@ export function AccountsCards({
           open={editDialog.open}
           onOpenChange={editDialog.closeDialog}
           onCloseComplete={editDialog.unmountDialog}
-          onSuccess={editDialog.data.onSuccess}
         />
       )}
 
@@ -329,7 +317,6 @@ export function AccountsCards({
           open={archiveDialog.open}
           onOpenChange={archiveDialog.closeDialog}
           onCloseComplete={archiveDialog.unmountDialog}
-          onSuccess={archiveDialog.data.onSuccess}
         />
       )}
 
@@ -341,7 +328,6 @@ export function AccountsCards({
           onCloseComplete={transactionTabsDialog.unmountDialog}
           defaultAccountId={transactionTabsDialog.data.defaultAccountId}
           defaultTab={transactionTabsDialog.data.defaultTab}
-          onSuccess={transactionTabsDialog.data.onSuccess}
         />
       )}
     </>

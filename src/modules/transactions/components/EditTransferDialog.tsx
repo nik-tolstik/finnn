@@ -34,6 +34,8 @@ interface EditTransferDialogProps {
   workspaceId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCloseComplete?: () => void;
+  onSuccess?: () => void;
 }
 
 export function EditTransferDialog({
@@ -41,6 +43,8 @@ export function EditTransferDialog({
   workspaceId,
   open,
   onOpenChange,
+  onCloseComplete,
+  onSuccess,
 }: EditTransferDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -79,10 +83,6 @@ export function EditTransferDialog({
     }
   }, [open, form, transaction]);
 
-  const handleOpenChange = (newOpen: boolean) => {
-    onOpenChange(newOpen);
-  };
-
   const onSubmit = async (data: UpdateTransferInput) => {
     const result = await updateTransfer(transaction.id, data);
     if (result.error) {
@@ -98,12 +98,15 @@ export function EditTransferDialog({
         queryKey: ["accounts", workspaceId],
       });
       router.refresh();
+      onSuccess?.();
     }
   };
 
+  console.log(123);
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogWindow className="sm:w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Редактировать перевод</DialogTitle>
           <DialogDescription>Измените параметры перевода</DialogDescription>
@@ -120,7 +123,7 @@ export function EditTransferDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => handleOpenChange(false)}
+            onClick={() => onOpenChange(false)}
           >
             Отмена
           </Button>
