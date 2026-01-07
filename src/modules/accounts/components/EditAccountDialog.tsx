@@ -39,7 +39,6 @@ interface EditAccountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete: () => void;
-  onSuccess?: () => void;
   onCancel?: () => void;
 }
 
@@ -48,7 +47,6 @@ export function EditAccountDialog({
   open,
   onOpenChange,
   onCloseComplete,
-  onSuccess,
   onCancel,
 }: EditAccountDialogProps) {
   const router = useRouter();
@@ -101,18 +99,18 @@ export function EditAccountDialog({
   };
 
   const onSubmit = async (data: UpdateAccountInput) => {
+    onOpenChange(false);
     const result = await updateAccount(account.id, data);
+
     if (result.error) {
       toast.error(result.error);
     } else {
       toast.success("Счёт успешно обновлён");
-      reset();
-      onOpenChange(false);
       await queryClient.invalidateQueries({
         queryKey: ["accounts", account.workspaceId],
       });
       router.refresh();
-      onSuccess?.();
+      reset();
     }
   };
 

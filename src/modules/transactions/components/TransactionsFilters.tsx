@@ -112,6 +112,25 @@ export function TransactionsFilters({
     );
   };
 
+  const renderCategoryOption: RenderOption<string> = ({
+    props,
+    option,
+    selected,
+  }) => {
+    const category = categories.find((cat) => cat.id === option.value)!;
+
+    return (
+      <>
+        {props.multiple && <Checkbox checked={selected} className="shrink-0" />}
+        <div
+          style={{ backgroundColor: category.color || undefined }}
+          className="size-4 rounded-full"
+        />
+        <span className="flex-1 text-sm">{option.label}</span>
+      </>
+    );
+  };
+
   const categoryOptions: SelectOption[] = categories.map((category) => ({
     value: category.id,
     label: category.name,
@@ -224,22 +243,7 @@ export function TransactionsFilters({
           label="Категории"
           multiple
           allowClear
-          renderOption={({ props, option, selected }) => {
-            const category = categories.find((cat) => cat.id === option.value)!;
-
-            return (
-              <>
-                {props.multiple && (
-                  <Checkbox checked={selected} className="shrink-0" />
-                )}
-                <div
-                  style={{ backgroundColor: category.color || undefined }}
-                  className="size-4 rounded-full"
-                />
-                <span className="flex-1 text-sm">{option.label}</span>
-              </>
-            );
-          }}
+          renderOption={renderCategoryOption}
         />
       </div>
 
@@ -455,6 +459,7 @@ export function TransactionsFilters({
                 : undefined
             );
           }}
+          renderOption={renderCategoryOption}
           placeholder="Все категории"
           label="Категории"
           multiple

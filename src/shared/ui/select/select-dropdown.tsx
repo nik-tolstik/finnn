@@ -111,7 +111,7 @@ export function SelectDropdown<TValue extends string | number = string>(
                     handleClear();
                   }
                 }}
-                className="rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+                className="rounded-full opacity-70 transition-opacity hover:opacity-100 focus:opacity-100 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
               >
                 <X className="h-3 w-3" />
               </div>

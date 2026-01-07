@@ -11,10 +11,7 @@ import { toast } from "sonner";
 import { getCategories } from "@/modules/categories/category.service";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
-import {
-  updateTransactionSchema,
-  type UpdateTransactionInput,
-} from "@/shared/lib/validations/transaction";
+import { updateTransactionSchema, type UpdateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { type ComboboxOption } from "@/shared/ui/combobox";
 import { DatePicker } from "@/shared/ui/date-picker";
@@ -40,7 +37,6 @@ interface EditTransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
-  onSuccess?: () => void;
 }
 
 export function EditTransactionDialog({
@@ -49,7 +45,6 @@ export function EditTransactionDialog({
   open,
   onOpenChange,
   onCloseComplete,
-  onSuccess,
 }: EditTransactionDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -83,9 +78,7 @@ export function EditTransactionDialog({
   // Фильтруем категории по типу транзакции
   const filteredCategories = useMemo(() => {
     return allCategories.filter(
-      (cat) =>
-        cat.type === transaction.type ||
-        transaction.type === TransactionType.TRANSFER
+      (cat) => cat.type === transaction.type || transaction.type === TransactionType.TRANSFER
     );
   }, [allCategories, transaction.type]);
 
@@ -118,23 +111,19 @@ export function EditTransactionDialog({
   }, [transaction, open, reset]);
 
   const onSubmit = async (data: UpdateTransactionInput) => {
+    onOpenChange(false);
     const result = await updateTransaction(transaction.id, data);
     if (result.error) {
       toast.error(result.error);
     } else {
       toast.success("Транзакция успешно обновлена");
-      reset();
-      onOpenChange(false);
-      // Инвалидируем кэш транзакций для обновления списка
-      await queryClient.invalidateQueries({
-        queryKey: ["transactions", workspaceId],
-      });
-      // Инвалидируем кэш счетов для обновления баланса
-      await queryClient.invalidateQueries({
-        queryKey: ["accounts", workspaceId],
-      });
+      // Инвалидируем кэш транзакций и счетов параллельно
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] }),
+        queryClient.invalidateQueries({ queryKey: ["accounts", workspaceId] }),
+      ]);
       router.refresh();
-      onSuccess?.();
+      reset();
     }
   };
 
@@ -176,11 +165,7 @@ export function EditTransactionDialog({
                 }}
                 aria-invalid={errors.amount ? "true" : "false"}
               />
-              {errors.amount && (
-                <p className="text-sm text-destructive">
-                  {errors.amount.message}
-                </p>
-              )}
+              {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -192,11 +177,7 @@ export function EditTransactionDialog({
                 {...register("description")}
                 aria-invalid={errors.description ? "true" : "false"}
               />
-              {errors.description && (
-                <p className="text-sm text-destructive">
-                  {errors.description.message}
-                </p>
-              )}
+              {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -211,17 +192,12 @@ export function EditTransactionDialog({
                   {selectedCategory ? (
                     <div className="flex items-center gap-2">
                       {selectedCategory.color && (
-                        <div
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: selectedCategory.color }}
-                        />
+                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedCategory.color }} />
                       )}
                       <span className="truncate">{selectedCategory.label}</span>
                     </div>
                   ) : (
-                    <span className="text-muted-foreground">
-                      Выберите категорию
-                    </span>
+                    <span className="text-muted-foreground">Выберите категорию</span>
                   )}
                 </Button>
                 {selectedCategory && (
@@ -247,11 +223,7 @@ export function EditTransactionDialog({
                 searchPlaceholder="Поиск категории..."
                 emptyText="Категории не найдены"
               />
-              {errors.categoryId && (
-                <p className="text-sm text-destructive">
-                  {errors.categoryId.message}
-                </p>
-              )}
+              {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -259,31 +231,17 @@ export function EditTransactionDialog({
               <Controller
                 control={control}
                 name="date"
-                render={({ field }) => (
-                  <DatePicker date={field.value} onSelect={field.onChange} />
-                )}
+                render={({ field }) => <DatePicker date={field.value} onSelect={field.onChange} />}
               />
-              {errors.date && (
-                <p className="text-sm text-destructive">
-                  {errors.date.message}
-                </p>
-              )}
+              {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
             </div>
           </form>
         </DialogContent>
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-          >
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
             {isSubmitting ? "Сохранение..." : "Сохранить"}
           </Button>
         </DialogFooter>
