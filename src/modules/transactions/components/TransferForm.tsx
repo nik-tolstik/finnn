@@ -6,14 +6,10 @@ import { useMemo } from "react";
 import { Controller, type UseFormReturn, useWatch } from "react-hook-form";
 
 import { AccountSelector } from "@/shared/components/AccountSelector";
-import type {
-  CreateTransferInput,
-  UpdateTransferInput,
-} from "@/shared/lib/validations/transaction";
+import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
 import { DatePicker } from "@/shared/ui/date-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { Separator } from "@/shared/ui/separator";
 import { Textarea } from "@/shared/ui/textarea";
 import { cn } from "@/shared/utils/cn";
 import { getCurrencySymbol } from "@/shared/utils/money";
@@ -27,12 +23,7 @@ interface TransferFormProps {
   onSubmit: (data: TransferFormData) => Promise<void>;
 }
 
-export function TransferForm({
-  workspaceId,
-  form,
-  accounts,
-  onSubmit,
-}: TransferFormProps) {
+export function TransferForm({ workspaceId, form, accounts, onSubmit }: TransferFormProps) {
   const fromAccountId = useWatch({
     control: form.control,
     name: "fromAccountId",
@@ -48,10 +39,7 @@ export function TransferForm({
   }, [accounts, toAccountId]);
 
   return (
-    <form
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-6 min-w-0 overflow-x-hidden"
-    >
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 min-w-0 overflow-x-hidden">
       <div className="space-y-2 min-w-0">
         <Label htmlFor="fromAccountId" className="wrap-break-word">
           Счёт отправителя <span className="text-destructive">*</span>
@@ -112,9 +100,7 @@ export function TransferForm({
           />
         </div>
         {form.formState.errors.amount && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.amount.message}
-          </p>
+          <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>
         )}
       </div>
 
@@ -150,8 +136,7 @@ export function TransferForm({
 
       <div className="space-y-2 min-w-0">
         <Label htmlFor="toAmount" className="wrap-break-word">
-          Сумма получения {toAccount && `(${toAccount.currency})`}{" "}
-          <span className="text-destructive">*</span>
+          Сумма получения {toAccount && `(${toAccount.currency})`} <span className="text-destructive">*</span>
         </Label>
         <div className="relative min-w-0">
           {toAccount && (
@@ -183,13 +168,9 @@ export function TransferForm({
           />
         </div>
         {form.formState.errors.toAmount && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.toAmount.message}
-          </p>
+          <p className="text-sm text-destructive">{form.formState.errors.toAmount.message}</p>
         )}
       </div>
-
-      <Separator className="my-8" />
 
       <div className="space-y-2">
         <Label htmlFor="description">Описание</Label>
@@ -201,9 +182,7 @@ export function TransferForm({
           aria-invalid={form.formState.errors.description ? "true" : "false"}
         />
         {form.formState.errors.description && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.description.message}
-          </p>
+          <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
         )}
       </div>
 
@@ -212,15 +191,9 @@ export function TransferForm({
         <Controller
           control={form.control}
           name="date"
-          render={({ field }) => (
-            <DatePicker date={field.value} onSelect={field.onChange} />
-          )}
+          render={({ field }) => <DatePicker date={field.value} onSelect={field.onChange} />}
         />
-        {form.formState.errors.date && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.date.message}
-          </p>
-        )}
+        {form.formState.errors.date && <p className="text-sm text-destructive">{form.formState.errors.date.message}</p>}
       </div>
     </form>
   );

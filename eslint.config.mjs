@@ -31,14 +31,7 @@ const eslintConfig = defineConfig([
       "import/order": [
         "warn",
         {
-          groups: [
-            "builtin",
-            "external",
-            "internal",
-            "parent",
-            "sibling",
-            "index",
-          ],
+          groups: ["builtin", "external", "internal", "parent", "sibling", "index"],
           "newlines-between": "always",
           alphabetize: { order: "asc", caseInsensitive: true },
         },
@@ -48,6 +41,7 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-explicit-any": "off",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/static-components": "off",
+      "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),

@@ -18,6 +18,7 @@ import {
 import { addMoney, subtractMoney } from "@/shared/utils/money";
 
 import { TransactionType } from "./transaction.constants";
+import type { TransactionWithRelations } from "./transaction.types";
 
 export async function createTransaction(
   workspaceId: string,
@@ -438,6 +439,99 @@ export async function updateTransfer(
   }
 }
 
+export async function deleteTransfer(transactionId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { error: "Не авторизован" };
+    }
+
+    const transaction = await prisma.transaction.findFirst({
+      where: {
+        id: transactionId,
+        workspace: {
+          members: {
+            some: {
+              userId: session.user.id,
+            },
+          },
+        },
+      },
+      include: {
+        account: true,
+        transferFrom: {
+          include: {
+            toTransaction: {
+              include: {
+                account: true,
+              },
+            },
+          },
+        },
+        transferTo: {
+          include: {
+            fromTransaction: {
+              include: {
+                account: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!transaction) {
+      return { error: "Транзакция не найдена или доступ запрещён" };
+    }
+
+    let fromTransaction = transaction;
+    let toTransaction = null;
+    let transfer = null;
+
+    if (transaction.transferFrom) {
+      transfer = transaction.transferFrom;
+      toTransaction = transaction.transferFrom.toTransaction;
+    } else if (transaction.transferTo) {
+      transfer = transaction.transferTo;
+      fromTransaction = transaction.transferTo.fromTransaction;
+      toTransaction = transaction;
+    } else {
+      return { error: "Перевод не найден" };
+    }
+
+    const fromAccount = fromTransaction.account;
+    const toAccount = toTransaction.account;
+
+    await prisma.account.update({
+      where: { id: fromAccount.id },
+      data: { balance: addMoney(fromAccount.balance, fromTransaction.amount) },
+    });
+
+    await prisma.account.update({
+      where: { id: toAccount.id },
+      data: { balance: subtractMoney(toAccount.balance, toTransaction.amount) },
+    });
+
+    await prisma.transfer.delete({
+      where: { fromTransactionId: fromTransaction.id },
+    });
+
+    await prisma.transaction.delete({
+      where: { id: fromTransaction.id },
+    });
+
+    await prisma.transaction.delete({
+      where: { id: toTransaction.id },
+    });
+
+    revalidatePath("/transactions");
+    revalidatePath("/accounts");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Не удалось удалить перевод" };
+  }
+}
+
 export async function deleteTransaction(id: string) {
   try {
     const session = await getServerSession(authOptions);
@@ -464,7 +558,7 @@ export async function deleteTransaction(id: string) {
     }
 
     if (transaction.transferFrom || transaction.transferTo) {
-      return { error: "Нельзя удалить транзакцию перевода напрямую" };
+      return await deleteTransfer(id);
     }
 
     const account = transaction.account;
@@ -502,12 +596,17 @@ export interface TransactionFilters {
   dateTo?: Date;
   search?: string;
   types?: TransactionType[];
+  skip?: number;
+  take?: number;
 }
 
 export async function getTransactions(
   workspaceId: string,
   filters?: TransactionFilters
-) {
+): Promise<
+  | { data: TransactionWithRelations[]; total: number }
+  | { error: string }
+> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -656,7 +755,18 @@ export async function getTransactions(
       }
     }
 
-    return { data: filteredTransactions };
+    const total = filteredTransactions.length;
+
+    const skip = filters?.skip ?? 0;
+    const take = filters?.take;
+
+    if (take !== undefined) {
+      filteredTransactions = filteredTransactions.slice(skip, skip + take);
+    } else if (skip > 0) {
+      filteredTransactions = filteredTransactions.slice(skip);
+    }
+
+    return { data: filteredTransactions, total };
   } catch (error: any) {
     return { error: error.message || "Не удалось загрузить транзакции" };
   }

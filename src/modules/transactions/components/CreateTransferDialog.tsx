@@ -8,19 +8,9 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import {
-  createTransferSchema,
-  type CreateTransferInput,
-} from "@/shared/lib/validations/transaction";
+import { createTransferSchema, type CreateTransferInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
-import {
-  Dialog,
-  DialogWindow,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogWindow, DialogHeader, DialogTitle, DialogFooter, DialogContent } from "@/shared/ui/dialog";
 
 import { createTransfer } from "../transaction.service";
 
@@ -104,22 +94,12 @@ export function CreateTransferDialog({
       <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать перевод</DialogTitle>
-          <DialogDescription>
-            Переведите деньги с одного счёта на другой
-          </DialogDescription>
         </DialogHeader>
-        <TransferForm
-          workspaceId={workspaceId}
-          form={form}
-          accounts={accounts}
-          onSubmit={onSubmit}
-        />
+        <DialogContent>
+          <TransferForm workspaceId={workspaceId} form={form} accounts={accounts} onSubmit={onSubmit} />
+        </DialogContent>
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             Отмена
           </Button>
           <TransferFormSubmitButton form={form} onSubmit={onSubmit} />

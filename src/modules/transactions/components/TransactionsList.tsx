@@ -15,13 +15,16 @@ import { EditTransactionDialog } from "./EditTransactionDialog";
 import { EditTransferDialog } from "./EditTransferDialog";
 import { TransactionActionsDialog } from "./TransactionActionsDialog";
 import { TransactionCard } from "./TransactionCard";
+import { TransactionCardSkeleton } from "./TransactionCardSkeleton";
 import { TransferCard } from "./TransferCard";
+import { TransferCardSkeleton } from "./TransferCardSkeleton";
 
 interface TransactionsListProps {
   transactions: TransactionWithRelations[];
   showLoadMore?: boolean;
   onLoadMore?: () => void;
   workspaceId: string;
+  isLoadingMore?: boolean;
 }
 
 export function TransactionsList({
@@ -29,6 +32,7 @@ export function TransactionsList({
   showLoadMore,
   onLoadMore,
   workspaceId,
+  isLoadingMore,
 }: TransactionsListProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -60,10 +64,7 @@ export function TransactionsList({
       if (result.error) {
         toast.error(result.error);
         if (previousTransactions) {
-          queryClient.setQueryData(
-            ["transactions", workspaceId],
-            previousTransactions
-          );
+          queryClient.setQueryData(["transactions", workspaceId], previousTransactions);
         }
       } else {
         await queryClient.invalidateQueries({
@@ -78,19 +79,12 @@ export function TransactionsList({
     } catch {
       toast.error("Не удалось удалить транзакцию");
       if (previousTransactions) {
-        queryClient.setQueryData(
-          ["transactions", workspaceId],
-          previousTransactions
-        );
+        queryClient.setQueryData(["transactions", workspaceId], previousTransactions);
       }
     }
   };
   if (transactions.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        Нет транзакций.
-      </div>
-    );
+    return <div className="text-center py-8 text-muted-foreground">Нет транзакций.</div>;
   }
 
   const processedTransactionIds = new Set<string>();
@@ -127,9 +121,7 @@ export function TransactionsList({
               account: transaction.transferFrom.toTransaction.account,
               amount: transaction.transferFrom.toAmount,
             };
-            processedTransactionIds.add(
-              transaction.transferFrom.toTransaction.id
-            );
+            processedTransactionIds.add(transaction.transferFrom.toTransaction.id);
           }
 
           if (!transferInfo) {
@@ -165,9 +157,7 @@ export function TransactionsList({
           onOpenChange={actionsDialog.closeDialog}
           onCloseComplete={actionsDialog.unmountDialog}
           onEdit={() => {
-            if (
-              actionsDialog.data.transaction.type === TransactionType.TRANSFER
-            ) {
+            if (actionsDialog.data.transaction.type === TransactionType.TRANSFER) {
               editTransferDialog.openDialog({
                 transaction: actionsDialog.data.transaction,
                 workspaceId,
@@ -193,7 +183,6 @@ export function TransactionsList({
           open={editTransactionDialog.open}
           onOpenChange={editTransactionDialog.closeDialog}
           onCloseComplete={() => {
-            console.log(111);
             editTransactionDialog.unmountDialog();
           }}
         />
@@ -207,7 +196,14 @@ export function TransactionsList({
           onCloseComplete={editTransferDialog.unmountDialog}
         />
       )}
-      {showLoadMore && onLoadMore && (
+      {isLoadingMore && (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index}>{index % 3 === 0 ? <TransferCardSkeleton /> : <TransactionCardSkeleton />}</div>
+          ))}
+        </div>
+      )}
+      {showLoadMore && onLoadMore && !isLoadingMore && (
         <div className="flex justify-center">
           <Button variant="outline" onClick={onLoadMore}>
             Показать ещё

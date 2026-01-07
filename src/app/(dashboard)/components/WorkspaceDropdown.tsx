@@ -12,12 +12,14 @@ import {
   CreditCard,
   Landmark,
   ArrowRight,
+  Archive,
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useRef, useState } from "react";
 
+import { ArchivedAccountsDialog } from "@/modules/accounts/components/ArchivedAccountsDialog";
 import { SettingsDialog } from "@/modules/accounts/components/SettingsDialog";
 import { CreateWorkspaceDialog } from "@/modules/workspace/components/CreateWorkspaceDialog";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
@@ -46,15 +48,14 @@ interface WorkspaceDropdownProps {
   currentWorkspaceId?: string;
 }
 
-export function WorkspaceDropdown({
-  currentWorkspaceId,
-}: WorkspaceDropdownProps) {
+export function WorkspaceDropdown({ currentWorkspaceId }: WorkspaceDropdownProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
   const createDialog = useDialogState();
   const settingsDialog = useDialogState<{ workspaceId: string }>();
+  const archivedAccountsDialog = useDialogState();
   const leaveDialog = useDialogState<{
     workspaceId: string;
     workspaceName: string;
@@ -68,9 +69,7 @@ export function WorkspaceDropdown({
 
   const workspaces = workspacesData?.data || [];
   const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId);
-  const CurrentWorkspaceIcon = currentWorkspace
-    ? getWorkspaceIcon(currentWorkspace.icon)
-    : Building2;
+  const CurrentWorkspaceIcon = currentWorkspace ? getWorkspaceIcon(currentWorkspace.icon) : Building2;
 
   const isOwner = currentWorkspace?.owner.id === session?.user?.id;
 
@@ -114,9 +113,7 @@ export function WorkspaceDropdown({
         <PopoverTrigger asChild>
           <Button variant="outline" className="gap-2">
             <CurrentWorkspaceIcon className="h-4 w-4" />
-            <span className="max-w-[200px] truncate">
-              {currentWorkspace?.name || "Выберите workspace"}
-            </span>
+            <span className="max-w-[200px] truncate">{currentWorkspace?.name || "Выберите workspace"}</span>
             <ChevronDown className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
@@ -127,20 +124,34 @@ export function WorkspaceDropdown({
             </div>
             <div className="mt-2 space-y-1">
               {currentWorkspaceId && (
-                <button
-                  onClick={() => {
-                    setOpen(false);
-                    if (currentWorkspaceId) {
-                      settingsDialog.openDialog({
-                        workspaceId: currentWorkspaceId,
-                      });
-                    }
-                  }}
-                  className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  <span>Настройки</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      if (currentWorkspaceId) {
+                        settingsDialog.openDialog({
+                          workspaceId: currentWorkspaceId,
+                        });
+                      }
+                    }}
+                    className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                  >
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <span>Настройки</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      if (currentWorkspaceId) {
+                        archivedAccountsDialog.openDialog(null);
+                      }
+                    }}
+                    className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                  >
+                    <Archive className="h-4 w-4 text-muted-foreground" />
+                    <span>Архив</span>
+                  </button>
+                </>
               )}
               <Popover open={switchOpen} onOpenChange={setSwitchOpen}>
                 <PopoverTrigger asChild>
@@ -165,22 +176,16 @@ export function WorkspaceDropdown({
                   onMouseLeave={handleSwitchMouseLeave}
                 >
                   <div className="p-2">
-                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                      Workspaces
-                    </div>
+                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Workspaces</div>
                     <div className="space-y-1">
                       {workspaces
                         .filter((w) => w.id !== currentWorkspaceId)
                         .map((workspace) => {
-                          const WorkspaceIcon = getWorkspaceIcon(
-                            workspace.icon
-                          );
+                          const WorkspaceIcon = getWorkspaceIcon(workspace.icon);
                           return (
                             <button
                               key={workspace.id}
-                              onClick={() =>
-                                handleWorkspaceSelect(workspace.id)
-                              }
+                              onClick={() => handleWorkspaceSelect(workspace.id)}
                               className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
                             >
                               <WorkspaceIcon className="h-4 w-4 text-muted-foreground" />
@@ -223,10 +228,7 @@ export function WorkspaceDropdown({
         </PopoverContent>
       </Popover>
       {createDialog.mounted && (
-        <CreateWorkspaceDialog
-          open={createDialog.open}
-          onOpenChange={createDialog.closeDialog}
-        />
+        <CreateWorkspaceDialog open={createDialog.open} onOpenChange={createDialog.closeDialog} />
       )}
       {settingsDialog.mounted && currentWorkspaceId && (
         <SettingsDialog
@@ -241,6 +243,14 @@ export function WorkspaceDropdown({
           workspaceName={leaveDialog.data.workspaceName}
           open={leaveDialog.open}
           onOpenChange={leaveDialog.closeDialog}
+        />
+      )}
+      {archivedAccountsDialog.mounted && currentWorkspaceId && (
+        <ArchivedAccountsDialog
+          workspaceId={currentWorkspaceId}
+          open={archivedAccountsDialog.open}
+          onOpenChange={archivedAccountsDialog.closeDialog}
+          onCloseComplete={archivedAccountsDialog.unmountDialog}
         />
       )}
     </>

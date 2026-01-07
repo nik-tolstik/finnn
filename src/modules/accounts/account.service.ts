@@ -14,10 +14,7 @@ import {
   type UpdateAccountsOrderInput,
 } from "@/shared/lib/validations/account";
 
-export async function createAccount(
-  workspaceId: string,
-  input: CreateAccountInput
-) {
+export async function createAccount(workspaceId: string, input: CreateAccountInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -91,12 +88,10 @@ export async function updateAccount(id: string, input: UpdateAccountInput) {
     const updateData: any = {};
     if (validated.name !== undefined) updateData.name = validated.name;
     if (validated.balance !== undefined) updateData.balance = validated.balance;
-    if (validated.currency !== undefined)
-      updateData.currency = validated.currency;
+    if (validated.currency !== undefined) updateData.currency = validated.currency;
     if (validated.color !== undefined) updateData.color = validated.color;
     if (validated.icon !== undefined) updateData.icon = validated.icon;
-    if (validated.createdAt !== undefined)
-      updateData.createdAt = validated.createdAt;
+    if (validated.createdAt !== undefined) updateData.createdAt = validated.createdAt;
     if (validated.order !== undefined) updateData.order = validated.order;
 
     const updated = await prisma.account.update({
@@ -220,10 +215,7 @@ export async function getAccount(id: string) {
   }
 }
 
-export async function updateAccountsOrder(
-  workspaceId: string,
-  input: UpdateAccountsOrderInput
-) {
+export async function updateAccountsOrder(workspaceId: string, input: UpdateAccountsOrderInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -266,5 +258,82 @@ export async function updateAccountsOrder(
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Не удалось обновить порядок счетов" };
+  }
+}
+
+export async function getArchivedAccounts(workspaceId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { error: "Не авторизован" };
+    }
+
+    const member = await prisma.workspaceMember.findFirst({
+      where: {
+        workspaceId,
+        userId: session.user.id,
+      },
+    });
+
+    if (!member) {
+      return { error: "Доступ запрещён" };
+    }
+
+    const accounts = await prisma.account.findMany({
+      where: {
+        workspaceId,
+        archived: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { data: accounts };
+  } catch (error: any) {
+    return { error: error.message || "Не удалось загрузить архивированные счета" };
+  }
+}
+
+export async function unarchiveAccount(id: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { error: "Не авторизован" };
+    }
+
+    const account = await prisma.account.findFirst({
+      where: {
+        id,
+        workspace: {
+          members: {
+            some: {
+              userId: session.user.id,
+            },
+          },
+        },
+      },
+    });
+
+    if (!account) {
+      return { error: "Счёт не найден или доступ запрещён" };
+    }
+
+    if (!account.archived) {
+      revalidatePath("/accounts");
+      return { success: true };
+    }
+
+    const accountsCount = await prisma.account.count({
+      where: { workspaceId: account.workspaceId, archived: false },
+    });
+
+    await prisma.account.update({
+      where: { id },
+      data: { archived: false, order: accountsCount },
+    });
+
+    revalidatePath("/accounts");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Не удалось удалить счёт из архива" };
   }
 }

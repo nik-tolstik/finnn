@@ -2,7 +2,7 @@
 
 import type { Account } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
-import { GripVertical, X, Check, Plus, MoreVertical } from "lucide-react";
+import { GripVertical, X, Check, Plus, MoreVertical, ArrowLeftRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
@@ -11,10 +11,8 @@ import { CreateAccountDialog } from "@/modules/accounts/components/CreateAccount
 import { TransactionsFilters } from "@/modules/transactions/components/TransactionsFilters";
 import { TransactionsList } from "@/modules/transactions/components/TransactionsList";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/TransactionsListSkeleton";
-import {
-  getTransactions,
-  type TransactionFilters,
-} from "@/modules/transactions/transaction.service";
+import { getTransactions, type TransactionFilters } from "@/modules/transactions/transaction.service";
+import type { TransactionWithRelations } from "@/modules/transactions/transaction.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
@@ -28,22 +26,29 @@ interface DashboardContentProps {
 const TRANSACTIONS_PER_PAGE = 20;
 const DEBOUNCE_DELAY = 300;
 
-export function DashboardContent({
-  accounts,
-  workspaceId,
-}: DashboardContentProps) {
+function isSuccessResponse(data: any): data is { data: TransactionWithRelations[]; total: number } {
+  return data && "data" in data && !("error" in data);
+}
+
+export function DashboardContent({ accounts, workspaceId }: DashboardContentProps) {
   const [displayedCount, setDisplayedCount] = useState(TRANSACTIONS_PER_PAGE);
   const [localFilters, setLocalFilters] = useState<TransactionFilters>({});
-  const [debouncedFilters, setDebouncedFilters] = useState<TransactionFilters>(
-    {}
-  );
+  const [debouncedFilters, setDebouncedFilters] = useState<TransactionFilters>({});
+  const [cachedTransactions, setCachedTransactions] = useState<{
+    data: TransactionWithRelations[];
+    total: number;
+    filtersKey: string;
+  } | null>(null);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const createAccountDialog = useDialogState();
 
+  const filtersKey = JSON.stringify(debouncedFilters);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedFilters(localFilters);
+      setDisplayedCount(TRANSACTIONS_PER_PAGE);
     }, DEBOUNCE_DELAY);
 
     return () => clearTimeout(timer);
@@ -55,15 +60,46 @@ export function DashboardContent({
     initialData: { data: accounts },
   });
 
-  const { data: allTransactionsData, isLoading } = useQuery({
-    queryKey: ["transactions", workspaceId, debouncedFilters],
-    queryFn: () => getTransactions(workspaceId, debouncedFilters),
+  const {
+    data: transactionsData,
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ["transactions", workspaceId, debouncedFilters, displayedCount],
+    queryFn: () =>
+      getTransactions(workspaceId, {
+        ...debouncedFilters,
+        skip: 0,
+        take: displayedCount,
+      } as TransactionFilters),
   });
 
+  useEffect(() => {
+    if (isSuccessResponse(transactionsData)) {
+      setCachedTransactions({
+        data: transactionsData.data,
+        total: transactionsData.total,
+        filtersKey,
+      });
+    }
+  }, [transactionsData, filtersKey]);
+
   const displayAccounts = accountsData?.data || accounts;
-  const allTransactions = allTransactionsData?.data || [];
-  const displayedTransactions = allTransactions.slice(0, displayedCount);
-  const hasMore = allTransactions.length > displayedCount;
+
+  let displayedTransactions: TransactionWithRelations[] = [];
+  let total = 0;
+
+  if (isSuccessResponse(transactionsData)) {
+    displayedTransactions = transactionsData.data;
+    total = transactionsData.total;
+  } else if (cachedTransactions && cachedTransactions.filtersKey === filtersKey) {
+    displayedTransactions = cachedTransactions.data;
+    total = cachedTransactions.total;
+  }
+
+  const hasMore = total > displayedCount;
+  const isInitialLoading = isLoading && displayedTransactions.length === 0;
+  const isLoadingMore = isFetching && !isInitialLoading && displayedTransactions.length > 0;
 
   return (
     <div className="w-full max-w-[1440px] mx-auto">
@@ -76,29 +112,21 @@ export function DashboardContent({
                 <div className="hidden md:flex gap-2">
                   <Button
                     size="sm"
+                    variant="outline"
                     onClick={() => createAccountDialog.openDialog(null)}
                     className="gap-2"
                   >
                     <Plus className="h-4 w-4" />
                     Новый
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsReorderMode(true)}
-                    className="gap-2"
-                  >
-                    <GripVertical className="h-4 w-4" />
+                  <Button variant="outline" size="sm" onClick={() => setIsReorderMode(true)} className="gap-2">
+                    <ArrowLeftRight className="h-4 w-4" />
                     Изменить порядок
                   </Button>
                 </div>
                 <Popover open={menuOpen} onOpenChange={setMenuOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon-sm"
-                      className="md:hidden"
-                    >
+                    <Button variant="outline" size="icon-sm" className="md:hidden">
                       <MoreVertical className="h-5 w-5" />
                     </Button>
                   </PopoverTrigger>
@@ -184,21 +212,20 @@ export function DashboardContent({
           <h2 className="mb-4 text-2xl font-semibold">Последние транзакции</h2>
           <div className="flex flex-col lg:flex-row lg:items-start gap-4">
             <div className="flex-1 min-w-0 order-2 lg:order-1">
-              {isLoading ? (
+              {isInitialLoading ? (
                 <TransactionsListSkeleton />
-              ) : displayedTransactions.length > 0 ? (
+              ) : displayedTransactions && displayedTransactions.length > 0 ? (
                 <TransactionsList
                   transactions={displayedTransactions}
                   showLoadMore={hasMore}
-                  onLoadMore={() =>
-                    setDisplayedCount((prev) => prev + TRANSACTIONS_PER_PAGE)
-                  }
+                  onLoadMore={() => {
+                    setDisplayedCount((prev) => prev + TRANSACTIONS_PER_PAGE);
+                  }}
                   workspaceId={workspaceId}
+                  isLoadingMore={isLoadingMore}
                 />
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  Нет транзакций.
-                </div>
+                <div className="text-center py-8 text-muted-foreground">Нет транзакций.</div>
               )}
             </div>
             <div className="order-1 lg:order-2 lg:w-80 lg:shrink-0">
@@ -208,7 +235,6 @@ export function DashboardContent({
                   filters={localFilters}
                   onFiltersChange={(newFilters) => {
                     setLocalFilters(newFilters);
-                    setDisplayedCount(TRANSACTIONS_PER_PAGE);
                   }}
                 />
               </div>

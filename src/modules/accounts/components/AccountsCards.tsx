@@ -9,25 +9,19 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Account } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 
-import { CreateTransactionTabsDialog } from "@/modules/transactions/components/CreateTransactionTabsDialog";
+import { CreateTransactionDialog } from "@/modules/transactions/components/CreateTransactionDialog";
+import { CreateTransferDialog } from "@/modules/transactions/components/CreateTransferDialog";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/utils/cn";
 
 import { updateAccountsOrder } from "../account.service";
@@ -60,14 +54,10 @@ function SortableAccountCard({
   onClick,
   isReorderMode,
 }: SortableAccountCardProps & { isReorderMode: boolean }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: account.id, disabled: !isReorderMode });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: account.id,
+    disabled: !isReorderMode,
+  });
 
   const [mounted, setMounted] = useState(false);
 
@@ -93,10 +83,7 @@ function SortableAccountCard({
     <div ref={setNodeRef} style={style}>
       <div
         {...(isReorderMode ? { ...attributes, ...listeners } : {})}
-        className={cn(
-          "select-none touch-none",
-          isReorderMode && "cursor-grab active:cursor-grabbing"
-        )}
+        className={cn("select-none touch-none", isReorderMode && "cursor-grab active:cursor-grabbing")}
         style={{
           WebkitUserSelect: "none",
           WebkitTouchCallout: "none",
@@ -126,7 +113,11 @@ export function AccountsCards({
   const transactionTabsDialog = useDialogState<{
     workspaceId: string;
     defaultAccountId?: string;
-    defaultTab?: TransactionType;
+    defaultType?: TransactionType.INCOME | TransactionType.EXPENSE;
+  }>();
+  const transferDialog = useDialogState<{
+    workspaceId: string;
+    defaultFromAccountId?: string;
   }>();
   const editDialog = useDialogState<ActionDialogData>();
   const archiveDialog = useDialogState<ActionDialogData>();
@@ -192,14 +183,7 @@ export function AccountsCards({
       onReorderModeChange?.(false);
       router.refresh();
     }
-  }, [
-    items,
-    originalItems,
-    workspaceId,
-    queryClient,
-    router,
-    onReorderModeChange,
-  ]);
+  }, [items, originalItems, workspaceId, queryClient, router, onReorderModeChange]);
 
   useEffect(() => {
     const handleSave = async () => {
@@ -234,11 +218,7 @@ export function AccountsCards({
   return (
     <>
       <div className="relative">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items.map((item) => item.id)}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fill,300px)]">
               {items.map((account) => (
@@ -254,23 +234,6 @@ export function AccountsCards({
             </div>
           </SortableContext>
         </DndContext>
-
-        {!isReorderMode && (
-          <Button
-            size="icon"
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
-            onClick={() => {
-              transactionTabsDialog.openDialog({
-                workspaceId,
-                defaultTab: TransactionType.EXPENSE,
-              });
-
-              accountActionsDialog.closeDialog();
-            }}
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        )}
       </div>
 
       {accountActionsDialog.mounted && (
@@ -295,7 +258,14 @@ export function AccountsCards({
             transactionTabsDialog.openDialog({
               workspaceId,
               defaultAccountId: accountActionsDialog.data.account.id,
-              defaultTab: TransactionType.EXPENSE,
+              defaultType: TransactionType.EXPENSE,
+            });
+            accountActionsDialog.closeDialog();
+          }}
+          onCreateTransfer={() => {
+            transferDialog.openDialog({
+              workspaceId,
+              defaultFromAccountId: accountActionsDialog.data.account.id,
             });
             accountActionsDialog.closeDialog();
           }}
@@ -321,13 +291,22 @@ export function AccountsCards({
       )}
 
       {transactionTabsDialog.mounted && (
-        <CreateTransactionTabsDialog
+        <CreateTransactionDialog
           workspaceId={transactionTabsDialog.data.workspaceId}
           open={transactionTabsDialog.open}
           onOpenChange={transactionTabsDialog.closeDialog}
           onCloseComplete={transactionTabsDialog.unmountDialog}
           defaultAccountId={transactionTabsDialog.data.defaultAccountId}
-          defaultTab={transactionTabsDialog.data.defaultTab}
+          defaultType={transactionTabsDialog.data.defaultType}
+        />
+      )}
+
+      {transferDialog.mounted && (
+        <CreateTransferDialog
+          workspaceId={transferDialog.data.workspaceId}
+          open={transferDialog.open}
+          onOpenChange={transferDialog.closeDialog}
+          defaultFromAccountId={transferDialog.data.defaultFromAccountId}
         />
       )}
     </>

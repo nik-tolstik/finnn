@@ -63,6 +63,9 @@ export function ArchiveAccountDialog({
         await queryClient.invalidateQueries({
           queryKey: ["accounts", account.workspaceId],
         });
+        await queryClient.invalidateQueries({
+          queryKey: ["archivedAccounts", account.workspaceId],
+        });
         router.refresh();
         onSuccess?.();
       }

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Account } from "@prisma/client";
-import { Archive, Pencil, Plus } from "lucide-react";
+import { Archive, ArrowLeftRight, Pencil, Plus } from "lucide-react";
 
 import { ActionsDialog } from "@/shared/ui/actions-dialog";
 
@@ -11,6 +11,7 @@ interface AccountActionsDialogProps {
   onCloseComplete: () => void;
   onOpenChange: (open: boolean) => void;
   onCreateTransaction: () => void;
+  onCreateTransfer: () => void;
   onEdit: () => void;
   onArchive: () => void;
 }
@@ -23,6 +24,7 @@ export function AccountActionsDialog({
   onEdit,
   onArchive,
   onCreateTransaction,
+  onCreateTransfer,
 }: AccountActionsDialogProps) {
   return (
     <ActionsDialog
@@ -34,8 +36,13 @@ export function AccountActionsDialog({
       actions={[
         {
           icon: <Plus className="h-3.5 w-3.5" />,
-          label: "Добавить транзакцию",
+          label: "Добавить расход/доход",
           onClick: onCreateTransaction,
+        },
+        {
+          icon: <ArrowLeftRight className="h-3.5 w-3.5" />,
+          label: "Добавить перевод",
+          onClick: onCreateTransfer,
         },
         {
           icon: <Pencil className="h-3.5 w-3.5" />,
@@ -46,6 +53,7 @@ export function AccountActionsDialog({
           icon: <Archive className="h-3.5 w-3.5" />,
           label: "Архивировать",
           onClick: onArchive,
+          theme: "error",
         },
       ]}
     />
