@@ -7,18 +7,9 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import {
-  createWorkspaceSchema,
-  type CreateWorkspaceInput,
-} from "@/shared/lib/validations/workspace";
+import { createWorkspaceSchema, type CreateWorkspaceInput } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
@@ -75,12 +66,8 @@ export function CreateWorkspacePrompt() {
     <div className="flex min-h-[60vh] items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">
-            Создайте ваш первый рабочий стол
-          </CardTitle>
-          <CardDescription>
-            Начните с создания рабочего стола для организации ваших финансов
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold">Создайте ваш первый рабочий стол</CardTitle>
+          <CardDescription>Начните с создания рабочего стола для организации ваших финансов</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -97,11 +84,7 @@ export function CreateWorkspacePrompt() {
                   aria-invalid={errors.name ? "true" : "false"}
                 />
               </div>
-              {errors.name && (
-                <p className="text-sm text-destructive">
-                  {errors.name.message}
-                </p>
-              )}
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -117,11 +100,7 @@ export function CreateWorkspacePrompt() {
                   aria-invalid={errors.slug ? "true" : "false"}
                 />
               </div>
-              {errors.slug && (
-                <p className="text-sm text-destructive">
-                  {errors.slug.message}
-                </p>
-              )}
+              {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
               <p className="text-xs text-muted-foreground">
                 Идентификатор для URL (автоматически генерируется из названия)
               </p>

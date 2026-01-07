@@ -7,4 +7,3 @@ export const ACCOUNT_TYPES = {
 } as const;
 
 export type AccountType = (typeof ACCOUNT_TYPES)[keyof typeof ACCOUNT_TYPES];
-

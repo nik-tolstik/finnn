@@ -50,17 +50,9 @@ export function DatePicker({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={cn(
-            "w-full justify-between text-left font-normal",
-            !date && "text-muted-foreground",
-            className
-          )}
+          className={cn("w-full justify-between text-left font-normal", !date && "text-muted-foreground", className)}
         >
-          {date ? (
-            format(date, "dd.MM.yyyy", { locale })
-          ) : (
-            <span>{placeholder}</span>
-          )}
+          {date ? format(date, "dd.MM.yyyy", { locale }) : <span>{placeholder}</span>}
           <ChevronDownIcon className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>

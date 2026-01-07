@@ -9,13 +9,7 @@ export function TransactionsListSkeleton({ count = 10 }: TransactionsListSkeleto
   return (
     <div className="space-y-3">
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index}>
-          {index % 3 === 0 ? (
-            <TransferCardSkeleton />
-          ) : (
-            <TransactionCardSkeleton />
-          )}
-        </div>
+        <div key={index}>{index % 3 === 0 ? <TransferCardSkeleton /> : <TransactionCardSkeleton />}</div>
       ))}
     </div>
   );

@@ -35,12 +35,7 @@ interface InviteMemberDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function InviteMemberDialog({
-  workspaceId,
-  workspaceName,
-  open,
-  onOpenChange,
-}: InviteMemberDialogProps) {
+export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenChange }: InviteMemberDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const {
@@ -67,11 +62,7 @@ export function InviteMemberDialog({
         throw new Error("Не удалось создать приглашение");
       }
 
-      const emailResult = await sendInviteEmail(
-        data.email,
-        inviteResult.data.token,
-        workspaceName
-      );
+      const emailResult = await sendInviteEmail(data.email, inviteResult.data.token, workspaceName);
 
       if (emailResult.error) {
         throw new Error(emailResult.error);
@@ -103,8 +94,7 @@ export function InviteMemberDialog({
         <DialogHeader>
           <DialogTitle>Пригласить участника</DialogTitle>
           <DialogDescription>
-            Введите email пользователя, которого хотите пригласить в рабочий
-            стол &quot;{workspaceName}&quot;.
+            Введите email пользователя, которого хотите пригласить в рабочий стол &quot;{workspaceName}&quot;.
           </DialogDescription>
         </DialogHeader>
         <DialogContent>
@@ -120,30 +110,17 @@ export function InviteMemberDialog({
                 placeholder="user@example.com"
                 aria-invalid={errors.email ? "true" : "false"}
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">
-                  {errors.email.message}
-                </p>
-              )}
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
           </form>
         </DialogContent>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || inviteMutation.isPending}
-          >
-            {isSubmitting || inviteMutation.isPending
-              ? "Отправка..."
-              : "Отправить приглашение"}
+          <Button type="submit" disabled={isSubmitting || inviteMutation.isPending}>
+            {isSubmitting || inviteMutation.isPending ? "Отправка..." : "Отправить приглашение"}
           </Button>
         </DialogFooter>
       </DialogWindow>

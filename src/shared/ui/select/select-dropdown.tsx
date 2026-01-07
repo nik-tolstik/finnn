@@ -11,20 +11,8 @@ import { cn } from "@/shared/utils/cn";
 
 import { SelectDropdownProps } from "./types";
 
-export function SelectDropdown<TValue extends string | number = string>(
-  props: SelectDropdownProps<TValue>
-) {
-  const {
-    options,
-    value,
-    onChange,
-    placeholder,
-    multiple,
-    allowClear,
-    valueLabel,
-    disabled,
-    renderOption,
-  } = props;
+export function SelectDropdown<TValue extends string | number = string>(props: SelectDropdownProps<TValue>) {
+  const { options, value, onChange, placeholder, multiple, allowClear, valueLabel, disabled, renderOption } = props;
   const [open, setOpen] = useState(false);
   const selectedValues: TValue[] = multiple
     ? Array.isArray(value)
@@ -79,9 +67,7 @@ export function SelectDropdown<TValue extends string | number = string>(
     }
   };
 
-  const hasSelection = multiple
-    ? selectedValues.length > 0
-    : currentValue !== undefined;
+  const hasSelection = multiple ? selectedValues.length > 0 : currentValue !== undefined;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -89,10 +75,7 @@ export function SelectDropdown<TValue extends string | number = string>(
         <Button
           variant="outline"
           disabled={disabled}
-          className={cn(
-            "w-full justify-between",
-            !hasSelection && "text-muted-foreground"
-          )}
+          className={cn("w-full justify-between", !hasSelection && "text-muted-foreground")}
         >
           <span className="truncate">{getDisplayLabel()}</span>
           <div className="flex items-center gap-1 shrink-0">
@@ -120,16 +103,10 @@ export function SelectDropdown<TValue extends string | number = string>(
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="p-1"
-        align="start"
-        style={{ width: "var(--radix-popover-trigger-width)" }}
-      >
+      <PopoverContent className="p-1" align="start" style={{ width: "var(--radix-popover-trigger-width)" }}>
         <div className="max-h-96 overflow-y-auto">
           {options.map((option) => {
-            const selected = multiple
-              ? selectedValues.includes(option.value)
-              : currentValue === option.value;
+            const selected = multiple ? selectedValues.includes(option.value) : currentValue === option.value;
 
             if (renderOption) {
               return (
@@ -180,9 +157,7 @@ export function SelectDropdown<TValue extends string | number = string>(
                   />
                 )}
                 <span className="flex-1">{option.label}</span>
-                {!multiple && selected && (
-                  <CheckIcon className="h-4 w-4 shrink-0 text-primary" />
-                )}
+                {!multiple && selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
               </div>
             );
           })}

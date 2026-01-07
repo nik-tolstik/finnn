@@ -44,9 +44,7 @@ export function LoginForm() {
 
       if (result?.error) {
         if (result.error.includes("Email не подтвержден")) {
-          toast.error(
-            "Email не подтвержден. Пожалуйста, проверьте вашу почту и подтвердите email."
-          );
+          toast.error("Email не подтвержден. Пожалуйста, проверьте вашу почту и подтвердите email.");
         } else {
           toast.error("Неверный email или пароль");
         }
@@ -93,9 +91,7 @@ export function LoginForm() {
                 aria-invalid={errors.email ? "true" : "false"}
               />
             </div>
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -116,18 +112,10 @@ export function LoginForm() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
               >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password.message}
-              </p>
-            )}
+            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>

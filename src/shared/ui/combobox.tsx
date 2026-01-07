@@ -5,11 +5,7 @@ import * as React from "react";
 
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
 export interface ComboboxOption {
@@ -55,9 +51,7 @@ export function Combobox({
     if (!search) return options;
     const searchLower = search.toLowerCase();
     return options.filter(
-      (opt) =>
-        opt.label.toLowerCase().includes(searchLower) ||
-        opt.value.toLowerCase().includes(searchLower)
+      (opt) => opt.label.toLowerCase().includes(searchLower) || opt.value.toLowerCase().includes(searchLower)
     );
   }, [options, search]);
 
@@ -86,10 +80,7 @@ export function Combobox({
           {selectedOption ? (
             <div className="flex items-center gap-2">
               {selectedOption.color && (
-                <div
-                  className="h-3 w-3 rounded-full"
-                  style={{ backgroundColor: selectedOption.color }}
-                />
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedOption.color }} />
               )}
               <span className="truncate">{selectedOption.label}</span>
             </div>
@@ -111,9 +102,7 @@ export function Combobox({
           </div>
           <div className="max-h-[300px] overflow-y-auto p-1">
             {filteredOptions.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">
-                {emptyText}
-              </div>
+              <div className="py-6 text-center text-sm text-muted-foreground">{emptyText}</div>
             ) : (
               filteredOptions.map((option) => (
                 <button
@@ -126,24 +115,21 @@ export function Combobox({
                   onClick={() => handleSelect(option)}
                 >
                   {option.color && (
-                    <div
-                      className="h-3 w-3 rounded-full shrink-0"
-                      style={{ backgroundColor: option.color }}
-                    />
+                    <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: option.color }} />
                   )}
                   <span className="flex-1 truncate text-left">
                     {option.isTemporary ? (
                       <span className="flex items-center gap-1">
                         <Plus className="h-3 w-3" />
-                        <span>{createText}: {option.label}</span>
+                        <span>
+                          {createText}: {option.label}
+                        </span>
                       </span>
                     ) : (
                       option.label
                     )}
                   </span>
-                  {value === option.value && (
-                    <Check className="h-4 w-4 shrink-0" />
-                  )}
+                  {value === option.value && <Check className="h-4 w-4 shrink-0" />}
                 </button>
               ))
             )}
@@ -153,4 +139,3 @@ export function Combobox({
     </Popover>
   );
 }
-

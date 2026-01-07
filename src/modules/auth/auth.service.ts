@@ -11,12 +11,7 @@ import { sendVerificationEmail } from "@/shared/lib/email";
 import { deleteAvatar } from "@/shared/lib/file-upload";
 import { prisma } from "@/shared/lib/prisma";
 
-import {
-  registerSchema,
-  updateUserSchema,
-  type RegisterInput,
-  type UpdateUserInput,
-} from "./auth.validations";
+import { registerSchema, updateUserSchema, type RegisterInput, type UpdateUserInput } from "./auth.validations";
 
 export async function registerAction(input: RegisterInput) {
   try {
@@ -37,8 +32,7 @@ export async function registerAction(input: RegisterInput) {
     if (existingPending) {
       if (existingPending.expiresAt > new Date()) {
         return {
-          error:
-            "Регистрация с этим email уже начата. Проверьте вашу почту для подтверждения.",
+          error: "Регистрация с этим email уже начата. Проверьте вашу почту для подтверждения.",
         };
       } else {
         await prisma.pendingRegistration.delete({
@@ -69,10 +63,7 @@ export async function registerAction(input: RegisterInput) {
     );
 
     if (emailResult.error) {
-      console.error(
-        "Ошибка отправки email при регистрации:",
-        emailResult.error
-      );
+      console.error("Ошибка отправки email при регистрации:", emailResult.error);
       await prisma.pendingRegistration.delete({
         where: { id: pendingRegistration.id },
       });
@@ -102,8 +93,7 @@ export async function verifyEmail(token: string) {
         where: { id: pendingRegistration.id },
       });
       return {
-        error:
-          "Токен подтверждения истек. Пожалуйста, зарегистрируйтесь заново.",
+        error: "Токен подтверждения истек. Пожалуйста, зарегистрируйтесь заново.",
       };
     }
 

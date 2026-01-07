@@ -2,24 +2,14 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Building2,
-  Wallet,
-  HandCoins,
-  CreditCard,
-  Landmark,
-  type LucideIcon,
-} from "lucide-react";
+import { Building2, Wallet, HandCoins, CreditCard, Landmark, type LucideIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import {
-  getWorkspace,
-  updateWorkspace,
-} from "@/modules/workspace/workspace.service";
+import { getWorkspace, updateWorkspace } from "@/modules/workspace/workspace.service";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -84,8 +74,7 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
   const selectedIcon = useWatch({ control, name: "icon" });
 
   const updateMutation = useMutation({
-    mutationFn: (data: WorkspaceSettingsInput) =>
-      updateWorkspace(workspaceId, data),
+    mutationFn: (data: WorkspaceSettingsInput) => updateWorkspace(workspaceId, data),
     onSuccess: (result) => {
       if (result.error) {
         toast.error(result.error);
@@ -133,9 +122,7 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
           disabled={!isOwner}
           aria-invalid={errors.name ? "true" : "false"}
         />
-        {errors.name && (
-          <p className="text-sm text-destructive">{errors.name.message}</p>
-        )}
+        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -153,9 +140,7 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
               disabled={!isOwner}
               className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-all",
-                selectedIcon === name
-                  ? "border-primary bg-primary/10"
-                  : "border-border hover:border-primary/50",
+                selectedIcon === name ? "border-primary bg-primary/10" : "border-border hover:border-primary/50",
                 !isOwner && "opacity-50 cursor-not-allowed"
               )}
               title={name}
@@ -166,11 +151,7 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
         </div>
       </div>
 
-      {!isOwner && (
-        <p className="text-sm text-muted-foreground">
-          Только владелец может изменять настройки workspace
-        </p>
-      )}
+      {!isOwner && <p className="text-sm text-muted-foreground">Только владелец может изменять настройки workspace</p>}
 
       {isOwner && isFormChanged && (
         <div className="flex justify-end gap-2">
@@ -182,13 +163,8 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
           >
             Отменить
           </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || updateMutation.isPending}
-          >
-            {isSubmitting || updateMutation.isPending
-              ? "Сохранение..."
-              : "Сохранить"}
+          <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
+            {isSubmitting || updateMutation.isPending ? "Сохранение..." : "Сохранить"}
           </Button>
         </div>
       )}

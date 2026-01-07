@@ -5,14 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/AccountCard";
-import {
-  Dialog,
-  DialogWindow,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogContent,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 
 interface SelectAccountDialogProps {
   workspaceId: string;
@@ -41,9 +34,7 @@ export function SelectAccountDialog({
     enabled: open,
   });
 
-  const accounts =
-    accountsData?.data?.filter((acc) => !excludeAccountIds.includes(acc.id)) ||
-    [];
+  const accounts = accountsData?.data?.filter((acc) => !excludeAccountIds.includes(acc.id)) || [];
 
   const handleSelect = (account: Account) => {
     onSelect(account);
@@ -52,10 +43,7 @@ export function SelectAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow
-        className="sm:max-w-[400px]"
-        onCloseComplete={onCloseComplete}
-      >
+      <DialogWindow className="sm:max-w-[400px]" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -63,16 +51,10 @@ export function SelectAccountDialog({
         <DialogContent>
           <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto py-4">
             {accounts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Нет доступных счетов
-              </div>
+              <div className="text-center py-8 text-muted-foreground">Нет доступных счетов</div>
             ) : (
               accounts.map((account) => (
-                <AccountCard
-                  key={account.id}
-                  account={account}
-                  onClick={() => handleSelect(account)}
-                />
+                <AccountCard key={account.id} account={account} onClick={() => handleSelect(account)} />
               ))
             )}
           </div>

@@ -11,11 +11,7 @@ export const createAccountSchema = z.object({
 });
 
 export const updateAccountSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Название обязательно")
-    .max(100, "Название не должно превышать 100 символов")
-    .optional(),
+  name: z.string().min(1, "Название обязательно").max(100, "Название не должно превышать 100 символов").optional(),
   balance: z.string().optional(),
   currency: z.string().optional(),
   color: z.string().optional(),

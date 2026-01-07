@@ -63,11 +63,7 @@ export function TransactionForm({
   }, [accounts, transactionAccountId]);
 
   const filteredCategories = useMemo(() => {
-    return allCategories.filter(
-      (cat) =>
-        cat.type === transactionType ||
-        transactionType === TransactionType.TRANSFER
-    );
+    return allCategories.filter((cat) => cat.type === transactionType || transactionType === TransactionType.TRANSFER);
   }, [allCategories, transactionType]);
 
   const comboboxOptions = useMemo<ComboboxOption[]>(() => {
@@ -104,11 +100,9 @@ export function TransactionForm({
 
     if (transactionDate < accountCreatedDate) {
       toast.error(
-        `Дата транзакции не может быть раньше даты создания счета (${format(
-          accountCreatedDate,
-          "dd.MM.yyyy",
-          { locale: ru }
-        )})`
+        `Дата транзакции не может быть раньше даты создания счета (${format(accountCreatedDate, "dd.MM.yyyy", {
+          locale: ru,
+        })})`
       );
       return;
     }
@@ -117,10 +111,7 @@ export function TransactionForm({
   };
 
   return (
-    <form
-      onSubmit={form.handleSubmit(handleSubmit)}
-      className="space-y-4"
-    >
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
       <Controller
         control={form.control}
         name="accountId"
@@ -150,17 +141,12 @@ export function TransactionForm({
             {selectedCategory ? (
               <div className="flex items-center gap-2">
                 {selectedCategory.color && (
-                  <div
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: selectedCategory.color }}
-                  />
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedCategory.color }} />
                 )}
                 <span className="truncate">{selectedCategory.label}</span>
               </div>
             ) : (
-              <span className="text-muted-foreground">
-                Выберите или создайте категорию
-              </span>
+              <span className="text-muted-foreground">Выберите или создайте категорию</span>
             )}
           </Button>
           {selectedCategory && (
@@ -189,11 +175,9 @@ export function TransactionForm({
           emptyText="Введите название для создания новой категории"
           createText="Создать"
         />
-        {(form.formState.errors.categoryId ||
-          form.formState.errors.newCategory) && (
+        {(form.formState.errors.categoryId || form.formState.errors.newCategory) && (
           <p className="text-sm text-destructive">
-            {form.formState.errors.categoryId?.message ||
-              form.formState.errors.newCategory?.message}
+            {form.formState.errors.categoryId?.message || form.formState.errors.newCategory?.message}
           </p>
         )}
       </div>
@@ -231,9 +215,7 @@ export function TransactionForm({
           />
         </div>
         {form.formState.errors.amount && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.amount.message}
-          </p>
+          <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>
         )}
       </div>
 
@@ -258,9 +240,7 @@ export function TransactionForm({
               onSelect={field.onChange}
               disabled={(date) => {
                 if (!transactionAccount) return false;
-                const accountCreatedDate = new Date(
-                  transactionAccount.createdAt
-                );
+                const accountCreatedDate = new Date(transactionAccount.createdAt);
                 accountCreatedDate.setHours(0, 0, 0, 0);
                 const checkDate = new Date(date);
                 checkDate.setHours(0, 0, 0, 0);

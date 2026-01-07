@@ -6,10 +6,7 @@ export const createWorkspaceSchema = z.object({
     .string()
     .min(1, "Slug обязателен")
     .max(50)
-    .regex(
-      /^[a-z0-9-]+$/,
-      "Slug может содержать только строчные буквы, цифры и дефисы"
-    ),
+    .regex(/^[a-z0-9-]+$/, "Slug может содержать только строчные буквы, цифры и дефисы"),
 });
 
 export const updateWorkspaceSchema = z.object({

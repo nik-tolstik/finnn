@@ -38,10 +38,7 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        const isValidPassword = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const isValidPassword = await bcrypt.compare(credentials.password, user.password);
 
         if (!isValidPassword) {
           return null;
@@ -70,7 +67,7 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.image = user.image;
       }
-      
+
       if (trigger === "update") {
         const updatedUser = await prisma.user.findUnique({
           where: { id: token.id as string },
@@ -81,14 +78,14 @@ export const authOptions: NextAuthOptions = {
             image: true,
           },
         });
-        
+
         if (updatedUser) {
           token.name = updatedUser.name;
           token.email = updatedUser.email;
           token.image = updatedUser.image;
         }
       }
-      
+
       return token;
     },
     async session({ session, token }) {

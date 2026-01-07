@@ -5,16 +5,19 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, set up your environment variables:
 
 1. Copy `.env.example` to `.env`:
+
 ```bash
 cp .env.example .env
 ```
 
 2. Generate a NextAuth secret (required for production):
+
 ```bash
 openssl rand -base64 32
 ```
 
 3. Update the `.env` file with your MongoDB connection string and NextAuth secret:
+
 ```env
 MONGODB_URI="mongodb://localhost:27017/finhub"
 NEXTAUTH_URL="http://localhost:9999"
@@ -25,6 +28,7 @@ UPLOADTHING_SECRET="your-uploadthing-secret-here"
 **Note:** For production, add `UPLOADTHING_SECRET` to use cloud storage for avatar uploads. You can use your `UPLOADTHING_TOKEN` as the value for `UPLOADTHING_SECRET`. In development, files are stored locally in `public/uploads/avatars/`.
 
 3. Generate Prisma client and push the schema:
+
 ```bash
 npm run db:generate
 npm run db:push

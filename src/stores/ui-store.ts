@@ -23,4 +23,3 @@ export const useUIStore = create<UIState>((set) => ({
       modals: { ...state.modals, [modalId]: false },
     })),
 }));
-

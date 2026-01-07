@@ -44,9 +44,7 @@ export function RegisterForm() {
         return;
       }
 
-      toast.success(
-        "Аккаунт создан! Письмо с подтверждением отправлено на ваш email."
-      );
+      toast.success("Аккаунт создан! Письмо с подтверждением отправлено на ваш email.");
       router.push("/login");
     } catch {
       toast.error("Что-то пошло не так");
@@ -75,9 +73,7 @@ export function RegisterForm() {
                 aria-invalid={errors.name ? "true" : "false"}
               />
             </div>
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -93,9 +89,7 @@ export function RegisterForm() {
                 aria-invalid={errors.email ? "true" : "false"}
               />
             </div>
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -116,18 +110,10 @@ export function RegisterForm() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
               >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password.message}
-              </p>
-            )}
+            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -146,22 +132,12 @@ export function RegisterForm() {
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={
-                  showConfirmPassword ? "Скрыть пароль" : "Показать пароль"
-                }
+                aria-label={showConfirmPassword ? "Скрыть пароль" : "Показать пароль"}
               >
-                {showConfirmPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {errors.confirmPassword && (
-              <p className="text-sm text-destructive">
-                {errors.confirmPassword.message}
-              </p>
-            )}
+            {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>

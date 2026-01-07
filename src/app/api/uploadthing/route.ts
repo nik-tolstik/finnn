@@ -7,4 +7,3 @@ const { GET, POST } = createRouteHandler({
 });
 
 export { GET, POST };
-

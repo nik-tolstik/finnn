@@ -24,20 +24,10 @@ const iconSizeClasses = {
   lg: "h-5 w-5",
 };
 
-export function IconWithBg({
-  icon: Icon,
-  color,
-  size = "md",
-  className,
-  iconClassName,
-}: IconWithBgProps) {
+export function IconWithBg({ icon: Icon, color, size = "md", className, iconClassName }: IconWithBgProps) {
   return (
     <div
-      className={cn(
-        "flex items-center justify-center rounded-lg shrink-0",
-        sizeClasses[size],
-        className
-      )}
+      className={cn("flex items-center justify-center rounded-lg shrink-0", sizeClasses[size], className)}
       style={{
         backgroundColor: color ? `${color}20` : undefined,
       }}

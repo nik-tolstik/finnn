@@ -25,11 +25,7 @@ function getBaseUrl(): string {
   throw new Error("APP_URL не установлен. Установите NEXT_PUBLIC_APP_URL или NEXTAUTH_URL в .env");
 }
 
-export async function sendInviteEmail(
-  email: string,
-  token: string,
-  workspaceName: string
-) {
+export async function sendInviteEmail(email: string, token: string, workspaceName: string) {
   try {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
       console.error("SMTP настройки не установлены. Проверьте SMTP_USER и SMTP_PASSWORD в .env");
@@ -60,6 +56,7 @@ export async function sendInviteEmail(
       `,
     });
 
+    // eslint-disable-next-line no-console
     console.log("Email успешно отправлен на:", email);
     return { success: true };
   } catch (error: any) {
@@ -68,11 +65,7 @@ export async function sendInviteEmail(
   }
 }
 
-export async function sendVerificationEmail(
-  email: string,
-  token: string,
-  name?: string | null
-) {
+export async function sendVerificationEmail(email: string, token: string, name?: string | null) {
   try {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
       console.error("SMTP настройки не установлены. Проверьте SMTP_USER и SMTP_PASSWORD в .env");
@@ -107,6 +100,7 @@ export async function sendVerificationEmail(
       `,
     });
 
+    // eslint-disable-next-line no-console
     console.log("Email успешно отправлен на:", email);
     return { success: true };
   } catch (error: any) {
@@ -114,6 +108,3 @@ export async function sendVerificationEmail(
     return { error: error.message || "Не удалось отправить email" };
   }
 }
-
-
-

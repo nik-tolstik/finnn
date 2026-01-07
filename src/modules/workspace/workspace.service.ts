@@ -8,10 +8,7 @@ import { getServerSession } from "next-auth";
 import { CategoryType } from "@/modules/categories/category.constants";
 import { authOptions } from "@/shared/lib/auth";
 import { prisma } from "@/shared/lib/prisma";
-import {
-  createInviteSchema,
-  type CreateInviteInput,
-} from "@/shared/lib/validations/invite";
+import { createInviteSchema, type CreateInviteInput } from "@/shared/lib/validations/invite";
 import {
   createWorkspaceSchema,
   updateWorkspaceSchema,
@@ -89,10 +86,7 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
     let colorIndex = 0;
 
     for (const categoryName of STANDARD_CATEGORIES) {
-      const color =
-        categoryName === "Перевод"
-          ? "#eab308"
-          : CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
+      const color = categoryName === "Перевод" ? "#eab308" : CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
       await prisma.category.create({
         data: {
           workspaceId: workspace.id,
@@ -375,8 +369,7 @@ export async function getWorkspaceMembers(workspaceId: string) {
     ];
 
     const uniqueMembers = allMembers.filter(
-      (member, index, self) =>
-        index === self.findIndex((m) => m.id === member.id)
+      (member, index, self) => index === self.findIndex((m) => m.id === member.id)
     );
 
     return { data: uniqueMembers };
@@ -387,10 +380,7 @@ export async function getWorkspaceMembers(workspaceId: string) {
   }
 }
 
-export async function createInvite(
-  workspaceId: string,
-  input: CreateInviteInput
-) {
+export async function createInvite(workspaceId: string, input: CreateInviteInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -593,4 +583,3 @@ export async function getWorkspaceInvite(token: string) {
     return { error: error.message || "Не удалось загрузить приглашение" };
   }
 }
-

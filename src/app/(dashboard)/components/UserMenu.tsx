@@ -38,33 +38,20 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
       <PopoverTrigger asChild>
         <Button variant="ghost" className="h-auto gap-2 p-0 hover:bg-accent">
           {image ? (
-            <Image
-              src={image}
-              alt={displayName}
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full"
-              unoptimized
-            />
+            <Image src={image} alt={displayName} width={32} height={32} className="h-8 w-8 rounded-full" unoptimized />
           ) : (
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
               {initials}
             </div>
           )}
-          <span className="hidden md:block max-w-[150px] truncate text-sm">
-            {displayName}
-          </span>
+          <span className="hidden md:block max-w-[150px] truncate text-sm">{displayName}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-0" align="end">
         <div className="p-2">
           <div className="px-2 py-1.5">
             <div className="text-sm font-medium">{displayName}</div>
-            {email && (
-              <div className="text-xs text-muted-foreground truncate">
-                {email}
-              </div>
-            )}
+            {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
           </div>
           <div className="mt-1 border-t pt-1 space-y-1">
             <button
@@ -91,10 +78,7 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
           </div>
         </div>
       </PopoverContent>
-      <UserSettingsDialog
-        open={settingsDialogOpen}
-        onOpenChange={setSettingsDialogOpen}
-      />
+      <UserSettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
     </Popover>
   );
 }

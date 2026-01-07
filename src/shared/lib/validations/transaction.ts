@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { CategoryType } from "@/modules/categories/category.constants";
+import { TransactionType } from "@/modules/transactions/transaction.constants";
 
 export const createTransactionSchema = z.object({
   accountId: z.string().min(1, "Счёт обязателен"),
@@ -103,4 +103,3 @@ export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 export type CreateTransferInput = z.infer<typeof createTransferSchema>;
 export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
 export type UpdateTransferInput = z.infer<typeof updateTransferSchema>;
-

@@ -8,19 +8,9 @@ import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import {
-  createWorkspaceSchema,
-  type CreateWorkspaceInput,
-} from "@/shared/lib/validations/workspace";
+import { createWorkspaceSchema, type CreateWorkspaceInput } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
-import {
-  Dialog,
-  DialogWindow,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogWindow, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
@@ -32,10 +22,7 @@ interface CreateWorkspaceDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateWorkspaceDialog({
-  open,
-  onOpenChange,
-}: CreateWorkspaceDialogProps) {
+export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -90,9 +77,7 @@ export function CreateWorkspaceDialog({
       <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать новый рабочий стол</DialogTitle>
-          <DialogDescription>
-            Создайте новый рабочий стол для организации ваших финансов
-          </DialogDescription>
+          <DialogDescription>Создайте новый рабочий стол для организации ваших финансов</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
@@ -108,9 +93,7 @@ export function CreateWorkspaceDialog({
                 aria-invalid={errors.name ? "true" : "false"}
               />
             </div>
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -126,12 +109,8 @@ export function CreateWorkspaceDialog({
                 aria-invalid={errors.slug ? "true" : "false"}
               />
             </div>
-            {errors.slug && (
-              <p className="text-sm text-destructive">{errors.slug.message}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Идентификатор генерируется автоматически на основе названия
-            </p>
+            {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
+            <p className="text-xs text-muted-foreground">Идентификатор генерируется автоматически на основе названия</p>
           </div>
 
           <DialogFooter>
@@ -143,13 +122,8 @@ export function CreateWorkspaceDialog({
             >
               Отмена
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || createMutation.isPending}
-            >
-              {isSubmitting || createMutation.isPending
-                ? "Создание..."
-                : "Создать"}
+            <Button type="submit" disabled={isSubmitting || createMutation.isPending}>
+              {isSubmitting || createMutation.isPending ? "Создание..." : "Создать"}
             </Button>
           </DialogFooter>
         </form>

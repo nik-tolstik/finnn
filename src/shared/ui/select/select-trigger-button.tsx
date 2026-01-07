@@ -6,30 +6,15 @@ import * as React from "react";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/utils/cn";
 
-interface SelectTriggerButtonProps
-  extends React.ComponentProps<typeof Button> {
+interface SelectTriggerButtonProps extends React.ComponentProps<typeof Button> {
   value?: string;
   placeholder?: string;
   onClear?: () => void;
   showClearButton?: boolean;
 }
 
-export const SelectTriggerButton = React.forwardRef<
-  HTMLButtonElement,
-  SelectTriggerButtonProps
->(
-  (
-    {
-      value,
-      placeholder = "Выберите...",
-      onClear,
-      showClearButton = false,
-      children,
-      className,
-      ...props
-    },
-    ref
-  ) => {
+export const SelectTriggerButton = React.forwardRef<HTMLButtonElement, SelectTriggerButtonProps>(
+  ({ value, placeholder = "Выберите...", onClear, showClearButton = false, children, className, ...props }, ref) => {
     return (
       <div className="relative">
         <Button
@@ -64,4 +49,3 @@ export const SelectTriggerButton = React.forwardRef<
 );
 
 SelectTriggerButton.displayName = "SelectTriggerButton";
-

@@ -10,10 +10,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
-import {
-  createAccountSchema,
-  type CreateAccountInput,
-} from "@/shared/lib/validations/account";
+import { createAccountSchema, type CreateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
@@ -42,12 +39,7 @@ interface CreateAccountDialogProps {
   onCloseComplete?: () => void;
 }
 
-export function CreateAccountDialog({
-  workspaceId,
-  open,
-  onOpenChange,
-  onCloseComplete,
-}: CreateAccountDialogProps) {
+export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseComplete }: CreateAccountDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
@@ -140,16 +132,10 @@ export function CreateAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogWindow
-        onCloseComplete={onCloseComplete}
-        key={open ? "open" : "closed"}
-        className="sm:w-[500px]"
-      >
+      <DialogWindow onCloseComplete={onCloseComplete} key={open ? "open" : "closed"} className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать новый счёт</DialogTitle>
-          <DialogDescription>
-            Добавьте новый счёт для отслеживания ваших финансов
-          </DialogDescription>
+          <DialogDescription>Добавьте новый счёт для отслеживания ваших финансов</DialogDescription>
         </DialogHeader>
         <DialogContent>
           <form className="space-y-4">
@@ -167,11 +153,7 @@ export function CreateAccountDialog({
                   aria-invalid={errors.name ? "true" : "false"}
                 />
               </div>
-              {errors.name && (
-                <p className="text-sm text-destructive">
-                  {errors.name.message}
-                </p>
-              )}
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -193,11 +175,7 @@ export function CreateAccountDialog({
                 placeholder="Выберите валюту"
                 multiple={false}
               />
-              {errors.currency && (
-                <p className="text-sm text-destructive">
-                  {errors.currency.message}
-                </p>
-              )}
+              {errors.currency && <p className="text-sm text-destructive">{errors.currency.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -212,11 +190,7 @@ export function CreateAccountDialog({
                 placeholder="0.00"
                 aria-invalid={errors.balance ? "true" : "false"}
               />
-              {errors.balance && (
-                <p className="text-sm text-destructive">
-                  {errors.balance.message}
-                </p>
-              )}
+              {errors.balance && <p className="text-sm text-destructive">{errors.balance.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -227,12 +201,10 @@ export function CreateAccountDialog({
                 control={control}
                 name="ownerId"
                 render={({ field }) => {
-                  const ownerOptions: SelectOption[] = members.map(
-                    (member) => ({
-                      value: member.id,
-                      label: member.name || member.email,
-                    })
-                  );
+                  const ownerOptions: SelectOption[] = members.map((member) => ({
+                    value: member.id,
+                    label: member.name || member.email,
+                  }));
                   return (
                     <Select
                       options={ownerOptions}
@@ -244,11 +216,7 @@ export function CreateAccountDialog({
                   );
                 }}
               />
-              {errors.ownerId && (
-                <p className="text-sm text-destructive">
-                  {errors.ownerId.message}
-                </p>
-              )}
+              {errors.ownerId && <p className="text-sm text-destructive">{errors.ownerId.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -261,20 +229,14 @@ export function CreateAccountDialog({
                     onClick={() => setValue("color", color)}
                     className={cn(
                       "h-8 w-8 rounded-md border-2 transition-all",
-                      selectedColor === color
-                        ? "border-primary scale-110"
-                        : "border-border hover:border-primary/50"
+                      selectedColor === color ? "border-primary scale-110" : "border-border hover:border-primary/50"
                     )}
                     style={{ backgroundColor: color }}
                     title={color}
                   />
                 ))}
               </div>
-              {errors.color && (
-                <p className="text-sm text-destructive">
-                  {errors.color.message}
-                </p>
-              )}
+              {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -287,9 +249,7 @@ export function CreateAccountDialog({
                     onClick={() => setValue("icon", name)}
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-all",
-                      selectedIcon === name
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50"
+                      selectedIcon === name ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
                     )}
                     title={name}
                   >
@@ -297,11 +257,7 @@ export function CreateAccountDialog({
                   </button>
                 ))}
               </div>
-              {errors.icon && (
-                <p className="text-sm text-destructive">
-                  {errors.icon.message}
-                </p>
-              )}
+              {errors.icon && <p className="text-sm text-destructive">{errors.icon.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -311,31 +267,17 @@ export function CreateAccountDialog({
               <Controller
                 control={control}
                 name="createdAt"
-                render={({ field }) => (
-                  <DatePicker date={field.value} onSelect={field.onChange} />
-                )}
+                render={({ field }) => <DatePicker date={field.value} onSelect={field.onChange} />}
               />
-              {errors.createdAt && (
-                <p className="text-sm text-destructive">
-                  {errors.createdAt.message}
-                </p>
-              )}
+              {errors.createdAt && <p className="text-sm text-destructive">{errors.createdAt.message}</p>}
             </div>
           </form>
         </DialogContent>
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-          >
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
             {isSubmitting ? "Создание..." : "Создать"}
           </Button>
         </DialogFooter>

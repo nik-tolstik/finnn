@@ -29,15 +29,10 @@ export function CategoriesList({ categories }: CategoriesListProps) {
             borderColor: category.color || undefined,
           }}
         >
-          {category.icon ? (
-            <span className="text-sm">{category.icon}</span>
-          ) : (
-            <Tag className="h-3 w-3" />
-          )}
+          {category.icon ? <span className="text-sm">{category.icon}</span> : <Tag className="h-3 w-3" />}
           <span>{category.name}</span>
         </Badge>
       ))}
     </div>
   );
 }
-

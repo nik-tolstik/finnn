@@ -68,16 +68,13 @@ async function main() {
         name: "email",
         message: "Email пользователя:",
         validate: (value: string) =>
-          value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-            ? true
-            : "Введите корректный email",
+          value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? true : "Введите корректный email",
       },
       {
         type: "password",
         name: "newPassword",
         message: "Новый пароль:",
-        validate: (value: string) =>
-          value ? true : "Пароль не может быть пустым",
+        validate: (value: string) => (value ? true : "Пароль не может быть пустым"),
       },
     ]);
 

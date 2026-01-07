@@ -7,13 +7,7 @@ import { toast } from "sonner";
 
 import { acceptInvite, getWorkspaceInvite } from "@/modules/workspace/workspace.service";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
 export default function InvitePage() {
   const router = useRouter();
@@ -124,9 +118,7 @@ export default function InvitePage() {
       <div className="flex min-h-screen items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Принятие приглашения...
-            </p>
+            <p className="text-center text-muted-foreground">Принятие приглашения...</p>
           </CardContent>
         </Card>
       </div>
@@ -139,14 +131,11 @@ export default function InvitePage() {
         <CardHeader>
           <CardTitle>Приглашение в рабочий стол</CardTitle>
           <CardDescription>
-            Вы были приглашены присоединиться к рабочему столу{" "}
-            <strong>{inviteData?.workspaceName}</strong>
+            Вы были приглашены присоединиться к рабочему столу <strong>{inviteData?.workspaceName}</strong>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Для принятия приглашения необходимо войти в систему.
-          </p>
+          <p className="text-sm text-muted-foreground">Для принятия приглашения необходимо войти в систему.</p>
           <Button
             onClick={() => {
               const token = params.token as string;
@@ -161,6 +150,3 @@ export default function InvitePage() {
     </div>
   );
 }
-
-
-

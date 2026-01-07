@@ -76,9 +76,7 @@ async function main() {
         name: "email",
         message: "Email пользователя:",
         validate: (value: string) =>
-          value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-            ? true
-            : "Введите корректный email",
+          value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? true : "Введите корректный email",
       },
       {
         type: "text",
@@ -115,4 +113,3 @@ async function main() {
 }
 
 main();
-

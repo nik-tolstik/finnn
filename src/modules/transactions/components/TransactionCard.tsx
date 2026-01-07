@@ -18,26 +18,16 @@ interface TransactionCardProps {
   onClick?: () => void;
 }
 
-export function TransactionCard({
-  transaction,
-  onClick,
-}: TransactionCardProps) {
+export function TransactionCard({ transaction, onClick }: TransactionCardProps) {
   const AccountIcon = getAccountIcon(transaction.account.icon);
 
   return (
-    <Card
-      className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={onClick}
-    >
+    <Card className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
       <div className="flex flex-col text-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">
-              {
-                TRANSACTION_TYPE_LABELS[
-                  transaction.type as keyof typeof TRANSACTION_TYPE_LABELS
-                ]
-              }
+              {TRANSACTION_TYPE_LABELS[transaction.type as keyof typeof TRANSACTION_TYPE_LABELS]}
             </span>
             {transaction.category && (
               <Badge
@@ -67,11 +57,7 @@ export function TransactionCard({
             />
             <div>{transaction.account.name}</div>
           </div>
-          <div
-            className={cn(
-              transaction.type === TransactionType.INCOME ? "text-lime-500" : "text-pink-500"
-            )}
-          >
+          <div className={cn(transaction.type === TransactionType.INCOME ? "text-lime-500" : "text-pink-500")}>
             {transaction.type === TransactionType.INCOME ? "+" : "-"}
             {formatMoney(transaction.amount, transaction.account.currency)}
           </div>

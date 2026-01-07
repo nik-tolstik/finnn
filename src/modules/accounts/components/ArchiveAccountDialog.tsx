@@ -83,9 +83,8 @@ export function ArchiveAccountDialog({
         <DialogHeader>
           <DialogTitle>Архивировать счёт?</DialogTitle>
           <DialogDescription>
-            Вы уверены, что хотите архивировать счёт &quot;{account.name}&quot;?
-            Счёт будет скрыт из списка, но не будет удалён из базы данных. Вы
-            сможете восстановить его позже.
+            Вы уверены, что хотите архивировать счёт &quot;{account.name}&quot;? Счёт будет скрыт из списка, но не будет
+            удалён из базы данных. Вы сможете восстановить его позже.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

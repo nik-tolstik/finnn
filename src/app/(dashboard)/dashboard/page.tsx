@@ -10,25 +10,19 @@ interface DashboardPageProps {
   searchParams: Promise<{ workspaceId?: string }>;
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: DashboardPageProps) {
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const workspacesResult = await getWorkspaces();
 
-  if (
-    workspacesResult.error ||
-    !workspacesResult.data ||
-    workspacesResult.data.length === 0
-  ) {
+  if (workspacesResult.error || !workspacesResult.data || workspacesResult.data.length === 0) {
     return <CreateWorkspacePrompt />;
   }
 
   const resolvedSearchParams = await searchParams;
   const requestedWorkspaceId = resolvedSearchParams.workspaceId;
-  const workspaceId = requestedWorkspaceId &&
-    workspacesResult.data.some((w) => w.id === requestedWorkspaceId)
-    ? requestedWorkspaceId
-    : workspacesResult.data[0].id;
+  const workspaceId =
+    requestedWorkspaceId && workspacesResult.data.some((w) => w.id === requestedWorkspaceId)
+      ? requestedWorkspaceId
+      : workspacesResult.data[0].id;
 
   if (!requestedWorkspaceId || !workspacesResult.data.some((w) => w.id === requestedWorkspaceId)) {
     redirect(`/dashboard?workspaceId=${workspaceId}`);
@@ -36,10 +30,5 @@ export default async function DashboardPage({
 
   const accountsResult = await getAccounts(workspaceId);
 
-  return (
-    <DashboardContent
-      accounts={accountsResult.data || []}
-      workspaceId={workspaceId}
-    />
-  );
+  return <DashboardContent accounts={accountsResult.data || []} workspaceId={workspaceId} />;
 }

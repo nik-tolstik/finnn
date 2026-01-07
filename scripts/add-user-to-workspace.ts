@@ -33,11 +33,7 @@ const prisma = new PrismaClient({
   datasourceUrl: databaseUrl,
 });
 
-async function addUserToWorkspace(
-  userEmail: string,
-  workspaceIdentifier: string,
-  role: string = "member"
-) {
+async function addUserToWorkspace(userEmail: string, workspaceIdentifier: string, role: string = "member") {
   console.log(`Поиск пользователя с email: ${userEmail}`);
 
   const user = await prisma.user.findUnique({
@@ -72,9 +68,7 @@ async function addUserToWorkspace(
   });
 
   if (existingMember) {
-    throw new Error(
-      `Пользователь ${userEmail} уже является участником workspace "${workspace.name}"`
-    );
+    throw new Error(`Пользователь ${userEmail} уже является участником workspace "${workspace.name}"`);
   }
 
   console.log(`Добавление пользователя в workspace...`);
@@ -111,9 +105,7 @@ async function main() {
         name: "userEmail",
         message: "Email пользователя:",
         validate: (value: string) =>
-          value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-            ? true
-            : "Введите корректный email",
+          value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? true : "Введите корректный email",
       },
       {
         type: workspaces.length > 0 ? "select" : "text",
@@ -165,4 +157,3 @@ async function main() {
 }
 
 main();
-

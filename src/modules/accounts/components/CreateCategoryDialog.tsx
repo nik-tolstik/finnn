@@ -9,19 +9,9 @@ import { toast } from "sonner";
 
 import { CategoryType } from "@/modules/categories/category.constants";
 import { createCategory } from "@/modules/categories/category.service";
-import {
-  createCategorySchema,
-  type CreateCategoryInput,
-} from "@/shared/lib/validations/category";
+import { createCategorySchema, type CreateCategoryInput } from "@/shared/lib/validations/category";
 import { Button } from "@/shared/ui/button";
-import {
-  Dialog,
-  DialogWindow,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogWindow, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
@@ -34,12 +24,7 @@ interface CreateCategoryDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateCategoryDialog({
-  workspaceId,
-  type,
-  open,
-  onOpenChange,
-}: CreateCategoryDialogProps) {
+export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: CreateCategoryDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const {
@@ -71,8 +56,7 @@ export function CreateCategoryDialog({
   }, [open, type, reset]);
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateCategoryInput) =>
-      createCategory(workspaceId, data),
+    mutationFn: (data: CreateCategoryInput) => createCategory(workspaceId, data),
     onSuccess: (result) => {
       if (result.error) {
         toast.error(result.error);
@@ -96,12 +80,9 @@ export function CreateCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
-          <DialogTitle>
-            Добавить категорию {type === CategoryType.INCOME ? "дохода" : "расхода"}
-          </DialogTitle>
+          <DialogTitle>Добавить категорию {type === CategoryType.INCOME ? "дохода" : "расхода"}</DialogTitle>
           <DialogDescription>
-            Создайте новую категорию для{" "}
-            {type === CategoryType.INCOME ? "доходов" : "расходов"}.
+            Создайте новую категорию для {type === CategoryType.INCOME ? "доходов" : "расходов"}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -116,9 +97,7 @@ export function CreateCategoryDialog({
               placeholder="Название категории"
               aria-invalid={errors.name ? "true" : "false"}
             />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -131,35 +110,22 @@ export function CreateCategoryDialog({
                   onClick={() => setValue("color", color)}
                   className={cn(
                     "h-8 w-8 rounded-md border-2 transition-all",
-                    selectedColor === color
-                      ? "border-primary scale-110"
-                      : "border-border hover:border-primary/50"
+                    selectedColor === color ? "border-primary scale-110" : "border-border hover:border-primary/50"
                   )}
                   style={{ backgroundColor: color }}
                   title={color}
                 />
               ))}
             </div>
-            {errors.color && (
-              <p className="text-sm text-destructive">{errors.color.message}</p>
-            )}
+            {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Отмена
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || createMutation.isPending}
-            >
-              {isSubmitting || createMutation.isPending
-                ? "Создание..."
-                : "Создать"}
+            <Button type="submit" disabled={isSubmitting || createMutation.isPending}>
+              {isSubmitting || createMutation.isPending ? "Создание..." : "Создать"}
             </Button>
           </DialogFooter>
         </form>

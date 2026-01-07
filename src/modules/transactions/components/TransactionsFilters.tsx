@@ -17,12 +17,7 @@ import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select/select";
 import { type SelectOption } from "@/shared/ui/select/types";
 import { RenderOption } from "@/shared/ui/select/types";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/shared/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import { getAccountIcon } from "@/shared/utils/account-icons";
 
 import type { TransactionFilters } from "../transaction.service";
@@ -33,11 +28,7 @@ interface TransactionsFiltersProps {
   onFiltersChange: (filters: TransactionFilters) => void;
 }
 
-export function TransactionsFilters({
-  workspaceId,
-  filters,
-  onFiltersChange,
-}: TransactionsFiltersProps) {
+export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: TransactionsFiltersProps) {
   const { isMobile } = useBreakpoints();
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -58,10 +49,7 @@ export function TransactionsFilters({
   const selectedCategoryIds = filters.categoryIds || [];
   const selectedTypes: TransactionType[] = filters.types || [];
 
-  const updateFilter = <K extends keyof TransactionFilters>(
-    key: K,
-    value: TransactionFilters[K]
-  ) => {
+  const updateFilter = <K extends keyof TransactionFilters>(key: K, value: TransactionFilters[K]) => {
     onFiltersChange({
       ...filters,
       [key]: value,
@@ -79,11 +67,7 @@ export function TransactionsFilters({
     label: account.name,
   }));
 
-  const renderAccountOption: RenderOption<string> = ({
-    option,
-    selected,
-    props: { multiple },
-  }) => {
+  const renderAccountOption: RenderOption<string> = ({ option, selected, props: { multiple } }) => {
     const account = accounts.find((acc) => acc.id === option.value);
     if (!account) return null;
 
@@ -91,41 +75,21 @@ export function TransactionsFilters({
 
     return (
       <>
-        {multiple && (
-          <Checkbox
-            checked={selected}
-            className="shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          />
-        )}
-        {account.icon && (
-          <AccountIcon
-            className="h-4 w-4 text-primary"
-            style={{ color: account.color || undefined }}
-          />
-        )}
+        {multiple && <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />}
+        {account.icon && <AccountIcon className="h-4 w-4 text-primary" style={{ color: account.color || undefined }} />}
         <span className="flex-1 text-sm">{option.label}</span>
-        {!multiple && selected && (
-          <Check className="h-4 w-4 shrink-0 text-primary" />
-        )}
+        {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
       </>
     );
   };
 
-  const renderCategoryOption: RenderOption<string> = ({
-    props,
-    option,
-    selected,
-  }) => {
+  const renderCategoryOption: RenderOption<string> = ({ props, option, selected }) => {
     const category = categories.find((cat) => cat.id === option.value)!;
 
     return (
       <>
         {props.multiple && <Checkbox checked={selected} className="shrink-0" />}
-        <div
-          style={{ backgroundColor: category.color || undefined }}
-          className="size-4 rounded-full"
-        />
+        <div style={{ backgroundColor: category.color || undefined }} className="size-4 rounded-full" />
         <span className="flex-1 text-sm">{option.label}</span>
       </>
     );
@@ -167,9 +131,7 @@ export function TransactionsFilters({
             id="search"
             placeholder="Поиск..."
             value={filters.search || ""}
-            onChange={(e) =>
-              updateFilter("search", e.target.value || undefined)
-            }
+            onChange={(e) => updateFilter("search", e.target.value || undefined)}
             className="pr-8"
           />
           {filters.search && (
@@ -193,9 +155,7 @@ export function TransactionsFilters({
           onChange={(newValue) => {
             updateFilter(
               "types",
-              (Array.isArray(newValue) && newValue.length > 0
-                ? newValue
-                : undefined) as TransactionFilters["types"]
+              (Array.isArray(newValue) && newValue.length > 0 ? newValue : undefined) as TransactionFilters["types"]
             );
           }}
           placeholder="Все типы"
@@ -211,12 +171,7 @@ export function TransactionsFilters({
           options={accountOptions}
           value={selectedAccountIds}
           onChange={(newValue) => {
-            updateFilter(
-              "accountIds",
-              Array.isArray(newValue) && newValue.length > 0
-                ? newValue
-                : undefined
-            );
+            updateFilter("accountIds", Array.isArray(newValue) && newValue.length > 0 ? newValue : undefined);
           }}
           placeholder="Все счета"
           label="Счета"
@@ -232,12 +187,7 @@ export function TransactionsFilters({
           options={categoryOptions}
           value={selectedCategoryIds}
           onChange={(newValue) => {
-            updateFilter(
-              "categoryIds",
-              Array.isArray(newValue) && newValue.length > 0
-                ? newValue
-                : undefined
-            );
+            updateFilter("categoryIds", Array.isArray(newValue) && newValue.length > 0 ? newValue : undefined);
           }}
           placeholder="Все категории"
           label="Категории"
@@ -257,9 +207,7 @@ export function TransactionsFilters({
               step="0.01"
               placeholder="От"
               value={filters.minAmount || ""}
-              onChange={(e) =>
-                updateFilter("minAmount", e.target.value || undefined)
-              }
+              onChange={(e) => updateFilter("minAmount", e.target.value || undefined)}
               className="pr-8"
             />
             {filters.minAmount && (
@@ -280,9 +228,7 @@ export function TransactionsFilters({
               step="0.01"
               placeholder="До"
               value={filters.maxAmount || ""}
-              onChange={(e) =>
-                updateFilter("maxAmount", e.target.value || undefined)
-              }
+              onChange={(e) => updateFilter("maxAmount", e.target.value || undefined)}
               className="pr-8"
             />
             {filters.maxAmount && (
@@ -326,17 +272,11 @@ export function TransactionsFilters({
   if (isMobile) {
     return (
       <>
-        <Button
-          variant="outline"
-          onClick={() => setSheetOpen(true)}
-          className="justify-start"
-        >
+        <Button variant="outline" onClick={() => setSheetOpen(true)} className="justify-start">
           <Filter className="mr-2 h-4 w-4" />
           Фильтры
           {hasActiveFilters && (
-            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-              Активно
-            </span>
+            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">Активно</span>
           )}
         </Button>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -344,9 +284,7 @@ export function TransactionsFilters({
             <SheetHeader>
               <SheetTitle>Фильтры</SheetTitle>
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6">
-              {filtersContent}
-            </div>
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6">{filtersContent}</div>
             <div className="border-t px-4 pb-5 pt-3 flex flex-col gap-2">
               {hasActiveFilters && (
                 <Button
@@ -372,9 +310,7 @@ export function TransactionsFilters({
 
   return (
     <div className="flex flex-wrap lg:flex-col lg:items-stretch items-end gap-2">
-      <h3 className="hidden lg:block text-lg font-semibold mb-2 w-full">
-        Фильтры
-      </h3>
+      <h3 className="hidden lg:block text-lg font-semibold mb-2 w-full">Фильтры</h3>
 
       <div className="relative w-[200px] lg:w-full lg:space-y-2">
         <Label htmlFor="search" className="hidden lg:block text-sm font-medium">
@@ -385,9 +321,7 @@ export function TransactionsFilters({
             id="search"
             placeholder="Поиск..."
             value={filters.search || ""}
-            onChange={(e) =>
-              updateFilter("search", e.target.value || undefined)
-            }
+            onChange={(e) => updateFilter("search", e.target.value || undefined)}
             className="pr-8"
           />
           {filters.search && (
@@ -404,18 +338,14 @@ export function TransactionsFilters({
       </div>
 
       <div className="w-[140px] lg:w-full lg:space-y-2">
-        <Label className="hidden lg:block text-sm font-medium">
-          Тип транзакции
-        </Label>
+        <Label className="hidden lg:block text-sm font-medium">Тип транзакции</Label>
         <Select
           options={typeOptions}
           value={selectedTypes}
           onChange={(newValue) => {
             updateFilter(
               "types",
-              (Array.isArray(newValue) && newValue.length > 0
-                ? newValue
-                : undefined) as TransactionFilters["types"]
+              (Array.isArray(newValue) && newValue.length > 0 ? newValue : undefined) as TransactionFilters["types"]
             );
           }}
           placeholder="Все типы"
@@ -431,12 +361,7 @@ export function TransactionsFilters({
           options={accountOptions}
           value={selectedAccountIds}
           onChange={(newValue) => {
-            updateFilter(
-              "accountIds",
-              Array.isArray(newValue) && newValue.length > 0
-                ? newValue
-                : undefined
-            );
+            updateFilter("accountIds", Array.isArray(newValue) && newValue.length > 0 ? newValue : undefined);
           }}
           placeholder="Все счета"
           label="Счета"
@@ -452,12 +377,7 @@ export function TransactionsFilters({
           options={categoryOptions}
           value={selectedCategoryIds}
           onChange={(newValue) => {
-            updateFilter(
-              "categoryIds",
-              Array.isArray(newValue) && newValue.length > 0
-                ? newValue
-                : undefined
-            );
+            updateFilter("categoryIds", Array.isArray(newValue) && newValue.length > 0 ? newValue : undefined);
           }}
           renderOption={renderCategoryOption}
           placeholder="Все категории"
@@ -477,9 +397,7 @@ export function TransactionsFilters({
               step="0.01"
               placeholder="От"
               value={filters.minAmount || ""}
-              onChange={(e) =>
-                updateFilter("minAmount", e.target.value || undefined)
-              }
+              onChange={(e) => updateFilter("minAmount", e.target.value || undefined)}
               className="pr-8"
             />
             {filters.minAmount && (
@@ -500,9 +418,7 @@ export function TransactionsFilters({
               step="0.01"
               placeholder="До"
               value={filters.maxAmount || ""}
-              onChange={(e) =>
-                updateFilter("maxAmount", e.target.value || undefined)
-              }
+              onChange={(e) => updateFilter("maxAmount", e.target.value || undefined)}
               className="pr-8"
             />
             {filters.maxAmount && (
@@ -542,12 +458,7 @@ export function TransactionsFilters({
       </div>
 
       {hasActiveFilters && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={clearAllFilters}
-          className="text-xs"
-        >
+        <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-xs">
           <X className="mr-1 h-3 w-3" />
           Очистить
         </Button>

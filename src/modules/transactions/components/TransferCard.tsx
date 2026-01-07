@@ -29,23 +29,10 @@ interface TransferCardProps {
   onClick?: () => void;
 }
 
-function AccountName({
-  account,
-  icon: Icon,
-  amount,
-}: {
-  account: TransferAccount;
-  icon: LucideIcon;
-  amount?: string;
-}) {
+function AccountName({ account, icon: Icon, amount }: { account: TransferAccount; icon: LucideIcon; amount?: string }) {
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 py-1 rounded-lg">
-      <IconWithBg
-        icon={Icon}
-        color={account.color}
-        className="size-6 sm:size-7"
-        iconClassName="size-3.5 sm:size-4"
-      />
+      <IconWithBg icon={Icon} color={account.color} className="size-6 sm:size-7" iconClassName="size-3.5 sm:size-4" />
       <div>{account.name}</div>
     </div>
   );
@@ -74,25 +61,17 @@ function AccountWithAmount({
   );
 }
 
-export function TransferCard({
-  transaction,
-  transferTo,
-  onClick,
-}: TransferCardProps) {
+export function TransferCard({ transaction, transferTo, onClick }: TransferCardProps) {
   const FromAccountIcon = getAccountIcon(transaction.account.icon);
   const ToAccountIcon = getAccountIcon(transferTo.account.icon);
 
   const description =
-    transaction.description?.startsWith("Перевод на ") ||
-    transaction.description?.startsWith("Перевод с ")
+    transaction.description?.startsWith("Перевод на ") || transaction.description?.startsWith("Перевод с ")
       ? undefined
       : transaction.description;
 
   return (
-    <Card
-      className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer text-sm"
-      onClick={onClick}
-    >
+    <Card className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer text-sm" onClick={onClick}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2">
         <div className="flex flex-col gap-2 sm:gap-3 flex-1 min-w-0">
           <div className="flex flex-col gap-2">
@@ -123,11 +102,7 @@ export function TransferCard({
             </div>
           </div>
 
-          {description && (
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">
-              {description}
-            </p>
-          )}
+          {description && <p className="text-xs sm:text-sm text-muted-foreground truncate">{description}</p>}
         </div>
       </div>
     </Card>

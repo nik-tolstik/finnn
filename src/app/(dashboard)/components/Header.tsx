@@ -18,13 +18,7 @@ export function Header() {
           <WorkspaceDropdown currentWorkspaceId={workspaceId} />
         </div>
         <div className="flex items-center gap-4">
-          {session?.user && (
-            <UserMenu
-              name={session.user.name}
-              email={session.user.email}
-              image={session.user.image}
-            />
-          )}
+          {session?.user && <UserMenu name={session.user.name} email={session.user.email} image={session.user.image} />}
         </div>
       </div>
     </header>

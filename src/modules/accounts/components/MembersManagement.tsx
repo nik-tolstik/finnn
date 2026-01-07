@@ -5,10 +5,7 @@ import { User, UserPlus } from "lucide-react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 
-import {
-  getWorkspace,
-  getWorkspaceMembers,
-} from "@/modules/workspace/workspace.service";
+import { getWorkspace, getWorkspaceMembers } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 
@@ -66,10 +63,7 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
         ) : (
           <div className="space-y-1.5">
             {members.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 p-2 border rounded-md"
-              >
+              <div key={member.id} className="flex items-center gap-3 p-2 border rounded-md">
                 {member.image ? (
                   <Image
                     src={member.image}
@@ -85,12 +79,8 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {member.name || "Без имени"}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {member.email}
-                  </p>
+                  <p className="text-sm font-medium truncate">{member.name || "Без имени"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                 </div>
               </div>
             ))}

@@ -50,8 +50,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   const expenseCategories = categories.filter((c) => c.type === CategoryType.EXPENSE);
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { name?: string; color?: string } }) =>
-      updateCategory(id, data),
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; color?: string } }) => updateCategory(id, data),
     onSuccess: (result) => {
       if (result.error) {
         toast.error(result.error);
@@ -127,22 +126,13 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     });
   };
 
-  const renderCategoryList = (
-    categoryList: Category[],
-    type: CategoryType
-  ) => (
+  const renderCategoryList = (categoryList: Category[], type: CategoryType) => (
     <div className="space-y-1.5">
       {categoryList.map((category) => (
-        <div
-          key={category.id}
-          className="flex items-center gap-2 p-2 border rounded-md"
-        >
+        <div key={category.id} className="flex items-center gap-2 p-2 border rounded-md">
           {editingCategory?.id === category.id ? (
             <>
-              <div
-                className="h-6 w-6 rounded border shrink-0"
-                style={{ backgroundColor: editingColor }}
-              />
+              <div className="h-6 w-6 rounded border shrink-0" style={{ backgroundColor: editingColor }} />
               <Input
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
@@ -177,20 +167,10 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
               />
               <span className="flex-1 text-sm font-medium">{category.name}</span>
               <div className="flex gap-1 shrink-0">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleStartEdit(category)}
-                  className="h-7 w-7 p-0"
-                >
+                <Button size="sm" variant="ghost" onClick={() => handleStartEdit(category)} className="h-7 w-7 p-0">
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleStartDelete(category)}
-                  className="h-7 w-7 p-0"
-                >
+                <Button size="sm" variant="ghost" onClick={() => handleStartDelete(category)} className="h-7 w-7 p-0">
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -206,11 +186,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       <div>
         <h3 className="text-lg font-semibold mb-4">Доходы</h3>
         {renderCategoryList(incomeCategories, CategoryType.INCOME)}
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => handleOpenCreateDialog(CategoryType.INCOME)}
-        >
+        <Button variant="outline" className="mt-4" onClick={() => handleOpenCreateDialog(CategoryType.INCOME)}>
           <Plus className="h-4 w-4 mr-2" />
           Добавить категорию
         </Button>
@@ -219,11 +195,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       <div>
         <h3 className="text-lg font-semibold mb-4">Расходы</h3>
         {renderCategoryList(expenseCategories, CategoryType.EXPENSE)}
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => handleOpenCreateDialog(CategoryType.EXPENSE)}
-        >
+        <Button variant="outline" className="mt-4" onClick={() => handleOpenCreateDialog(CategoryType.EXPENSE)}>
           <Plus className="h-4 w-4 mr-2" />
           Добавить категорию
         </Button>
@@ -251,4 +223,3 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     </div>
   );
 }
-

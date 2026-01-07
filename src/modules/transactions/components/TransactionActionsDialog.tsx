@@ -24,10 +24,8 @@ export function TransactionActionsDialog({
   onEdit,
   onDelete,
 }: TransactionActionsDialogProps) {
-  const transactionType =
-    transaction.type === TransactionType.TRANSFER ? "перевода" : "транзакции";
-  const transactionLabel =
-    transaction.type === TransactionType.TRANSFER ? "Перевод" : "Транзакция";
+  const transactionType = transaction.type === TransactionType.TRANSFER ? "перевода" : "транзакции";
+  const transactionLabel = transaction.type === TransactionType.TRANSFER ? "Перевод" : "Транзакция";
 
   return (
     <ActionsDialog

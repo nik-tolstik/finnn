@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 
-import {
-  Dialog,
-  DialogWindow,
-  DialogHeader,
-  DialogTitle,
-  DialogContent,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogWindow, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 import { cn } from "@/shared/utils/cn";
 
 import { CategoryManagement } from "./CategoryManagement";
@@ -23,13 +17,8 @@ interface SettingsDialogProps {
 
 type SettingsSection = "workspace" | "categories" | "members";
 
-export function SettingsDialog({
-  workspaceId,
-  open,
-  onOpenChange,
-}: SettingsDialogProps) {
-  const [selectedSection, setSelectedSection] =
-    useState<SettingsSection>("workspace");
+export function SettingsDialog({ workspaceId, open, onOpenChange }: SettingsDialogProps) {
+  const [selectedSection, setSelectedSection] = useState<SettingsSection>("workspace");
 
   const sections: { id: SettingsSection; label: string }[] = [
     { id: "workspace", label: "Workspace" },
@@ -60,15 +49,9 @@ export function SettingsDialog({
           ))}
         </div>
         <DialogContent className="flex-1">
-          {selectedSection === "workspace" && (
-            <WorkspaceSettings workspaceId={workspaceId} />
-          )}
-          {selectedSection === "categories" && (
-            <CategoryManagement workspaceId={workspaceId} />
-          )}
-          {selectedSection === "members" && (
-            <MembersManagement workspaceId={workspaceId} />
-          )}
+          {selectedSection === "workspace" && <WorkspaceSettings workspaceId={workspaceId} />}
+          {selectedSection === "categories" && <CategoryManagement workspaceId={workspaceId} />}
+          {selectedSection === "members" && <MembersManagement workspaceId={workspaceId} />}
         </DialogContent>
       </DialogWindow>
     </Dialog>

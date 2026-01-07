@@ -9,9 +9,7 @@ export const ACCOUNT_ICONS: Record<string, LucideIcon> = {
 
 export type AccountIconName = keyof typeof ACCOUNT_ICONS;
 
-export function getAccountIcon(
-  iconName?: string | null
-): LucideIcon {
+export function getAccountIcon(iconName?: string | null): LucideIcon {
   if (iconName && iconName in ACCOUNT_ICONS) {
     return ACCOUNT_ICONS[iconName as AccountIconName];
   }

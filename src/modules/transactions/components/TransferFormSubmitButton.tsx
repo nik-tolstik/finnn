@@ -4,10 +4,7 @@ import type { UseFormReturn } from "react-hook-form";
 
 import { Button } from "@/shared/ui/button";
 
-import type {
-  CreateTransferInput,
-  UpdateTransferInput,
-} from "@/shared/lib/validations/transaction";
+import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
 
 type TransferFormData = CreateTransferInput | UpdateTransferInput;
 
@@ -25,13 +22,8 @@ export function TransferFormSubmitButton({
   submittingLabel = "Создание...",
 }: TransferFormSubmitButtonProps) {
   return (
-    <Button
-      type="button"
-      onClick={form.handleSubmit(onSubmit)}
-      disabled={form.formState.isSubmitting}
-    >
+    <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
       {form.formState.isSubmitting ? submittingLabel : submitLabel}
     </Button>
   );
 }
-

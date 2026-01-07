@@ -37,8 +37,6 @@ export type SelectProps<TValue extends string | number = string> = {
   disabled?: boolean;
 } & SelectValueProps<TValue>;
 
-export type SelectSheetProps<TValue extends string | number = string> =
-  SelectProps<TValue>;
+export type SelectSheetProps<TValue extends string | number = string> = SelectProps<TValue>;
 
-export type SelectDropdownProps<TValue extends string | number = string> =
-  SelectProps<TValue>;
+export type SelectDropdownProps<TValue extends string | number = string> = SelectProps<TValue>;

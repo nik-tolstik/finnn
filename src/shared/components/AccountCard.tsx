@@ -43,15 +43,11 @@ export function AccountCard({ account, className, onClick }: AccountCardProps) {
               <AccountIcon className="text-primary h-3.5 w-3.5" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm leading-none">
-                {account.name}
-              </div>
+              <div className="font-semibold text-sm leading-none">{account.name}</div>
             </div>
           </div>
           <div className="shrink-0">
-            <p className="font-bold text-base">
-              {formatMoney(account.balance, account.currency)}
-            </p>
+            <p className="font-bold text-base">{formatMoney(account.balance, account.currency)}</p>
           </div>
         </div>
       </div>

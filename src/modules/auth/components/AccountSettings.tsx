@@ -92,9 +92,7 @@ export function AccountSettings() {
 
     const maxSize = useUploadthing ? 4 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error(
-        `Размер файла не должен превышать ${maxSize / 1024 / 1024}MB`
-      );
+      toast.error(`Размер файла не должен превышать ${maxSize / 1024 / 1024}MB`);
       return;
     }
 
@@ -215,9 +213,7 @@ export function AccountSettings() {
               />
             ) : (
               <div className="h-20 w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-medium border-2 border-border">
-                {(session.user.name || session.user.email || "U")
-                  .charAt(0)
-                  .toUpperCase()}
+                {(session.user.name || session.user.email || "U").charAt(0).toUpperCase()}
               </div>
             )}
             {displayImage && (
@@ -231,13 +227,7 @@ export function AccountSettings() {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
             <Button
               type="button"
               variant="outline"
@@ -246,19 +236,10 @@ export function AccountSettings() {
               disabled={uploading || isUploading}
             >
               <Camera className="h-4 w-4 mr-2" />
-              {uploading || isUploading
-                ? "Загрузка..."
-                : displayImage
-                  ? "Изменить"
-                  : "Загрузить"}
+              {uploading || isUploading ? "Загрузка..." : displayImage ? "Изменить" : "Загрузить"}
             </Button>
             {displayImage && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleRemoveAvatar}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={handleRemoveAvatar}>
                 Удалить
               </Button>
             )}
@@ -268,26 +249,13 @@ export function AccountSettings() {
 
       <div className="space-y-2">
         <Label htmlFor="name">Имя</Label>
-        <Input
-          id="name"
-          {...register("name")}
-          placeholder="Ваше имя"
-          aria-invalid={errors.name ? "true" : "false"}
-        />
-        {errors.name && (
-          <p className="text-sm text-destructive">{errors.name.message}</p>
-        )}
+        <Input id="name" {...register("name")} placeholder="Ваше имя" aria-invalid={errors.name ? "true" : "false"} />
+        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={session.user.email}
-          disabled
-          className="bg-muted cursor-not-allowed"
-        />
+        <Input id="email" type="email" value={session.user.email} disabled className="bg-muted cursor-not-allowed" />
         <p className="text-xs text-muted-foreground">Email нельзя изменить</p>
       </div>
 
@@ -301,13 +269,8 @@ export function AccountSettings() {
           >
             Отменить
           </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || updateMutation.isPending}
-          >
-            {isSubmitting || updateMutation.isPending
-              ? "Сохранение..."
-              : "Сохранить"}
+          <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
+            {isSubmitting || updateMutation.isPending ? "Сохранение..." : "Сохранить"}
           </Button>
         </div>
       )}

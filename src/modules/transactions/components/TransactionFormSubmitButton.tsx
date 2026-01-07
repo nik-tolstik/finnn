@@ -13,23 +13,13 @@ interface TransactionFormSubmitButtonProps {
   onSubmit: (data: CreateTransactionInput) => Promise<void>;
 }
 
-export function TransactionFormSubmitButton({
-  form,
-  type,
-  onSubmit,
-}: TransactionFormSubmitButtonProps) {
-  const submitLabel =
-    type === TransactionType.EXPENSE ? "Создать расход" : "Создать доход";
+export function TransactionFormSubmitButton({ form, type, onSubmit }: TransactionFormSubmitButtonProps) {
+  const submitLabel = type === TransactionType.EXPENSE ? "Создать расход" : "Создать доход";
   const submittingLabel = "Создание...";
 
   return (
-    <Button
-      type="button"
-      onClick={form.handleSubmit(onSubmit)}
-      disabled={form.formState.isSubmitting}
-    >
+    <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
       {form.formState.isSubmitting ? submittingLabel : submitLabel}
     </Button>
   );
 }
-

@@ -45,10 +45,7 @@ const imageSchema = z
   .nullable();
 
 export const updateUserSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Имя обязательно")
-    .max(100, "Имя не должно превышать 100 символов"),
+  name: z.string().min(1, "Имя обязательно").max(100, "Имя не должно превышать 100 символов"),
   image: z.preprocess((val) => {
     return val === "" || val === undefined ? null : val;
   }, imageSchema) as z.ZodType<string | null>,

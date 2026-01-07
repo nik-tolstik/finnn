@@ -6,13 +6,7 @@ import { toast } from "sonner";
 
 import { verifyEmail } from "@/modules/auth/auth.service";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -24,7 +18,7 @@ export default function VerifyEmailPage() {
     const verify = async () => {
       try {
         const token = params.token as string;
-        
+
         if (!token) {
           setError("Токен не найден");
           setStatus("error");
@@ -102,4 +96,3 @@ export default function VerifyEmailPage() {
     </div>
   );
 }
-

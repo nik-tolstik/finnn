@@ -17,22 +17,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   workspaces: [],
   setCurrentWorkspace: (workspace) => set({ currentWorkspace: workspace }),
   setWorkspaces: (workspaces) => set({ workspaces }),
-  addWorkspace: (workspace) =>
-    set((state) => ({ workspaces: [...state.workspaces, workspace] })),
+  addWorkspace: (workspace) => set((state) => ({ workspaces: [...state.workspaces, workspace] })),
   updateWorkspace: (id, updates) =>
     set((state) => ({
-      workspaces: state.workspaces.map((w) =>
-        w.id === id ? { ...w, ...updates } : w
-      ),
+      workspaces: state.workspaces.map((w) => (w.id === id ? { ...w, ...updates } : w)),
       currentWorkspace:
-        state.currentWorkspace?.id === id
-          ? { ...state.currentWorkspace, ...updates }
-          : state.currentWorkspace,
+        state.currentWorkspace?.id === id ? { ...state.currentWorkspace, ...updates } : state.currentWorkspace,
     })),
   removeWorkspace: (id) =>
     set((state) => ({
       workspaces: state.workspaces.filter((w) => w.id !== id),
-      currentWorkspace:
-        state.currentWorkspace?.id === id ? null : state.currentWorkspace,
+      currentWorkspace: state.currentWorkspace?.id === id ? null : state.currentWorkspace,
     })),
 }));

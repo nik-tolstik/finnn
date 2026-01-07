@@ -29,4 +29,3 @@ export function AccountCardSkeleton({ className }: AccountCardSkeletonProps) {
     </div>
   );
 }
-

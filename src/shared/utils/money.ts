@@ -3,9 +3,7 @@ import Big from "big.js";
 export function formatMoney(amount: string | number, currency = "USD"): string {
   const bigAmount = new Big(amount);
   const [integer, decimal] = bigAmount.toFixed(2).split(".");
-  const formattedInteger = new Intl.NumberFormat("ru-RU").format(
-    Number(integer)
-  );
+  const formattedInteger = new Intl.NumberFormat("ru-RU").format(Number(integer));
 
   let shouldAddSpace = false;
 

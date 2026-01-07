@@ -12,10 +12,7 @@ import {
   type UpdateCategoryInput,
 } from "@/shared/lib/validations/category";
 
-export async function createCategory(
-  workspaceId: string,
-  input: CreateCategoryInput
-) {
+export async function createCategory(workspaceId: string, input: CreateCategoryInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {

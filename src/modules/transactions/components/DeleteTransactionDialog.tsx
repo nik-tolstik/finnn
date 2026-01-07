@@ -72,10 +72,8 @@ export function DeleteTransactionDialog({
           <DialogTitle>Удалить транзакцию?</DialogTitle>
           <DialogDescription>
             Вы уверены, что хотите удалить транзакцию от{" "}
-            {format(new Date(transaction.date), "dd.MM.yyyy", { locale: ru })}{" "}
-            на сумму{" "}
-            {formatMoney(transaction.amount, transaction.account.currency)}? Это
-            действие нельзя отменить.
+            {format(new Date(transaction.date), "dd.MM.yyyy", { locale: ru })} на сумму{" "}
+            {formatMoney(transaction.amount, transaction.account.currency)}? Это действие нельзя отменить.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

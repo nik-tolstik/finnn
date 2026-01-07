@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 
-import {
-  Dialog,
-  DialogWindow,
-  DialogHeader,
-  DialogTitle,
-  DialogContent,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogWindow, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 import { cn } from "@/shared/utils/cn";
 
 import { AccountSettings } from "./AccountSettings";
@@ -20,16 +14,10 @@ interface UserSettingsDialogProps {
 
 type SettingsSection = "account";
 
-export function UserSettingsDialog({
-  open,
-  onOpenChange,
-}: UserSettingsDialogProps) {
-  const [selectedSection, setSelectedSection] =
-    useState<SettingsSection>("account");
+export function UserSettingsDialog({ open, onOpenChange }: UserSettingsDialogProps) {
+  const [selectedSection, setSelectedSection] = useState<SettingsSection>("account");
 
-  const sections: { id: SettingsSection; label: string }[] = [
-    { id: "account", label: "Аккаунт" },
-  ];
+  const sections: { id: SettingsSection; label: string }[] = [{ id: "account", label: "Аккаунт" }];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

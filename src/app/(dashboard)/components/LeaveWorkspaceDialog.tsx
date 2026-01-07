@@ -23,12 +23,7 @@ interface LeaveWorkspaceDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function LeaveWorkspaceDialog({
-  workspaceId,
-  workspaceName,
-  open,
-  onOpenChange,
-}: LeaveWorkspaceDialogProps) {
+export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenChange }: LeaveWorkspaceDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -60,8 +55,8 @@ export function LeaveWorkspaceDialog({
         <DialogHeader>
           <DialogTitle>Покинуть рабочий стол?</DialogTitle>
           <DialogDescription>
-            Вы уверены, что хотите покинуть &quot;{workspaceName}&quot;? Вы
-            потеряете доступ ко всем данным этого рабочего стола.
+            Вы уверены, что хотите покинуть &quot;{workspaceName}&quot;? Вы потеряете доступ ко всем данным этого
+            рабочего стола.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

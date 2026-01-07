@@ -8,60 +8,24 @@ import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { SelectTriggerButton } from "@/shared/ui/select/select-trigger-button";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/shared/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";
 
 import { SelectOption, SelectProps } from "./types";
 
-export function SelectSheet<TValue extends string | number = string>(
-  props: SelectProps<TValue>
-) {
-  const {
-    options,
-    value,
-    onChange,
-    filter,
-    multiple,
-    allowClear,
-    valueLabel,
-    renderOption,
-    placeholder,
-    label,
-  } = props;
+export function SelectSheet<TValue extends string | number = string>(props: SelectProps<TValue>) {
+  const { options, value, onChange, filter, multiple, allowClear, valueLabel, renderOption, placeholder, label } =
+    props;
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const currentValues = multiple
-    ? Array.isArray(value)
-      ? value
-      : []
-    : typeof value === "string"
-      ? [value]
-      : [];
-  const currentValue = multiple
-    ? undefined
-    : typeof value === "string"
-      ? value
-      : undefined;
+  const currentValues = multiple ? (Array.isArray(value) ? value : []) : typeof value === "string" ? [value] : [];
+  const currentValue = multiple ? undefined : typeof value === "string" ? value : undefined;
 
-  const [localValues, setLocalValues] = useState<TValue[]>(
-    currentValues as TValue[]
-  );
+  const [localValues, setLocalValues] = useState<TValue[]>(currentValues as TValue[]);
 
   React.useEffect(() => {
     if (open) {
-      const newValues = multiple
-        ? Array.isArray(value)
-          ? value
-          : []
-        : value !== undefined
-          ? [value]
-          : [];
+      const newValues = multiple ? (Array.isArray(value) ? value : []) : value !== undefined ? [value] : [];
       setLocalValues(newValues as TValue[]);
       setSearch("");
     }
@@ -76,9 +40,7 @@ export function SelectSheet<TValue extends string | number = string>(
 
     const searchLower = search.toLowerCase();
     return options.filter(
-      (opt) =>
-        opt.label.toLowerCase().includes(searchLower) ||
-        String(opt.value).toLowerCase().includes(searchLower)
+      (opt) => opt.label.toLowerCase().includes(searchLower) || String(opt.value).toLowerCase().includes(searchLower)
     );
   })();
 
@@ -140,9 +102,7 @@ export function SelectSheet<TValue extends string | number = string>(
   };
 
   const selectedValues = multiple ? localValues : [];
-  const hasSelection = multiple
-    ? currentValues.length > 0
-    : currentValue !== undefined;
+  const hasSelection = multiple ? currentValues.length > 0 : currentValue !== undefined;
 
   const getSelectedLabel = () => {
     if (valueLabel !== undefined) {
@@ -195,9 +155,7 @@ export function SelectSheet<TValue extends string | number = string>(
             </div>
             <div className="flex-1 overflow-y-auto space-y-1">
               {filteredOptions.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  Ничего не найдено
-                </div>
+                <div className="py-8 text-center text-sm text-muted-foreground">Ничего не найдено</div>
               ) : (
                 filteredOptions.map((option) => {
                   const selected = multiple
@@ -262,9 +220,7 @@ export function SelectSheet<TValue extends string | number = string>(
                           option.label
                         )}
                       </span>
-                      {!multiple && selected && (
-                        <Check className="h-4 w-4 shrink-0 text-primary" />
-                      )}
+                      {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
                     </div>
                   );
                 })
@@ -274,18 +230,11 @@ export function SelectSheet<TValue extends string | number = string>(
           {multiple && (
             <SheetFooter className="px-4 pb-4 pt-2 gap-2">
               {allowClear && hasSelection && (
-                <Button
-                  variant="outline"
-                  onClick={handleClear}
-                  className="flex-1"
-                >
+                <Button variant="outline" onClick={handleClear} className="flex-1">
                   Очистить
                 </Button>
               )}
-              <Button
-                onClick={handleApply}
-                className={allowClear && hasSelection ? "flex-1" : "w-full"}
-              >
+              <Button onClick={handleApply} className={allowClear && hasSelection ? "flex-1" : "w-full"}>
                 Применить
               </Button>
             </SheetFooter>

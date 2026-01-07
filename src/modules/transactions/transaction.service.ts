@@ -20,10 +20,7 @@ import { addMoney, subtractMoney } from "@/shared/utils/money";
 import { TransactionType } from "./transaction.constants";
 import type { TransactionWithRelations } from "./transaction.types";
 
-export async function createTransaction(
-  workspaceId: string,
-  input: CreateTransactionInput
-) {
+export async function createTransaction(workspaceId: string, input: CreateTransactionInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -113,10 +110,7 @@ export async function createTransaction(
   }
 }
 
-export async function createTransfer(
-  workspaceId: string,
-  input: CreateTransferInput
-) {
+export async function createTransfer(workspaceId: string, input: CreateTransferInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -207,10 +201,7 @@ export async function createTransfer(
   }
 }
 
-export async function updateTransaction(
-  id: string,
-  input: UpdateTransactionInput
-) {
+export async function updateTransaction(id: string, input: UpdateTransactionInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -249,10 +240,7 @@ export async function updateTransaction(
   }
 }
 
-export async function updateTransfer(
-  fromTransactionId: string,
-  input: UpdateTransferInput
-) {
+export async function updateTransfer(fromTransactionId: string, input: UpdateTransferInput) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -354,10 +342,7 @@ export async function updateTransfer(
     });
 
     if (oldFromAccountBalance) {
-      const correctedBalance = addMoney(
-        oldFromAccountBalance.balance,
-        oldAmount
-      );
+      const correctedBalance = addMoney(oldFromAccountBalance.balance, oldAmount);
       await prisma.account.update({
         where: { id: oldFromAccount.id },
         data: { balance: correctedBalance },
@@ -365,10 +350,7 @@ export async function updateTransfer(
     }
 
     if (oldToAccountBalance) {
-      const correctedBalance = subtractMoney(
-        oldToAccountBalance.balance,
-        oldToAmount
-      );
+      const correctedBalance = subtractMoney(oldToAccountBalance.balance, oldToAmount);
       await prisma.account.update({
         where: { id: oldToAccount.id },
         data: { balance: correctedBalance },
@@ -413,10 +395,7 @@ export async function updateTransfer(
     });
 
     if (newFromAccountBalance) {
-      const correctedBalance = subtractMoney(
-        newFromAccountBalance.balance,
-        newAmount
-      );
+      const correctedBalance = subtractMoney(newFromAccountBalance.balance, newAmount);
       await prisma.account.update({
         where: { id: newFromAccountId },
         data: { balance: correctedBalance },
@@ -484,16 +463,18 @@ export async function deleteTransfer(transactionId: string) {
       return { error: "Транзакция не найдена или доступ запрещён" };
     }
 
-    let fromTransaction = transaction;
-    let toTransaction = null;
-    let transfer = null;
+    let fromTransaction: typeof transaction & { account: typeof transaction.account };
+    let toTransaction: typeof transaction & { account: typeof transaction.account };
 
     if (transaction.transferFrom) {
-      transfer = transaction.transferFrom;
-      toTransaction = transaction.transferFrom.toTransaction;
+      fromTransaction = transaction;
+      toTransaction = transaction.transferFrom.toTransaction as typeof transaction & {
+        account: typeof transaction.account;
+      };
     } else if (transaction.transferTo) {
-      transfer = transaction.transferTo;
-      fromTransaction = transaction.transferTo.fromTransaction;
+      fromTransaction = transaction.transferTo.fromTransaction as typeof transaction & {
+        account: typeof transaction.account;
+      };
       toTransaction = transaction;
     } else {
       return { error: "Перевод не найден" };
@@ -603,10 +584,7 @@ export interface TransactionFilters {
 export async function getTransactions(
   workspaceId: string,
   filters?: TransactionFilters
-): Promise<
-  | { data: TransactionWithRelations[]; total: number }
-  | { error: string }
-> {
+): Promise<{ data: TransactionWithRelations[]; total: number } | { error: string }> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -720,12 +698,8 @@ export async function getTransactions(
     let filteredTransactions = transactions;
 
     if (filters?.minAmount || filters?.maxAmount) {
-      const minAmountNum = filters?.minAmount
-        ? parseFloat(filters.minAmount)
-        : undefined;
-      const maxAmountNum = filters?.maxAmount
-        ? parseFloat(filters.maxAmount)
-        : undefined;
+      const minAmountNum = filters?.minAmount ? parseFloat(filters.minAmount) : undefined;
+      const maxAmountNum = filters?.maxAmount ? parseFloat(filters.maxAmount) : undefined;
 
       filteredTransactions = transactions.filter((transaction) => {
         const amount = parseFloat(transaction.amount);
@@ -745,11 +719,8 @@ export async function getTransactions(
       const searchLower = filters.search.toLowerCase().trim();
       if (searchLower) {
         filteredTransactions = filteredTransactions.filter((transaction) => {
-          const descriptionMatch =
-            transaction.description?.toLowerCase().includes(searchLower);
-          const categoryMatch = transaction.category?.name
-            .toLowerCase()
-            .includes(searchLower);
+          const descriptionMatch = transaction.description?.toLowerCase().includes(searchLower);
+          const categoryMatch = transaction.category?.name.toLowerCase().includes(searchLower);
           return descriptionMatch || categoryMatch;
         });
       }
@@ -771,4 +742,3 @@ export async function getTransactions(
     return { error: error.message || "Не удалось загрузить транзакции" };
   }
 }
-

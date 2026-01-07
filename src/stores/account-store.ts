@@ -12,17 +12,13 @@ interface AccountState {
 export const useAccountStore = create<AccountState>((set) => ({
   accounts: [],
   setAccounts: (accounts) => set({ accounts }),
-  addAccount: (account) =>
-    set((state) => ({ accounts: [...state.accounts, account] })),
+  addAccount: (account) => set((state) => ({ accounts: [...state.accounts, account] })),
   updateAccount: (id, updates) =>
     set((state) => ({
-      accounts: state.accounts.map((a) =>
-        a.id === id ? { ...a, ...updates } : a
-      ),
+      accounts: state.accounts.map((a) => (a.id === id ? { ...a, ...updates } : a)),
     })),
   removeAccount: (id) =>
     set((state) => ({
       accounts: state.accounts.filter((a) => a.id !== id),
     })),
 }));
-

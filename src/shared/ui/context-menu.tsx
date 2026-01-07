@@ -12,13 +12,7 @@ interface ContextMenuProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ContextMenu({
-  children,
-  x,
-  y,
-  open,
-  onOpenChange,
-}: ContextMenuProps) {
+export function ContextMenu({ children, x, y, open, onOpenChange }: ContextMenuProps) {
   const menuRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -68,20 +62,14 @@ interface ContextMenuItemProps {
   variant?: "default" | "destructive";
 }
 
-export function ContextMenuItem({
-  children,
-  onClick,
-  className,
-  variant = "default",
-}: ContextMenuItemProps) {
+export function ContextMenuItem({ children, onClick, className, variant = "default" }: ContextMenuItemProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-        variant === "destructive" &&
-          "text-destructive focus:text-destructive hover:text-destructive",
+        variant === "destructive" && "text-destructive focus:text-destructive hover:text-destructive",
         className
       )}
     >
@@ -89,4 +77,3 @@ export function ContextMenuItem({
     </button>
   );
 }
-

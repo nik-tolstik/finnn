@@ -4,14 +4,7 @@ import { Check, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { ComboboxOption } from "@/shared/ui/combobox";
-import {
-  Dialog,
-  DialogWindow,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogContent,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { cn } from "@/shared/utils/cn";
 
@@ -46,9 +39,7 @@ export function CategorySelectModal({
     if (!search) return options;
     const searchLower = search.toLowerCase();
     return options.filter(
-      (opt) =>
-        opt.label.toLowerCase().includes(searchLower) ||
-        opt.value.toLowerCase().includes(searchLower)
+      (opt) => opt.label.toLowerCase().includes(searchLower) || opt.value.toLowerCase().includes(searchLower)
     );
   }, [options, search]);
 
@@ -68,9 +59,7 @@ export function CategorySelectModal({
       <DialogWindow className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Выберите категорию</DialogTitle>
-          <DialogDescription>
-            Выберите существующую категорию или создайте новую
-          </DialogDescription>
+          <DialogDescription>Выберите существующую категорию или создайте новую</DialogDescription>
         </DialogHeader>
         <DialogContent className="overflow-hidden flex flex-col">
           <div className="relative">
@@ -84,9 +73,7 @@ export function CategorySelectModal({
           </div>
           <div className="overflow-y-auto space-y-1 mt-4 flex-1">
             {filteredOptions.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                {emptyText}
-              </div>
+              <div className="py-8 text-center text-sm text-muted-foreground">{emptyText}</div>
             ) : (
               filteredOptions.map((option) => (
                 <button
@@ -99,10 +86,7 @@ export function CategorySelectModal({
                   )}
                 >
                   {option.color && (
-                    <div
-                      className="h-4 w-4 rounded-full shrink-0"
-                      style={{ backgroundColor: option.color }}
-                    />
+                    <div className="h-4 w-4 rounded-full shrink-0" style={{ backgroundColor: option.color }} />
                   )}
                   <span className="flex-1 text-sm">
                     {option.isTemporary ? (
@@ -116,9 +100,7 @@ export function CategorySelectModal({
                       option.label
                     )}
                   </span>
-                  {value === option.value && (
-                    <Check className="h-4 w-4 shrink-0 text-primary" />
-                  )}
+                  {value === option.value && <Check className="h-4 w-4 shrink-0 text-primary" />}
                 </button>
               ))
             )}

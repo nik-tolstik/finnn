@@ -1,10 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-import {
-  addMoney,
-  subtractMoney,
-  compareMoney,
-} from "../src/shared/utils/money";
+import { addMoney, subtractMoney, compareMoney } from "../src/shared/utils/money";
 
 function getDatabaseUrl(): string {
   const mongoUri = process.env.MONGODB_URI || "";
@@ -66,9 +62,7 @@ function randomFloat(min: number, max: number, decimals = 2): string {
 }
 
 function randomDate(start: Date, end: Date): Date {
-  return new Date(
-    start.getTime() + Math.random() * (end.getTime() - start.getTime())
-  );
+  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 }
 
 async function clearTransactions(workspaceId: string) {
@@ -88,10 +82,7 @@ async function clearTransactions(workspaceId: string) {
 
   const transfers = await prisma.transfer.findMany({
     where: {
-      OR: [
-        { fromTransactionId: { in: transactionIds } },
-        { toTransactionId: { in: transactionIds } },
-      ],
+      OR: [{ fromTransactionId: { in: transactionIds } }, { toTransactionId: { in: transactionIds } }],
     },
   });
 
@@ -99,10 +90,7 @@ async function clearTransactions(workspaceId: string) {
     console.log(`Удаление ${transfers.length} переводов...`);
     await prisma.transfer.deleteMany({
       where: {
-        OR: [
-          { fromTransactionId: { in: transactionIds } },
-          { toTransactionId: { in: transactionIds } },
-        ],
+        OR: [{ fromTransactionId: { in: transactionIds } }, { toTransactionId: { in: transactionIds } }],
       },
     });
   }
@@ -177,20 +165,14 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
     const accountCreatedDate = new Date(account.createdAt);
     accountCreatedDate.setHours(0, 0, 0, 0);
 
-    const transactionDate = randomDate(
-      accountCreatedDate > startDate ? accountCreatedDate : startDate,
-      endDate
-    );
+    const transactionDate = randomDate(accountCreatedDate > startDate ? accountCreatedDate : startDate, endDate);
     transactionDate.setHours(0, 0, 0, 0);
 
     const amount = randomFloat(100, 10000);
     const categoryId =
-      incomeCategories.length > 0
-        ? incomeCategories[randomInt(0, incomeCategories.length - 1)].id
-        : undefined;
+      incomeCategories.length > 0 ? incomeCategories[randomInt(0, incomeCategories.length - 1)].id : undefined;
 
-    const description =
-      descriptions[randomInt(0, descriptions.length - 1)] + ` #${i + 1}`;
+    const description = descriptions[randomInt(0, descriptions.length - 1)] + ` #${i + 1}`;
 
     const currentBalance = accountBalances.get(account.id) || "0";
     const newBalance = addMoney(currentBalance, amount);
@@ -210,19 +192,12 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
   let expenseAttempts = 0;
   const maxExpenseAttempts = expenseCount * 3;
 
-  for (
-    let i = 0;
-    i < expenseCount && expenseAttempts < maxExpenseAttempts;
-    expenseAttempts++
-  ) {
+  for (let i = 0; i < expenseCount && expenseAttempts < maxExpenseAttempts; expenseAttempts++) {
     const account = accounts[randomInt(0, accounts.length - 1)];
     const accountCreatedDate = new Date(account.createdAt);
     accountCreatedDate.setHours(0, 0, 0, 0);
 
-    const transactionDate = randomDate(
-      accountCreatedDate > startDate ? accountCreatedDate : startDate,
-      endDate
-    );
+    const transactionDate = randomDate(accountCreatedDate > startDate ? accountCreatedDate : startDate, endDate);
     transactionDate.setHours(0, 0, 0, 0);
 
     const amount = randomFloat(10, 5000);
@@ -233,13 +208,9 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
     }
 
     const categoryId =
-      expenseCategories.length > 0
-        ? expenseCategories[randomInt(0, expenseCategories.length - 1)].id
-        : undefined;
+      expenseCategories.length > 0 ? expenseCategories[randomInt(0, expenseCategories.length - 1)].id : undefined;
 
-    const description =
-      descriptions[randomInt(0, descriptions.length - 1)] +
-      ` #${incomeCount + i + 1}`;
+    const description = descriptions[randomInt(0, descriptions.length - 1)] + ` #${incomeCount + i + 1}`;
 
     const newBalance = subtractMoney(currentBalance, amount);
     accountBalances.set(account.id, newBalance);
@@ -284,9 +255,7 @@ async function main() {
   const count = parseInt(process.argv[3] || "100", 10);
 
   if (!workspaceId) {
-    console.error(
-      "Использование: tsx scripts/generate-transactions.ts <workspaceId> [count]"
-    );
+    console.error("Использование: tsx scripts/generate-transactions.ts <workspaceId> [count]");
     process.exit(1);
   }
 

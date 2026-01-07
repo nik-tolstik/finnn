@@ -8,10 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import {
-  updateTransferSchema,
-  type UpdateTransferInput,
-} from "@/shared/lib/validations/transaction";
+import { updateTransferSchema, type UpdateTransferInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -112,19 +109,10 @@ export function EditTransferDialog({
           <DialogDescription>Измените параметры перевода</DialogDescription>
         </DialogHeader>
         <DialogContent>
-          <TransferForm
-            workspaceId={workspaceId}
-            form={form}
-            accounts={accounts}
-            onSubmit={onSubmit}
-          />
+          <TransferForm workspaceId={workspaceId} form={form} accounts={accounts} onSubmit={onSubmit} />
         </DialogContent>
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <TransferFormSubmitButton

@@ -39,4 +39,3 @@ export function generateRandomColorFull(): string {
   }
   return color;
 }
-

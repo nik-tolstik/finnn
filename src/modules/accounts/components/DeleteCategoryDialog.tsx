@@ -38,12 +38,7 @@ export function DeleteCategoryDialog({
             {transactionCount > 0 && (
               <span className="block mt-2 font-medium text-foreground">
                 Эта категория используется в {transactionCount}{" "}
-                {transactionCount === 1
-                  ? "транзакции"
-                  : transactionCount < 5
-                    ? "транзакциях"
-                    : "транзакциях"}
-                .
+                {transactionCount === 1 ? "транзакции" : transactionCount < 5 ? "транзакциях" : "транзакциях"}.
               </span>
             )}
           </DialogDescription>

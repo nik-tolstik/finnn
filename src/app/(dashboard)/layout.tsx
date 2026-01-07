@@ -5,11 +5,7 @@ import { authOptions } from "@/shared/lib/auth";
 
 import { Header } from "./components/Header";
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
 
   if (!session) {

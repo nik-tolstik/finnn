@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Dialog,
-  DialogWindow,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogContent,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 
 import { cn } from "../utils/cn";
 
@@ -74,11 +67,7 @@ export function ActionsDialog({
 }: ActionsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow
-        className="sm:w-[400px]"
-        onCloseComplete={onCloseComplete}
-        mobilePosition="bottom"
-      >
+      <DialogWindow className="sm:w-[400px]" onCloseComplete={onCloseComplete} mobilePosition="bottom">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -90,10 +79,7 @@ export function ActionsDialog({
               icon={action.icon}
               onClick={action.onClick}
               theme={action.theme}
-              className={cn(
-                action.className,
-                "not-last:border-b border-border"
-              )}
+              className={cn(action.className, "not-last:border-b border-border")}
             >
               {action.label}
             </ActionButton>

@@ -23,18 +23,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { error: "Файл должен быть изображением" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Файл должен быть изображением" }, { status: 400 });
     }
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: "Размер файла не должен превышать 5MB" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Размер файла не должен превышать 5MB" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
@@ -53,9 +47,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: imageUrl });
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Не удалось загрузить файл" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || "Не удалось загрузить файл" }, { status: 500 });
   }
 }
