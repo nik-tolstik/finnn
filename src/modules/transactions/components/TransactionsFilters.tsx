@@ -336,17 +336,14 @@ export function TransactionsFilters({
           )}
         </Button>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetContent
-            side="bottom"
-            className="max-h-[90vh] p-0 flex flex-col"
-          >
+          <SheetContent side="bottom" className="max-h-dvh p-0 flex flex-col">
             <SheetHeader>
               <SheetTitle>Фильтры</SheetTitle>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto px-4 sm:px-6">
               {filtersContent}
             </div>
-            <div className="border-t px-4 py-3 flex flex-col gap-2">
+            <div className="border-t px-4 pb-5 pt-3 flex flex-col gap-2">
               {hasActiveFilters && (
                 <Button
                   variant="outline"

@@ -24,6 +24,7 @@ interface ArchiveAccountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete: () => void;
+  onSuccess?: () => void;
 }
 
 export function ArchiveAccountDialog({
@@ -31,6 +32,7 @@ export function ArchiveAccountDialog({
   open,
   onOpenChange,
   onCloseComplete,
+  onSuccess,
 }: ArchiveAccountDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -62,6 +64,7 @@ export function ArchiveAccountDialog({
           queryKey: ["accounts", account.workspaceId],
         });
         router.refresh();
+        onSuccess?.();
       }
     } catch {
       hasArchivedRef.current = false;

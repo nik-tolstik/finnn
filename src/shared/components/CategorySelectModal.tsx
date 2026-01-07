@@ -10,6 +10,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogContent,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { cn } from "@/shared/utils/cn";
@@ -62,8 +63,6 @@ export function CategorySelectModal({
     setSearch("");
   };
 
-  const selectedOption = options.find((opt) => opt.value === value);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow className="sm:max-w-[500px]">
@@ -73,7 +72,7 @@ export function CategorySelectModal({
             Выберите существующую категорию или создайте новую
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <DialogContent className="overflow-hidden flex flex-col">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -83,7 +82,7 @@ export function CategorySelectModal({
               className="pl-9"
             />
           </div>
-          <div className="max-h-[400px] overflow-y-auto space-y-1">
+          <div className="overflow-y-auto space-y-1 mt-4 flex-1">
             {filteredOptions.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
                 {emptyText}
@@ -124,7 +123,7 @@ export function CategorySelectModal({
               ))
             )}
           </div>
-        </div>
+        </DialogContent>
       </DialogWindow>
     </Dialog>
   );

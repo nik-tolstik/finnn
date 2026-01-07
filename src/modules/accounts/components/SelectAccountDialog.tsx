@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogContent,
 } from "@/shared/ui/dialog";
 
 interface SelectAccountDialogProps {
@@ -59,21 +60,23 @@ export function SelectAccountDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto py-4">
-          {accounts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Нет доступных счетов
-            </div>
-          ) : (
-            accounts.map((account) => (
-              <AccountCard
-                key={account.id}
-                account={account}
-                onClick={() => handleSelect(account)}
-              />
-            ))
-          )}
-        </div>
+        <DialogContent>
+          <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto py-4">
+            {accounts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Нет доступных счетов
+              </div>
+            ) : (
+              accounts.map((account) => (
+                <AccountCard
+                  key={account.id}
+                  account={account}
+                  onClick={() => handleSelect(account)}
+                />
+              ))
+            )}
+          </div>
+        </DialogContent>
       </DialogWindow>
     </Dialog>
   );

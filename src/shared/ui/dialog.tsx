@@ -6,6 +6,8 @@ import * as React from "react";
 
 import { cn } from "@/shared/utils/cn";
 
+import { useIsMobile } from "../hooks/useIsMobile";
+
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -38,7 +40,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/10 backdrop-blur-sm",
         className
       )}
       {...props}
@@ -51,11 +53,15 @@ function DialogWindow({
   children,
   showCloseButton = true,
   onCloseComplete,
+  mobilePosition = "center",
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
   onCloseComplete?: () => void;
+  mobilePosition?: "center" | "bottom";
 }) {
+  const isMobile = useIsMobile();
+
   const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     if (target.getAttribute("data-state") === "closed" && onCloseComplete) {
@@ -72,9 +78,14 @@ function DialogWindow({
         className={cn(
           "flex flex-col gap-4",
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed z-50 rounded-lg border p-6 shadow-lg duration-200 outline-none",
-          "bottom-0 left-0 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%]",
-          "sm:w-[500px] sm:h-fit w-dvw h-dvh max-h-dvh max-w-dvw",
-          "m-0 py-6 px-0",
+          "sm:w-[500px] max-h-dvh max-w-dvw m-0 py-6 px-0",
+          isMobile
+            ? "w-dvw"
+            : "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-fit",
+          isMobile &&
+            mobilePosition === "center" &&
+            "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-dvh",
+          isMobile && mobilePosition === "bottom" && "bottom-0 left-0 h-fit",
           className
         )}
         onOpenAutoFocus={(e) => e.preventDefault()}

@@ -74,7 +74,11 @@ export function ActionsDialog({
 }: ActionsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[400px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow
+        className="sm:w-[400px]"
+        onCloseComplete={onCloseComplete}
+        mobilePosition="bottom"
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

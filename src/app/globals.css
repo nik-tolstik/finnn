@@ -149,7 +149,35 @@
     -moz-appearance: textfield;
   }
 
-  html {
+  * {
     scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 3px;
+    border: none;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
+  }
+
+  .dark *::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+  }
+
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
   }
 }

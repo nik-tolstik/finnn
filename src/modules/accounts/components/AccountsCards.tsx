@@ -319,6 +319,7 @@ export function AccountsCards({
           open={editDialog.open}
           onOpenChange={editDialog.closeDialog}
           onCloseComplete={editDialog.unmountDialog}
+          onSuccess={editDialog.data.onSuccess}
         />
       )}
 
@@ -328,6 +329,7 @@ export function AccountsCards({
           open={archiveDialog.open}
           onOpenChange={archiveDialog.closeDialog}
           onCloseComplete={archiveDialog.unmountDialog}
+          onSuccess={archiveDialog.data.onSuccess}
         />
       )}
 
@@ -339,6 +341,7 @@ export function AccountsCards({
           onCloseComplete={transactionTabsDialog.unmountDialog}
           defaultAccountId={transactionTabsDialog.data.defaultAccountId}
           defaultTab={transactionTabsDialog.data.defaultTab}
+          onSuccess={transactionTabsDialog.data.onSuccess}
         />
       )}
     </>

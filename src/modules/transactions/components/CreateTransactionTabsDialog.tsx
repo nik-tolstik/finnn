@@ -46,6 +46,7 @@ interface CreateTransactionTabsDialogProps {
   onCloseComplete?: () => void;
   defaultAccountId?: string;
   defaultTab?: TransactionType;
+  onSuccess?: () => void;
 }
 
 export function CreateTransactionTabsDialog({
@@ -55,6 +56,7 @@ export function CreateTransactionTabsDialog({
   onCloseComplete,
   defaultAccountId,
   defaultTab = TransactionType.EXPENSE,
+  onSuccess,
 }: CreateTransactionTabsDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -146,6 +148,7 @@ export function CreateTransactionTabsDialog({
         });
       }
       router.refresh();
+      onSuccess?.();
     }
   };
 
@@ -164,6 +167,7 @@ export function CreateTransactionTabsDialog({
         queryKey: ["accounts", workspaceId],
       });
       router.refresh();
+      onSuccess?.();
     }
   };
 
