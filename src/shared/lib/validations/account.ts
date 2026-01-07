@@ -21,7 +21,18 @@ export const updateAccountSchema = z.object({
   color: z.string().optional(),
   icon: z.string().optional(),
   createdAt: z.date().optional(),
+  order: z.number().optional(),
+});
+
+export const updateAccountsOrderSchema = z.object({
+  accountOrders: z.array(
+    z.object({
+      id: z.string(),
+      order: z.number(),
+    })
+  ),
 });
 
 export type CreateAccountInput = z.infer<typeof createAccountSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
+export type UpdateAccountsOrderInput = z.infer<typeof updateAccountsOrderSchema>;

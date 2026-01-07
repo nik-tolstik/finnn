@@ -23,13 +23,17 @@ export function AccountCard({ account, className, onClick }: AccountCardProps) {
         !account.color && "bg-card",
         className
       )}
-      style={
-        account.color
+      style={{
+        ...(account.color
           ? {
               background: `linear-gradient(to right, var(--card), ${account.color})`,
             }
-          : undefined
-      }
+          : {}),
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+        userSelect: "none",
+        touchAction: "none",
+      }}
       onClick={onClick}
     >
       <div className="flex flex-col items-start gap-0 px-4 py-3">
