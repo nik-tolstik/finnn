@@ -116,7 +116,11 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
       }
       if (currentValues.length === 1) {
         const option = options.find((opt) => opt.value === currentValues[0]);
-        return option?.label || placeholder;
+        if (!option) return placeholder;
+        if (renderOption) {
+          return renderOption({ option, props, selected: true, isTrigger: true });
+        }
+        return option.label;
       }
       return `Выбрано: ${currentValues.length}`;
     } else {
@@ -124,7 +128,11 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
         return placeholder;
       }
       const option = options.find((opt) => opt.value === currentValue);
-      return option?.label || placeholder;
+      if (!option) return placeholder;
+      if (renderOption) {
+        return renderOption({ option, props, selected: true, isTrigger: true });
+      }
+      return option.label;
     }
   };
 

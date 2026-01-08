@@ -60,12 +60,17 @@ export function ArchiveAccountDialog({
       } else {
         toast.success("Счёт успешно архивирован");
         onOpenChange(false);
-        await queryClient.invalidateQueries({
-          queryKey: ["accounts", account.workspaceId],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["archivedAccounts", account.workspaceId],
-        });
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ["accounts", account.workspaceId],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ["archivedAccounts", account.workspaceId],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ["transactions", account.workspaceId],
+          }),
+        ]);
         router.refresh();
         onSuccess?.();
       }

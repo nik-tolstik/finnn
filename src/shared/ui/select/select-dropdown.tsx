@@ -34,7 +34,11 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
       }
       if (validSelectedValues.length === 1) {
         const option = options.find((opt) => opt.value === validSelectedValues[0]);
-        return option?.label || placeholder;
+        if (!option) return placeholder;
+        if (renderOption) {
+          return renderOption({ option, props, selected: true, isTrigger: true });
+        }
+        return option.label;
       }
       return `Выбрано: ${validSelectedValues.length}`;
     } else {
@@ -42,7 +46,11 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
         return placeholder;
       }
       const option = options.find((opt) => opt.value === currentValue);
-      return option?.label || placeholder;
+      if (!option) return placeholder;
+      if (renderOption) {
+        return renderOption({ option, props, selected: true, isTrigger: true });
+      }
+      return option.label;
     }
   };
 
@@ -77,9 +85,11 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
         <Button
           variant="outline"
           disabled={disabled}
-          className={cn("w-full justify-between", !hasSelection && "text-muted-foreground")}
+          className={cn("w-full justify-start", !hasSelection && "text-muted-foreground")}
         >
-          <span className="truncate">{getDisplayLabel()}</span>
+          <span className={cn("truncate flex items-center gap-2 flex-1 min-w-0 text-left", renderOption && "flex-1 min-w-0")}>
+            {getDisplayLabel()}
+          </span>
           <div className="flex items-center gap-1 shrink-0">
             {allowClear && hasSelection && (
               <div

@@ -87,7 +87,7 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     })),
   ];
 
-  const renderAccountOption: RenderOption<string> = ({ option, selected, props: { multiple } }) => {
+  const renderAccountOption: RenderOption<string> = ({ option, selected, props: { multiple }, isTrigger }) => {
     if (option.value === "__group_active__" || option.value === "__group_archived__") {
       return (
         <div
@@ -106,7 +106,7 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
 
     return (
       <>
-        {multiple && <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />}
+        {multiple && !isTrigger && <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />}
         {account.icon && <AccountIcon className="h-4 w-4 text-primary" style={{ color: account.color || undefined }} />}
         <div className="flex-1 flex flex-col min-w-0">
           <span className="text-sm">
@@ -119,7 +119,7 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
             </span>
           )}
         </div>
-        {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
+        {!multiple && selected && !isTrigger && <Check className="h-4 w-4 shrink-0 text-primary" />}
       </>
     );
   };

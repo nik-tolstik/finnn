@@ -89,9 +89,14 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
       toast.error(result.error);
     } else {
       toast.success("Счёт успешно обновлён");
-      await queryClient.invalidateQueries({
-        queryKey: ["accounts", account.workspaceId],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["accounts", account.workspaceId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["transactions", account.workspaceId],
+        }),
+      ]);
       router.refresh();
       reset();
     }

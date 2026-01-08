@@ -21,15 +21,15 @@ export const SelectTriggerButton = React.forwardRef<HTMLButtonElement, SelectTri
           ref={ref}
           type="button"
           variant="outline"
-          className={cn("w-full justify-between", className)}
+          className={cn("w-full justify-start", className)}
           {...props}
         >
           {value ? (
-            <span className="truncate">{children}</span>
+            <span className="truncate flex items-center gap-2 flex-1 min-w-0 text-left">{children}</span>
           ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
+            <span className="text-muted-foreground text-left">{placeholder}</span>
           )}
-          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+          <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-auto" />
         </Button>
         {showClearButton && value && (
           <button

@@ -8,6 +8,7 @@ export type RenderOptionProps<TValue extends string | number = string> = {
   option: SelectOption<TValue>;
   props: SelectSheetProps<TValue>;
   selected: boolean;
+  isTrigger?: boolean;
 };
 
 export type RenderOption<TValue extends string | number = string> = (
