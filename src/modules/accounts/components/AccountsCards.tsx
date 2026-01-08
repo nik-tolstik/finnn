@@ -23,6 +23,8 @@ import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { cn } from "@/shared/utils/cn";
+import { getAvatarColor } from "@/shared/utils/avatar-colors";
+import Image from "next/image";
 
 import { updateAccountsOrder } from "../account.service";
 
@@ -247,6 +249,7 @@ export function AccountsCards({
                 id: account.owner.id,
                 name: account.owner.name,
                 email: account.owner.email,
+                image: account.owner.image,
               }
             : null,
           ownerName,
@@ -259,7 +262,7 @@ export function AccountsCards({
     {} as Record<
       string,
       {
-        owner: { id: string; name: string | null; email: string } | null;
+        owner: { id: string; name: string | null; email: string; image: string | null } | null;
         ownerName: string;
         accounts: typeof items;
       }
@@ -282,9 +285,39 @@ export function AccountsCards({
               const ownerId = owner?.id || "__no_owner__";
               return (
                 <div key={ownerId} className="space-y-3">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                    {ownerName}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    {owner?.image ? (
+                      <Image
+                        src={owner.image}
+                        alt={ownerName}
+                        width={24}
+                        height={24}
+                        className="h-6 w-6 rounded-full object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div
+                        className="flex h-6 w-6 items-center justify-center rounded-full text-white text-xs font-medium"
+                        style={{
+                          backgroundColor: getAvatarColor(owner?.name || owner?.email || "U"),
+                        }}
+                      >
+                        {(() => {
+                          const displayName = owner?.name || owner?.email || "U";
+                          const initials = displayName
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2);
+                          return initials;
+                        })()}
+                      </div>
+                    )}
+                    <h3 className="text-sm font-semibold text-muted-foreground tracking-wider">
+                      {ownerName}
+                    </h3>
+                  </div>
                   <SortableContext items={ownerAccounts.map((account) => account.id)}>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fill,300px)]">
                       {ownerAccounts.map((account) => (
