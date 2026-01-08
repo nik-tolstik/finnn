@@ -137,7 +137,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogWindow onCloseComplete={onCloseComplete} key={open ? "open" : "closed"} className="sm:w-[500px]">
+      <DialogWindow onCloseComplete={onCloseComplete} className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать новый счёт</DialogTitle>
           <DialogDescription>Добавьте новый счёт для отслеживания ваших финансов</DialogDescription>
