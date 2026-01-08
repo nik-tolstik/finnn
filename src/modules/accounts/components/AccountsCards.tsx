@@ -155,6 +155,18 @@ export function AccountsCards({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
+      const activeAccount = items.find((item) => item.id === active.id);
+      const overAccount = items.find((item) => item.id === over.id);
+
+      if (!activeAccount || !overAccount) return;
+
+      const activeOwnerId = activeAccount.ownerId || "__no_owner__";
+      const overOwnerId = overAccount.ownerId || "__no_owner__";
+
+      if (activeOwnerId !== overOwnerId) {
+        return;
+      }
+
       const oldIndex = items.findIndex((item) => item.id === active.id);
       const newIndex = items.findIndex((item) => item.id === over.id);
 
@@ -265,29 +277,32 @@ export function AccountsCards({
     <>
       <div className="relative">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={items.map((item) => item.id)}>
-            <div className="space-y-6">
-              {sortedOwners.map(({ owner, ownerName, accounts: ownerAccounts }) => (
-                <div key={owner?.id || "__no_owner__"} className="space-y-3">
+          <div className="space-y-6">
+            {sortedOwners.map(({ owner, ownerName, accounts: ownerAccounts }) => {
+              const ownerId = owner?.id || "__no_owner__";
+              return (
+                <div key={ownerId} className="space-y-3">
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                     {ownerName}
                   </h3>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fill,300px)]">
-                    {ownerAccounts.map((account) => (
-                      <SortableAccountCard
-                        key={account.id}
-                        account={account}
-                        isReorderMode={isReorderMode}
-                        onClick={() => {
-                          accountActionsDialog.openDialog({ account });
-                        }}
-                      />
-                    ))}
-                  </div>
+                  <SortableContext items={ownerAccounts.map((account) => account.id)}>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fill,300px)]">
+                      {ownerAccounts.map((account) => (
+                        <SortableAccountCard
+                          key={account.id}
+                          account={account}
+                          isReorderMode={isReorderMode}
+                          onClick={() => {
+                            accountActionsDialog.openDialog({ account });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
                 </div>
-              ))}
-            </div>
-          </SortableContext>
+              );
+            })}
+          </div>
         </DndContext>
       </div>
 
