@@ -7,8 +7,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -19,7 +18,7 @@ import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { createTransactionSchema, type CreateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { type ComboboxOption } from "@/shared/ui/combobox";
-import { DatePicker } from "@/shared/ui/date-picker";
+import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -58,6 +57,8 @@ export function CreateTransactionDialog({
     queryKey: ["accounts", workspaceId],
     queryFn: () => getAccounts(workspaceId),
     enabled: open && !accountProp,
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const account = useMemo(() => {
@@ -84,12 +85,19 @@ export function CreateTransactionDialog({
       type: defaultType,
       description: "",
       date: (() => {
-        if (!account) return new Date();
+        const now = new Date();
+        if (!account) return now;
         const accountCreatedDate = new Date(account.createdAt);
         accountCreatedDate.setHours(0, 0, 0, 0);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        return now < accountCreatedDate ? accountCreatedDate : now;
+        const nowDateOnly = new Date(now);
+        nowDateOnly.setHours(0, 0, 0, 0);
+        // Если дата создания счета в будущем, используем её с текущим временем
+        if (nowDateOnly < accountCreatedDate) {
+          const result = new Date(accountCreatedDate);
+          result.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+          return result;
+        }
+        return now;
       })(),
       categoryId: undefined,
     },
@@ -104,6 +112,8 @@ export function CreateTransactionDialog({
     queryKey: ["categories", workspaceId],
     queryFn: () => getCategories(workspaceId),
     enabled: open,
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const allCategories = useMemo(() => {
@@ -140,15 +150,33 @@ export function CreateTransactionDialog({
     return comboboxOptions.find((opt) => opt.value === categoryId);
   }, [comboboxOptions, categoryId]);
 
+  const prevOpenRef = React.useRef(open);
+  const accountIdRef = React.useRef<string | undefined>(account?.id || defaultAccountId);
+
   useEffect(() => {
-    if (open && account) {
-      const accountCreatedDate = new Date(account.createdAt);
-      accountCreatedDate.setHours(0, 0, 0, 0);
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      const defaultDate = now < accountCreatedDate ? accountCreatedDate : now;
+    // Сбрасываем форму только при открытии модалки (когда open меняется с false на true)
+    if (open && !prevOpenRef.current) {
+      const now = new Date(); // Всегда используем текущее время
+      let defaultDate: Date = now;
+      const currentAccount = account;
+      
+      if (currentAccount) {
+        const accountCreatedDate = new Date(currentAccount.createdAt);
+        accountCreatedDate.setHours(0, 0, 0, 0);
+        const nowDateOnly = new Date(now);
+        nowDateOnly.setHours(0, 0, 0, 0);
+        // Если дата создания счета в будущем, используем её с текущим временем
+        if (nowDateOnly < accountCreatedDate) {
+          defaultDate = new Date(accountCreatedDate);
+          defaultDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+        }
+      }
+      
+      const initialAccountId = currentAccount?.id || defaultAccountId || "";
+      accountIdRef.current = initialAccountId;
+      
       reset({
-        accountId: account.id,
+        accountId: initialAccountId,
         amount: "",
         type: defaultType,
         description: "",
@@ -158,13 +186,11 @@ export function CreateTransactionDialog({
       });
       setTemporaryCategories([]);
     }
-  }, [account, open, reset, defaultType]);
+    prevOpenRef.current = open;
+  }, [open, reset, defaultType, defaultAccountId]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
-    if (!newOpen && onCloseComplete) {
-      setTimeout(() => onCloseComplete(), 0);
-    }
   };
 
   const onSubmit = async (data: CreateTransactionInput) => {
@@ -261,7 +287,7 @@ export function CreateTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogWindow key={open ? account.id : "closed"} onCloseComplete={onCloseComplete}>
+      <DialogWindow onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Создать транзакцию</DialogTitle>
         </DialogHeader>
@@ -389,12 +415,12 @@ export function CreateTransactionDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Дата</Label>
+              <Label>Дата и время</Label>
               <Controller
                 control={control}
                 name="date"
                 render={({ field }) => (
-                  <DatePicker
+                  <DateTimePicker
                     date={field.value}
                     onSelect={field.onChange}
                     disabled={(date) => {

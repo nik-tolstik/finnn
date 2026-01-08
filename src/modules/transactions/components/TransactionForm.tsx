@@ -13,7 +13,7 @@ import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import type { CreateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { type ComboboxOption } from "@/shared/ui/combobox";
-import { DatePicker } from "@/shared/ui/date-picker";
+import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
@@ -230,12 +230,12 @@ export function TransactionForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Дата</Label>
+        <Label>Дата и время</Label>
         <Controller
           control={form.control}
           name="date"
           render={({ field }) => (
-            <DatePicker
+            <DateTimePicker
               date={field.value}
               onSelect={field.onChange}
               disabled={(date) => {

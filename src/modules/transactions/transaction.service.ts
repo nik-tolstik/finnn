@@ -228,12 +228,42 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
 
     const validated = updateTransactionSchema.parse(input);
 
+    const oldAmount = transaction.amount.toString();
+    const newAmount = validated.amount || oldAmount;
+    const amountChanged = oldAmount !== newAmount;
+
+    if (amountChanged) {
+      const account = await prisma.account.findUnique({
+        where: { id: transaction.accountId },
+      });
+
+      if (!account) {
+        return { error: "Счёт не найден" };
+      }
+
+      let correctedBalance = account.balance.toString();
+
+      if (transaction.type === TransactionType.INCOME) {
+        correctedBalance = subtractMoney(correctedBalance, oldAmount);
+        correctedBalance = addMoney(correctedBalance, newAmount);
+      } else if (transaction.type === TransactionType.EXPENSE) {
+        correctedBalance = addMoney(correctedBalance, oldAmount);
+        correctedBalance = subtractMoney(correctedBalance, newAmount);
+      }
+
+      await prisma.account.update({
+        where: { id: transaction.accountId },
+        data: { balance: correctedBalance },
+      });
+    }
+
     const updated = await prisma.transaction.update({
       where: { id },
       data: validated,
     });
 
     revalidatePath("/transactions");
+    revalidatePath("/accounts");
     return { data: updated };
   } catch (error: any) {
     return { error: error.message || "Не удалось обновить транзакцию" };
@@ -646,6 +676,15 @@ export async function getTransactions(
             currency: true,
             color: true,
             icon: true,
+            ownerId: true,
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
           },
         },
         category: {
@@ -667,6 +706,15 @@ export async function getTransactions(
                     currency: true,
                     color: true,
                     icon: true,
+                    ownerId: true,
+                    owner: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                      },
+                    },
                   },
                 },
               },
@@ -685,6 +733,15 @@ export async function getTransactions(
                     currency: true,
                     color: true,
                     icon: true,
+                    ownerId: true,
+                    owner: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                      },
+                    },
                   },
                 },
               },

@@ -5,7 +5,7 @@ import { Filter, X } from "lucide-react";
 import { Check } from "lucide-react";
 import { useState } from "react";
 
-import { getAccounts } from "@/modules/accounts/account.service";
+import { getAccounts, getArchivedAccounts } from "@/modules/accounts/account.service";
 import { getCategories } from "@/modules/categories/category.service";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
@@ -35,14 +35,26 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
   const { data: accountsData } = useQuery({
     queryKey: ["accounts", workspaceId],
     queryFn: () => getAccounts(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
+  });
+
+  const { data: archivedAccountsData } = useQuery({
+    queryKey: ["archivedAccounts", workspaceId],
+    queryFn: () => getArchivedAccounts(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const { data: categoriesData } = useQuery({
     queryKey: ["categories", workspaceId],
     queryFn: () => getCategories(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
-  const accounts = accountsData?.data || [];
+  const activeAccounts = accountsData?.data || [];
+  const archivedAccounts = archivedAccountsData?.data || [];
   const categories = categoriesData?.data || [];
 
   const selectedAccountIds = filters.accountIds || [];
@@ -62,13 +74,32 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     { value: TransactionType.TRANSFER, label: "Перевод" },
   ];
 
-  const accountOptions: SelectOption[] = accounts.map((account) => ({
-    value: account.id,
-    label: account.name,
-  }));
+  const accountOptions: SelectOption[] = [
+    ...(activeAccounts.length > 0 ? [{ value: "__group_active__" as string, label: "Активные" }] : []),
+    ...activeAccounts.map((account) => ({
+      value: account.id,
+      label: account.name,
+    })),
+    ...(archivedAccounts.length > 0 ? [{ value: "__group_archived__" as string, label: "Архивированные" }] : []),
+    ...archivedAccounts.map((account) => ({
+      value: account.id,
+      label: account.name,
+    })),
+  ];
 
   const renderAccountOption: RenderOption<string> = ({ option, selected, props: { multiple } }) => {
-    const account = accounts.find((acc) => acc.id === option.value);
+    if (option.value === "__group_active__" || option.value === "__group_archived__") {
+      return (
+        <div
+          className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {option.label}
+        </div>
+      );
+    }
+
+    const account = activeAccounts.find((acc) => acc.id === option.value) || archivedAccounts.find((acc) => acc.id === option.value);
     if (!account) return null;
 
     const AccountIcon = getAccountIcon(account.icon);
@@ -77,7 +108,17 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
       <>
         {multiple && <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />}
         {account.icon && <AccountIcon className="h-4 w-4 text-primary" style={{ color: account.color || undefined }} />}
-        <span className="flex-1 text-sm">{option.label}</span>
+        <div className="flex-1 flex flex-col min-w-0">
+          <span className="text-sm">
+            {option.label}
+            {account.currency && <span className="text-muted-foreground"> ({account.currency})</span>}
+          </span>
+          {account.owner && (
+            <span className="text-xs text-muted-foreground truncate">
+              {account.owner.name || account.owner.email}
+            </span>
+          )}
+        </div>
         {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
       </>
     );

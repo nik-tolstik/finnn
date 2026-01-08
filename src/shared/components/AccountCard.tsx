@@ -7,12 +7,20 @@ import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
 interface AccountCardProps {
-  account: Account;
+  account: Account & {
+    owner?: {
+      id: string;
+      name: string | null;
+      email: string;
+      image: string | null;
+    } | null;
+  };
   className?: string;
   onClick?: () => void;
+  showOwner?: boolean;
 }
 
-export function AccountCard({ account, className, onClick }: AccountCardProps) {
+export function AccountCard({ account, className, onClick, showOwner = true }: AccountCardProps) {
   const AccountIcon = getAccountIcon(account.icon);
 
   return (
@@ -50,6 +58,11 @@ export function AccountCard({ account, className, onClick }: AccountCardProps) {
             <p className="font-bold text-base">{formatMoney(account.balance, account.currency)}</p>
           </div>
         </div>
+        {showOwner && account.owner && (
+          <div className="mt-2 text-xs text-muted-foreground">
+            {account.owner.name || account.owner.email}
+          </div>
+        )}
       </div>
     </div>
   );

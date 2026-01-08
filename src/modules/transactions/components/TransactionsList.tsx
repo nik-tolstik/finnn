@@ -111,6 +111,12 @@ export function TransactionsList({
                   currency: string;
                   color: string | null;
                   icon: string | null;
+                  owner?: {
+                    id: string;
+                    name: string | null;
+                    email: string;
+                    image: string | null;
+                  } | null;
                 };
                 amount: string;
               }
@@ -118,7 +124,10 @@ export function TransactionsList({
 
           if (transaction.transferFrom) {
             transferInfo = {
-              account: transaction.transferFrom.toTransaction.account,
+              account: {
+                ...transaction.transferFrom.toTransaction.account,
+                owner: transaction.transferFrom.toTransaction.account.owner,
+              },
               amount: transaction.transferFrom.toAmount,
             };
             processedTransactionIds.add(transaction.transferFrom.toTransaction.id);

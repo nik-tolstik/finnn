@@ -17,6 +17,7 @@ import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
+import { cn } from "@/shared/utils/cn";
 
 import { CreateCategoryDialog } from "./CreateCategoryDialog";
 import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
@@ -43,6 +44,8 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   const { data: categoriesData } = useQuery({
     queryKey: ["categories", workspaceId],
     queryFn: () => getCategories(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const categories = categoriesData?.data || [];
@@ -126,41 +129,61 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     });
   };
 
-  const renderCategoryList = (categoryList: Category[], type: CategoryType) => (
+  const renderCategoryList = (categoryList: Category[], _type: CategoryType) => (
     <div className="space-y-1.5">
       {categoryList.map((category) => (
-        <div key={category.id} className="flex items-center gap-2 p-2 border rounded-md">
+        <div key={category.id} className="p-2 border rounded-md">
           {editingCategory?.id === category.id ? (
-            <>
-              <div className="h-6 w-6 rounded border shrink-0" style={{ backgroundColor: editingColor }} />
-              <Input
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                className="flex-1 h-8 text-sm"
-                placeholder="Название категории"
-              />
-              <div className="flex gap-1.5 shrink-0">
-                <Button
-                  size="sm"
-                  onClick={handleSaveEdit}
-                  disabled={updateMutation.isPending || !editingName.trim()}
-                  className="h-8 text-xs px-2"
-                >
-                  Сохранить
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCancelEdit}
-                  disabled={updateMutation.isPending}
-                  className="h-8 text-xs px-2"
-                >
-                  Отмена
-                </Button>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded border shrink-0" style={{ backgroundColor: editingColor }} />
+                <Input
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  className="flex-1 h-8 text-sm"
+                  placeholder="Название категории"
+                />
+                <div className="flex gap-1.5 shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={handleSaveEdit}
+                    disabled={updateMutation.isPending || !editingName.trim()}
+                    className="h-8 text-xs px-2"
+                  >
+                    Сохранить
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={updateMutation.isPending}
+                    className="h-8 text-xs px-2"
+                  >
+                    Отмена
+                  </Button>
+                </div>
               </div>
-            </>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Цвет</label>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORY_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setEditingColor(color)}
+                      className={cn(
+                        "h-6 w-6 rounded-md border-2 transition-all",
+                        editingColor === color ? "border-primary scale-110" : "border-border hover:border-primary/50"
+                      )}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <div
                 className="h-6 w-6 rounded border shrink-0"
                 style={{ backgroundColor: category.color || undefined }}
@@ -174,7 +197,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </>
+            </div>
           )}
         </div>
       ))}

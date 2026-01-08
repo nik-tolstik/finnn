@@ -112,6 +112,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
                 name: accountName || account.name,
                 color: selectedColor || account.color,
                 icon: selectedIcon || account.icon || "Wallet",
+                owner: (account as any).owner,
               }}
             />
             <div className="space-y-2">

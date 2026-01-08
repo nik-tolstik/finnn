@@ -7,6 +7,13 @@ export type TransactionWithRelations = Transaction & {
     currency: string;
     color: string | null;
     icon: string | null;
+    ownerId: string | null;
+    owner: {
+      id: string;
+      name: string | null;
+      email: string;
+      image: string | null;
+    } | null;
   };
   category: {
     id: string;
@@ -23,6 +30,13 @@ export type TransactionWithRelations = Transaction & {
         currency: string;
         color: string | null;
         icon: string | null;
+        ownerId: string | null;
+        owner: {
+          id: string;
+          name: string | null;
+          email: string;
+          image: string | null;
+        } | null;
       };
     };
   } | null;
@@ -36,6 +50,13 @@ export type TransactionWithRelations = Transaction & {
         currency: string;
         color: string | null;
         icon: string | null;
+        ownerId: string | null;
+        owner: {
+          id: string;
+          name: string | null;
+          email: string;
+          image: string | null;
+        } | null;
       };
     };
   } | null;

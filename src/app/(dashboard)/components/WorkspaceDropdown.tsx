@@ -65,6 +65,8 @@ export function WorkspaceDropdown({ currentWorkspaceId }: WorkspaceDropdownProps
   const { data: workspacesData } = useQuery({
     queryKey: ["workspaces"],
     queryFn: () => getWorkspaces(),
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const workspaces = workspacesData?.data || [];
@@ -139,6 +141,59 @@ export function WorkspaceDropdown({ currentWorkspaceId }: WorkspaceDropdownProps
                     <Settings className="h-4 w-4 text-muted-foreground" />
                     <span>Настройки</span>
                   </button>
+                  <Popover open={switchOpen} onOpenChange={setSwitchOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                        onMouseEnter={handleSwitchMouseEnter}
+                        onMouseLeave={handleSwitchMouseLeave}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        <span>Перейти</span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-64 p-0"
+                      side="right"
+                      align="start"
+                      sideOffset={8}
+                      onMouseEnter={handleSwitchMouseEnter}
+                      onMouseLeave={handleSwitchMouseLeave}
+                    >
+                      <div className="p-2">
+                        <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Workspaces</div>
+                        <div className="space-y-1">
+                          {workspaces
+                            .filter((w) => w.id !== currentWorkspaceId)
+                            .map((workspace) => {
+                              const WorkspaceIcon = getWorkspaceIcon(workspace.icon);
+                              return (
+                                <button
+                                  key={workspace.id}
+                                  onClick={() => handleWorkspaceSelect(workspace.id)}
+                                  className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                                >
+                                  <WorkspaceIcon className="h-4 w-4 text-muted-foreground" />
+                                  <span className="truncate">{workspace.name}</span>
+                                </button>
+                              );
+                            })}
+                        </div>
+                        <div className="mt-2 pt-2 border-t">
+                          <button
+                            onClick={handleCreateWorkspace}
+                            className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                          >
+                            <Plus className="h-4 w-4 text-muted-foreground" />
+                            <span>Создать новый</span>
+                          </button>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <button
                     onClick={() => {
                       setOpen(false);
@@ -153,59 +208,6 @@ export function WorkspaceDropdown({ currentWorkspaceId }: WorkspaceDropdownProps
                   </button>
                 </>
               )}
-              <Popover open={switchOpen} onOpenChange={setSwitchOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                    onMouseEnter={handleSwitchMouseEnter}
-                    onMouseLeave={handleSwitchMouseLeave}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    <span>Перейти</span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-64 p-0"
-                  side="right"
-                  align="start"
-                  sideOffset={8}
-                  onMouseEnter={handleSwitchMouseEnter}
-                  onMouseLeave={handleSwitchMouseLeave}
-                >
-                  <div className="p-2">
-                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Workspaces</div>
-                    <div className="space-y-1">
-                      {workspaces
-                        .filter((w) => w.id !== currentWorkspaceId)
-                        .map((workspace) => {
-                          const WorkspaceIcon = getWorkspaceIcon(workspace.icon);
-                          return (
-                            <button
-                              key={workspace.id}
-                              onClick={() => handleWorkspaceSelect(workspace.id)}
-                              className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                            >
-                              <WorkspaceIcon className="h-4 w-4 text-muted-foreground" />
-                              <span className="truncate">{workspace.name}</span>
-                            </button>
-                          );
-                        })}
-                    </div>
-                    <div className="mt-2 pt-2 border-t">
-                      <button
-                        onClick={handleCreateWorkspace}
-                        className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                      >
-                        <Plus className="h-4 w-4 text-muted-foreground" />
-                        <span>Создать новый</span>
-                      </button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
               {currentWorkspaceId && !isOwner && (
                 <button
                   onClick={() => {

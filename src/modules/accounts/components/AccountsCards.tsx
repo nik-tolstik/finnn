@@ -31,8 +31,17 @@ import { AccountsCardsSkeleton } from "./AccountsCardsSkeleton";
 import { ArchiveAccountDialog } from "./ArchiveAccountDialog";
 import { EditAccountDialog } from "./EditAccountDialog";
 
+type AccountWithOwner = Account & {
+  owner?: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  } | null;
+};
+
 interface AccountsCardsProps {
-  accounts: Account[];
+  accounts: AccountWithOwner[];
   workspaceId: string;
   isLoading?: boolean;
   onReorderModeChange?: (isReorderMode: boolean) => void;
@@ -41,11 +50,11 @@ interface AccountsCardsProps {
 }
 
 type ActionDialogData = {
-  account: Account;
+  account: AccountWithOwner;
 };
 
 interface SortableAccountCardProps {
-  account: Account;
+  account: AccountWithOwner;
   onClick: () => void;
 }
 
@@ -90,7 +99,7 @@ function SortableAccountCard({
           userSelect: "none",
         }}
       >
-        <AccountCard account={account} onClick={handleClick} />
+        <AccountCard account={account} onClick={handleClick} showOwner={false} />
       </div>
     </div>
   );
@@ -215,21 +224,67 @@ export function AccountsCards({
     return <AccountsCardsSkeleton />;
   }
 
+  const accountsByOwner = items.reduce(
+    (acc, account) => {
+      const ownerId = account.ownerId || "__no_owner__";
+      const ownerName = account.owner?.name || account.owner?.email || "Без владельца";
+      if (!acc[ownerId]) {
+        acc[ownerId] = {
+          owner: account.owner
+            ? {
+                id: account.owner.id,
+                name: account.owner.name,
+                email: account.owner.email,
+              }
+            : null,
+          ownerName,
+          accounts: [],
+        };
+      }
+      acc[ownerId].accounts.push(account);
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        owner: { id: string; name: string | null; email: string } | null;
+        ownerName: string;
+        accounts: typeof items;
+      }
+    >
+  );
+
+  const sortedOwners = Object.values(accountsByOwner).sort((a, b) => {
+    if (!a.owner && b.owner) return 1;
+    if (a.owner && !b.owner) return -1;
+    if (!a.owner && !b.owner) return 0;
+    return (a.owner?.name || a.owner?.email || "").localeCompare(b.owner?.name || b.owner?.email || "");
+  });
+
   return (
     <>
       <div className="relative">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items.map((item) => item.id)}>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fill,300px)]">
-              {items.map((account) => (
-                <SortableAccountCard
-                  key={account.id}
-                  account={account}
-                  isReorderMode={isReorderMode}
-                  onClick={() => {
-                    accountActionsDialog.openDialog({ account });
-                  }}
-                />
+            <div className="space-y-6">
+              {sortedOwners.map(({ owner, ownerName, accounts: ownerAccounts }) => (
+                <div key={owner?.id || "__no_owner__"} className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    {ownerName}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fill,300px)]">
+                    {ownerAccounts.map((account) => (
+                      <SortableAccountCard
+                        key={account.id}
+                        account={account}
+                        isReorderMode={isReorderMode}
+                        onClick={() => {
+                          accountActionsDialog.openDialog({ account });
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </SortableContext>

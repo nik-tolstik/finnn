@@ -28,16 +28,17 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
       return valueLabel;
     }
     if (multiple) {
-      if (selectedValues.length === 0) {
+      const validSelectedValues = selectedValues.filter((v) => !String(v).startsWith("__group_"));
+      if (validSelectedValues.length === 0) {
         return placeholder;
       }
-      if (selectedValues.length === 1) {
-        const option = options.find((opt) => opt.value === selectedValues[0]);
+      if (validSelectedValues.length === 1) {
+        const option = options.find((opt) => opt.value === validSelectedValues[0]);
         return option?.label || placeholder;
       }
-      return `Выбрано: ${selectedValues.length}`;
+      return `Выбрано: ${validSelectedValues.length}`;
     } else {
-      if (currentValue === undefined) {
+      if (currentValue === undefined || String(currentValue).startsWith("__group_")) {
         return placeholder;
       }
       const option = options.find((opt) => opt.value === currentValue);
@@ -47,6 +48,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
 
   const handleSelect = (optionValue: TValue) => {
     if (!onChange) return;
+    if (String(optionValue).startsWith("__group_")) return;
     if (multiple) {
       const newValues = selectedValues.includes(optionValue)
         ? selectedValues.filter((v) => v !== optionValue)
@@ -107,57 +109,67 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
         <div className="max-h-96 overflow-y-auto">
           {options.map((option) => {
             const selected = multiple ? selectedValues.includes(option.value) : currentValue === option.value;
+            const isGroupHeader = String(option.value).startsWith("__group_");
 
             if (renderOption) {
               return (
                 <div
                   key={option.value.toString()}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleSelect(option.value)}
+                  role={isGroupHeader ? undefined : "button"}
+                  tabIndex={isGroupHeader ? undefined : 0}
+                  onClick={() => !isGroupHeader && handleSelect(option.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                    if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
                       e.preventDefault();
                       handleSelect(option.value);
                     }
                   }}
                   className={cn(
-                    "flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
-                    selected && "bg-accent"
+                    !isGroupHeader &&
+                      "flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
+                    !isGroupHeader && selected && "bg-accent"
                   )}
                 >
                   {renderOption({ option, props, selected })}
                 </div>
               );
             }
-
             return (
               <div
                 key={option.value.toString()}
-                role="button"
-                tabIndex={0}
-                onClick={() => handleSelect(option.value)}
+                role={isGroupHeader ? undefined : "button"}
+                tabIndex={isGroupHeader ? undefined : 0}
+                onClick={() => !isGroupHeader && handleSelect(option.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
+                  if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
                     e.preventDefault();
                     handleSelect(option.value);
                   }
                 }}
                 className={cn(
-                  "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
-                  selected && "bg-accent"
+                  !isGroupHeader &&
+                    "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
+                  !isGroupHeader && selected && "bg-accent"
                 )}
               >
-                {multiple && (
-                  <Checkbox
-                    checked={selected}
-                    onCheckedChange={() => handleSelect(option.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="shrink-0"
-                  />
+                {isGroupHeader ? (
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {option.label}
+                  </div>
+                ) : (
+                  <>
+                    {multiple && (
+                      <Checkbox
+                        checked={selected}
+                        onCheckedChange={() => handleSelect(option.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="shrink-0"
+                      />
+                    )}
+                    <span className="flex-1">{option.label}</span>
+                    {!multiple && selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
+                  </>
                 )}
-                <span className="flex-1">{option.label}</span>
-                {!multiple && selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
               </div>
             );
           })}

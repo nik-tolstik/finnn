@@ -170,6 +170,16 @@ export async function getAccounts(workspaceId: string) {
         workspaceId,
         archived: false,
       },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
     });
 
@@ -283,6 +293,16 @@ export async function getArchivedAccounts(workspaceId: string) {
       where: {
         workspaceId,
         archived: true,
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

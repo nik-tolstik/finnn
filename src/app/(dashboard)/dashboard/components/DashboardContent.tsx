@@ -18,8 +18,17 @@ import { Button } from "@/shared/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
+type AccountWithOwner = Account & {
+  owner?: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  } | null;
+};
+
 interface DashboardContentProps {
-  accounts: Account[];
+  accounts: AccountWithOwner[];
   workspaceId: string;
 }
 
@@ -58,6 +67,8 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
     queryKey: ["accounts", workspaceId],
     queryFn: () => getAccounts(workspaceId),
     initialData: { data: accounts },
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const {
@@ -72,6 +83,8 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
         skip: 0,
         take: displayedCount,
       } as TransactionFilters),
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   useEffect(() => {

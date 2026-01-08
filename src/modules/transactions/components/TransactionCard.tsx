@@ -42,7 +42,7 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
             )}
           </div>
           <span className="text-xs text-muted-foreground">
-            {format(new Date(transaction.date), "dd.MM.yyyy", {
+            {format(new Date(transaction.date), "dd.MM.yyyy HH:mm", {
               locale: ru,
             })}
           </span>
@@ -55,13 +55,28 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
               className="size-6 sm:size-7"
               iconClassName="size-3.5 sm:size-4"
             />
-            <div>{transaction.account.name}</div>
+            <div className="flex flex-col">
+              <div>
+                {transaction.account.name}
+                {transaction.account.currency && (
+                  <span className="text-muted-foreground"> ({transaction.account.currency})</span>
+                )}
+              </div>
+              {transaction.account.owner && (
+                <div className="text-xs text-muted-foreground">
+                  {transaction.account.owner.name || transaction.account.owner.email}
+                </div>
+              )}
+            </div>
           </div>
           <div className={cn(transaction.type === TransactionType.INCOME ? "text-lime-500" : "text-pink-500")}>
             {transaction.type === TransactionType.INCOME ? "+" : "-"}
             {formatMoney(transaction.amount, transaction.account.currency)}
           </div>
         </div>
+        {transaction.description && (
+          <p className="text-xs sm:text-sm text-muted-foreground truncate mt-2">{transaction.description}</p>
+        )}
       </div>
     </Card>
   );

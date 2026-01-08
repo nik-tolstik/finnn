@@ -61,6 +61,8 @@ export function EditTransferDialog({
     queryKey: ["accounts", workspaceId],
     queryFn: () => getAccounts(workspaceId),
     enabled: open,
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const accounts = useMemo(() => {

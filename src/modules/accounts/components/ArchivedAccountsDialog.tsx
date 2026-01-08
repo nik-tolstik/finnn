@@ -34,6 +34,8 @@ export function ArchivedAccountsDialog({
     queryKey: ["archivedAccounts", workspaceId],
     queryFn: () => getArchivedAccounts(workspaceId),
     enabled: open,
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const archivedAccounts = archivedAccountsData?.data || [];

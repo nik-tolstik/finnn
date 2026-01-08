@@ -41,6 +41,8 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
   const { data: workspaceData } = useQuery({
     queryKey: ["workspace", workspaceId],
     queryFn: () => getWorkspace(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const workspace = workspaceData?.data;

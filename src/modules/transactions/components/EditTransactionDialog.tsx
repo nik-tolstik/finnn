@@ -14,7 +14,7 @@ import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { updateTransactionSchema, type UpdateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { type ComboboxOption } from "@/shared/ui/combobox";
-import { DatePicker } from "@/shared/ui/date-picker";
+import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import {
   Dialog,
   DialogWindow,
@@ -69,6 +69,8 @@ export function EditTransactionDialog({
     queryKey: ["categories", workspaceId],
     queryFn: () => getCategories(workspaceId),
     enabled: open,
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const allCategories = useMemo(() => {
@@ -227,11 +229,11 @@ export function EditTransactionDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Дата</Label>
+              <Label>Дата и время</Label>
               <Controller
                 control={control}
                 name="date"
-                render={({ field }) => <DatePicker date={field.value} onSelect={field.onChange} />}
+                render={({ field }) => <DateTimePicker date={field.value} onSelect={field.onChange} />}
               />
               {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
             </div>

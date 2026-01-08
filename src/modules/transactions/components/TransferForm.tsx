@@ -7,7 +7,7 @@ import { Controller, type UseFormReturn, useWatch } from "react-hook-form";
 
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
-import { DatePicker } from "@/shared/ui/date-picker";
+import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
@@ -187,11 +187,11 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
       </div>
 
       <div className="space-y-2">
-        <Label>Дата</Label>
+        <Label>Дата и время</Label>
         <Controller
           control={form.control}
           name="date"
-          render={({ field }) => <DatePicker date={field.value} onSelect={field.onChange} />}
+          render={({ field }) => <DateTimePicker date={field.value} onSelect={field.onChange} />}
         />
         {form.formState.errors.date && <p className="text-sm text-destructive">{form.formState.errors.date.message}</p>}
       </div>

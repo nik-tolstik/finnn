@@ -25,11 +25,15 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
   const { data: membersData } = useQuery({
     queryKey: ["workspace-members", workspaceId],
     queryFn: () => getWorkspaceMembers(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const { data: workspaceData } = useQuery({
     queryKey: ["workspace", workspaceId],
     queryFn: () => getWorkspace(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const members = membersData?.data || [];

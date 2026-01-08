@@ -10,6 +10,7 @@ import { useForm, Controller, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
+import { AccountCard } from "@/shared/components/AccountCard";
 import { createAccountSchema, type CreateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
 import { DatePicker } from "@/shared/ui/date-picker";
@@ -68,6 +69,8 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
     queryKey: ["workspace-members", workspaceId],
     queryFn: () => getWorkspaceMembers(workspaceId),
     enabled: open,
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 
   const members = useMemo(() => {
@@ -83,6 +86,8 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
   const currency = useWatch({ control, name: "currency" });
   const selectedColor = useWatch({ control, name: "color" });
   const selectedIcon = useWatch({ control, name: "icon" });
+  const accountName = useWatch({ control, name: "name" });
+  const balance = useWatch({ control, name: "balance" });
 
   useEffect(() => {
     if (open && currentUserId) {
@@ -134,6 +139,23 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
           <DialogDescription>Добавьте новый счёт для отслеживания ваших финансов</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <AccountCard
+            account={{
+              id: "",
+              workspaceId,
+              name: accountName || "",
+              balance: balance || "0",
+              currency: currency || "USD",
+              color: selectedColor || null,
+              icon: selectedIcon || "Wallet",
+              description: null,
+              ownerId: null,
+              archived: false,
+              order: 0,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }}
+          />
           <div className="space-y-2">
             <Label htmlFor="name">
               Название <span className="text-destructive">*</span>

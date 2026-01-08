@@ -18,6 +18,12 @@ interface TransferAccount {
   currency: string;
   color: string | null;
   icon: string | null;
+  owner?: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  } | null;
 }
 
 interface TransferCardProps {
@@ -33,7 +39,17 @@ function AccountName({ account, icon: Icon, amount }: { account: TransferAccount
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 py-1 rounded-lg">
       <IconWithBg icon={Icon} color={account.color} className="size-6 sm:size-7" iconClassName="size-3.5 sm:size-4" />
-      <div>{account.name}</div>
+      <div className="flex flex-col">
+        <div>
+          {account.name}
+          {account.currency && <span className="text-muted-foreground"> ({account.currency})</span>}
+        </div>
+        {account.owner && (
+          <div className="text-xs text-muted-foreground">
+            {account.owner.name || account.owner.email}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -70,6 +86,11 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
       ? undefined
       : transaction.description;
 
+  const fromAccount: TransferAccount = {
+    ...transaction.account,
+    owner: transaction.account.owner,
+  };
+
   return (
     <Card className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer text-sm" onClick={onClick}>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2">
@@ -78,7 +99,7 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
             <div className="flex items-center justify-between">
               <span className="font-medium text-sm">Перевод</span>
               <span className="text-xs text-muted-foreground">
-                {format(new Date(transaction.date), "dd.MM.yyyy", {
+                {format(new Date(transaction.date), "dd.MM.yyyy HH:mm", {
                   locale: ru,
                 })}
               </span>
@@ -93,7 +114,7 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
               />
               <ArrowRightIcon className="size-4 text-muted-foreground shrink-0" />
               <AccountWithAmount
-                account={transaction.account}
+                account={fromAccount}
                 amount={transaction.amount}
                 icon={FromAccountIcon}
                 amountClassName="text-lime-500"

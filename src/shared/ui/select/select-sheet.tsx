@@ -49,6 +49,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
   };
 
   const handleSelect = (option: SelectOption<TValue>) => {
+    if (String(option.value).startsWith("__group_")) return;
     if (multiple) {
       setLocalValues((prev) => {
         if (prev.includes(option.value)) {
@@ -161,23 +162,24 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                   const selected = multiple
                     ? selectedValues.includes(option.value as TValue)
                     : currentValue === option.value;
+                  const isGroupHeader = String(option.value).startsWith("__group_");
 
                   if (renderOption) {
                     return (
                       <div
                         key={option.value}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleSelect(option)}
+                        role={isGroupHeader ? undefined : "button"}
+                        tabIndex={isGroupHeader ? undefined : 0}
+                        onClick={() => !isGroupHeader && handleSelect(option)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
+                          if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
                             e.preventDefault();
                             handleSelect(option);
                           }
                         }}
                         className={cn(
-                          "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
-                          selected && "bg-accent"
+                          !isGroupHeader && "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
+                          !isGroupHeader && selected && "bg-accent"
                         )}
                       >
                         {renderOption({ option, props, selected })}
@@ -188,39 +190,47 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                   return (
                     <div
                       key={option.value}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleSelect(option)}
+                      role={isGroupHeader ? undefined : "button"}
+                      tabIndex={isGroupHeader ? undefined : 0}
+                      onClick={() => !isGroupHeader && handleSelect(option)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
+                        if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
                           e.preventDefault();
                           handleSelect(option);
                         }
                       }}
                       className={cn(
-                        "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
-                        selected && "bg-accent"
+                        !isGroupHeader && "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
+                        !isGroupHeader && selected && "bg-accent"
                       )}
                     >
-                      {multiple && (
-                        <Checkbox
-                          checked={selected}
-                          onCheckedChange={() => handleSelect(option)}
-                          className="shrink-0"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      )}
-                      <span className="flex-1 text-sm">
-                        {option.isTemporary ? (
-                          <span className="flex items-center gap-2">
-                            <span className="text-xs">+</span>
-                            <span>Создать: {option.label}</span>
+                      {isGroupHeader ? (
+                        <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          {option.label}
+                        </div>
+                      ) : (
+                        <>
+                          {multiple && (
+                            <Checkbox
+                              checked={selected}
+                              onCheckedChange={() => handleSelect(option)}
+                              className="shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          )}
+                          <span className="flex-1 text-sm">
+                            {option.isTemporary ? (
+                              <span className="flex items-center gap-2">
+                                <span className="text-xs">+</span>
+                                <span>Создать: {option.label}</span>
+                              </span>
+                            ) : (
+                              option.label
+                            )}
                           </span>
-                        ) : (
-                          option.label
-                        )}
-                      </span>
-                      {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                          {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                        </>
+                      )}
                     </div>
                   );
                 })
