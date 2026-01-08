@@ -1,11 +1,14 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+import type { ComponentProps } from "react";
 
 import { cn } from "@/shared/utils/cn";
 
+type IconComponent = LucideIcon | ((props: ComponentProps<"svg">) => React.JSX.Element);
+
 interface IconWithBgProps {
-  icon: LucideIcon;
+  icon: IconComponent;
   color?: string | null;
   size?: "sm" | "md" | "lg";
   className?: string;

@@ -1,7 +1,8 @@
 import { CreditCard, type LucideIcon, HandCoins, Landmark, Wallet } from "lucide-react";
 import type { ComponentProps } from "react";
+import type React from "react";
 
-type IconComponent = LucideIcon | ((props: ComponentProps<"svg">) => JSX.Element);
+type IconComponent = LucideIcon | ((props: ComponentProps<"svg">) => React.JSX.Element);
 
 function VisaIcon({ className, ...props }: ComponentProps<"svg">) {
   return (

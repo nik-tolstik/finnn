@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
 type AccountWithOwner = Account & {
-  owner?: {
+  owner: {
     id: string;
     name: string | null;
     email: string;
