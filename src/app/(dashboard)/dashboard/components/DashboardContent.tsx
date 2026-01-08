@@ -48,6 +48,8 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
     total: number;
     filtersKey: string;
   } | null>(null);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const createAccountDialog = useDialogState();
@@ -58,6 +60,7 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
     const timer = setTimeout(() => {
       setDebouncedFilters(localFilters);
       setDisplayedCount(TRANSACTIONS_PER_PAGE);
+      setHasInitiallyLoaded(false);
     }, DEBOUNCE_DELAY);
 
     return () => clearTimeout(timer);
@@ -88,14 +91,23 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
   });
 
   useEffect(() => {
+    if (!isFetching && isLoadingMore) {
+      setIsLoadingMore(false);
+    }
+  }, [isFetching, isLoadingMore]);
+
+  useEffect(() => {
     if (isSuccessResponse(transactionsData)) {
       setCachedTransactions({
         data: transactionsData.data,
         total: transactionsData.total,
         filtersKey,
       });
+      if (!hasInitiallyLoaded && transactionsData.data.length > 0) {
+        setHasInitiallyLoaded(true);
+      }
     }
-  }, [transactionsData, filtersKey]);
+  }, [transactionsData, filtersKey, hasInitiallyLoaded]);
 
   const displayAccounts = accountsData?.data || accounts;
 
@@ -111,8 +123,7 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
   }
 
   const hasMore = total > displayedCount;
-  const isInitialLoading = isLoading && displayedTransactions.length === 0;
-  const isLoadingMore = isFetching && !isInitialLoading && displayedTransactions.length > 0;
+  const isInitialLoading = isLoading && !hasInitiallyLoaded && displayedTransactions.length === 0;
 
   return (
     <div className="w-full max-w-[1440px] mx-auto">
@@ -232,6 +243,7 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
                   transactions={displayedTransactions}
                   showLoadMore={hasMore}
                   onLoadMore={() => {
+                    setIsLoadingMore(true);
                     setDisplayedCount((prev) => prev + TRANSACTIONS_PER_PAGE);
                   }}
                   workspaceId={workspaceId}
