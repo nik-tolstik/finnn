@@ -125,7 +125,6 @@ export function EditTransactionDialog({
         queryClient.invalidateQueries({ queryKey: ["accounts", workspaceId] }),
       ]);
       router.refresh();
-      reset();
     }
   };
 

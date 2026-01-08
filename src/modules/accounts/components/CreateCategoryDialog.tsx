@@ -73,7 +73,6 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
         queryClient.invalidateQueries({
           queryKey: ["categories", workspaceId],
         });
-        reset();
         onOpenChange(false);
         router.refresh();
       }

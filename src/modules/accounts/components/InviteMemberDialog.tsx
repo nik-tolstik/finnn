@@ -75,7 +75,6 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
       queryClient.invalidateQueries({
         queryKey: ["workspace-members", workspaceId],
       });
-      reset();
       onOpenChange(false);
       router.refresh();
     },

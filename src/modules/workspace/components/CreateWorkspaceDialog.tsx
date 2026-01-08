@@ -58,7 +58,6 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
       } else {
         toast.success("Рабочий стол успешно создан!");
         queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-        reset();
         onOpenChange(false);
         if (result.data) {
           router.push(`/dashboard?workspaceId=${result.data.id}`);

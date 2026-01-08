@@ -126,7 +126,6 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
       toast.error(result.error);
     } else {
       toast.success("Счёт успешно создан");
-      reset();
       onOpenChange(false);
       await queryClient.invalidateQueries({
         queryKey: ["accounts", workspaceId],

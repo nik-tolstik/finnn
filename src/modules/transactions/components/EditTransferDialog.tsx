@@ -88,7 +88,6 @@ export function EditTransferDialog({
       toast.error(result.error);
     } else {
       toast.success("Перевод успешно обновлён");
-      form.reset();
       onOpenChange(false);
       await queryClient.invalidateQueries({
         queryKey: ["transactions", workspaceId],

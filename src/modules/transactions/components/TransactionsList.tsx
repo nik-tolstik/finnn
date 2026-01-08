@@ -1,7 +1,10 @@
 "use client";
 
+import { format, isSameDay, startOfDay } from "date-fns";
+import { ru } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { toast } from "sonner";
 
 import { useDialogState } from "@/shared/hooks/useDialogState";
@@ -89,9 +92,56 @@ export function TransactionsList({
 
   const processedTransactionIds = new Set<string>();
 
+  const groupedTransactions = useMemo(() => {
+    const groups: Array<{ date: Date; transactions: TransactionWithRelations[] }> = [];
+    let currentDate: Date | null = null;
+    let currentGroup: TransactionWithRelations[] = [];
+
+    transactions.forEach((transaction) => {
+      const transactionDate = startOfDay(new Date(transaction.date));
+
+      if (!currentDate || !isSameDay(currentDate, transactionDate)) {
+        if (currentGroup.length > 0) {
+          groups.push({ date: currentDate!, transactions: currentGroup });
+        }
+        currentDate = transactionDate;
+        currentGroup = [transaction];
+      } else {
+        currentGroup.push(transaction);
+      }
+    });
+
+    if (currentGroup.length > 0 && currentDate) {
+      groups.push({ date: currentDate, transactions: currentGroup });
+    }
+
+    return groups;
+  }, [transactions]);
+
+  const formatDateHeader = (date: Date) => {
+    const today = startOfDay(new Date());
+    const yesterday = startOfDay(new Date());
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (isSameDay(date, today)) {
+      return "Сегодня";
+    } else if (isSameDay(date, yesterday)) {
+      return "Вчера";
+    } else {
+      return format(date, "d MMMM yyyy", { locale: ru });
+    }
+  };
+
   return (
-    <div className="space-y-3">
-      {transactions.map((transaction) => {
+    <div className="space-y-4">
+      {groupedTransactions.map((group, groupIndex) => (
+        <div key={group.date.toISOString()} className="space-y-3">
+          <div className="sticky top-0 z-10 bg-background py-2">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              {formatDateHeader(group.date)}
+            </h3>
+          </div>
+          {group.transactions.map((transaction) => {
         const isTransfer = transaction.type === TransactionType.TRANSFER;
 
         if (isTransfer) {
@@ -158,7 +208,9 @@ export function TransactionsList({
             }}
           />
         );
-      })}
+          })}
+        </div>
+      ))}
       {actionsDialog.mounted && (
         <TransactionActionsDialog
           transaction={actionsDialog.data.transaction}

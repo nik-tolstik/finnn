@@ -79,7 +79,6 @@ export function CreateTransferDialog({
       toast.error(result.error);
     } else {
       toast.success("Перевод успешно создан");
-      form.reset();
       onOpenChange(false);
       await queryClient.invalidateQueries({
         queryKey: ["transactions", workspaceId],
