@@ -138,4 +138,24 @@
   *[role="button"] {
     cursor: pointer;
   }
+
+  .nivo-pie-legend {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .nivo-pie-legend-item {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .nivo-line-axis-right text {
+    text-anchor: start !important;
+  }
+
 }

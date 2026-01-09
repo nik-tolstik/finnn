@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && pnpm migrate:workspace-base-currency && next build",
     "start": "next start -p 9999",
     "lint": "eslint",
     "postinstall": "prisma generate",
@@ -15,7 +15,8 @@
     "generate:transactions": "tsx scripts/generate-transactions.ts",
     "script:create-user": "tsx scripts/create-user.ts",
     "script:add-user-to-workspace": "tsx scripts/add-user-to-workspace.ts",
-    "script:change-password": "tsx scripts/change-password.ts"
+    "script:change-password": "tsx scripts/change-password.ts",
+    "migrate:workspace-base-currency": "tsx scripts/migrate-workspace-base-currency.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -23,6 +24,9 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.2.2",
+    "@nivo/core": "^0.99.0",
+    "@nivo/line": "^0.99.0",
+    "@nivo/pie": "^0.99.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dialog": "^1.1.15",

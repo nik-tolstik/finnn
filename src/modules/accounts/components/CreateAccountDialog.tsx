@@ -9,7 +9,7 @@ import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
+import { getWorkspace, getWorkspaceMembers } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { createAccountSchema, type CreateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
@@ -56,7 +56,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
     defaultValues: {
       name: "",
       balance: "0",
-      currency: "USD",
+      currency: "BYN",
       ownerId: undefined,
       color: undefined,
       icon: "Wallet",
@@ -75,6 +75,18 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
     staleTime: 5000,
     refetchInterval: 5000,
   });
+
+  const { data: workspaceData } = useQuery({
+    queryKey: ["workspace", workspaceId],
+    queryFn: () => getWorkspace(workspaceId),
+    enabled: open,
+    staleTime: 5000,
+  });
+
+  const baseCurrency =
+    workspaceData && "data" in workspaceData && workspaceData.data
+      ? workspaceData.data.baseCurrency || "BYN"
+      : "BYN";
 
   const members = useMemo(() => {
     return membersData?.data || [];
@@ -103,7 +115,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
       reset({
         name: "",
         balance: "0",
-        currency: "USD",
+        currency: baseCurrency as "BYN" | "USD" | "EUR",
         ownerId: currentUserId,
         color: undefined,
         icon: "Wallet",
@@ -114,14 +126,17 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
         })(),
       });
     }
-  }, [open, reset, currentUserId]);
+  }, [open, reset, currentUserId, baseCurrency]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
   };
 
   const onSubmit = async (data: CreateAccountInput) => {
-    const result = await createAccount(workspaceId, data);
+    const result = await createAccount(workspaceId, {
+      ...data,
+      currency: data.currency as "BYN" | "USD" | "EUR",
+    });
     if (result.error) {
       toast.error(result.error);
     } else {
@@ -183,13 +198,9 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
               </Label>
               <Select
                 options={[
+                  { value: "BYN", label: "BYN (Br)" },
                   { value: "USD", label: "USD ($)" },
                   { value: "EUR", label: "EUR (€)" },
-                  { value: "RUB", label: "RUB (₽)" },
-                  { value: "BYN", label: "BYN (Br)" },
-                  { value: "GBP", label: "GBP (£)" },
-                  { value: "JPY", label: "JPY (¥)" },
-                  { value: "CNY", label: "CNY (¥)" },
                 ]}
                 value={currency}
                 onChange={(value) => setValue("currency", value)}

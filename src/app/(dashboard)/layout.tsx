@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/shared/lib/auth";
 
 import { Header } from "./components/Header";
+import { MobileNavigation } from "./components/MobileNavigation";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -15,7 +16,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex-1 p-4 md:p-8">{children}</main>
+      <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">{children}</main>
+      <MobileNavigation />
     </div>
   );
 }

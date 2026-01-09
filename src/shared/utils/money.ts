@@ -50,3 +50,31 @@ export function getCurrencySymbol(currency: string): string {
   };
   return currencySymbols[currency] || currency;
 }
+
+export function formatMoneyByMagnitude(amount: string | number, currency = "USD"): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  const absNum = Math.abs(num);
+  const sign = num < 0 ? "-" : "";
+
+  let formatted: string;
+  let magnitude: string;
+
+  if (absNum >= 1_000_000_000) {
+    formatted = (absNum / 1_000_000_000).toFixed(1);
+    magnitude = "b";
+  } else if (absNum >= 1_000_000) {
+    formatted = (absNum / 1_000_000).toFixed(1);
+    magnitude = "m";
+  } else if (absNum >= 1_000) {
+    formatted = (absNum / 1_000).toFixed(1);
+    magnitude = "k";
+  } else {
+    formatted = absNum.toFixed(0);
+    magnitude = "";
+  }
+
+  const currencySymbol = getCurrencySymbol(currency);
+  const shouldAddSpace = currency === "BYN";
+
+  return `${sign}${formatted}${magnitude}${shouldAddSpace ? " " : ""}${currencySymbol}`;
+}

@@ -73,6 +73,7 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
       data: {
         name: validated.name,
         slug: validated.slug,
+        baseCurrency: "BYN",
         ownerId: session.user.id,
         members: {
           create: {
