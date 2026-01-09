@@ -13,12 +13,13 @@ export function ExchangeRatesHeader({ baseCurrency }: ExchangeRatesHeaderProps) 
   const { data: ratesData, isLoading } = useQuery({
     queryKey: ["nbrb-rates"],
     queryFn: () => getNBRBExchangeRates(),
-    staleTime: 3600000,
-    refetchInterval: 3600000,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 86400000,
+    refetchInterval: false,
+    retry: 1,
+    retryDelay: 5000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    gcTime: 86400000,
   });
 
   if (baseCurrency !== "BYN") {
