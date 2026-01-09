@@ -666,8 +666,13 @@ export async function getTransactions(
       }
     }
 
+    const skip = filters?.skip ?? 0;
+    const take = filters?.take ?? 50;
+
     const transactions = await prisma.transaction.findMany({
       where,
+      skip,
+      take,
       include: {
         account: {
           select: {
@@ -783,16 +788,7 @@ export async function getTransactions(
       }
     }
 
-    const total = filteredTransactions.length;
-
-    const skip = filters?.skip ?? 0;
-    const take = filters?.take;
-
-    if (take !== undefined) {
-      filteredTransactions = filteredTransactions.slice(skip, skip + take);
-    } else if (skip > 0) {
-      filteredTransactions = filteredTransactions.slice(skip);
-    }
+    const total = await prisma.transaction.count({ where });
 
     return { data: filteredTransactions, total };
   } catch (error: any) {

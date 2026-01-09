@@ -25,14 +25,14 @@ model User {
 }
 
 model Workspace {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  slug        String   @unique
-  icon        String?
-  baseCurrency String  @default("BYN")
-  ownerId     String   @db.ObjectId
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String   @unique
+  icon         String?
+  baseCurrency String   @default("BYN")
+  ownerId      String   @db.ObjectId
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   owner        User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
   members      WorkspaceMember[]
@@ -77,6 +77,7 @@ model Account {
   owner        User?         @relation(fields: [ownerId], references: [id])
   transactions Transaction[]
 
+  @@index([workspaceId, archived])
   @@map("accounts")
 }
 
@@ -115,6 +116,9 @@ model Transaction {
   transferFrom Transfer? @relation("TransferFrom")
   transferTo   Transfer? @relation("TransferTo")
 
+  @@index([workspaceId, date])
+  @@index([workspaceId, accountId, date])
+  @@index([accountId, date])
   @@map("transactions")
 }
 
@@ -146,13 +150,13 @@ model WorkspaceInvite {
 }
 
 model PendingRegistration {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
-  email      String   @unique
-  password   String
-  token      String   @unique
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@map("pending_registrations")
 }

@@ -79,25 +79,35 @@ export async function getCapitalHistory(
         accountId: { in: accounts.map((a) => a.id) },
         date: { lte: dateToEnd },
       },
-      include: {
+      select: {
+        id: true,
+        accountId: true,
+        amount: true,
+        type: true,
+        date: true,
         transferFrom: {
-          include: {
+          select: {
+            id: true,
             toTransaction: {
               select: {
                 id: true,
                 accountId: true,
               },
             },
+            toAmount: true,
+            amount: true,
           },
         },
         transferTo: {
-          include: {
+          select: {
+            id: true,
             fromTransaction: {
               select: {
                 id: true,
                 accountId: true,
               },
             },
+            amount: true,
           },
         },
       },
