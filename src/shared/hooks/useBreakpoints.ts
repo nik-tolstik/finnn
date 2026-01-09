@@ -25,7 +25,11 @@ const calculateBreakpoints = () => {
 };
 
 export function useBreakpoints() {
-  const [breakpoints, setBreakpoints] = useState<Breakpoints>(calculateBreakpoints);
+  const [breakpoints, setBreakpoints] = useState<Breakpoints>({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: false,
+  });
 
   useEffect(() => {
     const handleResize = () => setBreakpoints(calculateBreakpoints());
