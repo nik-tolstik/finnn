@@ -10,24 +10,24 @@ interface NBRBRate {
 }
 
 export async function getNBRBExchangeRates(): Promise<{ data: Record<string, number> } | { error: string }> {
-  const url = "https://www.nbrb.by/api/exrates/rates?periodicity=0";
-  console.log("[NBRB] Начало запроса курсов валют:", url);
+  const apiUrl = "/api/exchange-rates";
+  console.log("[NBRB] Начало запроса курсов валют через API route:", apiUrl);
 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      console.error("[NBRB] Таймаут запроса (10 секунд)");
+      console.error("[NBRB] Таймаут запроса (30 секунд)");
       controller.abort();
-    }, 10000);
+    }, 30000);
 
     try {
-      console.log("[NBRB] Выполняю fetch запрос...");
-      const response = await fetch(url, {
-        next: { revalidate: 3600 },
+      console.log("[NBRB] Выполняю fetch запрос к API route...");
+      const response = await fetch(apiUrl, {
         signal: controller.signal,
         headers: {
           "Accept": "application/json",
         },
+        cache: "no-store",
       });
 
       clearTimeout(timeoutId);
@@ -35,33 +35,27 @@ export async function getNBRBExchangeRates(): Promise<{ data: Record<string, num
         status: response.status,
         statusText: response.statusText,
         ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries()),
       });
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => "Не удалось прочитать ответ");
+        const errorData = await response.json().catch(() => ({ error: "Не удалось прочитать ответ" }));
         console.error("[NBRB] Ошибка ответа:", {
           status: response.status,
           statusText: response.statusText,
-          body: errorText,
+          error: errorData.error,
         });
-        return { error: `Не удалось получить курсы валют: ${response.status} ${response.statusText}` };
+        return { error: errorData.error || `Не удалось получить курсы валют: ${response.status} ${response.statusText}` };
       }
 
       console.log("[NBRB] Парсинг JSON...");
-      const rates: NBRBRate[] = await response.json();
-      console.log("[NBRB] Получено курсов:", rates.length);
+      const result = await response.json();
+      console.log("[NBRB] Успешно получены курсы:", result.data ? Object.keys(result.data) : "нет данных");
 
-      const ratesMap: Record<string, number> = {};
-      for (const rate of rates) {
-        const ratePerUnit = rate.Cur_OfficialRate / rate.Cur_Scale;
-        ratesMap[rate.Cur_Abbreviation] = ratePerUnit;
+      if (result.error) {
+        return { error: result.error };
       }
 
-      ratesMap["BYN"] = 1;
-
-      console.log("[NBRB] Успешно получены курсы:", Object.keys(ratesMap));
-      return { data: ratesMap };
+      return { data: result.data };
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       console.error("[NBRB] Ошибка fetch:", {
@@ -73,11 +67,6 @@ export async function getNBRBExchangeRates(): Promise<{ data: Record<string, num
 
       if (fetchError.name === "AbortError") {
         return { error: "Таймаут при получении курсов валют" };
-      }
-
-      if (fetchError.message?.includes("CORS") || fetchError.message?.includes("cors")) {
-        console.error("[NBRB] Обнаружена CORS ошибка");
-        return { error: `CORS ошибка: ${fetchError.message}` };
       }
 
       throw fetchError;
