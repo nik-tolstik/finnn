@@ -21,7 +21,7 @@ async function getNBRBRates(): Promise<{ data: Record<string, number> } | { erro
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
       const response = await fetch(url, {
