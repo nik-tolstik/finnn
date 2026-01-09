@@ -10,7 +10,17 @@ interface NBRBRate {
 }
 
 export async function getNBRBExchangeRates(): Promise<{ data: Record<string, number> } | { error: string }> {
-  const apiUrl = "/api/exchange-rates";
+  let baseUrl = process.env.NEXTAUTH_URL;
+  
+  if (!baseUrl) {
+    if (process.env.VERCEL_URL) {
+      baseUrl = `https://${process.env.VERCEL_URL}`;
+    } else {
+      baseUrl = "http://localhost:3000";
+    }
+  }
+  
+  const apiUrl = `${baseUrl}/api/exchange-rates`;
   console.log("[NBRB] Начало запроса курсов валют через API route:", apiUrl);
 
   try {
