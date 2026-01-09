@@ -39,6 +39,10 @@ export function CapitalChart({ workspaceId, baseCurrency, dateFrom, dateTo, sele
         ]
       : [];
 
+  const minY = chartData.length > 0 && chartData[0].data.length > 0
+    ? Math.min(...chartData[0].data.map((d) => d.y))
+    : 0;
+
   const formatCurrency = (value: number) => {
     return formatMoney(value.toString(), baseCurrency);
   };
@@ -121,7 +125,20 @@ export function CapitalChart({ workspaceId, baseCurrency, dateFrom, dateTo, sele
             pointBorderWidth={0}
             pointBorderColor={{ from: "serieColor" }}
             pointLabelYOffset={-12}
-            enableArea={false}
+            enableArea={true}
+            areaBaselineValue={minY}
+            areaOpacity={0.3}
+            fill={[{ match: "*", id: "gradient" }]}
+            defs={[
+              {
+                id: "gradient",
+                type: "linearGradient",
+                colors: [
+                  { offset: 0, color: "#3b82f6", opacity: 0.3 },
+                  { offset: 100, color: "#3b82f6", opacity: 0 },
+                ],
+              },
+            ]}
             enableGridX={true}
             enableGridY={true}
             gridXValues={undefined}
