@@ -15,6 +15,10 @@ export function ExchangeRatesHeader({ baseCurrency }: ExchangeRatesHeaderProps) 
     queryFn: () => getNBRBExchangeRates(),
     staleTime: 3600000,
     refetchInterval: 3600000,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   if (baseCurrency !== "BYN") {

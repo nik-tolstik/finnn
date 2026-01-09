@@ -53,10 +53,17 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const createAccountDialog = useDialogState();
+  const [isInitialMount, setIsInitialMount] = useState(true);
 
   const filtersKey = JSON.stringify(debouncedFilters);
 
   useEffect(() => {
+    if (isInitialMount) {
+      setDebouncedFilters(localFilters);
+      setIsInitialMount(false);
+      return;
+    }
+
     const timer = setTimeout(() => {
       setDebouncedFilters(localFilters);
       setDisplayedCount(TRANSACTIONS_PER_PAGE);
@@ -64,7 +71,7 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
     }, DEBOUNCE_DELAY);
 
     return () => clearTimeout(timer);
-  }, [localFilters]);
+  }, [localFilters, isInitialMount]);
 
   const { data: accountsData, isLoading: isLoadingAccounts } = useQuery({
     queryKey: ["accounts", workspaceId],
