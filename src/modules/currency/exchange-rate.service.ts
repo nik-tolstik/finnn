@@ -66,31 +66,6 @@ export async function saveDailyExchangeRates() {
     savedRates.push(saved);
   }
 
-  for (let i = 0; i < SUPPORTED_CURRENCIES.length; i++) {
-    for (let j = i + 1; j < SUPPORTED_CURRENCIES.length; j++) {
-      const from = SUPPORTED_CURRENCIES[i];
-      const to = SUPPORTED_CURRENCIES[j];
-
-      if (from === baseCurrency || to === baseCurrency) {
-        continue;
-      }
-
-      const fromToBase = baseRates[from];
-      const toToBase = baseRates[to];
-
-      if (!fromToBase || !toToBase) {
-        continue;
-      }
-
-      const crossRate = fromToBase / toToBase;
-      const saved = await saveExchangeRate(today, from, to, crossRate);
-      savedRates.push(saved);
-    }
-  }
-
-  const bynToByn = await saveExchangeRate(today, Currency.BYN, Currency.BYN, 1);
-  savedRates.push(bynToByn);
-
   return savedRates;
 }
 
@@ -153,20 +128,16 @@ export async function getExchangeRate(
     }
 
     let calculatedRate: number;
-    let shouldSave = false;
 
     if (fromCurrency === baseCurrency) {
       calculatedRate = 1 / baseRates[toCurrency];
-      shouldSave = false;
     } else if (toCurrency === baseCurrency) {
       calculatedRate = baseRates[fromCurrency];
-      shouldSave = true;
     } else {
       calculatedRate = baseRates[fromCurrency] / baseRates[toCurrency];
-      shouldSave = fromCurrency < toCurrency;
     }
 
-    if (shouldSave) {
+    if (toCurrency === baseCurrency && fromCurrency !== baseCurrency) {
       rate = await prisma.exchangeRate.create({
         data: {
           date: targetDate,
