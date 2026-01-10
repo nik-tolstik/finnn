@@ -14,6 +14,7 @@ export const updateCategorySchema = z.object({
   type: z.nativeEnum(CategoryType).optional(),
   color: z.string().optional(),
   icon: z.string().optional(),
+  order: z.number().int().optional(),
 });
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
