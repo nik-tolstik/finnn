@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { TrendingUp, Wallet } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Currency } from "@prisma/client";
 
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { cn } from "@/shared/utils/cn";
+import { DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { getWorkspace } from "@/modules/workspace/workspace.service";
 
 import { UserMenu } from "./UserMenu";
@@ -30,8 +32,8 @@ export function Header() {
 
   const baseCurrency =
     workspaceData && "data" in workspaceData && workspaceData.data
-      ? workspaceData.data.baseCurrency || "BYN"
-      : "BYN";
+      ? (workspaceData.data.baseCurrency as Currency) || DEFAULT_CURRENCY
+      : DEFAULT_CURRENCY;
 
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
 

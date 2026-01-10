@@ -3,7 +3,9 @@
 import type { Account } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { GripVertical, X, Check, Plus, MoreVertical, ArrowLeftRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import * as React from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountsCards } from "@/modules/accounts/components/AccountsCards";
@@ -11,6 +13,7 @@ import { CreateAccountDialog } from "@/modules/accounts/components/CreateAccount
 import { TransactionsFilters } from "@/modules/transactions/components/TransactionsFilters";
 import { TransactionsList } from "@/modules/transactions/components/TransactionsList";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/TransactionsListSkeleton";
+import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { getTransactions, type TransactionFilters } from "@/modules/transactions/transaction.service";
 import type { TransactionWithRelations } from "@/modules/transactions/transaction.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
@@ -40,8 +43,54 @@ function isSuccessResponse(data: any): data is { data: TransactionWithRelations[
 }
 
 export function DashboardContent({ accounts, workspaceId }: DashboardContentProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [displayedCount, setDisplayedCount] = useState(TRANSACTIONS_PER_PAGE);
-  const [localFilters, setLocalFilters] = useState<TransactionFilters>({});
+
+  const parseFiltersFromURL = (): TransactionFilters => {
+    const filters: TransactionFilters = {};
+
+    const parseArray = (value: string | null): string[] | undefined => {
+      if (!value) return undefined;
+      const arr = value.split(",").filter(Boolean);
+      return arr.length > 0 ? arr : undefined;
+    };
+
+    const parseDate = (value: string | null): Date | undefined => {
+      if (!value) return undefined;
+      const date = new Date(value);
+      return !isNaN(date.getTime()) ? date : undefined;
+    };
+
+    const categoryIds = parseArray(searchParams.get("categoryIds"));
+    if (categoryIds) filters.categoryIds = categoryIds;
+
+    const accountIds = parseArray(searchParams.get("accountIds"));
+    if (accountIds) filters.accountIds = accountIds;
+
+    const types = parseArray(searchParams.get("types"));
+    if (types) filters.types = types as TransactionType[];
+
+    const dateFrom = parseDate(searchParams.get("dateFrom"));
+    if (dateFrom) filters.dateFrom = dateFrom;
+
+    const dateTo = parseDate(searchParams.get("dateTo"));
+    if (dateTo) filters.dateTo = dateTo;
+
+    const search = searchParams.get("search");
+    if (search) filters.search = search;
+
+    const minAmount = searchParams.get("minAmount");
+    if (minAmount) filters.minAmount = minAmount;
+
+    const maxAmount = searchParams.get("maxAmount");
+    if (maxAmount) filters.maxAmount = maxAmount;
+
+    return filters;
+  };
+
+  const [localFilters, setLocalFilters] = useState<TransactionFilters>(() => parseFiltersFromURL());
   const [debouncedFilters, setDebouncedFilters] = useState<TransactionFilters>({});
   const [cachedTransactions, setCachedTransactions] = useState<{
     data: TransactionWithRelations[];
@@ -53,17 +102,45 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const createAccountDialog = useDialogState();
-  const [isInitialMount, setIsInitialMount] = useState(true);
 
   const filtersKey = JSON.stringify(debouncedFilters);
 
-  useEffect(() => {
-    if (isInitialMount) {
-      setDebouncedFilters(localFilters);
-      setIsInitialMount(false);
-      return;
-    }
+  const updateFilters = useCallback(
+    (newFilters: TransactionFilters) => {
+      setLocalFilters(newFilters);
 
+      const params = new URLSearchParams();
+      params.set("workspaceId", workspaceId);
+
+      const setArrayParam = (key: string, value: string[] | undefined) => {
+        if (value && value.length > 0) {
+          params.set(key, value.join(","));
+        }
+      };
+
+      const setDateParam = (key: string, value: Date | undefined) => {
+        if (value) {
+          params.set(key, value.toISOString());
+        }
+      };
+
+      setArrayParam("categoryIds", newFilters.categoryIds);
+      setArrayParam("accountIds", newFilters.accountIds);
+      setArrayParam("types", newFilters.types);
+
+      setDateParam("dateFrom", newFilters.dateFrom);
+      setDateParam("dateTo", newFilters.dateTo);
+
+      if (newFilters.search) params.set("search", newFilters.search);
+      if (newFilters.minAmount) params.set("minAmount", newFilters.minAmount);
+      if (newFilters.maxAmount) params.set("maxAmount", newFilters.maxAmount);
+
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [workspaceId, pathname, router]
+  );
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedFilters(localFilters);
       setDisplayedCount(TRANSACTIONS_PER_PAGE);
@@ -71,7 +148,7 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
     }, DEBOUNCE_DELAY);
 
     return () => clearTimeout(timer);
-  }, [localFilters, isInitialMount]);
+  }, [localFilters]);
 
   const { data: accountsData, isLoading: isLoadingAccounts } = useQuery({
     queryKey: ["accounts", workspaceId],
@@ -262,13 +339,7 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
             </div>
             <div className="order-1 lg:order-2 lg:w-80 lg:shrink-0">
               <div className="lg:sticky lg:top-4 lg:bg-card lg:rounded-lg lg:p-4">
-                <TransactionsFilters
-                  workspaceId={workspaceId}
-                  filters={localFilters}
-                  onFiltersChange={(newFilters) => {
-                    setLocalFilters(newFilters);
-                  }}
-                />
+                <TransactionsFilters workspaceId={workspaceId} filters={localFilters} onFiltersChange={updateFilters} />
               </div>
             </div>
           </div>

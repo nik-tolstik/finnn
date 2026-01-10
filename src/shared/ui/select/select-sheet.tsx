@@ -29,9 +29,9 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
       setLocalValues(newValues as TValue[]);
       setSearch("");
     }
-  }, [open, value, multiple]);
+  }, [open, multiple]);
 
-  const filteredOptions = (() => {
+  const filteredOptions = React.useMemo(() => {
     if (filter) {
       return filter(search) ?? [];
     }
@@ -42,7 +42,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
     return options.filter(
       (opt) => opt.label.toLowerCase().includes(searchLower) || String(opt.value).toLowerCase().includes(searchLower)
     );
-  })();
+  }, [filter, search, options]);
 
   const handleSearchChange = (newSearch: string) => {
     setSearch(newSearch);
@@ -105,7 +105,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
   const selectedValues = multiple ? localValues : [];
   const hasSelection = multiple ? currentValues.length > 0 : currentValue !== undefined;
 
-  const getSelectedLabel = () => {
+  const selectedLabel = React.useMemo(() => {
     if (valueLabel !== undefined) {
       return valueLabel;
     }
@@ -134,9 +134,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
       }
       return option.label;
     }
-  };
-
-  const selectedLabel = getSelectedLabel();
+  }, [valueLabel, multiple, currentValues, currentValue, options, renderOption, placeholder, props]);
 
   return (
     <>

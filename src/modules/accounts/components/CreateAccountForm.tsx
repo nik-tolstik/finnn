@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
+import { Currency } from "@prisma/client";
 import { Plus, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -11,6 +12,7 @@ import { toast } from "sonner";
 
 import { getWorkspace, getWorkspaceMembers } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/AccountCard";
+import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { createAccountSchema, type CreateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
 import { DatePicker } from "@/shared/ui/date-picker";
@@ -53,7 +55,7 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
     defaultValues: {
       name: "",
       balance: "0",
-      currency: "BYN",
+      currency: Currency.BYN,
       ownerId: "",
       color: undefined,
       icon: "Wallet",
@@ -82,8 +84,8 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
 
   const baseCurrency =
     workspaceData && "data" in workspaceData && workspaceData.data
-      ? workspaceData.data.baseCurrency || "BYN"
-      : "BYN";
+      ? (workspaceData.data.baseCurrency as Currency) || DEFAULT_CURRENCY
+      : DEFAULT_CURRENCY;
 
   const members = useMemo(() => {
     return membersData?.data || [];
@@ -112,7 +114,7 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
       reset({
         name: "",
         balance: "0",
-        currency: baseCurrency as "BYN" | "USD" | "EUR",
+        currency: baseCurrency,
         ownerId: currentUserId || "",
         color: undefined,
         icon: "Wallet",
@@ -128,7 +130,7 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
   const onSubmit = async (data: CreateAccountInput) => {
     const result = await createAccount(workspaceId, {
       ...data,
-      currency: data.currency as "BYN" | "USD" | "EUR",
+      currency: data.currency,
     });
     if (result.error) {
       toast.error(result.error);
@@ -160,7 +162,7 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
               workspaceId,
               name: accountName || "",
               balance: balance || "0",
-              currency: currency || "USD",
+              currency: currency || Currency.USD,
               color: selectedColor || null,
               icon: selectedIcon || "Wallet",
               description: null,
@@ -193,11 +195,7 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
               Валюта <span className="text-destructive">*</span>
             </Label>
             <Select
-              options={[
-                { value: "BYN", label: "BYN (Br)" },
-                { value: "USD", label: "USD ($)" },
-                { value: "EUR", label: "EUR (€)" },
-              ]}
+              options={CURRENCY_OPTIONS}
               value={currency}
               onChange={(value) => setValue("currency", value)}
               placeholder="Выберите валюту"

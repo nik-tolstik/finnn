@@ -2,6 +2,7 @@
 
 import { randomBytes } from "crypto";
 
+import { Currency } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 
@@ -73,7 +74,7 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
       data: {
         name: validated.name,
         slug: validated.slug,
-        baseCurrency: "BYN",
+        baseCurrency: Currency.BYN,
         ownerId: session.user.id,
         members: {
           create: {

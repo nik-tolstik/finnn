@@ -14,16 +14,19 @@ import { SelectDropdownProps } from "./types";
 export function SelectDropdown<TValue extends string | number = string>(props: SelectDropdownProps<TValue>) {
   const { options, value, onChange, placeholder, multiple, allowClear, valueLabel, disabled, renderOption } = props;
   const [open, setOpen] = useState(false);
-  const selectedValues: TValue[] = multiple
-    ? Array.isArray(value)
-      ? (value as TValue[])
-      : []
-    : value !== undefined
-      ? [value as TValue]
-      : [];
-  const currentValue = multiple ? undefined : (value as TValue | undefined);
+  
+  const selectedValues: TValue[] = React.useMemo(() => {
+    if (multiple) {
+      return Array.isArray(value) ? (value as TValue[]) : [];
+    }
+    return value !== undefined ? [value as TValue] : [];
+  }, [value, multiple]);
+  
+  const currentValue = React.useMemo(() => {
+    return multiple ? undefined : (value as TValue | undefined);
+  }, [value, multiple]);
 
-  const getDisplayLabel = () => {
+  const displayLabel = React.useMemo(() => {
     if (valueLabel !== undefined) {
       return valueLabel;
     }
@@ -52,11 +55,12 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
       }
       return option.label;
     }
-  };
+  }, [valueLabel, multiple, selectedValues, currentValue, options, renderOption, placeholder, props]);
 
   const handleSelect = (optionValue: TValue) => {
     if (!onChange) return;
     if (String(optionValue).startsWith("__group_")) return;
+    
     if (multiple) {
       const newValues = selectedValues.includes(optionValue)
         ? selectedValues.filter((v) => v !== optionValue)
@@ -88,7 +92,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
           className={cn("w-full justify-start", !hasSelection && "text-muted-foreground")}
         >
           <span className={cn("truncate flex items-center gap-2 flex-1 min-w-0 text-left", renderOption && "flex-1 min-w-0")}>
-            {getDisplayLabel()}
+            {displayLabel}
           </span>
           <div className="flex items-center gap-1 shrink-0">
             {allowClear && hasSelection && (
@@ -125,20 +129,28 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
               return (
                 <div
                   key={option.value.toString()}
-                  role={isGroupHeader ? undefined : "button"}
-                  tabIndex={isGroupHeader ? undefined : 0}
-                  onClick={() => !isGroupHeader && handleSelect(option.value)}
+                  className={cn(
+                    !isGroupHeader &&
+                      "flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
+                    !isGroupHeader && selected && "bg-accent"
+                  )}
+                  onClick={(e) => {
+                    if (!isGroupHeader) {
+                      const target = e.target as HTMLElement;
+                      if (target.closest('button[data-radix-checkbox-root]')) {
+                        return;
+                      }
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelect(option.value);
+                    }
+                  }}
                   onKeyDown={(e) => {
                     if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
                       e.preventDefault();
                       handleSelect(option.value);
                     }
                   }}
-                  className={cn(
-                    !isGroupHeader &&
-                      "flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
-                    !isGroupHeader && selected && "bg-accent"
-                  )}
                 >
                   {renderOption({ option, props, selected })}
                 </div>
@@ -147,15 +159,6 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
             return (
               <div
                 key={option.value.toString()}
-                role={isGroupHeader ? undefined : "button"}
-                tabIndex={isGroupHeader ? undefined : 0}
-                onClick={() => !isGroupHeader && handleSelect(option.value)}
-                onKeyDown={(e) => {
-                  if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
-                    e.preventDefault();
-                    handleSelect(option.value);
-                  }
-                }}
                 className={cn(
                   !isGroupHeader &&
                     "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
@@ -168,16 +171,46 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                   </div>
                 ) : (
                   <>
-                    {multiple && (
-                      <Checkbox
-                        checked={selected}
-                        onCheckedChange={() => handleSelect(option.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="shrink-0"
-                      />
+                    {multiple ? (
+                      <>
+                        <Checkbox
+                          checked={selected}
+                          onCheckedChange={() => handleSelect(option.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0"
+                        />
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleSelect(option.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleSelect(option.value);
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          {option.label}
+                        </span>
+                      </>
+                    ) : (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleSelect(option.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleSelect(option.value);
+                          }
+                        }}
+                        className="flex items-center gap-2 flex-1 min-w-0"
+                      >
+                        <span className="flex-1">{option.label}</span>
+                        {selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
+                      </div>
                     )}
-                    <span className="flex-1">{option.label}</span>
-                    {!multiple && selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
                   </>
                 )}
               </div>

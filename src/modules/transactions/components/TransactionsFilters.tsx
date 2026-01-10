@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Filter, X } from "lucide-react";
-import { Check } from "lucide-react";
+import { Filter, X, Check } from "lucide-react";
 import { useState } from "react";
+import * as React from "react";
 
 import { getAccounts, getArchivedAccounts } from "@/modules/accounts/account.service";
 import { getCategories } from "@/modules/categories/category.service";
@@ -74,18 +74,21 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     { value: TransactionType.TRANSFER, label: "Перевод" },
   ];
 
-  const accountOptions: SelectOption[] = [
-    ...(activeAccounts.length > 0 ? [{ value: "__group_active__" as string, label: "Активные" }] : []),
-    ...activeAccounts.map((account) => ({
-      value: account.id,
-      label: account.name,
-    })),
-    ...(archivedAccounts.length > 0 ? [{ value: "__group_archived__" as string, label: "Архивированные" }] : []),
-    ...archivedAccounts.map((account) => ({
-      value: account.id,
-      label: account.name,
-    })),
-  ];
+  const accountOptions: SelectOption[] = React.useMemo(
+    () => [
+      ...(activeAccounts.length > 0 ? [{ value: "__group_active__" as string, label: "Активные" }] : []),
+      ...activeAccounts.map((account) => ({
+        value: account.id,
+        label: account.name,
+      })),
+      ...(archivedAccounts.length > 0 ? [{ value: "__group_archived__" as string, label: "Архивированные" }] : []),
+      ...archivedAccounts.map((account) => ({
+        value: account.id,
+        label: account.name,
+      })),
+    ],
+    [activeAccounts, archivedAccounts]
+  );
 
   const renderAccountOption: RenderOption<string> = ({ option, selected, props: { multiple }, isTrigger }) => {
     if (option.value === "__group_active__" || option.value === "__group_archived__") {
@@ -105,7 +108,7 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     const AccountIcon = getAccountIcon(account.icon);
 
     return (
-      <>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
         {multiple && !isTrigger && <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />}
         {account.icon && <AccountIcon className="h-4 w-4 text-primary" style={{ color: account.color || undefined }} />}
         <div className="flex-1 flex flex-col min-w-0">
@@ -120,26 +123,30 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
           )}
         </div>
         {!multiple && selected && !isTrigger && <Check className="h-4 w-4 shrink-0 text-primary" />}
-      </>
+      </div>
     );
   };
 
-  const renderCategoryOption: RenderOption<string> = ({ props, option, selected }) => {
+  const renderCategoryOption: RenderOption<string> = ({ props, option, selected, isTrigger }) => {
     const category = categories.find((cat) => cat.id === option.value)!;
 
     return (
-      <>
-        {props.multiple && <Checkbox checked={selected} className="shrink-0" />}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        {props.multiple && !isTrigger && <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />}
         <div style={{ backgroundColor: category.color || undefined }} className="size-4 rounded-full" />
         <span className="flex-1 text-sm">{option.label}</span>
-      </>
+      </div>
     );
   };
 
-  const categoryOptions: SelectOption[] = categories.map((category) => ({
-    value: category.id,
-    label: category.name,
-  }));
+  const categoryOptions: SelectOption[] = React.useMemo(
+    () =>
+      categories.map((category) => ({
+        value: category.id,
+        label: category.name,
+      })),
+    [categories]
+  );
 
   const clearFilter = (key: keyof TransactionFilters) => {
     const newFilters = { ...filters };

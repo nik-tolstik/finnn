@@ -1,13 +1,15 @@
 import Big from "big.js";
 
-export function formatMoney(amount: string | number, currency = "USD"): string {
+import { Currency } from "@/shared/constants/currency";
+
+export function formatMoney(amount: string | number, currency: string = Currency.USD): string {
   const bigAmount = new Big(amount);
   const [integer, decimal] = bigAmount.toFixed(2).split(".");
   const formattedInteger = new Intl.NumberFormat("ru-RU").format(Number(integer));
 
   let shouldAddSpace = false;
 
-  if (currency === "BYN") {
+  if (currency === Currency.BYN) {
     shouldAddSpace = true;
   }
 
@@ -51,7 +53,7 @@ export function getCurrencySymbol(currency: string): string {
   return currencySymbols[currency] || currency;
 }
 
-export function formatMoneyByMagnitude(amount: string | number, currency = "USD"): string {
+export function formatMoneyByMagnitude(amount: string | number, currency: string = Currency.USD): string {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
   const absNum = Math.abs(num);
   const sign = num < 0 ? "-" : "";
@@ -74,7 +76,7 @@ export function formatMoneyByMagnitude(amount: string | number, currency = "USD"
   }
 
   const currencySymbol = getCurrencySymbol(currency);
-  const shouldAddSpace = currency === "BYN";
+  const shouldAddSpace = currency === Currency.BYN;
 
   return `${sign}${formatted}${magnitude}${shouldAddSpace ? " " : ""}${currencySymbol}`;
 }

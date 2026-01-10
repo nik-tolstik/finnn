@@ -1,9 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Currency } from "@prisma/client";
 
 import { getCurrencySymbol } from "@/shared/utils/money";
-import { getNBRBExchangeRates } from "@/modules/analytics/currency.service";
+import { getTodayExchangeRates } from "@/modules/currency/exchange-rate.service";
 
 interface ExchangeRatesHeaderProps {
   baseCurrency: string;
@@ -11,9 +12,9 @@ interface ExchangeRatesHeaderProps {
 
 export function ExchangeRatesHeader({ baseCurrency }: ExchangeRatesHeaderProps) {
   const { data: ratesData, isLoading } = useQuery({
-    queryKey: ["nbrb-rates"],
-    queryFn: () => getNBRBExchangeRates(),
-    staleTime: 86400000,
+    queryKey: ["exchange-rates-today"],
+    queryFn: () => getTodayExchangeRates(),
+    staleTime: 3600000,
     refetchInterval: false,
     retry: 1,
     retryDelay: 5000,
@@ -22,7 +23,7 @@ export function ExchangeRatesHeader({ baseCurrency }: ExchangeRatesHeaderProps) 
     gcTime: 86400000,
   });
 
-  if (baseCurrency !== "BYN") {
+  if (baseCurrency !== Currency.BYN) {
     return null;
   }
 
@@ -40,8 +41,8 @@ export function ExchangeRatesHeader({ baseCurrency }: ExchangeRatesHeaderProps) 
   }
 
   const rates = ratesData && "data" in ratesData ? ratesData.data : {};
-  const usdRate = rates["USD"];
-  const eurRate = rates["EUR"];
+  const usdRate = rates[Currency.USD];
+  const eurRate = rates[Currency.EUR];
 
   if (!usdRate && !eurRate) {
     return null;
@@ -51,13 +52,13 @@ export function ExchangeRatesHeader({ baseCurrency }: ExchangeRatesHeaderProps) 
     <div className="flex items-center gap-4 text-sm">
       {usdRate && (
         <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground">{getCurrencySymbol("USD")}</span>
+          <span className="text-muted-foreground">{getCurrencySymbol(Currency.USD)}</span>
           <span className="font-medium">{usdRate.toFixed(2)}</span>
         </div>
       )}
       {eurRate && (
         <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground">{getCurrencySymbol("EUR")}</span>
+          <span className="text-muted-foreground">{getCurrencySymbol(Currency.EUR)}</span>
           <span className="font-medium">{eurRate.toFixed(2)}</span>
         </div>
       )}
