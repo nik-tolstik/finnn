@@ -159,7 +159,7 @@ export function CreateTransactionDialog({
       const now = new Date(); // Всегда используем текущее время
       let defaultDate: Date = now;
       const currentAccount = account;
-      
+
       if (currentAccount) {
         const accountCreatedDate = new Date(currentAccount.createdAt);
         accountCreatedDate.setHours(0, 0, 0, 0);
@@ -171,10 +171,10 @@ export function CreateTransactionDialog({
           defaultDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
         }
       }
-      
+
       const initialAccountId = currentAccount?.id || defaultAccountId || "";
       accountIdRef.current = initialAccountId;
-      
+
       reset({
         accountId: initialAccountId,
         amount: "",
@@ -303,13 +303,13 @@ export function CreateTransactionDialog({
                     value: TransactionType.EXPENSE,
                     label: "Расход",
                     icon: <ArrowDown className="h-4 w-4" />,
-                    selectedClassName: "text-pink-500",
+                    selectedClassName: "text-error-primary",
                   },
                   {
                     value: TransactionType.INCOME,
                     label: "Доход",
                     icon: <ArrowUp className="h-4 w-4" />,
-                    selectedClassName: "text-lime-500",
+                    selectedClassName: "text-success-primary",
                   },
                 ]}
                 value={transactionType}

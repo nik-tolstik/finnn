@@ -140,10 +140,7 @@ function SortableCategoryItem({
             >
               <GripVertical className="h-4 w-4" />
             </div>
-            <div
-              className="h-6 w-6 rounded border shrink-0"
-              style={{ backgroundColor: category.color || undefined }}
-            />
+            <div className="h-6 w-6 rounded border shrink-0" style={{ backgroundColor: category.color || undefined }} />
             <span className="flex-1 text-sm font-medium">{category.name}</span>
             <div className="flex gap-1 shrink-0">
               <Button size="sm" variant="ghost" onClick={() => onStartEdit(category)} className="h-7 w-7 p-0">
@@ -214,7 +211,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
     const currentIds = incomeItemsRef.current.map((item) => item.id).join(",");
     const newIds = incomeCategories.map((item) => item.id).join(",");
-    
+
     if (currentIds !== newIds) {
       setIncomeItems(incomeCategories);
       return;
@@ -222,7 +219,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
     const currentOrder = incomeItemsRef.current.map((item) => item.id).join(",");
     const newOrder = incomeCategories.map((item) => item.id).join(",");
-    
+
     if (currentOrder === newOrder) {
       const updatedItems = incomeItemsRef.current.map((item) => {
         const updated = incomeCategories.find((c) => c.id === item.id);
@@ -248,7 +245,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
     const currentIds = expenseItemsRef.current.map((item) => item.id).join(",");
     const newIds = expenseCategories.map((item) => item.id).join(",");
-    
+
     if (currentIds !== newIds) {
       setExpenseItems(expenseCategories);
       return;
@@ -256,7 +253,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
     const currentOrder = expenseItemsRef.current.map((item) => item.id).join(",");
     const newOrder = expenseCategories.map((item) => item.id).join(",");
-    
+
     if (currentOrder === newOrder) {
       const updatedItems = expenseItemsRef.current.map((item) => {
         const updated = expenseCategories.find((c) => c.id === item.id);
@@ -320,10 +317,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
         order: index,
       }));
 
-      const updatedCategories = [
-        ...categories.filter((cat) => cat.type !== type),
-        ...orderedItems,
-      ];
+      const updatedCategories = [...categories.filter((cat) => cat.type !== type), ...orderedItems];
 
       queryClient.setQueryData(["categories", workspaceId], { data: updatedCategories });
 
@@ -430,7 +424,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
               value: CategoryType.EXPENSE,
               label: "Расходы",
               icon: <ArrowDown className="h-4 w-4" />,
-              selectedClassName: "text-pink-500",
+              selectedClassName: "text-error-primary",
             },
             {
               value: CategoryType.INCOME,

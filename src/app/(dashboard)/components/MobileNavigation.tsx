@@ -31,39 +31,39 @@ export function MobileNavigation() {
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden">
-        <div className="flex h-16 items-center justify-around">
+        <div className="flex items-center justify-around">
           <Link
             href={`${accountsPath}${basePath}`}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-1 transition-colors",
+              "flex flex-col items-center justify-center gap-1 transition-colors size-16",
               isAccountsActive ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <Wallet className="h-5 w-5" />
+            <Wallet className="size-5" />
             <span className="text-xs">Счета</span>
           </Link>
-          <button
-            onClick={() => createTransactionDialog.openDialog(null)}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
-          >
-            <Plus className="h-6 w-6" />
-          </button>
           <Link
             href={`${analyticsPath}${basePath}`}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-1 transition-colors",
+              "flex flex-col items-center justify-center gap-1 transition-colors size-16",
               isAnalyticsActive ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <TrendingUp className="h-5 w-5" />
+            <TrendingUp className="size-5" />
             <span className="text-xs">Аналитика</span>
           </Link>
-          <div className="flex flex-1 flex-col items-center justify-center gap-1 text-muted-foreground opacity-50">
-            <div className="h-5 w-5" />
+          <button
+            onClick={() => createTransactionDialog.openDialog(null)}
+            className="flex items-center justify-center rounded-full bg-primary text-primary-foreground size-12"
+          >
+            <Plus className="size-6" />
+          </button>
+          <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground opacity-50 size-16">
+            <div className="size-5" />
             <span className="text-xs">—</span>
           </div>
-          <div className="flex flex-1 flex-col items-center justify-center gap-1 text-muted-foreground opacity-50">
-            <div className="h-5 w-5" />
+          <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground opacity-50 size-16">
+            <div className="size-5" />
             <span className="text-xs">—</span>
           </div>
         </div>

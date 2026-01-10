@@ -226,11 +226,13 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="border rounded-lg p-4">
               <div className="text-sm text-muted-foreground mb-1">Общий доход</div>
-              <div className="text-2xl font-semibold text-green-600">{formatMoney(totalIncome, baseCurrency)}</div>
+              <div className="text-2xl font-semibold text-success-primary">
+                {formatMoney(totalIncome, baseCurrency)}
+              </div>
             </div>
             <div className="border rounded-lg p-4">
               <div className="text-sm text-muted-foreground mb-1">Общий расход</div>
-              <div className="text-2xl font-semibold text-red-600">{formatMoney(totalExpense, baseCurrency)}</div>
+              <div className="text-2xl font-semibold text-error-primary">{formatMoney(totalExpense, baseCurrency)}</div>
             </div>
           </div>
         </div>

@@ -69,7 +69,9 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
               )}
             </div>
           </div>
-          <div className={cn(transaction.type === TransactionType.INCOME ? "text-lime-500" : "text-pink-500")}>
+          <div
+            className={cn(transaction.type === TransactionType.INCOME ? "text-success-primary" : "text-error-primary")}
+          >
             {transaction.type === TransactionType.INCOME ? "+" : "-"}
             {formatMoney(transaction.amount, transaction.account.currency)}
           </div>

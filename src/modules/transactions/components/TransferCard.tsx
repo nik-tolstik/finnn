@@ -38,7 +38,15 @@ interface TransferCardProps {
 
 type IconComponent = ReturnType<typeof getAccountIcon>;
 
-function AccountName({ account, icon: Icon, amount: _amount }: { account: TransferAccount; icon: IconComponent; amount?: string }) {
+function AccountName({
+  account,
+  icon: Icon,
+  amount: _amount,
+}: {
+  account: TransferAccount;
+  icon: IconComponent;
+  amount?: string;
+}) {
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 py-1 rounded-lg">
       <IconWithBg icon={Icon} color={account.color} className="size-6 sm:size-7" iconClassName="size-3.5 sm:size-4" />
@@ -48,9 +56,7 @@ function AccountName({ account, icon: Icon, amount: _amount }: { account: Transf
           {account.currency && <span className="text-muted-foreground"> ({account.currency})</span>}
         </div>
         {account.owner && (
-          <div className="text-xs text-muted-foreground">
-            {account.owner.name || account.owner.email}
-          </div>
+          <div className="text-xs text-muted-foreground">{account.owner.name || account.owner.email}</div>
         )}
       </div>
     </div>
@@ -112,7 +118,7 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
                 account={transferTo.account}
                 amount={transferTo.amount}
                 icon={ToAccountIcon}
-                amountClassName="text-pink-500"
+                amountClassName="text-error-primary"
                 className="flex-col items-start md:items-center md:flex-row"
               />
               <ArrowRightIcon className="size-4 text-muted-foreground shrink-0" />
@@ -120,7 +126,7 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
                 account={fromAccount}
                 amount={transaction.amount}
                 icon={FromAccountIcon}
-                amountClassName="text-lime-500"
+                amountClassName="text-success-primary"
                 className="flex-col items-end md:items-center md:flex-row"
               />
             </div>
