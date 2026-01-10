@@ -28,7 +28,7 @@ export function CategorySelectModal({
   value,
   onSelect,
   onSearchChange,
-  placeholder = "Выберите категорию",
+  placeholder: _placeholder = "Выберите категорию",
   searchPlaceholder = "Поиск категории...",
   emptyText = "Категории не найдены",
   createText = "Создать",

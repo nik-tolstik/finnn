@@ -1,8 +1,8 @@
 "use client";
 
-import { useSearchParams, usePathname } from "next/navigation";
-import Link from "next/link";
 import { Plus, TrendingUp, Wallet } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams, usePathname } from "next/navigation";
 
 import { CreateTransactionDialog } from "@/modules/transactions/components/CreateTransactionDialog";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";

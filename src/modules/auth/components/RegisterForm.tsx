@@ -36,7 +36,7 @@ export function RegisterForm() {
   const onSubmit = async (data: RegisterFormInput) => {
     setIsLoading(true);
     try {
-      const { confirmPassword, ...registerData } = data;
+      const { confirmPassword: _confirmPassword, ...registerData } = data;
       const result = await registerAction(registerData);
 
       if (result?.error) {

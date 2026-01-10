@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { Currency } from "@prisma/client";
+import { useQuery } from "@tanstack/react-query";
 
-import { getCurrencySymbol } from "@/shared/utils/money";
 import { getTodayExchangeRates } from "@/modules/currency/exchange-rate.service";
+import { getCurrencySymbol } from "@/shared/utils/money";
 
 interface ExchangeRatesHeaderProps {
   baseCurrency: string;

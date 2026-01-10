@@ -1,8 +1,9 @@
 "use server";
 
 import { Currency } from "@prisma/client";
-import { prisma } from "@/shared/lib/prisma";
+
 import { getNBRBExchangeRates, getNBRBExchangeRatesByDate } from "@/modules/analytics/currency.service";
+import { prisma } from "@/shared/lib/prisma";
 
 const SUPPORTED_CURRENCIES: Currency[] = [Currency.USD, Currency.EUR, Currency.BYN];
 

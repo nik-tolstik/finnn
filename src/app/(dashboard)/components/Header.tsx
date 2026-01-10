@@ -1,20 +1,20 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { useSession } from "next-auth/react";
-import { TrendingUp, Wallet } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { Currency } from "@prisma/client";
+import { useQuery } from "@tanstack/react-query";
+import { TrendingUp, Wallet } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
+import { getWorkspace } from "@/modules/workspace/workspace.service";
+import { DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { cn } from "@/shared/utils/cn";
-import { DEFAULT_CURRENCY } from "@/shared/constants/currency";
-import { getWorkspace } from "@/modules/workspace/workspace.service";
 
+import { ExchangeRatesHeader } from "./ExchangeRatesHeader";
 import { UserMenu } from "./UserMenu";
 import { WorkspaceDropdown } from "./WorkspaceDropdown";
-import { ExchangeRatesHeader } from "./ExchangeRatesHeader";
 
 export function Header() {
   const { data: session } = useSession();

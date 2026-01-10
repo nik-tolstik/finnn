@@ -31,7 +31,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
     handleSubmit,
     control,
     setValue,
-    reset,
+    reset: _reset,
     formState: { errors, isSubmitting },
   } = useForm<CreateWorkspaceInput>({
     resolver: zodResolver(createWorkspaceSchema),

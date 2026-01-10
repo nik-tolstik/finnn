@@ -42,7 +42,7 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
+    reset: _reset,
   } = useForm<InviteInput>({
     resolver: zodResolver(inviteSchema),
   });

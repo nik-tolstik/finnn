@@ -3,12 +3,11 @@
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowRightIcon } from "lucide-react";
-import type { ComponentProps } from "react";
 import type React from "react";
 
 import { Card } from "@/shared/ui/card";
 import { IconWithBg } from "@/shared/ui/icon-with-bg";
-import { getAccountIcon, type AccountIconName } from "@/shared/utils/account-icons";
+import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -39,7 +38,7 @@ interface TransferCardProps {
 
 type IconComponent = ReturnType<typeof getAccountIcon>;
 
-function AccountName({ account, icon: Icon, amount }: { account: TransferAccount; icon: IconComponent; amount?: string }) {
+function AccountName({ account, icon: Icon, amount: _amount }: { account: TransferAccount; icon: IconComponent; amount?: string }) {
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 py-1 rounded-lg">
       <IconWithBg icon={Icon} color={account.color} className="size-6 sm:size-7" iconClassName="size-3.5 sm:size-4" />

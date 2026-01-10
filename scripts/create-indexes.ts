@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 
-function getDatabaseUrl(): string {
+function _getDatabaseUrl(): string {
   const mongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL || "";
   const dbName = "finhub";
 

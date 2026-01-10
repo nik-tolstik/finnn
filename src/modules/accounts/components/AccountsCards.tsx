@@ -13,6 +13,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } 
 import { CSS } from "@dnd-kit/utilities";
 import type { Account } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
@@ -22,9 +23,8 @@ import { CreateTransferDialog } from "@/modules/transactions/components/CreateTr
 import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { cn } from "@/shared/utils/cn";
 import { getAvatarColor } from "@/shared/utils/avatar-colors";
-import Image from "next/image";
+import { cn } from "@/shared/utils/cn";
 
 import { updateAccountsOrder } from "../account.service";
 

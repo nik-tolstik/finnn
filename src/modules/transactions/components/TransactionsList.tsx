@@ -1,8 +1,8 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -86,13 +86,13 @@ export function TransactionsList({
       }
     }
   };
-  if (transactions.length === 0) {
-    return <div className="text-center py-8 text-muted-foreground">Нет транзакций.</div>;
-  }
 
   const processedTransactionIds = new Set<string>();
 
   const groupedTransactions = useMemo(() => {
+    if (transactions.length === 0) {
+      return [];
+    }
     const groups: Array<{ date: Date; transactions: TransactionWithRelations[] }> = [];
     let currentDate: Date | null = null;
     let currentGroup: TransactionWithRelations[] = [];
@@ -134,7 +134,10 @@ export function TransactionsList({
 
   return (
     <div className="space-y-4">
-      {groupedTransactions.map((group, groupIndex) => (
+      {groupedTransactions.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">Нет транзакций.</div>
+      ) : (
+        groupedTransactions.map((group) => (
         <div key={group.date.toISOString()} className="space-y-3">
           <div className="sticky top-0 z-10 bg-background py-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
@@ -210,7 +213,8 @@ export function TransactionsList({
         );
           })}
         </div>
-      ))}
+      ))
+      )}
       {actionsDialog.mounted && (
         <TransactionActionsDialog
           transaction={actionsDialog.data.transaction}
