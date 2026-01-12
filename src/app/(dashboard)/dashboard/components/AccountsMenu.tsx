@@ -50,7 +50,7 @@ export function AccountsMenu({
           <MoreVertical className="h-5 w-5" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-48 p-1" align="end">
+      <PopoverContent className="w-54 p-1" align="end">
         <div className="space-y-1">
           <button
             onClick={() => {
@@ -87,7 +87,7 @@ export function AccountsMenu({
             )}
           >
             {showAllAccounts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showAllAccounts ? "Скрыть все счета" : "Показать все счета"}
+            {showAllAccounts ? "Скрыть другие счета" : "Показать другие счета"}
           </button>
         </div>
       </PopoverContent>
