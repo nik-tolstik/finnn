@@ -2,12 +2,15 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Filter, X, Check } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import * as React from "react";
 
-import { getAccounts, getArchivedAccounts } from "@/modules/accounts/account.service";
+import { getAccounts } from "@/modules/accounts/account.service";
+import { CategoryType } from "@/modules/categories/category.constants";
 import { getCategories } from "@/modules/categories/category.service";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
+import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -31,17 +34,11 @@ interface TransactionsFiltersProps {
 export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: TransactionsFiltersProps) {
   const { isMobile } = useBreakpoints();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const { data: session } = useSession();
 
   const { data: accountsData } = useQuery({
     queryKey: ["accounts", workspaceId],
     queryFn: () => getAccounts(workspaceId),
-    staleTime: 5000,
-    refetchInterval: 5000,
-  });
-
-  const { data: archivedAccountsData } = useQuery({
-    queryKey: ["archivedAccounts", workspaceId],
-    queryFn: () => getArchivedAccounts(workspaceId),
     staleTime: 5000,
     refetchInterval: 5000,
   });
@@ -53,9 +50,47 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     refetchInterval: 5000,
   });
 
-  const activeAccounts = accountsData?.data || [];
-  const archivedAccounts = archivedAccountsData?.data || [];
+  const allAccounts = accountsData?.data || [];
+  const currentUserId = session?.user?.id;
   const categories = categoriesData?.data || [];
+
+  const sortedAccounts = React.useMemo(() => {
+    if (!currentUserId) {
+      return allAccounts;
+    }
+
+    const userAccounts = allAccounts.filter((acc) => acc.ownerId === currentUserId);
+    const otherAccounts = allAccounts.filter((acc) => acc.ownerId !== currentUserId);
+
+    return [...userAccounts, ...otherAccounts];
+  }, [allAccounts, currentUserId]);
+
+  const accountsByOwner = React.useMemo(() => {
+    const grouped = new Map<string | null, typeof sortedAccounts>();
+
+    for (const account of sortedAccounts) {
+      const ownerId = account.ownerId || null;
+      if (!grouped.has(ownerId)) {
+        grouped.set(ownerId, []);
+      }
+      grouped.get(ownerId)!.push(account);
+    }
+
+    const result: Array<{
+      ownerId: string | null;
+      ownerName: string;
+      owner: { name?: string | null; email?: string | null; image?: string | null } | null;
+      accounts: typeof sortedAccounts;
+    }> = [];
+
+    for (const [ownerId, accounts] of grouped.entries()) {
+      const firstAccount = accounts[0];
+      const ownerName = firstAccount.owner?.name || firstAccount.owner?.email || "Без владельца";
+      result.push({ ownerId, ownerName, owner: firstAccount.owner, accounts });
+    }
+
+    return result;
+  }, [sortedAccounts]);
 
   const selectedAccountIds = filters.accountIds || [];
   const selectedCategoryIds = filters.categoryIds || [];
@@ -74,24 +109,48 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     { value: TransactionType.TRANSFER, label: "Перевод" },
   ];
 
-  const accountOptions: SelectOption[] = React.useMemo(
-    () => [
-      ...(activeAccounts.length > 0 ? [{ value: "__group_active__" as string, label: "Активные" }] : []),
-      ...activeAccounts.map((account) => ({
-        value: account.id,
-        label: account.name,
-      })),
-      ...(archivedAccounts.length > 0 ? [{ value: "__group_archived__" as string, label: "Архивированные" }] : []),
-      ...archivedAccounts.map((account) => ({
-        value: account.id,
-        label: account.name,
-      })),
-    ],
-    [activeAccounts, archivedAccounts]
-  );
+  const accountOptions: SelectOption[] = React.useMemo(() => {
+    if (sortedAccounts.length === 0) {
+      return [];
+    }
+
+    const options: SelectOption[] = [];
+
+    for (const { ownerId, ownerName, accounts } of accountsByOwner) {
+      const groupId = ownerId ? `__group_${ownerId}__` : "__group_null__";
+      options.push({ value: groupId, label: ownerName });
+      options.push(
+        ...accounts.map((account) => ({
+          value: account.id,
+          label: account.name,
+        }))
+      );
+    }
+
+    return options;
+  }, [accountsByOwner]);
 
   const renderAccountOption: RenderOption<string> = ({ option, selected, props: { multiple }, isTrigger }) => {
-    if (option.value === "__group_active__" || option.value === "__group_archived__") {
+    if (option.value.startsWith("__group_") && option.value.endsWith("__")) {
+      const ownerId = option.value.replace("__group_", "").replace("__", "") || null;
+      const ownerGroup = accountsByOwner.find(
+        (group) => group.ownerId === ownerId || (ownerId === "null" && group.ownerId === null)
+      );
+
+      if (ownerGroup) {
+        return (
+          <div className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+            <UserDisplay
+              name={ownerGroup.owner?.name}
+              email={ownerGroup.owner?.email || undefined}
+              image={ownerGroup.owner?.image}
+              size="sm"
+              showName={true}
+            />
+          </div>
+        );
+      }
+
       return (
         <div
           className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
@@ -102,25 +161,22 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
       );
     }
 
-    const account = activeAccounts.find((acc) => acc.id === option.value) || archivedAccounts.find((acc) => acc.id === option.value);
+    const account = sortedAccounts.find((acc) => acc.id === option.value);
     if (!account) return null;
 
     const AccountIcon = getAccountIcon(account.icon);
 
     return (
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        {multiple && !isTrigger && <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />}
+        {multiple && !isTrigger && (
+          <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />
+        )}
         {account.icon && <AccountIcon className="h-4 w-4 text-primary" style={{ color: account.color || undefined }} />}
         <div className="flex-1 flex flex-col min-w-0">
           <span className="text-sm">
             {option.label}
-            {account.currency && <span className="text-muted-foreground"> ({account.currency})</span>}
+            {account.currency && <span className="text-muted-foreground text-xs"> ({account.currency})</span>}
           </span>
-          {account.owner && (
-            <span className="text-xs text-muted-foreground truncate">
-              {account.owner.name || account.owner.email}
-            </span>
-          )}
         </div>
         {!multiple && selected && !isTrigger && <Check className="h-4 w-4 shrink-0 text-primary" />}
       </div>
@@ -128,25 +184,63 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
   };
 
   const renderCategoryOption: RenderOption<string> = ({ props, option, selected, isTrigger }) => {
-    const category = categories.find((cat) => cat.id === option.value)!;
+    if (option.value === "__group_expense__" || option.value === "__group_income__") {
+      return (
+        <div
+          className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {option.label}
+        </div>
+      );
+    }
+
+    const category = categories.find((cat) => cat.id === option.value);
+    if (!category) return null;
 
     return (
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        {props.multiple && !isTrigger && <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />}
+        {props.multiple && !isTrigger && (
+          <Checkbox checked={selected} className="shrink-0" onClick={(e) => e.stopPropagation()} />
+        )}
         <div style={{ backgroundColor: category.color || undefined }} className="size-4 rounded-full" />
         <span className="flex-1 text-sm">{option.label}</span>
       </div>
     );
   };
 
-  const categoryOptions: SelectOption[] = React.useMemo(
-    () =>
-      categories.map((category) => ({
-        value: category.id,
-        label: category.name,
-      })),
-    [categories]
-  );
+  const categoryOptions: SelectOption[] = React.useMemo(() => {
+    if (categories.length === 0) {
+      return [];
+    }
+
+    const incomeCategories = categories.filter((cat) => cat.type === CategoryType.INCOME);
+    const expenseCategories = categories.filter((cat) => cat.type === CategoryType.EXPENSE);
+
+    const options: SelectOption[] = [];
+
+    if (expenseCategories.length > 0) {
+      options.push({ value: "__group_expense__", label: "Расходы" });
+      options.push(
+        ...expenseCategories.map((category) => ({
+          value: category.id,
+          label: category.name,
+        }))
+      );
+    }
+
+    if (incomeCategories.length > 0) {
+      options.push({ value: "__group_income__", label: "Доходы" });
+      options.push(
+        ...incomeCategories.map((category) => ({
+          value: category.id,
+          label: category.name,
+        }))
+      );
+    }
+
+    return options;
+  }, [categories]);
 
   const clearFilter = (key: keyof TransactionFilters) => {
     const newFilters = { ...filters };
