@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
+import { UserDisplay } from "@/shared/components/UserDisplay";
 import { Badge } from "@/shared/ui/badge";
 import { Card } from "@/shared/ui/card";
 import { IconWithBg } from "@/shared/ui/icon-with-bg";
@@ -10,7 +11,7 @@ import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
-import { TransactionType, TRANSACTION_TYPE_LABELS } from "../transaction.constants";
+import { TransactionType } from "../transaction.constants";
 import type { TransactionWithRelations } from "../transaction.types";
 
 interface TransactionCardProps {
@@ -26,9 +27,6 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
       <div className="flex flex-col text-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">
-              {TRANSACTION_TYPE_LABELS[transaction.type as keyof typeof TRANSACTION_TYPE_LABELS]}
-            </span>
             {transaction.category && (
               <Badge
                 variant="outline"
@@ -40,11 +38,19 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
                 {transaction.category.name}
               </Badge>
             )}
+
+            {transaction.account.owner && (
+              <UserDisplay
+                name={transaction.account.owner?.name}
+                email={transaction.account.owner?.email}
+                image={transaction.account.owner?.image}
+                size="sm"
+                showName={true}
+              />
+            )}
           </div>
           <span className="text-xs text-muted-foreground">
-            {format(new Date(transaction.date), "dd.MM.yyyy HH:mm", {
-              locale: ru,
-            })}
+            {format(new Date(transaction.date), "HH:mm", { locale: ru })}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-2 justify-between">
@@ -56,17 +62,7 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
               iconClassName="size-3.5 sm:size-4"
             />
             <div className="flex flex-col">
-              <div>
-                {transaction.account.name}
-                {transaction.account.currency && (
-                  <span className="text-muted-foreground"> ({transaction.account.currency})</span>
-                )}
-              </div>
-              {transaction.account.owner && (
-                <div className="text-xs text-muted-foreground">
-                  {transaction.account.owner.name || transaction.account.owner.email}
-                </div>
-              )}
+              <div>{transaction.account.name}</div>
             </div>
           </div>
           <div
