@@ -296,6 +296,18 @@ export function AccountsCards({
   );
 
   const sortedOwners = Object.values(accountsByOwner).sort((a, b) => {
+    if (!currentUserId) {
+      if (!a.owner && b.owner) return 1;
+      if (a.owner && !b.owner) return -1;
+      if (!a.owner && !b.owner) return 0;
+      return (a.owner?.name || a.owner?.email || "").localeCompare(b.owner?.name || b.owner?.email || "");
+    }
+
+    const aIsCurrentUser = a.owner?.id === currentUserId;
+    const bIsCurrentUser = b.owner?.id === currentUserId;
+
+    if (aIsCurrentUser && !bIsCurrentUser) return -1;
+    if (!aIsCurrentUser && bIsCurrentUser) return 1;
     if (!a.owner && b.owner) return 1;
     if (a.owner && !b.owner) return -1;
     if (!a.owner && !b.owner) return 0;
