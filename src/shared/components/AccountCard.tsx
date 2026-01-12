@@ -6,6 +6,8 @@ import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
+import { UserDisplay } from "./UserDisplay";
+
 interface AccountCardProps {
   account: Account & {
     owner?: {
@@ -51,17 +53,23 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
             <div className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0 bg-primary/10">
               <AccountIcon className="text-primary h-3.5 w-3.5" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex flex-col gap-2">
               <div className="font-semibold text-sm leading-none">{account.name}</div>
+              {showOwner && account.owner && (
+                <UserDisplay
+                  name={account.owner.name}
+                  email={account.owner.email}
+                  image={account.owner.image}
+                  size="sm"
+                  showName={true}
+                />
+              )}
             </div>
           </div>
           <div className="shrink-0">
             <p className="font-bold text-base">{formatMoney(account.balance, account.currency)}</p>
           </div>
         </div>
-        {showOwner && account.owner && (
-          <div className="mt-2 text-xs text-muted-foreground">{account.owner.name || account.owner.email}</div>
-        )}
       </div>
     </div>
   );
