@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 interface Breakpoints {
   isMobile: boolean;
@@ -25,13 +25,18 @@ const calculateBreakpoints = () => {
 };
 
 export function useBreakpoints() {
-  const [breakpoints, setBreakpoints] = useState<Breakpoints>({
-    isMobile: false,
-    isTablet: false,
-    isDesktop: false,
+  const [breakpoints, setBreakpoints] = useState<Breakpoints>(() => {
+    if (typeof window === "undefined") {
+      return {
+        isMobile: false,
+        isTablet: false,
+        isDesktop: false,
+      };
+    }
+    return calculateBreakpoints();
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const handleResize = () => setBreakpoints(calculateBreakpoints());
 
     handleResize();

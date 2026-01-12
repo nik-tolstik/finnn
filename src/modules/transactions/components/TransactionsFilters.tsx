@@ -418,7 +418,7 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
 
   if (isMobile) {
     return (
-      <>
+      <div suppressHydrationWarning>
         <Button variant="outline" onClick={() => setSheetOpen(true)} className="justify-start">
           <Filter className="mr-2 h-4 w-4" />
           Фильтры
@@ -451,12 +451,12 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
             </div>
           </SheetContent>
         </Sheet>
-      </>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-wrap lg:flex-col lg:items-stretch items-end gap-2">
+    <div className="flex flex-wrap lg:flex-col lg:items-stretch items-end gap-2" suppressHydrationWarning>
       <h3 className="hidden lg:block text-lg font-semibold mb-2 w-full">Фильтры</h3>
 
       <div className="relative w-[200px] lg:w-full lg:space-y-2">

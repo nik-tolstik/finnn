@@ -49,7 +49,7 @@ export function Header() {
         <div className="flex items-center gap-4">
           <WorkspaceDropdown currentWorkspaceId={workspaceId} />
           {!isMobile && (
-            <nav className="flex items-center gap-1 ml-4">
+            <nav className="flex items-center gap-1 ml-4" suppressHydrationWarning>
               <Link
                 href={`${accountsPath}${basePath}`}
                 className={cn(
