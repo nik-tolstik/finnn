@@ -35,7 +35,7 @@ const prisma = new PrismaClient({
 });
 
 async function changePassword(email: string, newPassword: string) {
-  console.log(`Поиск пользователя с email: ${email}`);
+  console.warn(`Поиск пользователя с email: ${email}`);
 
   const user = await prisma.user.findUnique({
     where: { email },
@@ -45,16 +45,16 @@ async function changePassword(email: string, newPassword: string) {
     throw new Error(`Пользователь с email ${email} не найден`);
   }
 
-  console.log(`Хеширование нового пароля...`);
+  console.warn(`Хеширование нового пароля...`);
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  console.log(`Обновление пароля для пользователя ${user.email}...`);
+  console.warn(`Обновление пароля для пользователя ${user.email}...`);
   await prisma.user.update({
     where: { id: user.id },
     data: { password: hashedPassword },
   });
 
-  console.log(`✅ Пароль успешно изменен для пользователя ${user.email}`);
+  console.warn(`✅ Пароль успешно изменен для пользователя ${user.email}`);
 }
 
 async function main() {

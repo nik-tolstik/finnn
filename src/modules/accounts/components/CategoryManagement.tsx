@@ -14,6 +14,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Category } from "@prisma/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
@@ -31,7 +32,6 @@ import { Input } from "@/shared/ui/input";
 import { Segmented } from "@/shared/ui/segmented";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
 import { cn } from "@/shared/utils/cn";
-import { ArrowDown, ArrowUp } from "lucide-react";
 
 import { CreateCategoryDialog } from "./CreateCategoryDialog";
 import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
@@ -235,7 +235,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     } else {
       setIncomeItems(incomeCategories);
     }
-  }, [incomeCategories]);
+  }, [incomeCategories, incomeItems.length]);
 
   useEffect(() => {
     if (expenseItems.length === 0 && expenseCategories.length > 0) {
@@ -269,7 +269,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     } else {
       setExpenseItems(expenseCategories);
     }
-  }, [expenseCategories]);
+  }, [expenseCategories, expenseItems.length]);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: { name?: string; color?: string } }) => updateCategory(id, data),

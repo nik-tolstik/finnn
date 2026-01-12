@@ -34,7 +34,7 @@ const prisma = new PrismaClient({
 });
 
 async function addUserToWorkspace(userEmail: string, workspaceIdentifier: string, role: string = "member") {
-  console.log(`Поиск пользователя с email: ${userEmail}`);
+  console.warn(`Поиск пользователя с email: ${userEmail}`);
 
   const user = await prisma.user.findUnique({
     where: { email: userEmail },
@@ -44,7 +44,7 @@ async function addUserToWorkspace(userEmail: string, workspaceIdentifier: string
     throw new Error(`Пользователь с email ${userEmail} не найден`);
   }
 
-  console.log(`Поиск workspace: ${workspaceIdentifier}`);
+  console.warn(`Поиск workspace: ${workspaceIdentifier}`);
 
   const workspace = await prisma.workspace.findFirst({
     where: {
@@ -56,7 +56,7 @@ async function addUserToWorkspace(userEmail: string, workspaceIdentifier: string
     throw new Error(`Workspace с ID или slug "${workspaceIdentifier}" не найден`);
   }
 
-  console.log(`Проверка существующего членства...`);
+  console.warn(`Проверка существующего членства...`);
 
   const existingMember = await prisma.workspaceMember.findUnique({
     where: {
@@ -71,7 +71,7 @@ async function addUserToWorkspace(userEmail: string, workspaceIdentifier: string
     throw new Error(`Пользователь ${userEmail} уже является участником workspace "${workspace.name}"`);
   }
 
-  console.log(`Добавление пользователя в workspace...`);
+  console.warn(`Добавление пользователя в workspace...`);
 
   const member = await prisma.workspaceMember.create({
     data: {
@@ -81,11 +81,11 @@ async function addUserToWorkspace(userEmail: string, workspaceIdentifier: string
     },
   });
 
-  console.log(`✅ Пользователь успешно добавлен в workspace:`);
-  console.log(`   Пользователь: ${user.name || user.email} (${user.email})`);
-  console.log(`   Workspace: ${workspace.name} (${workspace.slug})`);
-  console.log(`   Роль: ${role}`);
-  console.log(`   ID членства: ${member.id}`);
+  console.warn(`✅ Пользователь успешно добавлен в workspace:`);
+  console.warn(`   Пользователь: ${user.name || user.email} (${user.email})`);
+  console.warn(`   Workspace: ${workspace.name} (${workspace.slug})`);
+  console.warn(`   Роль: ${role}`);
+  console.warn(`   ID членства: ${member.id}`);
 }
 
 async function main() {

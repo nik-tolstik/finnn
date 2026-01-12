@@ -106,7 +106,7 @@ export async function getExchangeRate(
       return { data: 1 / inverseRate.rate };
     }
 
-    console.log(
+    console.warn(
       `[ExchangeRate] Курс ${fromCurrency}/${toCurrency} на ${targetDate.toISOString()} не найден в БД, запрашиваем из API`
     );
 
@@ -147,7 +147,7 @@ export async function getExchangeRate(
         },
       });
 
-      console.log(
+      console.warn(
         `[ExchangeRate] Курс ${fromCurrency}/${toCurrency} на ${targetDate.toISOString()} сохранен в БД: ${calculatedRate}`
       );
       return { data: rate.rate };

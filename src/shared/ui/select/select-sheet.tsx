@@ -18,7 +18,10 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
     props;
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const currentValues = multiple ? (Array.isArray(value) ? value : []) : typeof value === "string" ? [value] : [];
+  const currentValues = React.useMemo(
+    () => (multiple ? (Array.isArray(value) ? value : []) : typeof value === "string" ? [value] : []),
+    [multiple, value]
+  );
   const currentValue = multiple ? undefined : typeof value === "string" ? value : undefined;
 
   const [localValues, setLocalValues] = useState<TValue[]>(currentValues as TValue[]);
@@ -29,7 +32,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
       setLocalValues(newValues as TValue[]);
       setSearch("");
     }
-  }, [open, multiple]);
+  }, [open, multiple, value]);
 
   const filteredOptions = React.useMemo(() => {
     if (filter) {

@@ -50,9 +50,9 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     refetchInterval: 5000,
   });
 
-  const allAccounts = accountsData?.data || [];
+  const allAccounts = React.useMemo(() => accountsData?.data || [], [accountsData?.data]);
   const currentUserId = session?.user?.id;
-  const categories = categoriesData?.data || [];
+  const categories = React.useMemo(() => categoriesData?.data || [], [categoriesData?.data]);
 
   const sortedAccounts = React.useMemo(() => {
     if (!currentUserId) {
@@ -128,7 +128,7 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     }
 
     return options;
-  }, [accountsByOwner]);
+  }, [accountsByOwner, sortedAccounts.length]);
 
   const renderAccountOption: RenderOption<string> = ({ option, selected, props: { multiple }, isTrigger }) => {
     if (option.value.startsWith("__group_") && option.value.endsWith("__")) {

@@ -56,8 +56,7 @@ export async function sendInviteEmail(email: string, token: string, workspaceNam
       `,
     });
 
-    // eslint-disable-next-line no-console
-    console.log("Email успешно отправлен на:", email);
+    console.warn("Email успешно отправлен на:", email);
     return { success: true };
   } catch (error: any) {
     console.error("Ошибка отправки email:", error);
@@ -100,8 +99,7 @@ export async function sendVerificationEmail(email: string, token: string, name?:
       `,
     });
 
-    // eslint-disable-next-line no-console
-    console.log("Email успешно отправлен на:", email);
+    console.warn("Email успешно отправлен на:", email);
     return { success: true };
   } catch (error: any) {
     console.error("Ошибка отправки email:", error);

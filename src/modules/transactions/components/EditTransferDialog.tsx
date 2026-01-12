@@ -100,8 +100,6 @@ export function EditTransferDialog({
     }
   };
 
-  console.log(123);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>

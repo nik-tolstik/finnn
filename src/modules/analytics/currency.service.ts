@@ -17,7 +17,7 @@ interface ExchangeRateAPIResponse {
 
 async function getNBRBRates(): Promise<{ data: Record<string, number> } | { error: string }> {
   const url = "https://www.nbrb.by/api/exrates/rates?periodicity=0";
-  console.log("[NBRB] Попытка получить курсы от НБРБ:", url);
+  console.warn("[NBRB] Попытка получить курсы от НБРБ:", url);
 
   try {
     const controller = new AbortController();
@@ -48,7 +48,7 @@ async function getNBRBRates(): Promise<{ data: Record<string, number> } | { erro
 
       ratesMap["BYN"] = 1;
 
-      console.log("[NBRB] Успешно получены курсы от НБРБ");
+      console.warn("[NBRB] Успешно получены курсы от НБРБ");
       return { data: ratesMap };
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
@@ -64,7 +64,7 @@ async function getNBRBRates(): Promise<{ data: Record<string, number> } | { erro
 
 async function getExchangeRateAPIRates(): Promise<{ data: Record<string, number> } | { error: string }> {
   const url = "https://api.exchangerate-api.com/v4/latest/BYN";
-  console.log("[ExchangeRate-API] Получение курсов валют (fallback):", url);
+  console.warn("[ExchangeRate-API] Получение курсов валют (fallback):", url);
 
   try {
     const controller = new AbortController();
@@ -100,7 +100,7 @@ async function getExchangeRateAPIRates(): Promise<{ data: Record<string, number>
         }
       }
 
-      console.log("[ExchangeRate-API] Успешно получены курсы");
+      console.warn("[ExchangeRate-API] Успешно получены курсы");
       return { data: ratesMap };
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
@@ -115,14 +115,14 @@ async function getExchangeRateAPIRates(): Promise<{ data: Record<string, number>
 }
 
 export async function getNBRBExchangeRates(): Promise<{ data: Record<string, number> } | { error: string }> {
-  console.log("[Currency Service] Начало получения курсов валют");
+  console.warn("[Currency Service] Начало получения курсов валют");
 
   const nbrbResult = await getNBRBRates();
   if (!("error" in nbrbResult)) {
     return nbrbResult;
   }
 
-  console.log("[Currency Service] НБРБ недоступен, используем ExchangeRate-API:", nbrbResult.error);
+  console.warn("[Currency Service] НБРБ недоступен, используем ExchangeRate-API:", nbrbResult.error);
 
   const exchangeRateResult = await getExchangeRateAPIRates();
   if (!("error" in exchangeRateResult)) {
@@ -159,7 +159,7 @@ export async function getNBRBExchangeRate(currencyCode: string): Promise<{ data:
 export async function getNBRBExchangeRatesByDate(date: Date): Promise<{ data: Record<string, number> } | { error: string }> {
   const dateStr = date.toISOString().split("T")[0];
   const url = `https://www.nbrb.by/api/exrates/rates?periodicity=0&ondate=${dateStr}`;
-  console.log("[NBRB] Получение курсов на дату:", url);
+  console.warn("[NBRB] Получение курсов на дату:", url);
 
   try {
     const controller = new AbortController();
@@ -177,7 +177,7 @@ export async function getNBRBExchangeRatesByDate(date: Date): Promise<{ data: Re
 
       if (!response.ok) {
         const error = `NBRB API error: ${response.status}`;
-        console.log("[Currency Service] НБРБ недоступен для даты, используем ExchangeRate-API (fallback):", error);
+        console.warn("[Currency Service] НБРБ недоступен для даты, используем ExchangeRate-API (fallback):", error);
         const exchangeRateResult = await getExchangeRateAPIRates();
         if (!("error" in exchangeRateResult)) {
           return exchangeRateResult;
@@ -195,12 +195,12 @@ export async function getNBRBExchangeRatesByDate(date: Date): Promise<{ data: Re
 
       ratesMap["BYN"] = 1;
 
-      console.log("[NBRB] Успешно получены курсы на дату", dateStr);
+      console.warn("[NBRB] Успешно получены курсы на дату", dateStr);
       return { data: ratesMap };
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       if (fetchError.name === "AbortError") {
-        console.log("[Currency Service] НБРБ timeout для даты, используем ExchangeRate-API (fallback)");
+        console.warn("[Currency Service] НБРБ timeout для даты, используем ExchangeRate-API (fallback)");
         const exchangeRateResult = await getExchangeRateAPIRates();
         if (!("error" in exchangeRateResult)) {
           return exchangeRateResult;
@@ -210,7 +210,7 @@ export async function getNBRBExchangeRatesByDate(date: Date): Promise<{ data: Re
       throw fetchError;
     }
   } catch (error: any) {
-    console.log("[Currency Service] НБРБ ошибка для даты, используем ExchangeRate-API (fallback):", error.message);
+    console.warn("[Currency Service] НБРБ ошибка для даты, используем ExchangeRate-API (fallback):", error.message);
     const exchangeRateResult = await getExchangeRateAPIRates();
     if (!("error" in exchangeRateResult)) {
       return exchangeRateResult;

@@ -11,7 +11,7 @@ interface NBRBRate {
 
 export async function GET() {
   const url = "https://www.nbrb.by/api/exrates/rates?periodicity=0";
-  console.log("[NBRB API Route] Начало запроса курсов валют:", url);
+  console.warn("[NBRB API Route] Начало запроса курсов валют:", url);
 
   try {
     const controller = new AbortController();
@@ -21,7 +21,7 @@ export async function GET() {
     }, 30000);
 
     try {
-      console.log("[NBRB API Route] Выполняю fetch запрос...");
+      console.warn("[NBRB API Route] Выполняю fetch запрос...");
       const response = await fetch(url, {
         next: { revalidate: 3600 },
         signal: controller.signal,
@@ -31,7 +31,7 @@ export async function GET() {
       });
 
       clearTimeout(timeoutId);
-      console.log("[NBRB API Route] Получен ответ:", {
+      console.warn("[NBRB API Route] Получен ответ:", {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok,
@@ -50,9 +50,9 @@ export async function GET() {
         );
       }
 
-      console.log("[NBRB API Route] Парсинг JSON...");
+      console.warn("[NBRB API Route] Парсинг JSON...");
       const rates: NBRBRate[] = await response.json();
-      console.log("[NBRB API Route] Получено курсов:", rates.length);
+      console.warn("[NBRB API Route] Получено курсов:", rates.length);
 
       const ratesMap: Record<string, number> = {};
       for (const rate of rates) {
@@ -62,7 +62,7 @@ export async function GET() {
 
       ratesMap["BYN"] = 1;
 
-      console.log("[NBRB API Route] Успешно получены курсы:", Object.keys(ratesMap));
+      console.warn("[NBRB API Route] Успешно получены курсы:", Object.keys(ratesMap));
       return NextResponse.json({ data: ratesMap });
     } catch (fetchError: any) {
       clearTimeout(timeoutId);

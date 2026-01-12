@@ -43,11 +43,11 @@ function getConnectionString(): string {
 }
 
 async function createIndexes() {
-  console.log("Создание индексов для оптимизации производительности...");
+  console.warn("Создание индексов для оптимизации производительности...");
 
   const connectionString = getConnectionString();
   if (!connectionString) {
-    console.log("⚠️ MONGODB_URI или DATABASE_URL не установлен, пропускаем создание индексов");
+    console.warn("⚠️ MONGODB_URI или DATABASE_URL не установлен, пропускаем создание индексов");
     return;
   }
 
@@ -59,10 +59,10 @@ async function createIndexes() {
 
     try {
       await db.collection("transactions").createIndex({ workspaceId: 1, date: 1 });
-      console.log("✅ Индекс создан: transactions (workspaceId, date)");
+      console.warn("✅ Индекс создан: transactions (workspaceId, date)");
     } catch (error: any) {
       if (error.code === 85) {
-        console.log("ℹ️ Индекс уже существует: transactions (workspaceId, date)");
+        console.warn("ℹ️ Индекс уже существует: transactions (workspaceId, date)");
       } else {
         console.error("⚠️ Ошибка при создании индекса transactions (workspaceId, date):", error.message);
       }
@@ -70,10 +70,10 @@ async function createIndexes() {
 
     try {
       await db.collection("transactions").createIndex({ workspaceId: 1, accountId: 1, date: 1 });
-      console.log("✅ Индекс создан: transactions (workspaceId, accountId, date)");
+      console.warn("✅ Индекс создан: transactions (workspaceId, accountId, date)");
     } catch (error: any) {
       if (error.code === 85) {
-        console.log("ℹ️ Индекс уже существует: transactions (workspaceId, accountId, date)");
+        console.warn("ℹ️ Индекс уже существует: transactions (workspaceId, accountId, date)");
       } else {
         console.error("⚠️ Ошибка при создании индекса transactions (workspaceId, accountId, date):", error.message);
       }
@@ -81,10 +81,10 @@ async function createIndexes() {
 
     try {
       await db.collection("transactions").createIndex({ accountId: 1, date: 1 });
-      console.log("✅ Индекс создан: transactions (accountId, date)");
+      console.warn("✅ Индекс создан: transactions (accountId, date)");
     } catch (error: any) {
       if (error.code === 85) {
-        console.log("ℹ️ Индекс уже существует: transactions (accountId, date)");
+        console.warn("ℹ️ Индекс уже существует: transactions (accountId, date)");
       } else {
         console.error("⚠️ Ошибка при создании индекса transactions (accountId, date):", error.message);
       }
@@ -92,19 +92,19 @@ async function createIndexes() {
 
     try {
       await db.collection("accounts").createIndex({ workspaceId: 1, archived: 1 });
-      console.log("✅ Индекс создан: accounts (workspaceId, archived)");
+      console.warn("✅ Индекс создан: accounts (workspaceId, archived)");
     } catch (error: any) {
       if (error.code === 85) {
-        console.log("ℹ️ Индекс уже существует: accounts (workspaceId, archived)");
+        console.warn("ℹ️ Индекс уже существует: accounts (workspaceId, archived)");
       } else {
         console.error("⚠️ Ошибка при создании индекса accounts (workspaceId, archived):", error.message);
       }
     }
 
-    console.log("✅ Процесс создания индексов завершен");
+    console.warn("✅ Процесс создания индексов завершен");
   } catch (error) {
     console.error("⚠️ Ошибка при подключении к базе данных:", error instanceof Error ? error.message : error);
-    console.log("ℹ️ Продолжаем сборку без создания индексов");
+    console.warn("ℹ️ Продолжаем сборку без создания индексов");
   } finally {
     await client.close();
   }

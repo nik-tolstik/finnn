@@ -7,14 +7,13 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import React, { useEffect, useState, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { useSession } from "next-auth/react";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { SelectAccountDialog } from "@/modules/accounts/components/SelectAccountDialog";
-import { CategoryType } from "@/modules/categories/category.constants";
 import { getCategories } from "@/modules/categories/category.service";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
@@ -69,7 +68,7 @@ export function CreateTransactionDialog({
     if (!accounts || !session?.user?.id) return undefined;
     const userAccounts = accounts.filter((acc) => acc.ownerId === session.user.id);
     return userAccounts[0];
-  }, [accountProp, accountsData?.data, session?.user?.id]);
+  }, [accountProp, accountsData?.data, session]);
 
   const {
     register,

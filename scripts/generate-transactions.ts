@@ -66,7 +66,7 @@ function randomDate(start: Date, end: Date): Date {
 }
 
 async function clearTransactions(workspaceId: string) {
-  console.log("Очистка существующих транзакций...");
+  console.warn("Очистка существующих транзакций...");
 
   const transactions = await prisma.transaction.findMany({
     where: { workspaceId },
@@ -74,7 +74,7 @@ async function clearTransactions(workspaceId: string) {
   });
 
   if (transactions.length === 0) {
-    console.log("Нет транзакций для удаления");
+    console.warn("Нет транзакций для удаления");
     return;
   }
 
@@ -87,7 +87,7 @@ async function clearTransactions(workspaceId: string) {
   });
 
   if (transfers.length > 0) {
-    console.log(`Удаление ${transfers.length} переводов...`);
+    console.warn(`Удаление ${transfers.length} переводов...`);
     await prisma.transfer.deleteMany({
       where: {
         OR: [{ fromTransactionId: { in: transactionIds } }, { toTransactionId: { in: transactionIds } }],
@@ -95,7 +95,7 @@ async function clearTransactions(workspaceId: string) {
     });
   }
 
-  console.log(`Удаление ${transactions.length} транзакций...`);
+  console.warn(`Удаление ${transactions.length} транзакций...`);
   await prisma.transaction.deleteMany({
     where: { workspaceId },
   });
@@ -104,7 +104,7 @@ async function clearTransactions(workspaceId: string) {
     where: { workspaceId },
   });
 
-  console.log("Сброс балансов счетов...");
+  console.warn("Сброс балансов счетов...");
   for (const account of accounts) {
     await prisma.account.update({
       where: { id: account.id },
@@ -112,11 +112,11 @@ async function clearTransactions(workspaceId: string) {
     });
   }
 
-  console.log("✅ Очистка завершена");
+  console.warn("✅ Очистка завершена");
 }
 
 async function generateTransactions(workspaceId: string, count: number = 100) {
-  console.log(`Генерация ${count} транзакций для workspace: ${workspaceId}`);
+  console.warn(`Генерация ${count} транзакций для workspace: ${workspaceId}`);
 
   await clearTransactions(workspaceId);
 
@@ -228,7 +228,7 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
     i++;
   }
 
-  console.log("Создание транзакций...");
+  console.warn("Создание транзакций...");
 
   for (const transaction of transactions) {
     await prisma.transaction.create({
@@ -236,7 +236,7 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
     });
   }
 
-  console.log("Обновление балансов счетов...");
+  console.warn("Обновление балансов счетов...");
 
   for (const [accountId, balance] of accountBalances.entries()) {
     await prisma.account.update({
@@ -245,7 +245,7 @@ async function generateTransactions(workspaceId: string, count: number = 100) {
     });
   }
 
-  console.log(
+  console.warn(
     `✅ Успешно создано ${transactions.length} транзакций (${incomeCount} доходов, ${transactions.length - incomeCount} расходов)`
   );
 }

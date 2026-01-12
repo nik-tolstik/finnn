@@ -35,7 +35,7 @@ const prisma = new PrismaClient({
 });
 
 async function createUser(email: string, name: string, password: string) {
-  console.log(`Проверка существования пользователя с email: ${email}`);
+  console.warn(`Проверка существования пользователя с email: ${email}`);
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
@@ -45,10 +45,10 @@ async function createUser(email: string, name: string, password: string) {
     throw new Error(`Пользователь с email ${email} уже существует`);
   }
 
-  console.log(`Хеширование пароля...`);
+  console.warn(`Хеширование пароля...`);
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  console.log(`Создание пользователя...`);
+  console.warn(`Создание пользователя...`);
   const user = await prisma.user.create({
     data: {
       email,
@@ -58,10 +58,10 @@ async function createUser(email: string, name: string, password: string) {
     },
   });
 
-  console.log(`✅ Пользователь успешно создан:`);
-  console.log(`   ID: ${user.id}`);
-  console.log(`   Email: ${user.email}`);
-  console.log(`   Имя: ${user.name}`);
+  console.warn(`✅ Пользователь успешно создан:`);
+  console.warn(`   ID: ${user.id}`);
+  console.warn(`   Email: ${user.email}`);
+  console.warn(`   Имя: ${user.name}`);
 }
 
 async function main() {
