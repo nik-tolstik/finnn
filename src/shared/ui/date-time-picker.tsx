@@ -3,13 +3,11 @@
 import { format } from "date-fns";
 import type { Locale } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronDownIcon } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/shared/ui/button";
 import { Calendar } from "@/shared/ui/calendar";
 import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
@@ -110,15 +108,17 @@ export function DateTimePicker({
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("flex items-center gap-2", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className={cn("w-full justify-between text-left font-normal", !date && "text-muted-foreground")}
+            className={cn(
+              "justify-between text-left font-normal border-input w-fit px-2",
+              !date && "text-muted-foreground"
+            )}
           >
             {date ? format(date, "dd.MM.yyyy", { locale }) : <span>{placeholder}</span>}
-            <ChevronDownIcon className="h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto overflow-hidden p-0" align={align}>
@@ -134,20 +134,16 @@ export function DateTimePicker({
         </PopoverContent>
       </Popover>
       {showTime && (
-        <div className="space-y-2">
-          <Label htmlFor="time">Время</Label>
-          <Input
-            id="time"
-            type="time"
-            value={timeValue}
-            onChange={handleTimeChange}
-            onFocus={handleTimeFocus}
-            onBlur={handleTimeBlur}
-            className="h-9"
-          />
-        </div>
+        <Input
+          id="time"
+          type="time"
+          value={timeValue}
+          onChange={handleTimeChange}
+          onFocus={handleTimeFocus}
+          onBlur={handleTimeBlur}
+          className="h-9 w-fit py-0 px-2 text-sm"
+        />
       )}
     </div>
   );
 }
-
