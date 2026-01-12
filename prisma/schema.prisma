@@ -51,11 +51,11 @@ model Workspace {
 }
 
 model WorkspaceMember {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId String   @db.ObjectId
-  userId      String   @db.ObjectId
-  role        String   @default("member")
-  createdAt   DateTime @default(now())
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String    @db.ObjectId
+  userId      String    @db.ObjectId
+  role        String    @default("member")
+  createdAt   DateTime  @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   user      User      @relation(fields: [userId], references: [id])
@@ -79,8 +79,8 @@ model Account {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
-  owner        User?         @relation(fields: [ownerId], references: [id])
+  workspace    Workspace         @relation(fields: [workspaceId], references: [id])
+  owner        User?             @relation(fields: [ownerId], references: [id])
   transactions Transaction[]
 
   @@index([workspaceId, archived])

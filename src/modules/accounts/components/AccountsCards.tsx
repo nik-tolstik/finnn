@@ -12,18 +12,18 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Account } from "@prisma/client";
-import { useQueryClient } from "@tanstack/react-query";
-import Image from "next/image";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
 import { CreateTransactionDialog } from "@/modules/transactions/components/CreateTransactionDialog";
 import { CreateTransferDialog } from "@/modules/transactions/components/CreateTransferDialog";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/AccountCard";
+import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { cn } from "@/shared/utils/cn";
 
 import { updateAccountsOrder } from "../account.service";
@@ -49,6 +49,8 @@ interface AccountsCardsProps {
   onReorderModeChange?: (isReorderMode: boolean) => void;
   reorderMode?: boolean;
   onCancelReorder?: () => void;
+  showAllAccounts?: boolean;
+  onShowAllAccountsChange?: (show: boolean) => void;
 }
 
 type ActionDialogData = {
@@ -94,7 +96,10 @@ function SortableAccountCard({
     <div ref={setNodeRef} style={style}>
       <div
         {...(isReorderMode ? { ...attributes, ...listeners } : {})}
-        className={cn("select-none", isReorderMode && "touch-none cursor-grab active:cursor-grabbing")}
+        className={cn(
+          "select-none",
+          isReorderMode && "touch-none cursor-grab active:cursor-grabbing"
+        )}
         style={{
           WebkitUserSelect: "none",
           WebkitTouchCallout: "none",
@@ -114,16 +119,22 @@ export function AccountsCards({
   onReorderModeChange,
   reorderMode = false,
   onCancelReorder,
+  showAllAccounts: showAllAccountsProp,
+  onShowAllAccountsChange,
 }: AccountsCardsProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
   const [items, setItems] = useState(accounts);
   const [originalItems, setOriginalItems] = useState(accounts);
+  const [showAllAccountsLocal, setShowAllAccountsLocal] = useState(false);
   const isReorderMode = reorderMode;
   const accountActionsDialog = useDialogState<{ account: Account }>();
+
+  const showAllAccounts = showAllAccountsProp ?? showAllAccountsLocal;
+  const setShowAllAccounts = onShowAllAccountsChange ?? setShowAllAccountsLocal;
   const transactionTabsDialog = useDialogState<{
     workspaceId: string;
-    defaultAccountId?: string;
     defaultType?: TransactionType.INCOME | TransactionType.EXPENSE;
   }>();
   const transferDialog = useDialogState<{
@@ -140,12 +151,27 @@ export function AccountsCards({
     })
   );
 
-  useEffect(() => {
-    setItems(accounts);
-    if (!isReorderMode) {
-      setOriginalItems(accounts);
+  const currentUserId = session?.user?.id;
+
+  const filteredAccounts = useMemo(() => {
+    if (showAllAccounts || !currentUserId) {
+      return accounts;
     }
-  }, [accounts, isReorderMode]);
+    return accounts.filter((account) => account.ownerId === currentUserId);
+  }, [accounts, showAllAccounts, currentUserId]);
+
+  useEffect(() => {
+    setItems(filteredAccounts);
+    if (!isReorderMode) {
+      setOriginalItems(filteredAccounts);
+    }
+  }, [filteredAccounts, isReorderMode]);
+
+  useEffect(() => {
+    if (!isReorderMode) {
+      setShowAllAccounts(false);
+    }
+  }, [isReorderMode, setShowAllAccounts]);
 
   useEffect(() => {
     if (isReorderMode) {
@@ -281,46 +307,23 @@ export function AccountsCards({
       <div className="relative">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <div className="space-y-6">
-            {sortedOwners.map(({ owner, ownerName, accounts: ownerAccounts }) => {
+            {sortedOwners.map(({ owner, accounts: ownerAccounts }) => {
               const ownerId = owner?.id || "__no_owner__";
+
               return (
                 <div key={ownerId} className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    {owner?.image ? (
-                      <Image
-                        src={owner.image}
-                        alt={ownerName}
-                        width={24}
-                        height={24}
-                        className="h-6 w-6 rounded-full object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-white text-xs font-medium"
-                        style={{
-                          backgroundColor: getAvatarColor(owner?.name || owner?.email || "U"),
-                        }}
-                      >
-                        {(() => {
-                          const displayName = owner?.name || owner?.email || "U";
-                          const initials = displayName
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()
-                            .slice(0, 2);
-                          return initials;
-                        })()}
-                      </div>
-                    )}
-                    <h3 className="text-sm font-semibold text-muted-foreground tracking-wider">
-                      {ownerName}
-                    </h3>
-                  </div>
-                  <SortableContext items={ownerAccounts.map((account) => account.id)}>
+                  {sortedOwners.length > 1 && (
+                    <UserDisplay
+                      name={owner?.name}
+                      email={owner?.email}
+                      image={owner?.image}
+                      size="sm"
+                      showName={true}
+                    />
+                  )}
+                  <SortableContext items={ownerAccounts.map((account: AccountWithOwner) => account.id)}>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fill,300px)]">
-                      {ownerAccounts.map((account) => (
+                      {ownerAccounts.map((account: AccountWithOwner) => (
                         <SortableAccountCard
                           key={account.id}
                           account={account}
@@ -360,7 +363,6 @@ export function AccountsCards({
           onCreateTransaction={() => {
             transactionTabsDialog.openDialog({
               workspaceId,
-              defaultAccountId: accountActionsDialog.data.account.id,
               defaultType: TransactionType.EXPENSE,
             });
             accountActionsDialog.closeDialog();
@@ -399,7 +401,6 @@ export function AccountsCards({
           open={transactionTabsDialog.open}
           onOpenChange={transactionTabsDialog.closeDialog}
           onCloseComplete={transactionTabsDialog.unmountDialog}
-          defaultAccountId={transactionTabsDialog.data.defaultAccountId}
           defaultType={transactionTabsDialog.data.defaultType}
         />
       )}

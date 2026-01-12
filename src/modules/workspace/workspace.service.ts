@@ -585,3 +585,4 @@ export async function getWorkspaceInvite(token: string) {
     return { error: error.message || "Не удалось загрузить приглашение" };
   }
 }
+

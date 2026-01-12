@@ -11,10 +11,14 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { useSession } from "next-auth/react";
 import { getAccounts } from "@/modules/accounts/account.service";
+import { SelectAccountDialog } from "@/modules/accounts/components/SelectAccountDialog";
 import { CategoryType } from "@/modules/categories/category.constants";
 import { getCategories } from "@/modules/categories/category.service";
+import { AccountCard } from "@/shared/components/AccountCard";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
+import { useDialogState } from "@/shared/hooks/useDialogState";
 import { createTransactionSchema, type CreateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { type ComboboxOption } from "@/shared/ui/combobox";
@@ -37,7 +41,6 @@ interface CreateTransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
-  defaultAccountId?: string;
   defaultType?: TransactionType.INCOME | TransactionType.EXPENSE;
 }
 
@@ -47,11 +50,12 @@ export function CreateTransactionDialog({
   open,
   onOpenChange,
   onCloseComplete,
-  defaultAccountId,
   defaultType = TransactionType.EXPENSE,
 }: CreateTransactionDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const selectAccountDialog = useDialogState();
 
   const { data: accountsData } = useQuery({
     queryKey: ["accounts", workspaceId],
@@ -64,11 +68,10 @@ export function CreateTransactionDialog({
   const account = useMemo(() => {
     if (accountProp) return accountProp;
     const accounts = accountsData?.data;
-    if (defaultAccountId && accounts) {
-      return accounts.find((acc) => acc.id === defaultAccountId);
-    }
-    return accounts?.[0];
-  }, [accountProp, defaultAccountId, accountsData?.data]);
+    if (!accounts || !session?.user?.id) return undefined;
+    const userAccounts = accounts.filter((acc) => acc.ownerId === session.user.id);
+    return userAccounts[0];
+  }, [accountProp, accountsData?.data, session?.user?.id]);
 
   const {
     register,
@@ -80,7 +83,7 @@ export function CreateTransactionDialog({
   } = useForm<CreateTransactionInput>({
     resolver: zodResolver(createTransactionSchema),
     defaultValues: {
-      accountId: account?.id || defaultAccountId || "",
+      accountId: account?.id || "",
       amount: "",
       type: defaultType,
       description: "",
@@ -91,7 +94,6 @@ export function CreateTransactionDialog({
         accountCreatedDate.setHours(0, 0, 0, 0);
         const nowDateOnly = new Date(now);
         nowDateOnly.setHours(0, 0, 0, 0);
-        // Если дата создания счета в будущем, используем её с текущим временем
         if (nowDateOnly < accountCreatedDate) {
           const result = new Date(accountCreatedDate);
           result.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
@@ -105,8 +107,18 @@ export function CreateTransactionDialog({
 
   const transactionType = useWatch({ control, name: "type" });
   const categoryId = useWatch({ control, name: "categoryId" });
+  const accountId = useWatch({ control, name: "accountId" });
   const [temporaryCategories, setTemporaryCategories] = useState<TemporaryCategory[]>([]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+
+  const selectedAccount = useMemo(() => {
+    if (accountProp) return accountProp;
+    const accounts = accountsData?.data;
+    if (accountId && accounts) {
+      return accounts.find((acc) => acc.id === accountId);
+    }
+    return account;
+  }, [accountProp, accountId, accountsData?.data, account]);
 
   const { data: categoriesData } = useQuery({
     queryKey: ["categories", workspaceId],
@@ -151,12 +163,11 @@ export function CreateTransactionDialog({
   }, [comboboxOptions, categoryId]);
 
   const prevOpenRef = React.useRef(open);
-  const accountIdRef = React.useRef<string | undefined>(account?.id || defaultAccountId);
+  const accountIdRef = React.useRef<string | undefined>(account?.id);
 
   useEffect(() => {
-    // Сбрасываем форму только при открытии модалки (когда open меняется с false на true)
     if (open && !prevOpenRef.current) {
-      const now = new Date(); // Всегда используем текущее время
+      const now = new Date();
       let defaultDate: Date = now;
       const currentAccount = account;
 
@@ -165,14 +176,13 @@ export function CreateTransactionDialog({
         accountCreatedDate.setHours(0, 0, 0, 0);
         const nowDateOnly = new Date(now);
         nowDateOnly.setHours(0, 0, 0, 0);
-        // Если дата создания счета в будущем, используем её с текущим временем
         if (nowDateOnly < accountCreatedDate) {
           defaultDate = new Date(accountCreatedDate);
           defaultDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
         }
       }
 
-      const initialAccountId = currentAccount?.id || defaultAccountId || "";
+      const initialAccountId = currentAccount?.id || "";
       accountIdRef.current = initialAccountId;
 
       reset({
@@ -187,16 +197,17 @@ export function CreateTransactionDialog({
       setTemporaryCategories([]);
     }
     prevOpenRef.current = open;
-  }, [open, reset, defaultType, defaultAccountId]);
+  }, [open, reset, defaultType, account]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
   };
 
   const onSubmit = async (data: CreateTransactionInput) => {
-    if (!account) return;
+    const currentAccount = selectedAccount || account;
+    if (!currentAccount) return;
 
-    const accountCreatedDate = new Date(account.createdAt);
+    const accountCreatedDate = new Date(currentAccount.createdAt);
     accountCreatedDate.setHours(0, 0, 0, 0);
     const transactionDate = new Date(data.date);
     transactionDate.setHours(0, 0, 0, 0);
@@ -281,22 +292,38 @@ export function CreateTransactionDialog({
     }
   };
 
+  const handleAccountSelect = (selectedAccount: Account) => {
+    setValue("accountId", selectedAccount.id);
+  };
+
   if (!account) {
     return null;
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogWindow onCloseComplete={onCloseComplete}>
-        <DialogHeader>
-          <DialogTitle>Создать транзакцию</DialogTitle>
-        </DialogHeader>
-        <DialogContent>
-          <form className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">
-                Тип транзакции <span className="text-destructive">*</span>
-              </Label>
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogWindow onCloseComplete={onCloseComplete}>
+          <DialogHeader>
+            <DialogTitle>Создать транзакцию</DialogTitle>
+          </DialogHeader>
+          <DialogContent>
+            <form className="space-y-4">
+              <div className="space-y-2">
+                <Label>Счёт</Label>
+                {selectedAccount && (
+                  <AccountCard
+                    account={selectedAccount}
+                    onClick={() => selectAccountDialog.openDialog(null)}
+                    showOwner={false}
+                  />
+                )}
+                {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="type">
+                  Тип транзакции <span className="text-destructive">*</span>
+                </Label>
               <Segmented
                 options={[
                   {
@@ -374,7 +401,7 @@ export function CreateTransactionDialog({
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-                  {getCurrencySymbol(account.currency)}
+                  {getCurrencySymbol(selectedAccount?.currency || account.currency)}
                 </span>
                 <Input
                   id="amount"
@@ -424,8 +451,9 @@ export function CreateTransactionDialog({
                     date={field.value}
                     onSelect={field.onChange}
                     disabled={(date) => {
-                      if (!account) return false;
-                      const accountCreatedDate = new Date(account.createdAt);
+                      const currentAccount = selectedAccount || account;
+                      if (!currentAccount) return false;
+                      const accountCreatedDate = new Date(currentAccount.createdAt);
                       accountCreatedDate.setHours(0, 0, 0, 0);
                       const checkDate = new Date(date);
                       checkDate.setHours(0, 0, 0, 0);
@@ -449,5 +477,16 @@ export function CreateTransactionDialog({
         </DialogFooter>
       </DialogWindow>
     </Dialog>
+
+    {selectAccountDialog.mounted && (
+      <SelectAccountDialog
+        workspaceId={workspaceId}
+        open={selectAccountDialog.open}
+        onOpenChange={selectAccountDialog.closeDialog}
+        onCloseComplete={selectAccountDialog.unmountDialog}
+        onSelect={handleAccountSelect}
+      />
+    )}
+    </>
   );
 }

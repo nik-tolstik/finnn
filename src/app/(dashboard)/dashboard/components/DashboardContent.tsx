@@ -2,7 +2,6 @@
 
 import type { Account } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
-import { GripVertical, X, Check, Plus, MoreVertical, ArrowLeftRight } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import * as React from "react";
@@ -17,9 +16,8 @@ import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { getTransactions, type TransactionFilters } from "@/modules/transactions/transaction.service";
 import type { TransactionWithRelations } from "@/modules/transactions/transaction.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { Button } from "@/shared/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { cn } from "@/shared/utils/cn";
+
+import { AccountsMenu } from "./AccountsMenu";
 
 type AccountWithOwner = Account & {
   owner: {
@@ -100,7 +98,7 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [showAllAccounts, setShowAllAccounts] = useState(false);
   const createAccountDialog = useDialogState();
 
   const filtersKey = JSON.stringify(debouncedFilters);
@@ -215,87 +213,23 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-semibold">Счета</h2>
-            {!isReorderMode ? (
-              <>
-                <div className="hidden md:flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => createAccountDialog.openDialog(null)}
-                    className="gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Новый
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setIsReorderMode(true)} className="gap-2">
-                    <ArrowLeftRight className="h-4 w-4" />
-                    Изменить порядок
-                  </Button>
-                </div>
-                <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon-sm" className="md:hidden">
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-48 p-1" align="end">
-                    <div className="space-y-1">
-                      <button
-                        onClick={() => {
-                          createAccountDialog.openDialog(null);
-                          setMenuOpen(false);
-                        }}
-                        className={cn(
-                          "w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                        )}
-                      >
-                        <Plus className="h-4 w-4" />
-                        Новый
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsReorderMode(true);
-                          setMenuOpen(false);
-                        }}
-                        className={cn(
-                          "w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                        )}
-                      >
-                        <GripVertical className="h-4 w-4" />
-                        Изменить порядок
-                      </button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </>
-            ) : (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const event = new CustomEvent("cancelReorder");
-                    window.dispatchEvent(event);
-                    setIsReorderMode(false);
-                  }}
-                  className="gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Отменить
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const event = new CustomEvent("saveReorder");
-                    window.dispatchEvent(event);
-                  }}
-                  className="gap-2"
-                >
-                  <Check className="h-4 w-4" />
-                  Сохранить
-                </Button>
-              </div>
-            )}
+            <AccountsMenu
+              isReorderMode={isReorderMode}
+              showAllAccounts={showAllAccounts}
+              onReorderModeChange={setIsReorderMode}
+              onShowAllAccountsChange={setShowAllAccounts}
+              onCreateAccount={() => createAccountDialog.openDialog(null)}
+              onCancelReorder={() => {
+                const event = new CustomEvent("cancelReorder");
+                window.dispatchEvent(event);
+                setIsReorderMode(false);
+                setShowAllAccounts(false);
+              }}
+              onSaveReorder={() => {
+                const event = new CustomEvent("saveReorder");
+                window.dispatchEvent(event);
+              }}
+            />
           </div>
           <AccountsCards
             accounts={displayAccounts}
@@ -303,7 +237,12 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
             isLoading={isLoadingAccounts}
             reorderMode={isReorderMode}
             onReorderModeChange={setIsReorderMode}
-            onCancelReorder={() => setIsReorderMode(false)}
+            onCancelReorder={() => {
+              setIsReorderMode(false);
+              setShowAllAccounts(false);
+            }}
+            showAllAccounts={showAllAccounts}
+            onShowAllAccountsChange={setShowAllAccounts}
           />
         </div>
 

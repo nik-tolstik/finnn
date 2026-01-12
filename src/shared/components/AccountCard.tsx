@@ -29,6 +29,7 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
         "relative overflow-hidden bg-card text-card-foreground flex flex-col rounded-xl shadow-sm",
         onClick && "cursor-pointer",
         !account.color && "bg-card",
+
         className
       )}
       style={{
@@ -47,7 +48,7 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
       <div className="flex flex-col items-start gap-0 px-4 py-3">
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0 bg-primary/10">
               <AccountIcon className="text-primary h-3.5 w-3.5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -59,9 +60,7 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
           </div>
         </div>
         {showOwner && account.owner && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            {account.owner.name || account.owner.email}
-          </div>
+          <div className="mt-2 text-xs text-muted-foreground">{account.owner.name || account.owner.email}</div>
         )}
       </div>
     </div>
