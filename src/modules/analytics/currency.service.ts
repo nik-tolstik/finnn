@@ -176,7 +176,13 @@ export async function getNBRBExchangeRatesByDate(date: Date): Promise<{ data: Re
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        return { error: `NBRB API error: ${response.status}` };
+        const error = `NBRB API error: ${response.status}`;
+        console.log("[Currency Service] НБРБ недоступен для даты, используем ExchangeRate-API (fallback):", error);
+        const exchangeRateResult = await getExchangeRateAPIRates();
+        if (!("error" in exchangeRateResult)) {
+          return exchangeRateResult;
+        }
+        return { error };
       }
 
       const rates: NBRBRate[] = await response.json();
@@ -194,11 +200,21 @@ export async function getNBRBExchangeRatesByDate(date: Date): Promise<{ data: Re
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       if (fetchError.name === "AbortError") {
+        console.log("[Currency Service] НБРБ timeout для даты, используем ExchangeRate-API (fallback)");
+        const exchangeRateResult = await getExchangeRateAPIRates();
+        if (!("error" in exchangeRateResult)) {
+          return exchangeRateResult;
+        }
         return { error: "NBRB timeout" };
       }
       throw fetchError;
     }
   } catch (error: any) {
+    console.log("[Currency Service] НБРБ ошибка для даты, используем ExchangeRate-API (fallback):", error.message);
+    const exchangeRateResult = await getExchangeRateAPIRates();
+    if (!("error" in exchangeRateResult)) {
+      return exchangeRateResult;
+    }
     return { error: error.message || "NBRB error" };
   }
 }

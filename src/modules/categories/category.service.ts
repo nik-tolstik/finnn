@@ -153,6 +153,13 @@ export async function getCategories(workspaceId: string, type?: string) {
         workspaceId,
         ...(type && { type }),
       },
+      include: {
+        _count: {
+          select: {
+            transactions: true,
+          },
+        },
+      },
       orderBy: [{ order: "asc" }, { name: "asc" }],
     });
 

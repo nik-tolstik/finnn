@@ -198,6 +198,8 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     const category = categories.find((cat) => cat.id === option.value);
     if (!category) return null;
 
+    const transactionCount = (category as any)._count?.transactions || 0;
+
     return (
       <div className="flex items-center gap-2 flex-1 min-w-0">
         {props.multiple && !isTrigger && (
@@ -205,6 +207,9 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
         )}
         <div style={{ backgroundColor: category.color || undefined }} className="size-4 rounded-full" />
         <span className="flex-1 text-sm">{option.label}</span>
+        {!isTrigger && transactionCount > 0 && (
+          <span className="text-xs text-muted-foreground shrink-0">{transactionCount}</span>
+        )}
       </div>
     );
   };
