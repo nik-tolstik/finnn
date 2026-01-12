@@ -37,6 +37,12 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
+        const isRedirect = response.status >= 300 && response.status < 400;
+        
+        if (isRedirect) {
+          return response;
+        }
+
         if (!response || response.status !== 200 || response.type === "error") {
           return caches.match(event.request).then((cachedResponse) => {
             return cachedResponse || response;
