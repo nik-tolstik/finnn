@@ -30,12 +30,12 @@ export function MobileNavigation() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden">
-        <div className="flex items-center justify-around py-2">
+      <nav className="fixed -bottom-px left-0 right-0 z-50 border-t bg-background md:hidden">
+        <div className="flex items-center justify-around">
           <Link
             href={`${accountsPath}${basePath}`}
             className={cn(
-              "flex flex-col items-center justify-center gap-1 transition-colors size-16",
+              "flex flex-col items-center justify-center gap-1 transition-colors size-16 py-3",
               isAccountsActive ? "text-primary" : "text-muted-foreground"
             )}
           >
@@ -45,7 +45,7 @@ export function MobileNavigation() {
           <Link
             href={`${analyticsPath}${basePath}`}
             className={cn(
-              "flex flex-col items-center justify-center gap-1 transition-colors size-16",
+              "flex flex-col items-center justify-center gap-1 transition-colors size-16 py-3",
               isAnalyticsActive ? "text-primary" : "text-muted-foreground"
             )}
           >
@@ -54,15 +54,18 @@ export function MobileNavigation() {
           </Link>
           <button
             onClick={() => createTransactionDialog.openDialog(null)}
-            className="flex items-center justify-center rounded-full bg-primary text-primary-foreground size-12"
+            className="flex flex-col items-center justify-center gap-1 transition-colors size-16 py-3 relative"
           >
-            <Plus className="size-6" />
+            <div className="absolute size-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 top-0 left-1/2 -translate-x-1/2 -translate-y-1/4">
+              <Plus className="size-5" />
+            </div>
+            <span className="text-xs mt-auto">Создать</span>
           </button>
-          <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground opacity-50 size-16">
+          <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground opacity-50 size-16 py-3">
             <div className="size-5" />
             <span className="text-xs">—</span>
           </div>
-          <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground opacity-50 size-16">
+          <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground opacity-50 size-16 py-3">
             <div className="size-5" />
             <span className="text-xs">—</span>
           </div>
