@@ -1,13 +1,7 @@
 const CACHE_NAME = "finhub-v2";
-const urlsToCache = ["/"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
-  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -31,6 +25,10 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  if (event.request.destination === "document") {
     return;
   }
 
@@ -58,15 +56,7 @@ self.addEventListener("fetch", (event) => {
       })
       .catch(() => {
         return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-
-          if (event.request.destination === "document") {
-            return caches.match("/");
-          }
-
-          return new Response("Network error", {
+          return cachedResponse || new Response("Network error", {
             status: 408,
             headers: { "Content-Type": "text/plain" },
           });
