@@ -40,7 +40,7 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
         WebkitUserSelect: "none",
         WebkitTouchCallout: "none",
         userSelect: "none",
-        touchAction: "none",
+        touchAction: "pan-y",
       }}
       onClick={onClick}
     >

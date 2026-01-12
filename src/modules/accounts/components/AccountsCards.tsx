@@ -94,7 +94,7 @@ function SortableAccountCard({
     <div ref={setNodeRef} style={style}>
       <div
         {...(isReorderMode ? { ...attributes, ...listeners } : {})}
-        className={cn("select-none touch-none", isReorderMode && "cursor-grab active:cursor-grabbing")}
+        className={cn("select-none", isReorderMode && "touch-none cursor-grab active:cursor-grabbing")}
         style={{
           WebkitUserSelect: "none",
           WebkitTouchCallout: "none",
