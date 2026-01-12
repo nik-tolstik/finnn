@@ -28,12 +28,10 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Segmented } from "@/shared/ui/segmented";
 import { Textarea } from "@/shared/ui/textarea";
-import { generateRandomColor } from "@/shared/utils/category-colors";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
 import { TransactionType } from "../transaction.constants";
 import { createTransaction } from "../transaction.service";
-import type { TemporaryCategory } from "../transaction.types";
 
 interface CreateTransactionDialogProps {
   account?: Account;
@@ -108,7 +106,6 @@ export function CreateTransactionDialog({
   const transactionType = useWatch({ control, name: "type" });
   const categoryId = useWatch({ control, name: "categoryId" });
   const accountId = useWatch({ control, name: "accountId" });
-  const [temporaryCategories, setTemporaryCategories] = useState<TemporaryCategory[]>([]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const selectedAccount = useMemo(() => {
@@ -137,26 +134,13 @@ export function CreateTransactionDialog({
     return allCategories.filter((cat) => cat.type === transactionType || transactionType === TransactionType.TRANSFER);
   }, [allCategories, transactionType]);
 
-  // Объединяем существующие и временные категории для Combobox
   const comboboxOptions = useMemo<ComboboxOption[]>(() => {
-    const existingOptions: ComboboxOption[] = filteredCategories.map((cat) => ({
+    return filteredCategories.map((cat) => ({
       value: cat.id,
       label: cat.name,
       color: cat.color || undefined,
-      isTemporary: false,
     }));
-
-    const tempOptions: ComboboxOption[] = temporaryCategories
-      .filter((temp) => temp.type === transactionType)
-      .map((temp) => ({
-        value: temp.id,
-        label: temp.name,
-        color: temp.color,
-        isTemporary: true,
-      }));
-
-    return [...existingOptions, ...tempOptions];
-  }, [filteredCategories, temporaryCategories, transactionType]);
+  }, [filteredCategories]);
 
   const selectedCategory = useMemo(() => {
     return comboboxOptions.find((opt) => opt.value === categoryId);
@@ -194,7 +178,6 @@ export function CreateTransactionDialog({
         categoryId: undefined,
         newCategory: undefined,
       });
-      setTemporaryCategories([]);
     }
     prevOpenRef.current = open;
   }, [open, reset, defaultType, account]);
@@ -246,51 +229,10 @@ export function CreateTransactionDialog({
   };
 
   const handleCategorySelect = (option: ComboboxOption) => {
-    if (option.isTemporary) {
-      // Если выбрана временная категория, сохраняем информацию в newCategory
-      // и устанавливаем categoryId в временный ID для отображения
-      const tempCategory = temporaryCategories.find((temp) => temp.id === option.value);
-      if (tempCategory) {
-        setValue("newCategory", {
-          name: tempCategory.name,
-          color: tempCategory.color,
-          type: tempCategory.type === TransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE,
-        });
-        setValue("categoryId", option.value);
-      }
-    } else {
-      // Если выбрана существующая категория, используем её ID
-      setValue("categoryId", option.value);
-      setValue("newCategory", undefined);
-    }
+    setValue("categoryId", option.value);
+    setValue("newCategory", undefined);
   };
 
-  const handleCategorySearch = (searchValue: string) => {
-    if (!searchValue.trim()) {
-      return;
-    }
-
-    // Проверяем, существует ли категория с таким именем
-    const exists = allCategories.some((cat) => cat.name.toLowerCase() === searchValue.toLowerCase());
-
-    // Если категории нет и она ещё не создана как временная
-    if (
-      !exists &&
-      !temporaryCategories.some(
-        (temp) => temp.name.toLowerCase() === searchValue.toLowerCase() && temp.type === transactionType
-      )
-    ) {
-      // Создаём временную категорию
-      const newTempCategory: TemporaryCategory = {
-        id: `temp-${Date.now()}-${Math.random()}`,
-        name: searchValue.trim(),
-        color: generateRandomColor(),
-        type: transactionType as TransactionType.INCOME | TransactionType.EXPENSE,
-        isTemporary: true,
-      };
-      setTemporaryCategories((prev) => [...prev, newTempCategory]);
-    }
-  };
 
   const handleAccountSelect = (selectedAccount: Account) => {
     setValue("accountId", selectedAccount.id);
@@ -361,7 +303,7 @@ export function CreateTransactionDialog({
                       <span className="truncate">{selectedCategory.label}</span>
                     </div>
                   ) : (
-                    <span className="text-muted-foreground">Выберите или создайте категорию</span>
+                    <span className="text-muted-foreground">Выберите категорию</span>
                   )}
                 </Button>
                 {selectedCategory && (
@@ -384,11 +326,9 @@ export function CreateTransactionDialog({
                 options={comboboxOptions}
                 value={categoryId}
                 onSelect={handleCategorySelect}
-                onSearchChange={handleCategorySearch}
-                placeholder="Выберите или создайте категорию"
-                searchPlaceholder="Поиск или создание категории..."
-                emptyText="Введите название для создания новой категории"
-                createText="Создать"
+                placeholder="Выберите категорию"
+                searchPlaceholder="Поиск категории..."
+                emptyText="Категории не найдены"
               />
               {(errors.categoryId || errors.newCategory) && (
                 <p className="text-sm text-destructive">{errors.categoryId?.message || errors.newCategory?.message}</p>

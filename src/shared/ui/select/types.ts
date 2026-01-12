@@ -1,7 +1,6 @@
 export interface SelectOption<TValue extends string | number = string> {
   value: TValue;
   label: string;
-  isTemporary?: boolean;
 }
 
 export type RenderOptionProps<TValue extends string | number = string> = {

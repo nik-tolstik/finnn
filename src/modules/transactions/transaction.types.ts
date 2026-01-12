@@ -61,13 +61,3 @@ export type TransactionWithRelations = Transaction & {
     };
   } | null;
 };
-
-import { TransactionType } from "./transaction.constants";
-
-export type TemporaryCategory = {
-  id: string;
-  name: string;
-  color: string;
-  type: TransactionType.INCOME | TransactionType.EXPENSE;
-  isTemporary: true;
-};

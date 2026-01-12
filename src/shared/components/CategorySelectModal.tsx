@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Plus, Search } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { ComboboxOption } from "@/shared/ui/combobox";
@@ -18,7 +18,6 @@ interface CategorySelectModalProps {
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
-  createText?: string;
 }
 
 export function CategorySelectModal({
@@ -31,7 +30,6 @@ export function CategorySelectModal({
   placeholder: _placeholder = "Выберите категорию",
   searchPlaceholder = "Поиск категории...",
   emptyText = "Категории не найдены",
-  createText = "Создать",
 }: CategorySelectModalProps) {
   const [search, setSearch] = useState("");
 
@@ -59,7 +57,7 @@ export function CategorySelectModal({
       <DialogWindow className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Выберите категорию</DialogTitle>
-          <DialogDescription>Выберите существующую категорию или создайте новую</DialogDescription>
+          <DialogDescription>Выберите существующую категорию</DialogDescription>
         </DialogHeader>
         <DialogContent className="overflow-hidden flex flex-col">
           <div className="relative">
@@ -88,18 +86,7 @@ export function CategorySelectModal({
                   {option.color && (
                     <div className="h-4 w-4 rounded-full shrink-0" style={{ backgroundColor: option.color }} />
                   )}
-                  <span className="flex-1 text-sm">
-                    {option.isTemporary ? (
-                      <span className="flex items-center gap-2">
-                        <Plus className="h-3 w-3" />
-                        <span>
-                          {createText}: {option.label}
-                        </span>
-                      </span>
-                    ) : (
-                      option.label
-                    )}
-                  </span>
+                  <span className="flex-1 text-sm">{option.label}</span>
                   {value === option.value && <Check className="h-4 w-4 shrink-0 text-primary" />}
                 </button>
               ))

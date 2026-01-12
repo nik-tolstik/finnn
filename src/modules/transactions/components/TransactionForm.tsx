@@ -20,7 +20,6 @@ import { Textarea } from "@/shared/ui/textarea";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
 import { TransactionType } from "../transaction.constants";
-import type { TemporaryCategory } from "../transaction.types";
 
 interface TransactionFormProps {
   workspaceId: string;
@@ -32,11 +31,9 @@ interface TransactionFormProps {
     color: string | null;
     type: string;
   }>;
-  temporaryCategories: TemporaryCategory[];
   categoryModalOpen: boolean;
   onCategoryModalOpenChange: (open: boolean) => void;
   onCategorySelect: (option: ComboboxOption) => void;
-  onCategorySearch: (searchValue: string) => void;
   onSubmit: (data: CreateTransactionInput) => Promise<void>;
   type: TransactionType.INCOME | TransactionType.EXPENSE;
 }
@@ -46,11 +43,9 @@ export function TransactionForm({
   form,
   accounts,
   allCategories,
-  temporaryCategories,
   categoryModalOpen,
   onCategoryModalOpenChange,
   onCategorySelect,
-  onCategorySearch,
   onSubmit,
   type,
 }: TransactionFormProps) {
@@ -67,24 +62,12 @@ export function TransactionForm({
   }, [allCategories, transactionType]);
 
   const comboboxOptions = useMemo<ComboboxOption[]>(() => {
-    const existingOptions: ComboboxOption[] = filteredCategories.map((cat) => ({
+    return filteredCategories.map((cat) => ({
       value: cat.id,
       label: cat.name,
       color: cat.color || undefined,
-      isTemporary: false,
     }));
-
-    const tempOptions: ComboboxOption[] = temporaryCategories
-      .filter((temp) => temp.type === transactionType)
-      .map((temp) => ({
-        value: temp.id,
-        label: temp.name,
-        color: temp.color,
-        isTemporary: true,
-      }));
-
-    return [...existingOptions, ...tempOptions];
-  }, [filteredCategories, temporaryCategories, transactionType]);
+  }, [filteredCategories]);
 
   const selectedCategory = useMemo(() => {
     return comboboxOptions.find((opt) => opt.value === categoryId);
@@ -146,7 +129,7 @@ export function TransactionForm({
                 <span className="truncate">{selectedCategory.label}</span>
               </div>
             ) : (
-              <span className="text-muted-foreground">Выберите или создайте категорию</span>
+              <span className="text-muted-foreground">Выберите категорию</span>
             )}
           </Button>
           {selectedCategory && (
@@ -169,11 +152,9 @@ export function TransactionForm({
           options={comboboxOptions}
           value={categoryId}
           onSelect={onCategorySelect}
-          onSearchChange={onCategorySearch}
-          placeholder="Выберите или создайте категорию"
-          searchPlaceholder="Поиск или создание категории..."
-          emptyText="Введите название для создания новой категории"
-          createText="Создать"
+          placeholder="Выберите категорию"
+          searchPlaceholder="Поиск категории..."
+          emptyText="Категории не найдены"
         />
         {(form.formState.errors.categoryId || form.formState.errors.newCategory) && (
           <p className="text-sm text-destructive">

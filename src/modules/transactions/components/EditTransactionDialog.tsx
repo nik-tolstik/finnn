@@ -90,7 +90,6 @@ export function EditTransactionDialog({
       value: cat.id,
       label: cat.name,
       color: cat.color || undefined,
-      isTemporary: false,
     }));
   }, [filteredCategories]);
 

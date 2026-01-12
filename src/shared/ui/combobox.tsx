@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/shared/ui/button";
@@ -12,7 +12,6 @@ export interface ComboboxOption {
   value: string;
   label: string;
   color?: string;
-  isTemporary?: boolean;
 }
 
 interface ComboboxProps {
@@ -24,7 +23,6 @@ interface ComboboxProps {
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
-  createText?: string;
   className?: string;
   disabled?: boolean;
 }
@@ -38,7 +36,6 @@ export function Combobox({
   placeholder = "Выберите...",
   searchPlaceholder = "Поиск...",
   emptyText = "Ничего не найдено",
-  createText = "Создать",
   className,
   disabled,
 }: ComboboxProps) {
@@ -90,7 +87,7 @@ export function Combobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
         <div className="flex flex-col">
           <div className="border-b p-2">
             <Input
@@ -117,18 +114,7 @@ export function Combobox({
                   {option.color && (
                     <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: option.color }} />
                   )}
-                  <span className="flex-1 truncate text-left">
-                    {option.isTemporary ? (
-                      <span className="flex items-center gap-1">
-                        <Plus className="h-3 w-3" />
-                        <span>
-                          {createText}: {option.label}
-                        </span>
-                      </span>
-                    ) : (
-                      option.label
-                    )}
-                  </span>
+                  <span className="flex-1 truncate text-left">{option.label}</span>
                   {value === option.value && <Check className="h-4 w-4 shrink-0" />}
                 </button>
               ))

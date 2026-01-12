@@ -224,16 +224,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                               onClick={(e) => e.stopPropagation()}
                             />
                           )}
-                          <span className="flex-1 text-sm">
-                            {option.isTemporary ? (
-                              <span className="flex items-center gap-2">
-                                <span className="text-xs">+</span>
-                                <span>Создать: {option.label}</span>
-                              </span>
-                            ) : (
-                              option.label
-                            )}
-                          </span>
+                          <span className="flex-1 text-sm">{option.label}</span>
                           {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
                         </>
                       )}
