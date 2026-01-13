@@ -228,33 +228,71 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
 
     const validated = updateTransactionSchema.parse(input);
 
+    const oldAccountId = transaction.accountId;
+    const newAccountId = validated.accountId || oldAccountId;
+    const accountChanged = oldAccountId !== newAccountId;
+
     const oldAmount = transaction.amount.toString();
     const newAmount = validated.amount || oldAmount;
     const amountChanged = oldAmount !== newAmount;
 
-    if (amountChanged) {
-      const account = await prisma.account.findUnique({
-        where: { id: transaction.accountId },
+    if (accountChanged || amountChanged) {
+      const oldAccount = await prisma.account.findUnique({
+        where: { id: oldAccountId },
       });
 
-      if (!account) {
-        return { error: "Счёт не найден" };
+      if (!oldAccount) {
+        return { error: "Старый счёт не найден" };
       }
 
-      let correctedBalance = account.balance.toString();
+      let oldAccountBalance = oldAccount.balance.toString();
 
       if (transaction.type === TransactionType.INCOME) {
-        correctedBalance = subtractMoney(correctedBalance, oldAmount);
-        correctedBalance = addMoney(correctedBalance, newAmount);
+        oldAccountBalance = subtractMoney(oldAccountBalance, oldAmount);
       } else if (transaction.type === TransactionType.EXPENSE) {
-        correctedBalance = addMoney(correctedBalance, oldAmount);
-        correctedBalance = subtractMoney(correctedBalance, newAmount);
+        oldAccountBalance = addMoney(oldAccountBalance, oldAmount);
       }
 
       await prisma.account.update({
-        where: { id: transaction.accountId },
-        data: { balance: correctedBalance },
+        where: { id: oldAccountId },
+        data: { balance: oldAccountBalance },
       });
+
+      if (accountChanged) {
+        const newAccount = await prisma.account.findUnique({
+          where: { id: newAccountId },
+        });
+
+        if (!newAccount) {
+          return { error: "Новый счёт не найден" };
+        }
+
+        let newAccountBalance = newAccount.balance.toString();
+
+        if (transaction.type === TransactionType.INCOME) {
+          newAccountBalance = addMoney(newAccountBalance, newAmount);
+        } else if (transaction.type === TransactionType.EXPENSE) {
+          newAccountBalance = subtractMoney(newAccountBalance, newAmount);
+        }
+
+        await prisma.account.update({
+          where: { id: newAccountId },
+          data: { balance: newAccountBalance },
+        });
+      } else {
+        let correctedBalance = oldAccountBalance;
+
+        if (transaction.type === TransactionType.INCOME) {
+          correctedBalance = addMoney(correctedBalance, newAmount);
+        } else if (transaction.type === TransactionType.EXPENSE) {
+          correctedBalance = subtractMoney(correctedBalance, newAmount);
+        }
+
+        await prisma.account.update({
+          where: { id: oldAccountId },
+          data: { balance: correctedBalance },
+        });
+      }
     }
 
     const updated = await prisma.transaction.update({

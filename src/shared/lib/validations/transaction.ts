@@ -56,6 +56,7 @@ export const createTransferSchema = z.object({
 });
 
 export const updateTransactionSchema = z.object({
+  accountId: z.string().optional(),
   amount: z
     .string()
     .optional()

@@ -96,10 +96,7 @@ function SortableAccountCard({
     <div ref={setNodeRef} style={style}>
       <div
         {...(isReorderMode ? { ...attributes, ...listeners } : {})}
-        className={cn(
-          "select-none",
-          isReorderMode && "touch-none cursor-grab active:cursor-grabbing"
-        )}
+        className={cn("select-none", isReorderMode && "touch-none cursor-grab active:cursor-grabbing")}
         style={{
           WebkitUserSelect: "none",
           WebkitTouchCallout: "none",
@@ -133,9 +130,10 @@ export function AccountsCards({
 
   const showAllAccounts = showAllAccountsProp ?? showAllAccountsLocal;
   const setShowAllAccounts = onShowAllAccountsChange ?? setShowAllAccountsLocal;
-  const transactionTabsDialog = useDialogState<{
+  const createTransactionDialog = useDialogState<{
     workspaceId: string;
     defaultType?: TransactionType.INCOME | TransactionType.EXPENSE;
+    account?: Account;
   }>();
   const transferDialog = useDialogState<{
     workspaceId: string;
@@ -373,9 +371,10 @@ export function AccountsCards({
           }}
           onOpenChange={accountActionsDialog.closeDialog}
           onCreateTransaction={() => {
-            transactionTabsDialog.openDialog({
+            createTransactionDialog.openDialog({
               workspaceId,
               defaultType: TransactionType.EXPENSE,
+              account: accountActionsDialog.data.account,
             });
             accountActionsDialog.closeDialog();
           }}
@@ -407,13 +406,14 @@ export function AccountsCards({
         />
       )}
 
-      {transactionTabsDialog.mounted && (
+      {createTransactionDialog.mounted && (
         <CreateTransactionDialog
-          workspaceId={transactionTabsDialog.data.workspaceId}
-          open={transactionTabsDialog.open}
-          onOpenChange={transactionTabsDialog.closeDialog}
-          onCloseComplete={transactionTabsDialog.unmountDialog}
-          defaultType={transactionTabsDialog.data.defaultType}
+          workspaceId={createTransactionDialog.data.workspaceId}
+          open={createTransactionDialog.open}
+          onOpenChange={createTransactionDialog.closeDialog}
+          onCloseComplete={createTransactionDialog.unmountDialog}
+          defaultType={createTransactionDialog.data.defaultType}
+          account={createTransactionDialog.data.account}
         />
       )}
 

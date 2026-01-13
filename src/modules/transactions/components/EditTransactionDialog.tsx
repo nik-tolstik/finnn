@@ -1,15 +1,18 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { getAccounts } from "@/modules/accounts/account.service";
 import { getCategories } from "@/modules/categories/category.service";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
+import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { updateTransactionSchema, type UpdateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
@@ -52,12 +55,12 @@ export function EditTransactionDialog({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
     setValue,
     control,
   } = useForm<UpdateTransactionInput>({
     resolver: zodResolver(updateTransactionSchema),
     defaultValues: {
+      accountId: transaction.account.id,
       amount: transaction.amount,
       description: transaction.description || "",
       date: new Date(transaction.date),
@@ -72,6 +75,18 @@ export function EditTransactionDialog({
     staleTime: 5000,
     refetchInterval: 5000,
   });
+
+  const { data: accountsData } = useQuery({
+    queryKey: ["accounts", workspaceId],
+    queryFn: () => getAccounts(workspaceId),
+    enabled: open,
+    staleTime: 5000,
+    refetchInterval: 5000,
+  });
+
+  const accounts = useMemo(() => {
+    return accountsData?.data || [];
+  }, [accountsData?.data]);
 
   const allCategories = useMemo(() => {
     return categoriesData?.data || [];
@@ -94,22 +109,16 @@ export function EditTransactionDialog({
   }, [filteredCategories]);
 
   const categoryId = useWatch({ control, name: "categoryId" });
+  const accountId = useWatch({ control, name: "accountId" });
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const selectedCategory = useMemo(() => {
     return comboboxOptions.find((opt) => opt.value === categoryId);
   }, [comboboxOptions, categoryId]);
 
-  useEffect(() => {
-    if (open) {
-      reset({
-        amount: transaction.amount,
-        description: transaction.description || "",
-        date: new Date(transaction.date),
-        categoryId: transaction.categoryId || null,
-      });
-    }
-  }, [transaction, open, reset]);
+  const selectedAccount = useMemo(() => {
+    return accounts.find((acc) => acc.id === accountId);
+  }, [accounts, accountId]);
 
   const onSubmit = async (data: UpdateTransactionInput) => {
     onOpenChange(false);
@@ -140,6 +149,25 @@ export function EditTransactionDialog({
         </DialogHeader>
         <DialogContent>
           <form className="space-y-4">
+            <div className="space-y-2">
+              <Controller
+                control={control}
+                name="accountId"
+                render={({ field }) => (
+                  <AccountSelector
+                    workspaceId={workspaceId}
+                    account={selectedAccount || null}
+                    onSelect={(account: Account) => {
+                      field.onChange(account.id);
+                    }}
+                    label="Счёт"
+                    required
+                    error={errors.accountId?.message}
+                  />
+                )}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="amount">
                 Сумма <span className="text-destructive">*</span>
