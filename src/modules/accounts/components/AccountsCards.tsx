@@ -152,7 +152,10 @@ export function AccountsCards({
   const currentUserId = session?.user?.id;
 
   const filteredAccounts = useMemo(() => {
-    if (showAllAccounts || !currentUserId) {
+    if (showAllAccounts) {
+      return accounts;
+    }
+    if (!currentUserId) {
       return accounts;
     }
     return accounts.filter((account) => account.ownerId === currentUserId);

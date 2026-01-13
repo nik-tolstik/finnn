@@ -3,7 +3,8 @@
 import type { Account } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import * as React from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
@@ -44,6 +45,7 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [displayedCount, setDisplayedCount] = useState(TRANSACTIONS_PER_PAGE);
 
   const parseFiltersFromURL = (): TransactionFilters => {
@@ -148,13 +150,31 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
     return () => clearTimeout(timer);
   }, [localFilters]);
 
-  const { data: accountsData, isLoading: isLoadingAccounts } = useQuery({
+  const { data: accountsData, isLoading: isLoadingAccounts, isFetching: isFetchingAccounts } = useQuery({
     queryKey: ["accounts", workspaceId],
     queryFn: () => getAccounts(workspaceId),
     initialData: { data: accounts },
     staleTime: 5000,
     refetchInterval: 5000,
   });
+
+  const currentUserId = session?.user?.id;
+  
+  const displayAccounts = useMemo(() => {
+    const accountsToUse = accountsData?.data || accounts;
+    
+    if (showAllAccounts) {
+      return accountsToUse;
+    }
+    
+    if (!currentUserId) {
+      return accounts;
+    }
+    
+    return accountsToUse.filter((account) => account.ownerId === currentUserId);
+  }, [accountsData?.data, accounts, showAllAccounts, currentUserId]);
+
+  const isAccountsLoading = isLoadingAccounts || (isFetchingAccounts && accounts.length === 0);
 
   const {
     data: transactionsData,
@@ -190,8 +210,6 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
       }
     }
   }, [transactionsData, filtersKey, hasInitiallyLoaded]);
-
-  const displayAccounts = accountsData?.data || accounts;
 
   let displayedTransactions: TransactionWithRelations[] = [];
   let total = 0;
@@ -234,7 +252,7 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
           <AccountsCards
             accounts={displayAccounts}
             workspaceId={workspaceId}
-            isLoading={isLoadingAccounts}
+            isLoading={isAccountsLoading}
             reorderMode={isReorderMode}
             onReorderModeChange={setIsReorderMode}
             onCancelReorder={() => {

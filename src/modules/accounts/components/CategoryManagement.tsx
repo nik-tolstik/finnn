@@ -28,8 +28,6 @@ import {
 } from "@/modules/categories/category.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Segmented } from "@/shared/ui/segmented";
 import {
   ColorPicker,
   ColorPickerTrigger,
@@ -38,6 +36,8 @@ import {
   ColorPickerFormatSelect,
   ColorPickerInput,
 } from "@/shared/ui/color-picker";
+import { Input } from "@/shared/ui/input";
+import { Segmented } from "@/shared/ui/segmented";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
 import { cn } from "@/shared/utils/cn";
 
@@ -90,7 +90,16 @@ function SortableCategoryItem({
         {editingCategory?.id === category.id ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded border shrink-0" style={{ backgroundColor: editingColor }} />
+              <ColorPicker value={editingColor} onChange={setEditingColor}>
+                <ColorPickerTrigger className="h-6 w-6 rounded border shrink-0" />
+                <ColorPickerContent>
+                  <ColorPickerArea />
+                  <div className="flex items-center gap-2 mt-2">
+                    <ColorPickerFormatSelect />
+                    <ColorPickerInput />
+                  </div>
+                </ColorPickerContent>
+              </ColorPicker>
               <Input
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
@@ -116,19 +125,6 @@ function SortableCategoryItem({
                   Отмена
                 </Button>
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Цвет</label>
-              <ColorPicker value={editingColor} onChange={setEditingColor}>
-                <ColorPickerTrigger />
-                <ColorPickerContent>
-                  <ColorPickerArea />
-                  <div className="flex items-center gap-2 mt-2">
-                    <ColorPickerFormatSelect />
-                    <ColorPickerInput />
-                  </div>
-                </ColorPickerContent>
-              </ColorPicker>
             </div>
           </div>
         ) : (

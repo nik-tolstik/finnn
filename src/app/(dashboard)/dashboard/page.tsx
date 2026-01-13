@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/CreateWorkspacePrompt";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
+import { authOptions } from "@/shared/lib/auth";
 
 import { DashboardContent } from "./components/DashboardContent";
 
@@ -28,7 +30,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect(`/dashboard?workspaceId=${workspaceId}`);
   }
 
+  const session = await getServerSession(authOptions);
   const accountsResult = await getAccounts(workspaceId);
+  const allAccounts = accountsResult.data || [];
+  
+  const currentUserId = session?.user?.id;
+  const filteredAccounts = currentUserId
+    ? allAccounts.filter((account) => account.ownerId === currentUserId)
+    : [];
 
-  return <DashboardContent accounts={accountsResult.data || []} workspaceId={workspaceId} />;
+  return <DashboardContent accounts={filteredAccounts} workspaceId={workspaceId} />;
 }
