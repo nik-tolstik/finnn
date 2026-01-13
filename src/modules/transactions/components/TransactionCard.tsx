@@ -27,17 +27,15 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
       <div className="flex flex-col text-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {transaction.category && (
-              <Badge
-                variant="outline"
-                className="text-xs"
-                style={{
-                  borderColor: transaction.category.color || undefined,
-                }}
-              >
-                {transaction.category.name}
-              </Badge>
-            )}
+            <Badge
+              variant="outline"
+              className="text-xs"
+              style={{
+                borderColor: transaction.category?.color || undefined,
+              }}
+            >
+              {transaction.category?.name || "Без категории"}
+            </Badge>
 
             {transaction.account.owner && (
               <UserDisplay
