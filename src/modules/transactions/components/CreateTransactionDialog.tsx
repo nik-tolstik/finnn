@@ -208,7 +208,6 @@ export function CreateTransactionDialog({
       toast.error(result.error);
     } else {
       onOpenChange(false);
-      toast.success("Транзакция успешно создана");
 
       await Promise.all([
         queryClient.invalidateQueries({
@@ -231,7 +230,6 @@ export function CreateTransactionDialog({
     setValue("categoryId", option.value);
     setValue("newCategory", undefined);
   };
-
 
   const handleAccountSelect = (selectedAccount: Account) => {
     setValue("accountId", selectedAccount.id);
@@ -265,167 +263,169 @@ export function CreateTransactionDialog({
                 <Label htmlFor="type">
                   Тип транзакции <span className="text-destructive">*</span>
                 </Label>
-              <Segmented
-                options={[
-                  {
-                    value: TransactionType.EXPENSE,
-                    label: "Расход",
-                    icon: <ArrowDown className="h-4 w-4" />,
-                    selectedClassName: "text-error-primary",
-                  },
-                  {
-                    value: TransactionType.INCOME,
-                    label: "Доход",
-                    icon: <ArrowUp className="h-4 w-4" />,
-                    selectedClassName: "text-success-primary",
-                  },
-                ]}
-                value={transactionType}
-                onChange={(value) => setValue("type", value)}
-              />
-              {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="categoryId">Категория</Label>
-              <div className="relative">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-between"
-                  onClick={() => setCategoryModalOpen(true)}
-                >
-                  {selectedCategory ? (
-                    <div className="flex items-center gap-2">
-                      {selectedCategory.color && (
-                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedCategory.color }} />
-                      )}
-                      <span className="truncate">{selectedCategory.label}</span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">Выберите категорию</span>
-                  )}
-                </Button>
-                {selectedCategory && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setValue("categoryId", undefined);
-                      setValue("newCategory", undefined);
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <CategorySelectModal
-                open={categoryModalOpen}
-                onOpenChange={setCategoryModalOpen}
-                options={comboboxOptions}
-                value={categoryId}
-                onSelect={handleCategorySelect}
-                placeholder="Выберите категорию"
-                searchPlaceholder="Поиск категории..."
-                emptyText="Категории не найдены"
-              />
-              {(errors.categoryId || errors.newCategory) && (
-                <p className="text-sm text-destructive">{errors.categoryId?.message || errors.newCategory?.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amount">
-                Сумма <span className="text-destructive">*</span>
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-                  {getCurrencySymbol(selectedAccount?.currency || account.currency)}
-                </span>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  placeholder="0.00"
-                  className="pl-9"
-                  {...register("amount", {
-                    onChange: (e) => {
-                      const value = e.target.value;
-                      if (value && parseFloat(value) < 0) {
-                        e.target.value = "";
-                      }
+                <Segmented
+                  options={[
+                    {
+                      value: TransactionType.EXPENSE,
+                      label: "Расход",
+                      icon: <ArrowDown className="h-4 w-4" />,
+                      selectedClassName: "text-error-primary",
                     },
-                  })}
-                  onKeyDown={(e) => {
-                    if (e.key === "-" || e.key === "e" || e.key === "E") {
-                      e.preventDefault();
-                    }
-                  }}
-                  aria-invalid={errors.amount ? "true" : "false"}
+                    {
+                      value: TransactionType.INCOME,
+                      label: "Доход",
+                      icon: <ArrowUp className="h-4 w-4" />,
+                      selectedClassName: "text-success-primary",
+                    },
+                  ]}
+                  value={transactionType}
+                  onChange={(value) => setValue("type", value)}
                 />
+                {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
               </div>
-              {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Описание</Label>
-              <Textarea
-                id="description"
-                placeholder="Описание транзакции"
-                rows={3}
-                {...register("description")}
-                aria-invalid={errors.description ? "true" : "false"}
-              />
-              {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Дата и время</Label>
-              <Controller
-                control={control}
-                name="date"
-                render={({ field }) => (
-                  <DateTimePicker
-                    date={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) => {
-                      const currentAccount = selectedAccount || account;
-                      if (!currentAccount) return false;
-                      const accountCreatedDate = new Date(currentAccount.createdAt);
-                      accountCreatedDate.setHours(0, 0, 0, 0);
-                      const checkDate = new Date(date);
-                      checkDate.setHours(0, 0, 0, 0);
-                      return checkDate < accountCreatedDate;
-                    }}
-                  />
+              <div className="space-y-2">
+                <Label htmlFor="categoryId">Категория</Label>
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between"
+                    onClick={() => setCategoryModalOpen(true)}
+                  >
+                    {selectedCategory ? (
+                      <div className="flex items-center gap-2">
+                        {selectedCategory.color && (
+                          <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedCategory.color }} />
+                        )}
+                        <span className="truncate">{selectedCategory.label}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Выберите категорию</span>
+                    )}
+                  </Button>
+                  {selectedCategory && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setValue("categoryId", undefined);
+                        setValue("newCategory", undefined);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <CategorySelectModal
+                  open={categoryModalOpen}
+                  onOpenChange={setCategoryModalOpen}
+                  options={comboboxOptions}
+                  value={categoryId}
+                  onSelect={handleCategorySelect}
+                  placeholder="Выберите категорию"
+                  searchPlaceholder="Поиск категории..."
+                  emptyText="Категории не найдены"
+                />
+                {(errors.categoryId || errors.newCategory) && (
+                  <p className="text-sm text-destructive">
+                    {errors.categoryId?.message || errors.newCategory?.message}
+                  </p>
                 )}
-              />
-              {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
-            </div>
-          </form>
-        </DialogContent>
+              </div>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Отмена
-          </Button>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-            {isSubmitting ? "Создание..." : "Создать транзакцию"}
-          </Button>
-        </DialogFooter>
-      </DialogWindow>
-    </Dialog>
+              <div className="space-y-2">
+                <Label htmlFor="amount">
+                  Сумма <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+                    {getCurrencySymbol(selectedAccount?.currency || account.currency)}
+                  </span>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="0.00"
+                    className="pl-9"
+                    {...register("amount", {
+                      onChange: (e) => {
+                        const value = e.target.value;
+                        if (value && parseFloat(value) < 0) {
+                          e.target.value = "";
+                        }
+                      },
+                    })}
+                    onKeyDown={(e) => {
+                      if (e.key === "-" || e.key === "e" || e.key === "E") {
+                        e.preventDefault();
+                      }
+                    }}
+                    aria-invalid={errors.amount ? "true" : "false"}
+                  />
+                </div>
+                {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+              </div>
 
-    {selectAccountDialog.mounted && (
-      <SelectAccountDialog
-        workspaceId={workspaceId}
-        open={selectAccountDialog.open}
-        onOpenChange={selectAccountDialog.closeDialog}
-        onCloseComplete={selectAccountDialog.unmountDialog}
-        onSelect={handleAccountSelect}
-      />
-    )}
+              <div className="space-y-2">
+                <Label htmlFor="description">Описание</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Описание транзакции"
+                  rows={3}
+                  {...register("description")}
+                  aria-invalid={errors.description ? "true" : "false"}
+                />
+                {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Дата и время</Label>
+                <Controller
+                  control={control}
+                  name="date"
+                  render={({ field }) => (
+                    <DateTimePicker
+                      date={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) => {
+                        const currentAccount = selectedAccount || account;
+                        if (!currentAccount) return false;
+                        const accountCreatedDate = new Date(currentAccount.createdAt);
+                        accountCreatedDate.setHours(0, 0, 0, 0);
+                        const checkDate = new Date(date);
+                        checkDate.setHours(0, 0, 0, 0);
+                        return checkDate < accountCreatedDate;
+                      }}
+                    />
+                  )}
+                />
+                {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
+              </div>
+            </form>
+          </DialogContent>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              Отмена
+            </Button>
+            <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+              {isSubmitting ? "Создание..." : "Создать транзакцию"}
+            </Button>
+          </DialogFooter>
+        </DialogWindow>
+      </Dialog>
+
+      {selectAccountDialog.mounted && (
+        <SelectAccountDialog
+          workspaceId={workspaceId}
+          open={selectAccountDialog.open}
+          onOpenChange={selectAccountDialog.closeDialog}
+          onCloseComplete={selectAccountDialog.unmountDialog}
+          onSelect={handleAccountSelect}
+        />
+      )}
     </>
   );
 }

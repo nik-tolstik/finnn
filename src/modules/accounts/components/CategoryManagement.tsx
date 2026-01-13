@@ -276,7 +276,6 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Категория обновлена");
         queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
         setEditingCategory(null);
         setEditingName("");
@@ -330,7 +329,6 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Категория удалена");
         queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
       }
       deleteDialog.closeDialog();

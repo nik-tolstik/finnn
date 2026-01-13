@@ -13,6 +13,14 @@ import { toast } from "sonner";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { updateAccountSchema, type UpdateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
+import {
+  ColorPicker,
+  ColorPickerTrigger,
+  ColorPickerContent,
+  ColorPickerArea,
+  ColorPickerFormatSelect,
+  ColorPickerInput,
+} from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
@@ -26,14 +34,6 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
-import {
-  ColorPicker,
-  ColorPickerTrigger,
-  ColorPickerContent,
-  ColorPickerArea,
-  ColorPickerFormatSelect,
-  ColorPickerInput,
-} from "@/shared/ui/color-picker";
 import { cn } from "@/shared/utils/cn";
 
 import { updateAccount } from "../account.service";
@@ -95,7 +95,6 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success("Счёт успешно обновлён");
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["accounts", account.workspaceId],
@@ -142,10 +141,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
 
             <div className="space-y-2">
               <Label>Цвет</Label>
-              <ColorPicker
-                value={selectedColor || "#3b82f6"}
-                onChange={(color) => setValue("color", color)}
-              >
+              <ColorPicker value={selectedColor || "#3b82f6"} onChange={(color) => setValue("color", color)}>
                 <ColorPickerTrigger />
                 <ColorPickerContent>
                   <ColorPickerArea />

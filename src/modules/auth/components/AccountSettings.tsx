@@ -30,7 +30,6 @@ export function AccountSettings() {
       if (res?.[0]?.url) {
         setValue("image", res[0].url, { shouldDirty: true });
         setPreview(res[0].url);
-        toast.success("Аватар загружен");
       }
       setUploading(false);
     },
@@ -120,7 +119,6 @@ export function AccountSettings() {
 
         setValue("image", result.url, { shouldDirty: true });
         setPreview(result.url);
-        toast.success("Аватар загружен");
         setUploading(false);
       } catch (error: any) {
         toast.error(error.message || "Не удалось загрузить аватар");
@@ -143,8 +141,6 @@ export function AccountSettings() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Настройки аккаунта обновлены");
-
         if (result.data) {
           await updateSession();
           queryClient.invalidateQueries({ queryKey: ["user"] });

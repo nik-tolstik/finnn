@@ -228,7 +228,6 @@ export function AccountsCards({
         data: originalItems,
       });
     } else {
-      toast.success("Порядок счетов сохранён");
       setOriginalItems(items);
       onReorderModeChange?.(false);
       router.refresh();

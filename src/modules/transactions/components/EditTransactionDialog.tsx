@@ -126,8 +126,6 @@ export function EditTransactionDialog({
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success("Транзакция успешно обновлена");
-      // Инвалидируем кэш транзакций и счетов параллельно
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] }),
         queryClient.invalidateQueries({ queryKey: ["accounts", workspaceId] }),

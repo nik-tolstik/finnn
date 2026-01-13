@@ -76,7 +76,6 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Категория создана");
         queryClient.invalidateQueries({
           queryKey: ["categories", workspaceId],
         });

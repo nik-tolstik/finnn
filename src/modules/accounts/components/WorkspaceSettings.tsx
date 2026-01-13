@@ -81,7 +81,6 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Настройки workspace обновлены");
         queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
         queryClient.invalidateQueries({ queryKey: ["workspaces"] });
         if (workspace) {

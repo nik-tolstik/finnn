@@ -15,6 +15,14 @@ import { AccountCard } from "@/shared/components/AccountCard";
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { createAccountSchema, type CreateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
+import {
+  ColorPicker,
+  ColorPickerTrigger,
+  ColorPickerContent,
+  ColorPickerArea,
+  ColorPickerFormatSelect,
+  ColorPickerInput,
+} from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
@@ -30,14 +38,6 @@ import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select/select";
 import { SelectOption } from "@/shared/ui/select/types";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
-import {
-  ColorPicker,
-  ColorPickerTrigger,
-  ColorPickerContent,
-  ColorPickerArea,
-  ColorPickerFormatSelect,
-  ColorPickerInput,
-} from "@/shared/ui/color-picker";
 import { cn } from "@/shared/utils/cn";
 
 import { createAccount } from "../account.service";
@@ -142,7 +142,6 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success("Счёт успешно создан");
       reset();
       setOpen(false);
       router.refresh();
@@ -254,10 +253,7 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
 
           <div className="space-y-2">
             <Label>Цвет</Label>
-            <ColorPicker
-              value={selectedColor || "#3b82f6"}
-              onChange={(color) => setValue("color", color)}
-            >
+            <ColorPicker value={selectedColor || "#3b82f6"} onChange={(color) => setValue("color", color)}>
               <ColorPickerTrigger />
               <ColorPickerContent>
                 <ColorPickerArea />

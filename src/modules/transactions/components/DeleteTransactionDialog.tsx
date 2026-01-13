@@ -46,13 +46,10 @@ export function DeleteTransactionDialog({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Транзакция успешно удалена");
         onOpenChange(false);
-        // Инвалидируем кэш транзакций для обновления списка
         await queryClient.invalidateQueries({
           queryKey: ["transactions", workspaceId],
         });
-        // Инвалидируем кэш счетов для обновления баланса
         await queryClient.invalidateQueries({
           queryKey: ["accounts", workspaceId],
         });

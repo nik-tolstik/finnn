@@ -51,7 +51,6 @@ export function ArchivedAccountsDialog({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Счёт удалён из архива");
         await queryClient.invalidateQueries({
           queryKey: ["accounts", workspaceId],
         });

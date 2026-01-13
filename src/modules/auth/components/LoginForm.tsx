@@ -58,8 +58,6 @@ export function LoginForm() {
         } else {
           toast.success("Приглашение принято");
         }
-      } else {
-        toast.success("Успешный вход");
       }
 
       router.push("/dashboard");
