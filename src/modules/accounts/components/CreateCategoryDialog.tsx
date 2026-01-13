@@ -12,6 +12,14 @@ import { createCategory } from "@/modules/categories/category.service";
 import { createCategorySchema, type CreateCategoryInput } from "@/shared/lib/validations/category";
 import { Button } from "@/shared/ui/button";
 import {
+  ColorPicker,
+  ColorPickerTrigger,
+  ColorPickerContent,
+  ColorPickerArea,
+  ColorPickerFormatSelect,
+  ColorPickerInput,
+} from "@/shared/ui/color-picker";
+import {
   Dialog,
   DialogWindow,
   DialogDescription,
@@ -23,7 +31,6 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
-import { cn } from "@/shared/utils/cn";
 
 interface CreateCategoryDialogProps {
   workspaceId: string;
@@ -110,21 +117,16 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
 
             <div className="space-y-2">
               <Label>Цвет</Label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORY_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setValue("color", color)}
-                    className={cn(
-                      "h-8 w-8 rounded-md border-2 transition-all",
-                      selectedColor === color ? "border-primary scale-110" : "border-border hover:border-primary/50"
-                    )}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
-              </div>
+              <ColorPicker value={selectedColor} onChange={(color) => setValue("color", color)}>
+                <ColorPickerTrigger />
+                <ColorPickerContent>
+                  <ColorPickerArea />
+                  <div className="flex items-center gap-2 mt-2">
+                    <ColorPickerFormatSelect />
+                    <ColorPickerInput />
+                  </div>
+                </ColorPickerContent>
+              </ColorPicker>
               {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
             </div>
           </form>

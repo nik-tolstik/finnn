@@ -30,6 +30,14 @@ import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Segmented } from "@/shared/ui/segmented";
+import {
+  ColorPicker,
+  ColorPickerTrigger,
+  ColorPickerContent,
+  ColorPickerArea,
+  ColorPickerFormatSelect,
+  ColorPickerInput,
+} from "@/shared/ui/color-picker";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
 import { cn } from "@/shared/utils/cn";
 
@@ -111,21 +119,16 @@ function SortableCategoryItem({
             </div>
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground">Цвет</label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORY_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setEditingColor(color)}
-                    className={cn(
-                      "h-6 w-6 rounded-md border-2 transition-all",
-                      editingColor === color ? "border-primary scale-110" : "border-border hover:border-primary/50"
-                    )}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
-              </div>
+              <ColorPicker value={editingColor} onChange={setEditingColor}>
+                <ColorPickerTrigger />
+                <ColorPickerContent>
+                  <ColorPickerArea />
+                  <div className="flex items-center gap-2 mt-2">
+                    <ColorPickerFormatSelect />
+                    <ColorPickerInput />
+                  </div>
+                </ColorPickerContent>
+              </ColorPicker>
             </div>
           </div>
         ) : (

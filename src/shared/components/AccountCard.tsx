@@ -4,6 +4,7 @@ import type { Account } from "@prisma/client";
 
 import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
+import { getContrastTextColor } from "@/shared/utils/color-utils";
 import { formatMoney } from "@/shared/utils/money";
 
 import { UserDisplay } from "./UserDisplay";
@@ -67,7 +68,18 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
             </div>
           </div>
           <div className="shrink-0">
-            <p className="font-bold text-base">{formatMoney(account.balance, account.currency)}</p>
+            <p
+              className="font-bold text-base"
+              style={
+                account.color
+                  ? {
+                      color: getContrastTextColor(account.color),
+                    }
+                  : undefined
+              }
+            >
+              {formatMoney(account.balance, account.currency)}
+            </p>
           </div>
         </div>
       </div>

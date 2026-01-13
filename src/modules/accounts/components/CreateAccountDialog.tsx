@@ -30,7 +30,14 @@ import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select/select";
 import { SelectOption } from "@/shared/ui/select/types";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
-import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
+import {
+  ColorPicker,
+  ColorPickerTrigger,
+  ColorPickerContent,
+  ColorPickerArea,
+  ColorPickerFormatSelect,
+  ColorPickerInput,
+} from "@/shared/ui/color-picker";
 import { cn } from "@/shared/utils/cn";
 
 import { createAccount } from "../account.service";
@@ -251,21 +258,19 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
 
             <div className="space-y-2">
               <Label>Цвет</Label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORY_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setValue("color", color)}
-                    className={cn(
-                      "h-8 w-8 rounded-md border-2 transition-all",
-                      selectedColor === color ? "border-primary scale-110" : "border-border hover:border-primary/50"
-                    )}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
-              </div>
+              <ColorPicker
+                value={selectedColor || "#3b82f6"}
+                onChange={(color) => setValue("color", color)}
+              >
+                <ColorPickerTrigger />
+                <ColorPickerContent>
+                  <ColorPickerArea />
+                  <div className="flex items-center gap-2 mt-2">
+                    <ColorPickerFormatSelect />
+                    <ColorPickerInput />
+                  </div>
+                </ColorPickerContent>
+              </ColorPicker>
               {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
             </div>
 
