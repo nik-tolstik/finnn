@@ -138,8 +138,18 @@ export async function getExchangeRate(
     }
 
     if (toCurrency === baseCurrency && fromCurrency !== baseCurrency) {
-      rate = await prisma.exchangeRate.create({
-        data: {
+      rate = await prisma.exchangeRate.upsert({
+        where: {
+          date_fromCurrency_toCurrency: {
+            date: targetDate,
+            fromCurrency,
+            toCurrency,
+          },
+        },
+        update: {
+          rate: calculatedRate,
+        },
+        create: {
           date: targetDate,
           fromCurrency,
           toCurrency,
@@ -181,6 +191,34 @@ export async function getTodayExchangeRates(): Promise<{ data: Record<string, nu
 
   if (Object.keys(rates).length === 0) {
     return { error: "Не удалось получить курсы валют" };
+  }
+
+  return { data: rates };
+}
+
+export async function getYesterdayExchangeRates(): Promise<{ data: Record<string, number> } | { error: string }> {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(0, 0, 0, 0);
+
+  const baseCurrency = Currency.BYN;
+  const rates: Record<string, number> = {};
+
+  for (const currency of SUPPORTED_CURRENCIES) {
+    if (currency === baseCurrency) {
+      continue;
+    }
+
+    const result = await getExchangeRate(yesterday, currency, baseCurrency);
+    if ("error" in result) {
+      console.warn(`[ExchangeRate] Ошибка получения вчерашнего курса ${currency}:`, result.error);
+      continue;
+    }
+    rates[currency] = result.data;
+  }
+
+  if (Object.keys(rates).length === 0) {
+    return { error: "Не удалось получить вчерашние курсы валют" };
   }
 
   return { data: rates };

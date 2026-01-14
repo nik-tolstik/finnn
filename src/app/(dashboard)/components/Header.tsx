@@ -44,12 +44,19 @@ export function Header() {
   const isAnalyticsActive = pathname === analyticsPath;
 
   return (
-    <header className="border-b bg-background">
-      <div className="flex h-16 items-center justify-between px-4 sm:px-8">
-        <div className="flex items-center gap-4">
+    <header className="border-b bg-background py-2">
+      {isMobile && (
+        <div className="px-4 mb-2">
+          <div className="flex items-center">
+            <ExchangeRatesHeader baseCurrency={baseCurrency} />
+          </div>
+        </div>
+      )}
+      <div className="flex sm:h-16 items-center justify-between px-4 sm:px-8">
+        <div className="flex items-center gap-4" suppressHydrationWarning>
           <WorkspaceDropdown currentWorkspaceId={workspaceId} />
           {!isMobile && (
-            <nav className="flex items-center gap-1 ml-4" suppressHydrationWarning>
+            <nav className="flex items-center gap-1 ml-4">
               <Link
                 href={`${accountsPath}${basePath}`}
                 className={cn(
@@ -78,7 +85,7 @@ export function Header() {
           )}
         </div>
         <div className="flex items-center gap-4">
-          <ExchangeRatesHeader baseCurrency={baseCurrency} />
+          {!isMobile && <ExchangeRatesHeader baseCurrency={baseCurrency} />}
           {session?.user && <UserMenu name={session.user.name} email={session.user.email} image={session.user.image} />}
         </div>
       </div>
