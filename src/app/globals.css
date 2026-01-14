@@ -130,4 +130,12 @@
   *[role="button"] {
     cursor: pointer;
   }
+
+  html {
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+  }
 }
