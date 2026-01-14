@@ -17,7 +17,7 @@ import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
-import { getCurrencySymbol } from "@/shared/utils/money";
+import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { TransactionType } from "../transaction.constants";
 
@@ -169,7 +169,7 @@ export function TransactionForm({
         </Label>
         <div className="relative">
           {transactionAccount && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
               {getCurrencySymbol(transactionAccount.currency)}
             </span>
           )}
@@ -179,13 +179,33 @@ export function TransactionForm({
             step="0.01"
             min="0.01"
             placeholder="0.00"
-            className={transactionAccount ? "pl-9" : ""}
+            className={transactionAccount ? "pl-9 pr-12" : "pr-12"}
             {...form.register("amount", {
               onChange: (e) => {
                 const value = e.target.value;
                 if (value && parseFloat(value) < 0) {
                   e.target.value = "";
                 }
+                if (transactionAccount && type === TransactionType.EXPENSE && value) {
+                  const amount = parseFloat(value);
+                  if (!isNaN(amount) && compareMoney(amount, transactionAccount.balance) > 0) {
+                    form.setError("amount", {
+                      type: "manual",
+                      message: `Сумма не может превышать баланс счёта (${transactionAccount.balance})`,
+                    });
+                  } else {
+                    form.clearErrors("amount");
+                  }
+                }
+              },
+              validate: (value) => {
+                if (!transactionAccount || type !== TransactionType.EXPENSE) return true;
+                const amount = parseFloat(value);
+                if (isNaN(amount)) return true;
+                if (compareMoney(amount, transactionAccount.balance) > 0) {
+                  return `Сумма не может превышать баланс счёта (${transactionAccount.balance})`;
+                }
+                return true;
               },
             })}
             onKeyDown={(e) => {
@@ -194,6 +214,19 @@ export function TransactionForm({
               }
             }}
           />
+          {transactionAccount && parseFloat(transactionAccount.balance) > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
+              onClick={() => {
+                form.setValue("amount", transactionAccount.balance, { shouldValidate: true, shouldTouch: true });
+              }}
+            >
+              Max
+            </Button>
+          )}
         </div>
         {form.formState.errors.amount && (
           <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>

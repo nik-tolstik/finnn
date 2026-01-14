@@ -71,17 +71,20 @@ function AccountWithAmount({
   icon: Icon,
   amountClassName,
   className,
+  isNegative,
 }: {
   account: TransferAccount;
   amount: string;
   icon: IconComponent;
   amountClassName?: string;
   className?: string;
+  isNegative?: boolean;
 }) {
   return (
     <div className={cn("flex items-center md:gap-4 gap-2", className)}>
       <AccountName account={account} icon={Icon} amount={amount} />
       <span className={cn("text-muted-foreground text-sm", amountClassName)}>
+        {isNegative ? "-" : "+"}
         {formatMoney(amount, account.currency)}
       </span>
     </div>

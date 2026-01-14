@@ -27,7 +27,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Segmented } from "@/shared/ui/segmented";
 import { Textarea } from "@/shared/ui/textarea";
-import { getCurrencySymbol } from "@/shared/utils/money";
+import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { TransactionType } from "../transaction.constants";
 import { createTransaction } from "../transaction.service";
@@ -76,6 +76,8 @@ export function CreateTransactionDialog({
     formState: { errors, isSubmitting },
     reset,
     setValue,
+    setError,
+    clearErrors,
     control,
   } = useForm<CreateTransactionInput>({
     resolver: zodResolver(createTransactionSchema),
@@ -339,7 +341,7 @@ export function CreateTransactionDialog({
                   Сумма <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                     {getCurrencySymbol(selectedAccount?.currency || account.currency)}
                   </span>
                   <Input
@@ -348,13 +350,35 @@ export function CreateTransactionDialog({
                     step="0.01"
                     min="0.01"
                     placeholder="0.00"
-                    className="pl-9"
+                    className="pl-9 pr-12"
                     {...register("amount", {
                       onChange: (e) => {
                         const value = e.target.value;
                         if (value && parseFloat(value) < 0) {
                           e.target.value = "";
                         }
+                        const currentAccount = selectedAccount || account;
+                        if (currentAccount && transactionType === TransactionType.EXPENSE && value) {
+                          const amount = parseFloat(value);
+                          if (!isNaN(amount) && compareMoney(amount, currentAccount.balance) > 0) {
+                            setError("amount", {
+                              type: "manual",
+                              message: `Сумма не может превышать баланс счёта (${currentAccount.balance})`,
+                            });
+                          } else {
+                            clearErrors("amount");
+                          }
+                        }
+                      },
+                      validate: (value) => {
+                        const currentAccount = selectedAccount || account;
+                        if (!currentAccount || transactionType !== TransactionType.EXPENSE) return true;
+                        const amount = parseFloat(value);
+                        if (isNaN(amount)) return true;
+                        if (compareMoney(amount, currentAccount.balance) > 0) {
+                          return `Сумма не может превышать баланс счёта (${currentAccount.balance})`;
+                        }
+                        return true;
                       },
                     })}
                     onKeyDown={(e) => {
@@ -364,6 +388,19 @@ export function CreateTransactionDialog({
                     }}
                     aria-invalid={errors.amount ? "true" : "false"}
                   />
+                  {selectedAccount && parseFloat(selectedAccount.balance) > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
+                      onClick={() => {
+                        setValue("amount", selectedAccount.balance, { shouldValidate: true, shouldTouch: true });
+                      }}
+                    >
+                      Max
+                    </Button>
+                  )}
                 </div>
                 {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
               </div>

@@ -31,6 +31,8 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 
+import { compareMoney } from "@/shared/utils/money";
+
 import { updateTransaction } from "../transaction.service";
 import type { TransactionWithRelations } from "../transaction.types";
 
@@ -56,6 +58,8 @@ export function EditTransactionDialog({
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
+    setError,
+    clearErrors,
     control,
   } = useForm<UpdateTransactionInput>({
     resolver: zodResolver(updateTransactionSchema),
@@ -170,27 +174,63 @@ export function EditTransactionDialog({
               <Label htmlFor="amount">
                 Сумма <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                {...register("amount", {
-                  onChange: (e) => {
-                    const value = e.target.value;
-                    if (value && parseFloat(value) < 0) {
-                      e.target.value = "";
+              <div className="relative">
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="0.00"
+                  className="pr-12"
+                  {...register("amount", {
+                    onChange: (e) => {
+                      const value = e.target.value;
+                      if (value && parseFloat(value) < 0) {
+                        e.target.value = "";
+                      }
+                      if (selectedAccount && transaction.type === TransactionType.EXPENSE && value) {
+                        const amount = parseFloat(value);
+                        if (!isNaN(amount) && compareMoney(amount, selectedAccount.balance) > 0) {
+                          setError("amount", {
+                            type: "manual",
+                            message: `Сумма не может превышать баланс счёта (${selectedAccount.balance})`,
+                          });
+                        } else {
+                          clearErrors("amount");
+                        }
+                      }
+                    },
+                    validate: (value) => {
+                      if (!selectedAccount || transaction.type !== TransactionType.EXPENSE || !value) return true;
+                      const amount = parseFloat(value);
+                      if (isNaN(amount)) return true;
+                      if (compareMoney(amount, selectedAccount.balance) > 0) {
+                        return `Сумма не может превышать баланс счёта (${selectedAccount.balance})`;
+                      }
+                      return true;
+                    },
+                  })}
+                  onKeyDown={(e) => {
+                    if (e.key === "-" || e.key === "e" || e.key === "E") {
+                      e.preventDefault();
                     }
-                  },
-                })}
-                onKeyDown={(e) => {
-                  if (e.key === "-" || e.key === "e" || e.key === "E") {
-                    e.preventDefault();
-                  }
-                }}
-                aria-invalid={errors.amount ? "true" : "false"}
-              />
+                  }}
+                  aria-invalid={errors.amount ? "true" : "false"}
+                />
+                {selectedAccount && parseFloat(selectedAccount.balance) > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
+                    onClick={() => {
+                      setValue("amount", selectedAccount.balance, { shouldValidate: true, shouldTouch: true });
+                    }}
+                  >
+                    Max
+                  </Button>
+                )}
+              </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
 

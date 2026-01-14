@@ -15,7 +15,7 @@ import {
   type UpdateTransactionInput,
   type UpdateTransferInput,
 } from "@/shared/lib/validations/transaction";
-import { addMoney, subtractMoney } from "@/shared/utils/money";
+import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
 import { TransactionType } from "./transaction.constants";
 import type { TransactionWithRelations } from "./transaction.types";
@@ -60,6 +60,12 @@ export async function createTransaction(workspaceId: string, input: CreateTransa
       return {
         error: `Дата транзакции не может быть раньше даты создания счета (${accountCreatedDate.toLocaleDateString("ru-RU")})`,
       };
+    }
+
+    if (validated.type === TransactionType.EXPENSE) {
+      if (compareMoney(validated.amount, account.balance) > 0) {
+        return { error: `Сумма не может превышать баланс счёта (${account.balance})` };
+      }
     }
 
     let finalCategoryId = validated.categoryId;
@@ -150,6 +156,10 @@ export async function createTransfer(workspaceId: string, input: CreateTransferI
 
     if (fromAccount.id === toAccount.id) {
       return { error: "Нельзя перевести на тот же счёт" };
+    }
+
+    if (compareMoney(validated.amount, fromAccount.balance) > 0) {
+      return { error: `Сумма отправления не может превышать баланс счёта (${fromAccount.balance})` };
     }
 
     const fromTransaction = await prisma.transaction.create({
@@ -267,6 +277,14 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
           return { error: "Новый счёт не найден" };
         }
 
+        if (transaction.type === TransactionType.EXPENSE && compareMoney(newAmount, newAccount.balance) > 0) {
+          await prisma.account.update({
+            where: { id: oldAccountId },
+            data: { balance: oldAccount.balance },
+          });
+          return { error: `Сумма не может превышать баланс счёта (${newAccount.balance})` };
+        }
+
         let newAccountBalance = newAccount.balance.toString();
 
         if (transaction.type === TransactionType.INCOME) {
@@ -280,6 +298,14 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
           data: { balance: newAccountBalance },
         });
       } else {
+        if (transaction.type === TransactionType.EXPENSE && compareMoney(newAmount, oldAccountBalance) > 0) {
+          await prisma.account.update({
+            where: { id: oldAccountId },
+            data: { balance: oldAccount.balance },
+          });
+          return { error: `Сумма не может превышать баланс счёта (${oldAccountBalance})` };
+        }
+
         let correctedBalance = oldAccountBalance;
 
         if (transaction.type === TransactionType.INCOME) {
@@ -380,26 +406,6 @@ export async function updateTransfer(fromTransactionId: string, input: UpdateTra
       return { error: "Счёт не найден" };
     }
 
-    await prisma.transaction.update({
-      where: { id: fromTransactionId },
-      data: {
-        accountId: newFromAccountId,
-        amount: newAmount,
-        description: newDescription,
-        date: newDate,
-      },
-    });
-
-    await prisma.transaction.update({
-      where: { id: toTransaction.id },
-      data: {
-        accountId: newToAccountId,
-        amount: newToAmount,
-        description: newDescription,
-        date: newDate,
-      },
-    });
-
     const oldFromAccountBalance = await prisma.account.findUnique({
       where: { id: oldFromAccount.id },
       select: { balance: true },
@@ -423,6 +429,31 @@ export async function updateTransfer(fromTransactionId: string, input: UpdateTra
         where: { id: oldToAccount.id },
         data: { balance: correctedBalance },
       });
+    }
+
+    const newFromAccountCurrent = await prisma.account.findUnique({
+      where: { id: newFromAccountId },
+      select: { balance: true },
+    });
+
+    if (!newFromAccountCurrent) {
+      return { error: "Счёт отправителя не найден" };
+    }
+
+    if (compareMoney(newAmount, newFromAccountCurrent.balance) > 0) {
+      if (oldFromAccountBalance) {
+        await prisma.account.update({
+          where: { id: oldFromAccount.id },
+          data: { balance: oldFromAccountBalance.balance },
+        });
+      }
+      if (oldToAccountBalance) {
+        await prisma.account.update({
+          where: { id: oldToAccount.id },
+          data: { balance: oldToAccountBalance.balance },
+        });
+      }
+      return { error: `Сумма отправления не может превышать баланс счёта (${newFromAccountCurrent.balance})` };
     }
 
     await prisma.transaction.update({

@@ -7,12 +7,13 @@ import { Controller, type UseFormReturn, useWatch } from "react-hook-form";
 
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
+import { Button } from "@/shared/ui/button";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { cn } from "@/shared/utils/cn";
-import { getCurrencySymbol } from "@/shared/utils/money";
+import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 type TransferFormData = CreateTransferInput | UpdateTransferInput;
 
@@ -72,7 +73,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
         </Label>
         <div className="relative min-w-0">
           {fromAccount && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
               {getCurrencySymbol(fromAccount.currency)}
             </span>
           )}
@@ -82,13 +83,33 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
             step="0.01"
             min="0.01"
             placeholder="0.00"
-            className={cn(fromAccount ? "pl-9" : "", "min-w-0 w-full")}
+            className={cn(fromAccount ? "pl-9 pr-12" : "pr-12", "min-w-0 w-full")}
             {...form.register("amount", {
               onChange: (e) => {
                 const value = e.target.value;
                 if (value && parseFloat(value) < 0) {
                   e.target.value = "";
                 }
+                if (fromAccount && value) {
+                  const amount = parseFloat(value);
+                  if (!isNaN(amount) && compareMoney(amount, fromAccount.balance) > 0) {
+                    form.setError("amount", {
+                      type: "manual",
+                      message: `Сумма не может превышать баланс счёта (${fromAccount.balance})`,
+                    });
+                  } else {
+                    form.clearErrors("amount");
+                  }
+                }
+              },
+              validate: (value) => {
+                if (!fromAccount || !value) return true;
+                const amount = parseFloat(value);
+                if (isNaN(amount)) return true;
+                if (compareMoney(amount, fromAccount.balance) > 0) {
+                  return `Сумма не может превышать баланс счёта (${fromAccount.balance})`;
+                }
+                return true;
               },
             })}
             onKeyDown={(e) => {
@@ -98,6 +119,19 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
             }}
             aria-invalid={form.formState.errors.amount ? "true" : "false"}
           />
+          {fromAccount && parseFloat(fromAccount.balance) > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
+              onClick={() => {
+                form.setValue("amount", fromAccount.balance, { shouldValidate: true, shouldTouch: true });
+              }}
+            >
+              Max
+            </Button>
+          )}
         </div>
         {form.formState.errors.amount && (
           <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>

@@ -214,14 +214,28 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
             <Label htmlFor="balance">
               Начальный баланс <span className="text-destructive">*</span>
             </Label>
-            <Input
-              id="balance"
-              type="number"
-              step="0.01"
-              {...register("balance")}
-              placeholder="0.00"
-              aria-invalid={errors.balance ? "true" : "false"}
-            />
+            <div className="relative">
+              <Input
+                id="balance"
+                type="number"
+                step="0.01"
+                {...register("balance")}
+                placeholder="0.00"
+                className="pr-12"
+                aria-invalid={errors.balance ? "true" : "false"}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
+                onClick={() => {
+                  setValue("balance", "0");
+                }}
+              >
+                Max
+              </Button>
+            </div>
             {errors.balance && <p className="text-sm text-destructive">{errors.balance.message}</p>}
           </div>
 
