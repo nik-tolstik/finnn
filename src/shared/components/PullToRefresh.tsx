@@ -21,6 +21,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
         mainElement?: string;
         triggerElement?: string;
         onRefresh?: () => void;
+        getStyles?: () => string;
       }) => void;
       destroyAll: () => void;
     };
