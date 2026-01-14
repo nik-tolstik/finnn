@@ -45,13 +45,6 @@ export function Header() {
 
   return (
     <header className="border-b bg-background py-2">
-      {isMobile && (
-        <div className="px-4 mb-2">
-          <div className="flex items-center">
-            <ExchangeRatesHeader baseCurrency={baseCurrency} />
-          </div>
-        </div>
-      )}
       <div className="flex sm:h-16 items-center justify-between px-4 sm:px-8">
         <div className="flex items-center gap-4" suppressHydrationWarning>
           <WorkspaceDropdown currentWorkspaceId={workspaceId} />
@@ -85,7 +78,7 @@ export function Header() {
           )}
         </div>
         <div className="flex items-center gap-4">
-          {!isMobile && <ExchangeRatesHeader baseCurrency={baseCurrency} />}
+          <ExchangeRatesHeader baseCurrency={baseCurrency} />
           {session?.user && <UserMenu name={session.user.name} email={session.user.email} image={session.user.image} />}
         </div>
       </div>

@@ -35,9 +35,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const allAccounts = accountsResult.data || [];
   
   const currentUserId = session?.user?.id;
-  const filteredAccounts = currentUserId
+  const initialAccounts = currentUserId
     ? allAccounts.filter((account) => account.ownerId === currentUserId)
-    : [];
+    : allAccounts;
 
-  return <DashboardContent accounts={filteredAccounts} workspaceId={workspaceId} />;
+  return <DashboardContent accounts={initialAccounts} allAccounts={allAccounts} workspaceId={workspaceId} />;
 }

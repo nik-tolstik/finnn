@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Eye, EyeOff, GripVertical, MoreVertical, Plus, X } from "lucide-react";
+import { Check, GripVertical, MoreVertical, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/shared/ui/button";
@@ -75,19 +75,6 @@ export function AccountsMenu({
           >
             <GripVertical className="h-4 w-4" />
             Изменить порядок
-          </button>
-
-          <button
-            onClick={() => {
-              onShowAllAccountsChange(!showAllAccounts);
-              setMenuOpen(false);
-            }}
-            className={cn(
-              "w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-            )}
-          >
-            {showAllAccounts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showAllAccounts ? "Скрыть другие счета" : "Показать другие счета"}
           </button>
         </div>
       </PopoverContent>
