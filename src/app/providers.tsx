@@ -5,7 +5,6 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 
-import { PullToRefresh } from "@/shared/components/PullToRefresh";
 import { ServiceWorkerRegistration } from "@/shared/components/ServiceWorkerRegistration";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -25,7 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
-          <PullToRefresh>{children}</PullToRefresh>
+          {children}
           <ServiceWorkerRegistration />
         </QueryClientProvider>
       </ThemeProvider>
