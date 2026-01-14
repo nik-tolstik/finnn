@@ -11,7 +11,6 @@ import { CategoryType } from "@/modules/categories/category.constants";
 import { getCategories } from "@/modules/categories/category.service";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { UserDisplay } from "@/shared/components/UserDisplay";
-import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
@@ -32,7 +31,6 @@ interface TransactionsFiltersProps {
 }
 
 export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: TransactionsFiltersProps) {
-  const { isMobile } = useBreakpoints();
   const [sheetOpen, setSheetOpen] = useState(false);
   const { data: session } = useSession();
 
@@ -416,9 +414,9 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <div suppressHydrationWarning>
+  return (
+    <>
+      <div className="md:hidden">
         <Button variant="outline" onClick={() => setSheetOpen(true)} className="justify-start">
           <Filter className="mr-2 h-4 w-4" />
           Фильтры
@@ -452,11 +450,7 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
           </SheetContent>
         </Sheet>
       </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-wrap lg:flex-col lg:items-stretch items-end gap-2" suppressHydrationWarning>
+      <div className="hidden md:flex flex-wrap lg:flex-col lg:items-stretch items-end gap-2">
       <h3 className="hidden lg:block text-lg font-semibold mb-2 w-full">Фильтры</h3>
 
       <div className="relative w-[200px] lg:w-full lg:space-y-2">
@@ -611,5 +605,6 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
         </Button>
       )}
     </div>
+    </>
   );
 }

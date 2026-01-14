@@ -9,7 +9,6 @@ import { useSession } from "next-auth/react";
 
 import { getWorkspace } from "@/modules/workspace/workspace.service";
 import { DEFAULT_CURRENCY } from "@/shared/constants/currency";
-import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { cn } from "@/shared/utils/cn";
 
 import { ExchangeRatesHeader } from "./ExchangeRatesHeader";
@@ -20,7 +19,6 @@ export function Header() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { isMobile } = useBreakpoints();
   const workspaceId = searchParams.get("workspaceId") || undefined;
 
   const { data: workspaceData } = useQuery({
@@ -46,36 +44,34 @@ export function Header() {
   return (
     <header className="border-b bg-background py-2">
       <div className="flex sm:h-16 items-center justify-between px-4 sm:px-8">
-        <div className="flex items-center gap-4" suppressHydrationWarning>
+        <div className="flex items-center gap-4">
           <WorkspaceDropdown currentWorkspaceId={workspaceId} />
-          {!isMobile && (
-            <nav className="flex items-center gap-1 ml-4">
-              <Link
-                href={`${accountsPath}${basePath}`}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  isAccountsActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                )}
-              >
-                <Wallet className="h-4 w-4" />
-                <span>Счета</span>
-              </Link>
-              <Link
-                href={`${analyticsPath}${basePath}`}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  isAnalyticsActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                )}
-              >
-                <TrendingUp className="h-4 w-4" />
-                <span>Аналитика</span>
-              </Link>
-            </nav>
-          )}
+          <nav className="hidden md:flex items-center gap-1 ml-4">
+            <Link
+              href={`${accountsPath}${basePath}`}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                isAccountsActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <Wallet className="h-4 w-4" />
+              <span>Счета</span>
+            </Link>
+            <Link
+              href={`${analyticsPath}${basePath}`}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                isAnalyticsActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span>Аналитика</span>
+            </Link>
+          </nav>
         </div>
         <div className="flex items-center gap-4">
           <ExchangeRatesHeader baseCurrency={baseCurrency} />

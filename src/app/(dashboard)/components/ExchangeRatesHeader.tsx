@@ -23,7 +23,6 @@ export function ExchangeRatesHeader({ baseCurrency }: ExchangeRatesHeaderProps) 
     gcTime: 86400000,
   });
 
-
   if (baseCurrency !== Currency.BYN) {
     return null;
   }

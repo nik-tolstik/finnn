@@ -246,7 +246,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
               <Badge variant="secondary" className="text-xs">
                 {displayAccounts.length}
               </Badge>
-              <TooltipProvider>
+              <TooltipProvider delayDuration={200} disableHoverableContent>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -258,7 +258,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
                       {showAllAccounts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="hidden md:block">
                     <p>{showAllAccounts ? "Показать только ваши счета" : "Показать все счета"}</p>
                   </TooltipContent>
                 </Tooltip>
