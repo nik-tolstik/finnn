@@ -30,7 +30,7 @@ export function MobileNavigation() {
 
   return (
     <>
-      <nav className="fixed -bottom-px left-0 right-0 z-50 border-t bg-background md:hidden">
+      <nav className="fixed -bottom-px left-0 right-0 z-50 border-t bg-background md:hidden pb-3">
         <div className="flex items-center justify-around">
           <Link
             href={`${accountsPath}${basePath}`}
