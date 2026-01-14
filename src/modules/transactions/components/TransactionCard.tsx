@@ -29,7 +29,7 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
           <div className="flex items-center gap-2">
             <Badge
               variant="outline"
-              className="text-xs"
+              className="text-xs font-normal"
               style={{
                 borderColor: transaction.category?.color || undefined,
               }}

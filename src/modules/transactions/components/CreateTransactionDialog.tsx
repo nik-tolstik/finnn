@@ -27,7 +27,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Segmented } from "@/shared/ui/segmented";
 import { Textarea } from "@/shared/ui/textarea";
-import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { TransactionType } from "../transaction.constants";
 import { createTransaction } from "../transaction.service";
@@ -107,6 +107,7 @@ export function CreateTransactionDialog({
   const transactionType = useWatch({ control, name: "type" });
   const categoryId = useWatch({ control, name: "categoryId" });
   const accountId = useWatch({ control, name: "accountId" });
+  const amount = useWatch({ control, name: "amount" });
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const selectedAccount = useMemo(() => {
@@ -117,6 +118,25 @@ export function CreateTransactionDialog({
     }
     return account;
   }, [accountProp, accountId, accountsData?.data, account]);
+
+  const previewAccount = useMemo(() => {
+    const currentAccount = selectedAccount || account;
+    if (!currentAccount || !amount) return currentAccount;
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum)) return currentAccount;
+
+    let newBalance = currentAccount.balance;
+    if (transactionType === TransactionType.INCOME) {
+      newBalance = addMoney(currentAccount.balance, amount);
+    } else if (transactionType === TransactionType.EXPENSE) {
+      newBalance = subtractMoney(currentAccount.balance, amount);
+    }
+
+    return {
+      ...currentAccount,
+      balance: newBalance,
+    };
+  }, [selectedAccount, account, amount, transactionType]);
 
   const { data: categoriesData } = useQuery({
     queryKey: ["categories", workspaceId],
@@ -252,9 +272,9 @@ export function CreateTransactionDialog({
             <form className="space-y-4">
               <div className="space-y-2">
                 <Label>Счёт</Label>
-                {selectedAccount && (
+                {previewAccount && (
                   <AccountCard
-                    account={selectedAccount}
+                    account={previewAccount}
                     onClick={() => selectAccountDialog.openDialog(null)}
                     showOwner={false}
                   />

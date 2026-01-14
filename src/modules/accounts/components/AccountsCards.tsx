@@ -22,6 +22,7 @@ import { CreateTransactionDialog } from "@/modules/transactions/components/Creat
 import { CreateTransferDialog } from "@/modules/transactions/components/CreateTransferDialog";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/AccountCard";
+import { Badge } from "@/shared/ui/badge";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { cn } from "@/shared/utils/cn";
@@ -325,13 +326,18 @@ export function AccountsCards({
               return (
                 <div key={ownerId} className="space-y-3">
                   {sortedOwners.length > 1 && (
-                    <UserDisplay
-                      name={owner?.name}
-                      email={owner?.email}
-                      image={owner?.image}
-                      size="sm"
-                      showName={true}
-                    />
+                    <div className="flex items-center gap-2">
+                      <UserDisplay
+                        name={owner?.name}
+                        email={owner?.email}
+                        image={owner?.image}
+                        size="sm"
+                        showName={true}
+                      />
+                      <Badge variant="secondary" className="text-xs">
+                        {ownerAccounts.length}
+                      </Badge>
+                    </div>
                   )}
                   <SortableContext items={ownerAccounts.map((account: AccountWithOwner) => account.id)}>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fill,300px)]">

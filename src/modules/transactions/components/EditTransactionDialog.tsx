@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { getCategories } from "@/modules/categories/category.service";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
+import { AccountCard } from "@/shared/components/AccountCard";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { updateTransactionSchema, type UpdateTransactionInput } from "@/shared/lib/validations/transaction";
@@ -31,7 +32,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 
-import { compareMoney } from "@/shared/utils/money";
+import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { updateTransaction } from "../transaction.service";
 import type { TransactionWithRelations } from "../transaction.types";
@@ -114,6 +115,7 @@ export function EditTransactionDialog({
 
   const categoryId = useWatch({ control, name: "categoryId" });
   const accountId = useWatch({ control, name: "accountId" });
+  const amount = useWatch({ control, name: "amount" });
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const selectedCategory = useMemo(() => {
@@ -123,6 +125,33 @@ export function EditTransactionDialog({
   const selectedAccount = useMemo(() => {
     return accounts.find((acc) => acc.id === accountId);
   }, [accounts, accountId]);
+
+  const accountBalanceBeforeTransaction = useMemo(() => {
+    if (!selectedAccount || transaction.type !== TransactionType.EXPENSE) return null;
+    return addMoney(selectedAccount.balance, transaction.amount);
+  }, [selectedAccount, transaction]);
+
+  const previewAccount = useMemo(() => {
+    if (!selectedAccount || !amount) return selectedAccount;
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum)) return selectedAccount;
+
+    let newBalance = accountBalanceBeforeTransaction || selectedAccount.balance;
+    if (transaction.type === TransactionType.INCOME) {
+      newBalance = addMoney(accountBalanceBeforeTransaction || selectedAccount.balance, amount);
+    } else if (transaction.type === TransactionType.EXPENSE) {
+      if (accountBalanceBeforeTransaction) {
+        newBalance = subtractMoney(accountBalanceBeforeTransaction, amount);
+      } else {
+        newBalance = subtractMoney(selectedAccount.balance, amount);
+      }
+    }
+
+    return {
+      ...selectedAccount,
+      balance: newBalance,
+    };
+  }, [selectedAccount, amount, transaction.type, accountBalanceBeforeTransaction]);
 
   const onSubmit = async (data: UpdateTransactionInput) => {
     onOpenChange(false);
@@ -158,7 +187,7 @@ export function EditTransactionDialog({
                 render={({ field }) => (
                   <AccountSelector
                     workspaceId={workspaceId}
-                    account={selectedAccount || null}
+                    account={previewAccount || selectedAccount || null}
                     onSelect={(account: Account) => {
                       field.onChange(account.id);
                     }}
@@ -175,25 +204,30 @@ export function EditTransactionDialog({
                 Сумма <span className="text-destructive">*</span>
               </Label>
               <div className="relative">
+                {selectedAccount && (
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                    {getCurrencySymbol(selectedAccount.currency)}
+                  </span>
+                )}
                 <Input
                   id="amount"
                   type="number"
                   step="0.01"
                   min="0.01"
                   placeholder="0.00"
-                  className="pr-12"
+                  className={selectedAccount ? "pl-9 pr-12" : "pr-12"}
                   {...register("amount", {
                     onChange: (e) => {
                       const value = e.target.value;
                       if (value && parseFloat(value) < 0) {
                         e.target.value = "";
                       }
-                      if (selectedAccount && transaction.type === TransactionType.EXPENSE && value) {
+                      if (selectedAccount && transaction.type === TransactionType.EXPENSE && value && accountBalanceBeforeTransaction) {
                         const amount = parseFloat(value);
-                        if (!isNaN(amount) && compareMoney(amount, selectedAccount.balance) > 0) {
+                        if (!isNaN(amount) && compareMoney(amount, accountBalanceBeforeTransaction) > 0) {
                           setError("amount", {
                             type: "manual",
-                            message: `Сумма не может превышать баланс счёта (${selectedAccount.balance})`,
+                            message: `Сумма не может превышать баланс счёта (${accountBalanceBeforeTransaction})`,
                           });
                         } else {
                           clearErrors("amount");
@@ -201,11 +235,11 @@ export function EditTransactionDialog({
                       }
                     },
                     validate: (value) => {
-                      if (!selectedAccount || transaction.type !== TransactionType.EXPENSE || !value) return true;
+                      if (!selectedAccount || transaction.type !== TransactionType.EXPENSE || !value || !accountBalanceBeforeTransaction) return true;
                       const amount = parseFloat(value);
                       if (isNaN(amount)) return true;
-                      if (compareMoney(amount, selectedAccount.balance) > 0) {
-                        return `Сумма не может превышать баланс счёта (${selectedAccount.balance})`;
+                      if (compareMoney(amount, accountBalanceBeforeTransaction) > 0) {
+                        return `Сумма не может превышать баланс счёта (${accountBalanceBeforeTransaction})`;
                       }
                       return true;
                     },
@@ -217,19 +251,22 @@ export function EditTransactionDialog({
                   }}
                   aria-invalid={errors.amount ? "true" : "false"}
                 />
-                {selectedAccount && parseFloat(selectedAccount.balance) > 0 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
-                    onClick={() => {
-                      setValue("amount", selectedAccount.balance, { shouldValidate: true, shouldTouch: true });
-                    }}
-                  >
-                    Max
-                  </Button>
-                )}
+                {selectedAccount &&
+                  transaction.type === TransactionType.EXPENSE &&
+                  accountBalanceBeforeTransaction &&
+                  parseFloat(accountBalanceBeforeTransaction) > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
+                      onClick={() => {
+                        setValue("amount", accountBalanceBeforeTransaction, { shouldValidate: true, shouldTouch: true });
+                      }}
+                    >
+                      Max
+                    </Button>
+                  )}
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>

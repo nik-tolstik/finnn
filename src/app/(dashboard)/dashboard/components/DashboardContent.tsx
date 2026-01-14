@@ -18,6 +18,8 @@ import { getTransactions, type TransactionFilters } from "@/modules/transactions
 import type { TransactionWithRelations } from "@/modules/transactions/transaction.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 
+import { Badge } from "@/shared/ui/badge";
+
 import { AccountsMenu } from "./AccountsMenu";
 
 type AccountWithOwner = Account & {
@@ -230,7 +232,12 @@ export function DashboardContent({ accounts, workspaceId }: DashboardContentProp
       <div className="space-y-8">
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold">Счета</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-semibold">{showAllAccounts ? "Все счета" : "Ваши счета"}</h2>
+              <Badge variant="secondary" className="text-xs">
+                {displayAccounts.length}
+              </Badge>
+            </div>
             <AccountsMenu
               isReorderMode={isReorderMode}
               showAllAccounts={showAllAccounts}

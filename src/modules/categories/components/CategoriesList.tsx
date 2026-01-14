@@ -24,7 +24,7 @@ export function CategoriesList({ categories }: CategoriesListProps) {
         <Badge
           key={category.id}
           variant="outline"
-          className="flex items-center gap-2 px-3 py-1.5"
+          className="flex items-center gap-2 px-3 py-1.5 font-normal"
           style={{
             borderColor: category.color || undefined,
           }}

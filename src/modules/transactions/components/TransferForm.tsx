@@ -5,6 +5,7 @@ import { ArrowDown } from "lucide-react";
 import { useMemo } from "react";
 import { Controller, type UseFormReturn, useWatch } from "react-hook-form";
 
+import { AccountCard } from "@/shared/components/AccountCard";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
@@ -13,7 +14,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { cn } from "@/shared/utils/cn";
-import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 type TransferFormData = CreateTransferInput | UpdateTransferInput;
 
@@ -22,14 +23,17 @@ interface TransferFormProps {
   form: UseFormReturn<TransferFormData>;
   accounts: Account[];
   onSubmit: (data: TransferFormData) => Promise<void>;
+  originalAmount?: string;
 }
 
-export function TransferForm({ workspaceId, form, accounts, onSubmit }: TransferFormProps) {
+export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAmount }: TransferFormProps) {
   const fromAccountId = useWatch({
     control: form.control,
     name: "fromAccountId",
   });
   const toAccountId = useWatch({ control: form.control, name: "toAccountId" });
+  const amount = useWatch({ control: form.control, name: "amount" });
+  const toAmount = useWatch({ control: form.control, name: "toAmount" });
 
   const fromAccount = useMemo(() => {
     return accounts.find((acc) => acc.id === fromAccountId);
@@ -38,6 +42,38 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
   const toAccount = useMemo(() => {
     return accounts.find((acc) => acc.id === toAccountId);
   }, [accounts, toAccountId]);
+
+  const fromAccountBalanceBeforeTransfer = useMemo(() => {
+    if (!fromAccount || !originalAmount) return null;
+    return addMoney(fromAccount.balance, originalAmount);
+  }, [fromAccount, originalAmount]);
+
+  const previewFromAccount = useMemo(() => {
+    if (!fromAccount || !amount) return fromAccount;
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum)) return fromAccount;
+
+    const balanceToUse = fromAccountBalanceBeforeTransfer || fromAccount.balance;
+    const newBalance = subtractMoney(balanceToUse, amount);
+
+    return {
+      ...fromAccount,
+      balance: newBalance,
+    };
+  }, [fromAccount, amount, fromAccountBalanceBeforeTransfer]);
+
+  const previewToAccount = useMemo(() => {
+    if (!toAccount || !toAmount) return toAccount;
+    const toAmountNum = parseFloat(toAmount);
+    if (isNaN(toAmountNum)) return toAccount;
+
+    const newBalance = addMoney(toAccount.balance, toAmount);
+
+    return {
+      ...toAccount,
+      balance: newBalance,
+    };
+  }, [toAccount, toAmount]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 min-w-0 overflow-x-hidden">
@@ -51,7 +87,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
           render={({ field }) => (
             <AccountSelector
               workspaceId={workspaceId}
-              account={fromAccount || null}
+              account={previewFromAccount || fromAccount || null}
               onSelect={(account) => {
                 field.onChange(account.id);
                 if (account.id === toAccountId) {
@@ -92,10 +128,11 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
                 }
                 if (fromAccount && value) {
                   const amount = parseFloat(value);
-                  if (!isNaN(amount) && compareMoney(amount, fromAccount.balance) > 0) {
+                  const balanceToCheck = fromAccountBalanceBeforeTransfer || fromAccount.balance;
+                  if (!isNaN(amount) && compareMoney(amount, balanceToCheck) > 0) {
                     form.setError("amount", {
                       type: "manual",
-                      message: `Сумма не может превышать баланс счёта (${fromAccount.balance})`,
+                      message: `Сумма не может превышать баланс счёта (${balanceToCheck})`,
                     });
                   } else {
                     form.clearErrors("amount");
@@ -106,8 +143,9 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
                 if (!fromAccount || !value) return true;
                 const amount = parseFloat(value);
                 if (isNaN(amount)) return true;
-                if (compareMoney(amount, fromAccount.balance) > 0) {
-                  return `Сумма не может превышать баланс счёта (${fromAccount.balance})`;
+                const balanceToCheck = fromAccountBalanceBeforeTransfer || fromAccount.balance;
+                if (compareMoney(amount, balanceToCheck) > 0) {
+                  return `Сумма не может превышать баланс счёта (${balanceToCheck})`;
                 }
                 return true;
               },
@@ -119,14 +157,15 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
             }}
             aria-invalid={form.formState.errors.amount ? "true" : "false"}
           />
-          {fromAccount && parseFloat(fromAccount.balance) > 0 && (
+          {fromAccount && parseFloat(fromAccountBalanceBeforeTransfer || fromAccount.balance) > 0 && (
             <Button
               type="button"
               variant="ghost"
               size="sm"
               className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
               onClick={() => {
-                form.setValue("amount", fromAccount.balance, { shouldValidate: true, shouldTouch: true });
+                const maxAmount = fromAccountBalanceBeforeTransfer || fromAccount.balance;
+                form.setValue("amount", maxAmount, { shouldValidate: true, shouldTouch: true });
               }}
             >
               Max
@@ -152,7 +191,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit }: Transfer
           render={({ field }) => (
             <AccountSelector
               workspaceId={workspaceId}
-              account={toAccount || null}
+              account={previewToAccount || toAccount || null}
               onSelect={(account) => {
                 field.onChange(account.id);
                 if (account.id === fromAccountId) {

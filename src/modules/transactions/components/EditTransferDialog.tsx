@@ -107,7 +107,13 @@ export function EditTransferDialog({
           <DialogDescription>Измените параметры перевода</DialogDescription>
         </DialogHeader>
         <DialogContent>
-          <TransferForm workspaceId={workspaceId} form={form} accounts={accounts} onSubmit={onSubmit} />
+          <TransferForm
+            workspaceId={workspaceId}
+            form={form}
+            accounts={accounts}
+            onSubmit={onSubmit}
+            originalAmount={transaction.amount}
+          />
         </DialogContent>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

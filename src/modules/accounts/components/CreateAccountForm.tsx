@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 import { getWorkspace, getWorkspaceMembers } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/AccountCard";
+import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { createAccountSchema, type CreateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
@@ -214,28 +215,14 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
             <Label htmlFor="balance">
               Начальный баланс <span className="text-destructive">*</span>
             </Label>
-            <div className="relative">
-              <Input
-                id="balance"
-                type="number"
-                step="0.01"
-                {...register("balance")}
-                placeholder="0.00"
-                className="pr-12"
-                aria-invalid={errors.balance ? "true" : "false"}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
-                onClick={() => {
-                  setValue("balance", "0");
-                }}
-              >
-                Max
-              </Button>
-            </div>
+            <Input
+              id="balance"
+              type="number"
+              step="0.01"
+              {...register("balance")}
+              placeholder="0.00"
+              aria-invalid={errors.balance ? "true" : "false"}
+            />
             {errors.balance && <p className="text-sm text-destructive">{errors.balance.message}</p>}
           </div>
 
@@ -258,6 +245,38 @@ export function CreateAccountForm({ workspaceId }: CreateAccountFormProps) {
                     onChange={(value) => field.onChange(value)}
                     placeholder="Выберите владельца"
                     multiple={false}
+                    renderOption={({ option, selected }) => {
+                      const member = members.find((m) => m.id === option.value);
+                      if (!member) return <span>{option.label}</span>;
+                      const displayName = member.name || member.email || "U";
+                      const initials = displayName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2);
+                      return (
+                        <div className="flex items-center gap-2">
+                          {member.image ? (
+                            <img
+                              src={member.image}
+                              alt={displayName}
+                              className="h-5 w-5 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div
+                              className="flex h-5 w-5 items-center justify-center rounded-full text-white text-xs font-medium"
+                              style={{
+                                backgroundColor: getAvatarColor(displayName),
+                              }}
+                            >
+                              {initials}
+                            </div>
+                          )}
+                          <span className="font-normal">{option.label}</span>
+                        </div>
+                      );
+                    }}
                   />
                 );
               }}
