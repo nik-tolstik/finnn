@@ -49,7 +49,6 @@ export function CategorySelectModal({
   const handleSelect = (option: ComboboxOption) => {
     onSelect(option);
     onOpenChange(false);
-    setSearch("");
   };
 
   return (

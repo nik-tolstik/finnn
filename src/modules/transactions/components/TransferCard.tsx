@@ -78,7 +78,7 @@ function AccountWithAmount({
   icon: IconComponent;
   amountClassName?: string;
   className?: string;
-  isNegative?: boolean;
+  isNegative: boolean;
 }) {
   return (
     <div className={cn("flex items-center md:gap-4 gap-2", className)}>
@@ -119,11 +119,12 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
 
       <div className="flex md:items-center md:justify-between w-full md:flex-row flex-col gap-2">
         <AccountWithAmount
-          account={transferTo.account}
-          amount={transferTo.amount}
-          icon={ToAccountIcon}
+          account={fromAccount}
+          amount={transaction.amount}
+          icon={FromAccountIcon}
           amountClassName="text-error-primary"
           className="flex-1 justify-between"
+          isNegative={true}
         />
         <div className="flex items-center gap-2">
           <div className="w-full h-px bg-primary/10" />
@@ -133,11 +134,12 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
           <div className="w-full h-px bg-primary/10" />
         </div>
         <AccountWithAmount
-          account={fromAccount}
-          amount={transaction.amount}
-          icon={FromAccountIcon}
+          account={transferTo.account}
+          amount={transferTo.amount}
+          icon={ToAccountIcon}
           amountClassName="text-success-primary"
           className={cn("flex-1 md:flex-row-reverse justify-between")}
+          isNegative={false}
         />
       </div>
 

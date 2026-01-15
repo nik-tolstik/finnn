@@ -8,7 +8,7 @@ import { ru } from "date-fns/locale";
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -108,7 +108,7 @@ export function CreateTransactionDialog({
   const categoryId = useWatch({ control, name: "categoryId" });
   const accountId = useWatch({ control, name: "accountId" });
   const amount = useWatch({ control, name: "amount" });
-  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const categoryModal = useDialogState();
 
   const selectedAccount = useMemo(() => {
     if (accountProp) return accountProp;
@@ -312,7 +312,7 @@ export function CreateTransactionDialog({
                     type="button"
                     variant="outline"
                     className="w-full justify-between"
-                    onClick={() => setCategoryModalOpen(true)}
+                    onClick={() => categoryModal.openDialog(true)}
                   >
                     {selectedCategory ? (
                       <div className="flex items-center gap-2">
@@ -339,16 +339,18 @@ export function CreateTransactionDialog({
                     </button>
                   )}
                 </div>
-                <CategorySelectModal
-                  open={categoryModalOpen}
-                  onOpenChange={setCategoryModalOpen}
-                  options={comboboxOptions}
-                  value={categoryId}
-                  onSelect={handleCategorySelect}
-                  placeholder="Выберите категорию"
-                  searchPlaceholder="Поиск категории..."
-                  emptyText="Категории не найдены"
-                />
+                {categoryModal.mounted && (
+                  <CategorySelectModal
+                    open={categoryModal.open}
+                    onOpenChange={categoryModal.closeDialog}
+                    options={comboboxOptions}
+                    value={categoryId}
+                    onSelect={handleCategorySelect}
+                    placeholder="Выберите категорию"
+                    searchPlaceholder="Поиск категории..."
+                    emptyText="Категории не найдены"
+                  />
+                )}
                 {(errors.categoryId || errors.newCategory) && (
                   <p className="text-sm text-destructive">
                     {errors.categoryId?.message || errors.newCategory?.message}

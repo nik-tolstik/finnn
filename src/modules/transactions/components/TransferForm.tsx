@@ -5,7 +5,6 @@ import { ArrowDown } from "lucide-react";
 import { useMemo } from "react";
 import { Controller, type UseFormReturn, useWatch } from "react-hook-form";
 
-import { AccountCard } from "@/shared/components/AccountCard";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
