@@ -2,6 +2,7 @@
 
 import type { Account } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
+import { Eye, EyeOff } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useCallback, useMemo } from "react";
@@ -17,9 +18,6 @@ import { TransactionType } from "@/modules/transactions/transaction.constants";
 import { getTransactions, type TransactionFilters } from "@/modules/transactions/transaction.service";
 import type { TransactionWithRelations } from "@/modules/transactions/transaction.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-
-import { Eye, EyeOff } from "lucide-react";
-
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
@@ -166,7 +164,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
   });
 
   const currentUserId = session?.user?.id;
-  
+
   const displayAccounts = useMemo(() => {
     if (showAllAccounts) {
       const allAccountsToUse = accountsData?.data || allAccounts;
@@ -175,11 +173,11 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
       }
       return accounts;
     }
-    
+
     if (!currentUserId) {
       return accounts;
     }
-    
+
     const allAccountsToUse = accountsData?.data || allAccounts;
     const accountsToFilter = allAccountsToUse || accounts;
     return accountsToFilter.filter((account) => account.ownerId === currentUserId);

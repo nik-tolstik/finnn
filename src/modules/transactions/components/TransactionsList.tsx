@@ -138,82 +138,82 @@ export function TransactionsList({
         <div className="text-center py-8 text-muted-foreground">Нет транзакций.</div>
       ) : (
         groupedTransactions.map((group) => (
-        <div key={group.date.toISOString()} className="space-y-3">
-          <div className="sticky top-0 z-10 bg-background py-2">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              {formatDateHeader(group.date)}
-            </h3>
-          </div>
-          {group.transactions.map((transaction) => {
-        const isTransfer = transaction.type === TransactionType.TRANSFER;
+          <div key={group.date.toISOString()} className="space-y-3">
+            <div className="sticky top-0 z-10 bg-background py-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                {formatDateHeader(group.date)}
+              </h3>
+            </div>
+            {group.transactions.map((transaction) => {
+              const isTransfer = transaction.type === TransactionType.TRANSFER;
 
-        if (isTransfer) {
-          if (transaction.transferTo) {
-            return null;
-          }
+              if (isTransfer) {
+                if (transaction.transferTo) {
+                  return null;
+                }
 
-          if (processedTransactionIds.has(transaction.id)) {
-            return null;
-          }
+                if (processedTransactionIds.has(transaction.id)) {
+                  return null;
+                }
 
-          let transferInfo:
-            | {
-                account: {
-                  id: string;
-                  name: string;
-                  currency: string;
-                  color: string | null;
-                  icon: string | null;
-                  owner?: {
-                    id: string;
-                    name: string | null;
-                    email: string;
-                    image: string | null;
-                  } | null;
-                };
-                amount: string;
+                let transferInfo:
+                  | {
+                    account: {
+                      id: string;
+                      name: string;
+                      currency: string;
+                      color: string | null;
+                      icon: string | null;
+                      owner?: {
+                        id: string;
+                        name: string | null;
+                        email: string;
+                        image: string | null;
+                      } | null;
+                    };
+                    amount: string;
+                  }
+                  | undefined;
+
+                if (transaction.transferFrom) {
+                  transferInfo = {
+                    account: {
+                      ...transaction.transferFrom.toTransaction.account,
+                      owner: transaction.transferFrom.toTransaction.account.owner,
+                    },
+                    amount: transaction.transferFrom.toAmount,
+                  };
+                  processedTransactionIds.add(transaction.transferFrom.toTransaction.id);
+                }
+
+                if (!transferInfo) {
+                  return null;
+                }
+
+                return (
+                  <TransferCard
+                    key={transaction.id}
+                    transaction={transaction}
+                    transferTo={transferInfo}
+                    onClick={() => {
+                      actionsDialog.openDialog({ transaction });
+                    }}
+                  />
+                );
               }
-            | undefined;
 
-          if (transaction.transferFrom) {
-            transferInfo = {
-              account: {
-                ...transaction.transferFrom.toTransaction.account,
-                owner: transaction.transferFrom.toTransaction.account.owner,
-              },
-              amount: transaction.transferFrom.toAmount,
-            };
-            processedTransactionIds.add(transaction.transferFrom.toTransaction.id);
-          }
-
-          if (!transferInfo) {
-            return null;
-          }
-
-          return (
-            <TransferCard
-              key={transaction.id}
-              transaction={transaction}
-              transferTo={transferInfo}
-              onClick={() => {
-                actionsDialog.openDialog({ transaction });
-              }}
-            />
-          );
-        }
-
-        return (
-          <TransactionCard
-            key={transaction.id}
-            transaction={transaction}
-            onClick={() => {
-              actionsDialog.openDialog({ transaction });
-            }}
-          />
-        );
-          })}
-        </div>
-      ))
+              return (
+                <TransactionCard
+                  key={transaction.id}
+                  transaction={transaction}
+                  onClick={() => {
+                    actionsDialog.openDialog({ transaction });
+                  }}
+                />
+              );
+            })}
+          </div>
+        ))
       )}
       {actionsDialog.mounted && (
         <TransactionActionsDialog
