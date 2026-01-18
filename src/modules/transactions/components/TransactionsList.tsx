@@ -139,7 +139,7 @@ export function TransactionsList({
       ) : (
         groupedTransactions.map((group) => (
           <div key={group.date.toISOString()} className="space-y-3">
-            <div className="sticky top-0 z-10 bg-background py-2">
+            <div className="sticky top-16 z-10 bg-background py-2">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                 {formatDateHeader(group.date)}
               </h3>
@@ -158,21 +158,21 @@ export function TransactionsList({
 
                 let transferInfo:
                   | {
-                    account: {
-                      id: string;
-                      name: string;
-                      currency: string;
-                      color: string | null;
-                      icon: string | null;
-                      owner?: {
+                      account: {
                         id: string;
-                        name: string | null;
-                        email: string;
-                        image: string | null;
-                      } | null;
-                    };
-                    amount: string;
-                  }
+                        name: string;
+                        currency: string;
+                        color: string | null;
+                        icon: string | null;
+                        owner?: {
+                          id: string;
+                          name: string | null;
+                          email: string;
+                          image: string | null;
+                        } | null;
+                      };
+                      amount: string;
+                    }
                   | undefined;
 
                 if (transaction.transferFrom) {

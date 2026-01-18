@@ -1,17 +1,13 @@
 "use client";
 
-import { Currency } from "@prisma/client";
-import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-import { getWorkspace } from "@/modules/workspace/workspace.service";
-import { DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { cn } from "@/shared/utils/cn";
 
-import { ExchangeRatesHeader } from "./ExchangeRatesHeader";
+import { BurgerMenu } from "./BurgerMenu";
 import { UserMenu } from "./UserMenu";
 import { WorkspaceDropdown } from "./WorkspaceDropdown";
 
@@ -20,18 +16,6 @@ export function Header() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const workspaceId = searchParams.get("workspaceId") || undefined;
-
-  const { data: workspaceData } = useQuery({
-    queryKey: ["workspace", workspaceId],
-    queryFn: () => (workspaceId ? getWorkspace(workspaceId) : null),
-    enabled: !!workspaceId,
-    staleTime: 5000,
-  });
-
-  const baseCurrency =
-    workspaceData && "data" in workspaceData && workspaceData.data
-      ? (workspaceData.data.baseCurrency as Currency) || DEFAULT_CURRENCY
-      : DEFAULT_CURRENCY;
 
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
 
@@ -42,11 +26,12 @@ export function Header() {
   const isAnalyticsActive = pathname === analyticsPath;
 
   return (
-    <header className="border-b bg-background py-2">
-      <div className="flex sm:h-16 items-center justify-between px-4 sm:px-8">
-        <div className="flex items-center gap-4">
-          <WorkspaceDropdown currentWorkspaceId={workspaceId} />
-          <nav className="hidden md:flex items-center gap-1 ml-4">
+    <header className="border-b bg-background py-2 sticky top-0 z-20 h-16 flex items-center">
+      <div className="flex items-center justify-between px-4 sm:px-8 w-full">
+        <div className="flex items-center gap-4 flex-1">
+          <BurgerMenu />
+          <div className="hidden md:block text-2xl font-bold text-white">FinHub</div>
+          <nav className="hidden md:flex items-center gap-2 ml-4">
             <Link
               href={`${accountsPath}${basePath}`}
               className={cn(
@@ -71,10 +56,13 @@ export function Header() {
               <TrendingUp className="h-4 w-4" />
               <span>Аналитика</span>
             </Link>
+
+            <WorkspaceDropdown currentWorkspaceId={workspaceId} />
           </nav>
+
+          <WorkspaceDropdown currentWorkspaceId={workspaceId} className="md:hidden ml-auto" />
         </div>
-        <div className="flex items-center gap-4">
-          <ExchangeRatesHeader baseCurrency={baseCurrency} />
+        <div className="items-center gap-4 hidden md:flex">
           {session?.user && <UserMenu name={session.user.name} email={session.user.email} image={session.user.image} />}
         </div>
       </div>

@@ -24,8 +24,8 @@ import { SettingsDialog } from "@/modules/accounts/components/SettingsDialog";
 import { CreateWorkspaceDialog } from "@/modules/workspace/components/CreateWorkspaceDialog";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { Button } from "@/shared/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { cn } from "@/shared/utils/cn";
 
 import { LeaveWorkspaceDialog } from "./LeaveWorkspaceDialog";
 
@@ -46,9 +46,10 @@ function getWorkspaceIcon(iconName?: string | null): LucideIcon {
 
 interface WorkspaceDropdownProps {
   currentWorkspaceId?: string;
+  className?: string;
 }
 
-export function WorkspaceDropdown({ currentWorkspaceId }: WorkspaceDropdownProps) {
+export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDropdownProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
@@ -113,17 +114,19 @@ export function WorkspaceDropdown({ currentWorkspaceId }: WorkspaceDropdownProps
         }}
       >
         <PopoverTrigger asChild>
-          <Button variant="outline" className="gap-2">
+          <div
+            className={cn(
+              "cursor-pointer flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent",
+              className
+            )}
+          >
             <CurrentWorkspaceIcon className="h-4 w-4" />
             <span className="max-w-[200px] truncate">{currentWorkspace?.name || "Выберите workspace"}</span>
             <ChevronDown className="h-4 w-4" />
-          </Button>
+          </div>
         </PopoverTrigger>
         <PopoverContent className="w-64 p-0" align="start">
           <div className="p-2">
-            <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-              {currentWorkspace?.name || "Workspace"}
-            </div>
             <div className="mt-2 space-y-1">
               {currentWorkspaceId && (
                 <>
