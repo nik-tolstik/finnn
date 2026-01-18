@@ -14,6 +14,7 @@ import { TransactionType } from "../transaction.constants";
 import { deleteTransaction } from "../transaction.service";
 import type { TransactionWithRelations } from "../transaction.types";
 
+import { CreateTransactionDialog } from "./CreateTransactionDialog";
 import { EditTransactionDialog } from "./EditTransactionDialog";
 import { EditTransferDialog } from "./EditTransferDialog";
 import { TransactionActionsDialog } from "./TransactionActionsDialog";
@@ -50,6 +51,32 @@ export function TransactionsList({
   const actionsDialog = useDialogState<{
     transaction: TransactionWithRelations;
   }>();
+  const createTransactionDialog = useDialogState<{
+    workspaceId: string;
+    account: TransactionWithRelations["account"];
+    defaultType: TransactionType.INCOME | TransactionType.EXPENSE;
+    initialAmount: string;
+    initialDescription: string | undefined;
+    initialDate: Date;
+    initialCategoryId: string | undefined;
+  }>();
+
+  const handleRepeat = (transaction: TransactionWithRelations) => {
+    if (transaction.type === TransactionType.TRANSFER) {
+      return;
+    }
+
+    createTransactionDialog.openDialog({
+      workspaceId,
+      account: transaction.account,
+      defaultType: transaction.type as TransactionType.INCOME | TransactionType.EXPENSE,
+      initialAmount: transaction.amount,
+      initialDescription: transaction.description || undefined,
+      initialDate: new Date(),
+      initialCategoryId: transaction.category?.id || undefined,
+    });
+    actionsDialog.closeDialog();
+  };
 
   const handleDelete = async (transaction: TransactionWithRelations) => {
     const previousTransactions = queryClient.getQueryData<{
@@ -239,6 +266,9 @@ export function TransactionsList({
           onDelete={() => {
             handleDelete(actionsDialog.data.transaction);
           }}
+          onRepeat={() => {
+            handleRepeat(actionsDialog.data.transaction);
+          }}
         />
       )}
       {editTransactionDialog.mounted && (
@@ -259,6 +289,20 @@ export function TransactionsList({
           open={editTransferDialog.open}
           onOpenChange={editTransferDialog.closeDialog}
           onCloseComplete={editTransferDialog.unmountDialog}
+        />
+      )}
+      {createTransactionDialog.mounted && (
+        <CreateTransactionDialog
+          workspaceId={createTransactionDialog.data.workspaceId}
+          account={createTransactionDialog.data.account}
+          open={createTransactionDialog.open}
+          onOpenChange={createTransactionDialog.closeDialog}
+          onCloseComplete={createTransactionDialog.unmountDialog}
+          defaultType={createTransactionDialog.data.defaultType}
+          initialAmount={createTransactionDialog.data.initialAmount}
+          initialDescription={createTransactionDialog.data.initialDescription}
+          initialDate={createTransactionDialog.data.initialDate}
+          initialCategoryId={createTransactionDialog.data.initialCategoryId}
         />
       )}
       {isLoadingMore && (

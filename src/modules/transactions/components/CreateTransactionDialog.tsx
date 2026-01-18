@@ -33,12 +33,16 @@ import { TransactionType } from "../transaction.constants";
 import { createTransaction } from "../transaction.service";
 
 interface CreateTransactionDialogProps {
-  account?: Account;
+  account?: Account | (Partial<Account> & { id: string });
   workspaceId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
   defaultType?: TransactionType.INCOME | TransactionType.EXPENSE;
+  initialAmount?: string;
+  initialDescription?: string;
+  initialDate?: Date;
+  initialCategoryId?: string;
 }
 
 export function CreateTransactionDialog({
@@ -48,6 +52,10 @@ export function CreateTransactionDialog({
   onOpenChange,
   onCloseComplete,
   defaultType = TransactionType.EXPENSE,
+  initialAmount,
+  initialDescription,
+  initialDate,
+  initialCategoryId,
 }: CreateTransactionDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -57,13 +65,30 @@ export function CreateTransactionDialog({
   const { data: accountsData } = useQuery({
     queryKey: ["accounts", workspaceId],
     queryFn: () => getAccounts(workspaceId),
-    enabled: open && !accountProp,
+    enabled: open,
     staleTime: 5000,
     refetchInterval: 5000,
   });
 
   const account = useMemo(() => {
-    if (accountProp) return accountProp;
+    if (accountProp) {
+      const accounts = accountsData?.data;
+      if (accounts && accountProp.id) {
+        const hasAllFields =
+          "createdAt" in accountProp &&
+          accountProp.createdAt &&
+          "balance" in accountProp &&
+          accountProp.balance !== undefined;
+        if (!hasAllFields) {
+          const fullAccount = accounts.find((acc) => acc.id === accountProp.id);
+          if (fullAccount) return fullAccount;
+        }
+      }
+      if ("balance" in accountProp && accountProp.balance !== undefined && "createdAt" in accountProp) {
+        return accountProp as Account;
+      }
+      return undefined;
+    }
     const accounts = accountsData?.data;
     if (!accounts || !session?.user?.id) return undefined;
     const userAccounts = accounts.filter((acc) => acc.ownerId === session.user.id);
@@ -82,11 +107,11 @@ export function CreateTransactionDialog({
   } = useForm<CreateTransactionInput>({
     resolver: zodResolver(createTransactionSchema),
     defaultValues: {
-      accountId: account?.id || "",
-      amount: "",
+      accountId: accountProp?.id || account?.id || "",
+      amount: initialAmount || "",
       type: defaultType,
-      description: "",
-      date: (() => {
+      description: initialDescription || "",
+      date: initialDate || (() => {
         const now = new Date();
         if (!account) return now;
         const accountCreatedDate = new Date(account.createdAt);
@@ -100,7 +125,7 @@ export function CreateTransactionDialog({
         }
         return now;
       })(),
-      categoryId: undefined,
+      categoryId: initialCategoryId || undefined,
     },
   });
 
@@ -111,7 +136,17 @@ export function CreateTransactionDialog({
   const categoryModal = useDialogState();
 
   const selectedAccount = useMemo(() => {
-    if (accountProp) return accountProp;
+    if (accountProp) {
+      const accounts = accountsData?.data;
+      if (accounts && accountProp.id && (!("balance" in accountProp) || !accountProp.balance)) {
+        const fullAccount = accounts.find((acc) => acc.id === accountProp.id);
+        if (fullAccount) return fullAccount;
+      }
+      if ("balance" in accountProp && accountProp.balance) {
+        return accountProp as Account;
+      }
+      return undefined;
+    }
     const accounts = accountsData?.data;
     if (accountId && accounts) {
       return accounts.find((acc) => acc.id === accountId);
@@ -121,7 +156,9 @@ export function CreateTransactionDialog({
 
   const previewAccount = useMemo(() => {
     const currentAccount = selectedAccount || account;
-    if (!currentAccount || !amount) return currentAccount;
+    if (!currentAccount || !("balance" in currentAccount) || !currentAccount.balance || !amount) {
+      return currentAccount;
+    }
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum)) return currentAccount;
 
@@ -168,15 +205,15 @@ export function CreateTransactionDialog({
   }, [comboboxOptions, categoryId]);
 
   const prevOpenRef = React.useRef(open);
-  const accountIdRef = React.useRef<string | undefined>(account?.id);
+  const accountIdRef = React.useRef<string | undefined>(account?.id || accountProp?.id);
 
   useEffect(() => {
     if (open && !prevOpenRef.current) {
       const now = new Date();
-      let defaultDate: Date = now;
+      let defaultDate: Date = initialDate || now;
       const currentAccount = account;
 
-      if (currentAccount) {
+      if (!initialDate && currentAccount && "createdAt" in currentAccount && currentAccount.createdAt) {
         const accountCreatedDate = new Date(currentAccount.createdAt);
         accountCreatedDate.setHours(0, 0, 0, 0);
         const nowDateOnly = new Date(now);
@@ -187,21 +224,65 @@ export function CreateTransactionDialog({
         }
       }
 
-      const initialAccountId = currentAccount?.id || "";
+      const initialAccountId = currentAccount?.id || accountProp?.id || "";
       accountIdRef.current = initialAccountId;
 
-      reset({
+      const resetValues = {
         accountId: initialAccountId,
-        amount: "",
+        amount: initialAmount || "",
         type: defaultType,
-        description: "",
+        description: initialDescription || "",
         date: defaultDate,
-        categoryId: undefined,
+        categoryId: initialCategoryId || undefined,
+        newCategory: undefined,
+      };
+
+      reset(resetValues);
+
+      if (initialAmount) {
+        setValue("amount", initialAmount, { shouldValidate: false });
+      }
+      if (initialDescription) {
+        setValue("description", initialDescription, { shouldValidate: false });
+      }
+      if (initialCategoryId) {
+        setValue("categoryId", initialCategoryId, { shouldValidate: false });
+      }
+      if (initialDate) {
+        setValue("date", initialDate, { shouldValidate: false });
+      }
+    }
+    prevOpenRef.current = open;
+  }, [open, reset, defaultType, account, accountProp, initialAmount, initialDescription, initialDate, initialCategoryId]);
+
+  useEffect(() => {
+    if (open && account && account.id !== accountIdRef.current) {
+      const now = new Date();
+      let defaultDate: Date = initialDate || now;
+
+      if (!initialDate && "createdAt" in account && account.createdAt) {
+        const accountCreatedDate = new Date(account.createdAt);
+        accountCreatedDate.setHours(0, 0, 0, 0);
+        const nowDateOnly = new Date(now);
+        nowDateOnly.setHours(0, 0, 0, 0);
+        if (nowDateOnly < accountCreatedDate) {
+          defaultDate = new Date(accountCreatedDate);
+          defaultDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+        }
+      }
+
+      accountIdRef.current = account.id;
+      reset({
+        accountId: account.id,
+        amount: initialAmount || "",
+        type: defaultType,
+        description: initialDescription || "",
+        date: defaultDate,
+        categoryId: initialCategoryId || undefined,
         newCategory: undefined,
       });
     }
-    prevOpenRef.current = open;
-  }, [open, reset, defaultType, account]);
+  }, [open, account, reset, defaultType, initialAmount, initialDescription, initialDate, initialCategoryId]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
@@ -209,7 +290,7 @@ export function CreateTransactionDialog({
 
   const onSubmit = async (data: CreateTransactionInput) => {
     const currentAccount = selectedAccount || account;
-    if (!currentAccount) return;
+    if (!currentAccount || !("createdAt" in currentAccount) || !currentAccount.createdAt) return;
 
     const accountCreatedDate = new Date(currentAccount.createdAt);
     accountCreatedDate.setHours(0, 0, 0, 0);
@@ -272,9 +353,9 @@ export function CreateTransactionDialog({
             <form className="space-y-4">
               <div className="space-y-2">
                 <Label>Счёт</Label>
-                {previewAccount && (
+                {previewAccount && "balance" in previewAccount && previewAccount.balance !== undefined && (
                   <AccountCard
-                    account={previewAccount}
+                    account={previewAccount as Account}
                     onClick={() => selectAccountDialog.openDialog(null)}
                     showOwner={false}
                   />
@@ -380,7 +461,13 @@ export function CreateTransactionDialog({
                           e.target.value = "";
                         }
                         const currentAccount = selectedAccount || account;
-                        if (currentAccount && transactionType === TransactionType.EXPENSE && value) {
+                        if (
+                          currentAccount &&
+                          "balance" in currentAccount &&
+                          currentAccount.balance &&
+                          transactionType === TransactionType.EXPENSE &&
+                          value
+                        ) {
                           const amount = parseFloat(value);
                           if (!isNaN(amount) && compareMoney(amount, currentAccount.balance) > 0) {
                             setError("amount", {
@@ -394,7 +481,13 @@ export function CreateTransactionDialog({
                       },
                       validate: (value) => {
                         const currentAccount = selectedAccount || account;
-                        if (!currentAccount || transactionType !== TransactionType.EXPENSE) return true;
+                        if (
+                          !currentAccount ||
+                          !("balance" in currentAccount) ||
+                          !currentAccount.balance ||
+                          transactionType !== TransactionType.EXPENSE
+                        )
+                          return true;
                         const amount = parseFloat(value);
                         if (isNaN(amount)) return true;
                         if (compareMoney(amount, currentAccount.balance) > 0) {
@@ -410,19 +503,22 @@ export function CreateTransactionDialog({
                     }}
                     aria-invalid={errors.amount ? "true" : "false"}
                   />
-                  {selectedAccount && parseFloat(selectedAccount.balance) > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
-                      onClick={() => {
-                        setValue("amount", selectedAccount.balance, { shouldValidate: true, shouldTouch: true });
-                      }}
-                    >
-                      Max
-                    </Button>
-                  )}
+                  {selectedAccount &&
+                    "balance" in selectedAccount &&
+                    selectedAccount.balance &&
+                    parseFloat(selectedAccount.balance) > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
+                        onClick={() => {
+                          setValue("amount", selectedAccount.balance, { shouldValidate: true, shouldTouch: true });
+                        }}
+                      >
+                        Max
+                      </Button>
+                    )}
                 </div>
                 {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
               </div>
@@ -450,7 +546,8 @@ export function CreateTransactionDialog({
                       onSelect={field.onChange}
                       disabled={(date) => {
                         const currentAccount = selectedAccount || account;
-                        if (!currentAccount) return false;
+                        if (!currentAccount || !("createdAt" in currentAccount) || !currentAccount.createdAt)
+                          return false;
                         const accountCreatedDate = new Date(currentAccount.createdAt);
                         accountCreatedDate.setHours(0, 0, 0, 0);
                         const checkDate = new Date(date);
