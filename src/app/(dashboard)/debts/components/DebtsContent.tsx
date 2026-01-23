@@ -1,0 +1,115 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+
+import { CreateDebtDialog } from "@/modules/debts/components/CreateDebtDialog";
+import { DebtsList } from "@/modules/debts/components/DebtsList";
+import { DebtStatus, DebtType } from "@/modules/debts/debt.constants";
+import { getDebts } from "@/modules/debts/debt.service";
+import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
+import { useDialogState } from "@/shared/hooks/useDialogState";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { formatMoney, addMoney } from "@/shared/utils/money";
+
+interface DebtsContentProps {
+  workspaceId: string;
+}
+
+export function DebtsContent({ workspaceId }: DebtsContentProps) {
+  const { isMobile } = useBreakpoints();
+  const createDebtDialog = useDialogState();
+
+  const { data } = useQuery({
+    queryKey: ["debts", workspaceId],
+    queryFn: () => getDebts(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
+  });
+
+  const debts = "data" in (data || {}) ? data?.data : [];
+  const openDebts = debts?.filter((d) => d.status === DebtStatus.OPEN) || [];
+
+  const lentTotal = openDebts
+    .filter((d) => d.type === DebtType.LENT)
+    .reduce(
+      (acc, d) => {
+        const currency = d.currency;
+        if (!acc[currency]) acc[currency] = "0";
+        acc[currency] = addMoney(acc[currency], d.remainingAmount);
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+
+  const borrowedTotal = openDebts
+    .filter((d) => d.type === DebtType.BORROWED)
+    .reduce(
+      (acc, d) => {
+        const currency = d.currency;
+        if (!acc[currency]) acc[currency] = "0";
+        acc[currency] = addMoney(acc[currency], d.remainingAmount);
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+
+  return (
+    <div className="w-full max-w-[1440px] mx-auto">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Долги</h1>
+          {!isMobile && (
+            <Button onClick={() => createDebtDialog.openDialog(null)}>
+              <Plus className="size-4 mr-2" />
+              Добавить долг
+            </Button>
+          )}
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4 text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-muted-foreground shrink-0">Мне должны:</span>
+            {Object.entries(lentTotal).length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(lentTotal).map(([currency, amount]) => (
+                  <Badge key={currency} variant="default" className="bg-success-primary/10 text-success-primary">
+                    {formatMoney(amount, currency)}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-muted-foreground shrink-0">Я должен:</span>
+            {Object.entries(borrowedTotal).length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(borrowedTotal).map(([currency, amount]) => (
+                  <Badge key={currency} variant="destructive" className="bg-error-primary/10 text-error-primary">
+                    {formatMoney(amount, currency)}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </div>
+        </div>
+
+        <DebtsList workspaceId={workspaceId} />
+      </div>
+
+      {createDebtDialog.mounted && (
+        <CreateDebtDialog
+          workspaceId={workspaceId}
+          open={createDebtDialog.open}
+          onOpenChange={createDebtDialog.closeDialog}
+          onCloseComplete={createDebtDialog.unmountDialog}
+        />
+      )}
+    </div>
+  );
+}

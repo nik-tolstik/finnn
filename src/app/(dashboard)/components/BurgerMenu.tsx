@@ -1,6 +1,6 @@
 "use client";
 
-import { Grip, LogOut, Settings, TrendingUp, Wallet } from "lucide-react";
+import { Grip, HandCoins, LogOut, Settings, TrendingUp, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -25,9 +25,11 @@ export function BurgerMenu() {
 
   const accountsPath = "/dashboard";
   const analyticsPath = "/analytics";
+  const debtsPath = "/debts";
 
   const isAccountsActive = pathname === accountsPath;
   const isAnalyticsActive = pathname === analyticsPath;
+  const isDebtsActive = pathname === debtsPath;
 
   const handleLogout = async () => {
     setOpen(false);
@@ -100,6 +102,17 @@ export function BurgerMenu() {
               >
                 <TrendingUp className="h-5 w-5" />
                 <span>Аналитика</span>
+              </Link>
+              <Link
+                href={`${debtsPath}${basePath}`}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  isDebtsActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
+                )}
+              >
+                <HandCoins className="h-5 w-5" />
+                <span>Долги</span>
               </Link>
             </nav>
 

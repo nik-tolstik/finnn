@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, TrendingUp, Wallet } from "lucide-react";
+import { HandCoins, Plus, TrendingUp, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
 
@@ -22,9 +22,11 @@ export function MobileNavigation() {
 
   const accountsPath = "/dashboard";
   const analyticsPath = "/analytics";
+  const debtsPath = "/debts";
 
   const isAccountsActive = pathname === accountsPath;
   const isAnalyticsActive = pathname === analyticsPath;
+  const isDebtsActive = pathname === debtsPath;
 
   const basePath = `?workspaceId=${workspaceId}`;
 
@@ -61,10 +63,16 @@ export function MobileNavigation() {
             </div>
             <span className="text-xs mt-auto">Создать</span>
           </button>
-          <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground opacity-50 size-16 py-3">
-            <div className="size-5" />
-            <span className="text-xs">—</span>
-          </div>
+          <Link
+            href={`${debtsPath}${basePath}`}
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 transition-colors size-16 py-3",
+              isDebtsActive ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <HandCoins className="size-5" />
+            <span className="text-xs">Долги</span>
+          </Link>
           <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground opacity-50 size-16 py-3">
             <div className="size-5" />
             <span className="text-xs">—</span>

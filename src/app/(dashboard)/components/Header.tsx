@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, Wallet } from "lucide-react";
+import { HandCoins, TrendingUp, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -21,9 +21,11 @@ export function Header() {
 
   const accountsPath = "/dashboard";
   const analyticsPath = "/analytics";
+  const debtsPath = "/debts";
 
   const isAccountsActive = pathname === accountsPath;
   const isAnalyticsActive = pathname === analyticsPath;
+  const isDebtsActive = pathname === debtsPath;
 
   return (
     <header className="border-b bg-background py-2 sticky top-0 z-20 h-16 flex items-center">
@@ -55,6 +57,18 @@ export function Header() {
             >
               <TrendingUp className="h-4 w-4" />
               <span>Аналитика</span>
+            </Link>
+            <Link
+              href={`${debtsPath}${basePath}`}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                isDebtsActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <HandCoins className="h-4 w-4" />
+              <span>Долги</span>
             </Link>
 
             <WorkspaceDropdown currentWorkspaceId={workspaceId} />

@@ -46,6 +46,7 @@ model Workspace {
   categories   Category[]
   transactions Transaction[]
   invites      WorkspaceInvite[]
+  debts        Debt[]
 
   @@map("workspaces")
 }
@@ -82,6 +83,7 @@ model Account {
   workspace    Workspace         @relation(fields: [workspaceId], references: [id])
   owner        User?             @relation(fields: [ownerId], references: [id])
   transactions Transaction[]
+  debts        Debt[]
 
   @@index([workspaceId, archived])
   @@map("accounts")
@@ -181,4 +183,25 @@ model ExchangeRate {
   @@index([date])
   @@index([fromCurrency, toCurrency])
   @@map("exchange_rates")
+}
+
+model Debt {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId     String   @db.ObjectId
+  type            String
+  personName      String
+  amount          String
+  remainingAmount String
+  currency        String
+  accountId       String?  @db.ObjectId
+  date            DateTime @default(now())
+  status          String   @default("open")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  account   Account?  @relation(fields: [accountId], references: [id])
+
+  @@index([workspaceId, status])
+  @@map("debts")
 }
