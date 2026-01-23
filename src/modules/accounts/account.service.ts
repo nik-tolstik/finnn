@@ -45,7 +45,7 @@ export async function createAccount(workspaceId: string, input: CreateAccountInp
         currency: validated.currency,
         color: validated.color,
         icon: validated.icon,
-        ownerId: validated.ownerId,
+        ownerId: validated.ownerId ?? null,
         workspaceId,
         order: accountsCount,
         createdAt: validated.createdAt || new Date(),
@@ -89,6 +89,7 @@ export async function updateAccount(id: string, input: UpdateAccountInput) {
     if (validated.name !== undefined) updateData.name = validated.name;
     if (validated.balance !== undefined) updateData.balance = validated.balance;
     if (validated.currency !== undefined) updateData.currency = validated.currency;
+    if (validated.ownerId !== undefined) updateData.ownerId = validated.ownerId ?? null;
     if (validated.color !== undefined) updateData.color = validated.color;
     if (validated.icon !== undefined) updateData.icon = validated.icon;
     if (validated.createdAt !== undefined) updateData.createdAt = validated.createdAt;

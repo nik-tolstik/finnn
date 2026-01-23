@@ -18,6 +18,7 @@ import { useSession } from "next-auth/react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
+import { getWorkspace } from "@/modules/workspace/workspace.service";
 import { CreateTransactionDialog } from "@/modules/transactions/components/CreateTransactionDialog";
 import { CreateTransferDialog } from "@/modules/transactions/components/CreateTransferDialog";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
@@ -26,10 +27,34 @@ import { Badge } from "@/shared/ui/badge";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { cn } from "@/shared/utils/cn";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Building2,
+  Wallet,
+  HandCoins,
+  CreditCard,
+  Landmark,
+  type LucideIcon,
+} from "lucide-react";
 
 import { updateAccountsOrder } from "../account.service";
 
 import { AccountActionsDialog } from "./AccountActionsDialog";
+
+const WORKSPACE_ICONS: Record<string, LucideIcon> = {
+  Building2,
+  Wallet,
+  HandCoins,
+  CreditCard,
+  Landmark,
+} as const;
+
+function getWorkspaceIcon(iconName?: string | null): LucideIcon {
+  if (iconName && iconName in WORKSPACE_ICONS) {
+    return WORKSPACE_ICONS[iconName];
+  }
+  return Building2;
+}
 import { AccountsCardsSkeleton } from "./AccountsCardsSkeleton";
 import { ArchiveAccountDialog } from "./ArchiveAccountDialog";
 import { EditAccountDialog } from "./EditAccountDialog";
@@ -128,6 +153,23 @@ export function AccountsCards({
   const [showAllAccountsLocal, setShowAllAccountsLocal] = useState(false);
   const isReorderMode = reorderMode;
   const accountActionsDialog = useDialogState<{ account: Account }>();
+
+  const { data: workspaceData } = useQuery({
+    queryKey: ["workspace", workspaceId],
+    queryFn: () => getWorkspace(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
+  });
+
+  const workspaceName = useMemo(() => {
+    return workspaceData && "data" in workspaceData && workspaceData.data ? workspaceData.data.name : "";
+  }, [workspaceData]);
+
+  const workspaceIcon = useMemo(() => {
+    return workspaceData && "data" in workspaceData && workspaceData.data
+      ? getWorkspaceIcon(workspaceData.data.icon)
+      : Building2;
+  }, [workspaceData]);
 
   const showAllAccounts = showAllAccountsProp ?? showAllAccountsLocal;
   const setShowAllAccounts = onShowAllAccountsChange ?? setShowAllAccountsLocal;
@@ -268,7 +310,7 @@ export function AccountsCards({
   const accountsByOwner = items.reduce(
     (acc, account) => {
       const ownerId = account.ownerId || "__no_owner__";
-      const ownerName = account.owner?.name || account.owner?.email || "Без владельца";
+      const ownerName = account.owner?.name || account.owner?.email || "Общие";
       if (!acc[ownerId]) {
         acc[ownerId] = {
           owner: account.owner
@@ -306,12 +348,14 @@ export function AccountsCards({
 
     const aIsCurrentUser = a.owner?.id === currentUserId;
     const bIsCurrentUser = b.owner?.id === currentUserId;
+    const aIsShared = !a.owner;
+    const bIsShared = !b.owner;
 
     if (aIsCurrentUser && !bIsCurrentUser) return -1;
     if (!aIsCurrentUser && bIsCurrentUser) return 1;
-    if (!a.owner && b.owner) return 1;
-    if (a.owner && !b.owner) return -1;
-    if (!a.owner && !b.owner) return 0;
+    if (aIsShared && !bIsShared && !bIsCurrentUser) return 1;
+    if (!aIsShared && bIsShared && !aIsCurrentUser) return -1;
+    if (aIsShared && bIsShared) return 0;
     return (a.owner?.name || a.owner?.email || "").localeCompare(b.owner?.name || b.owner?.email || "");
   });
 
@@ -327,13 +371,17 @@ export function AccountsCards({
                 <div key={ownerId} className="space-y-3">
                   {sortedOwners.length > 1 && (
                     <div className="flex items-center gap-2">
-                      <UserDisplay
-                        name={owner?.name}
-                        email={owner?.email}
-                        image={owner?.image}
-                        size="sm"
-                        showName={true}
-                      />
+                      {owner ? (
+                        <UserDisplay
+                          name={owner.name}
+                          email={owner.email}
+                          image={owner.image}
+                          size="sm"
+                          showName={true}
+                        />
+                      ) : (
+                        <span className="text-sm font-medium">Общие</span>
+                      )}
                       <Badge variant="secondary" className="text-xs">
                         {ownerAccounts.length}
                       </Badge>

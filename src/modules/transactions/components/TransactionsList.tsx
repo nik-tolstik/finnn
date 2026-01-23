@@ -1,12 +1,21 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
+import {
+  Building2,
+  Wallet,
+  HandCoins,
+  CreditCard,
+  Landmark,
+  type LucideIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
+import { getWorkspace } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 
@@ -22,6 +31,21 @@ import { TransactionCard } from "./TransactionCard";
 import { TransactionCardSkeleton } from "./TransactionCardSkeleton";
 import { TransferCard } from "./TransferCard";
 import { TransferCardSkeleton } from "./TransferCardSkeleton";
+
+const WORKSPACE_ICONS: Record<string, LucideIcon> = {
+  Building2,
+  Wallet,
+  HandCoins,
+  CreditCard,
+  Landmark,
+} as const;
+
+function getWorkspaceIcon(iconName?: string | null): LucideIcon {
+  if (iconName && iconName in WORKSPACE_ICONS) {
+    return WORKSPACE_ICONS[iconName];
+  }
+  return Building2;
+}
 
 interface TransactionsListProps {
   transactions: TransactionWithRelations[];
@@ -60,6 +84,23 @@ export function TransactionsList({
     initialDate: Date;
     initialCategoryId: string | undefined;
   }>();
+
+  const { data: workspaceData } = useQuery({
+    queryKey: ["workspace", workspaceId],
+    queryFn: () => getWorkspace(workspaceId),
+    staleTime: 5000,
+    refetchInterval: 5000,
+  });
+
+  const workspaceName = useMemo(() => {
+    return workspaceData && "data" in workspaceData && workspaceData.data ? workspaceData.data.name : "";
+  }, [workspaceData]);
+
+  const workspaceIcon = useMemo(() => {
+    return workspaceData && "data" in workspaceData && workspaceData.data
+      ? getWorkspaceIcon(workspaceData.data.icon)
+      : Building2;
+  }, [workspaceData]);
 
   const handleRepeat = (transaction: TransactionWithRelations) => {
     if (transaction.type === TransactionType.TRANSFER) {
@@ -191,6 +232,7 @@ export function TransactionsList({
                         currency: string;
                         color: string | null;
                         icon: string | null;
+                        ownerId?: string | null;
                         owner?: {
                           id: string;
                           name: string | null;
@@ -206,6 +248,7 @@ export function TransactionsList({
                   transferInfo = {
                     account: {
                       ...transaction.transferFrom.toTransaction.account,
+                      ownerId: transaction.transferFrom.toTransaction.account.ownerId,
                       owner: transaction.transferFrom.toTransaction.account.owner,
                     },
                     amount: transaction.transferFrom.toAmount,
@@ -222,6 +265,8 @@ export function TransactionsList({
                     key={transaction.id}
                     transaction={transaction}
                     transferTo={transferInfo}
+                    workspaceName={workspaceName}
+                    workspaceIcon={workspaceIcon}
                     onClick={() => {
                       actionsDialog.openDialog({ transaction });
                     }}
@@ -233,6 +278,8 @@ export function TransactionsList({
                 <TransactionCard
                   key={transaction.id}
                   transaction={transaction}
+                  workspaceName={workspaceName}
+                  workspaceIcon={workspaceIcon}
                   onClick={() => {
                     actionsDialog.openDialog({ transaction });
                   }}

@@ -82,12 +82,14 @@ export function SelectAccountDialog({
 
       const aIsCurrentUser = a.owner?.id === currentUserId;
       const bIsCurrentUser = b.owner?.id === currentUserId;
+      const aIsShared = !a.owner;
+      const bIsShared = !b.owner;
 
       if (aIsCurrentUser && !bIsCurrentUser) return -1;
       if (!aIsCurrentUser && bIsCurrentUser) return 1;
-      if (!a.owner && b.owner) return 1;
-      if (a.owner && !b.owner) return -1;
-      if (!a.owner && !b.owner) return 0;
+      if (aIsShared && !bIsShared && !bIsCurrentUser) return 1;
+      if (!aIsShared && bIsShared && !aIsCurrentUser) return -1;
+      if (aIsShared && bIsShared) return 0;
       return (a.owner?.name || a.owner?.email || "").localeCompare(b.owner?.name || b.owner?.email || "");
     });
 
@@ -113,13 +115,17 @@ export function SelectAccountDialog({
             ) : (
               accountsByOwner.map((group) => (
                 <div key={group.owner?.id || "__no_owner__"} className="flex flex-col gap-3">
-                  <UserDisplay
-                    name={group.owner?.name}
-                    email={group.owner?.email}
-                    image={group.owner?.image}
-                    size="sm"
-                    showName={true}
-                  />
+                  {group.owner ? (
+                    <UserDisplay
+                      name={group.owner.name}
+                      email={group.owner.email}
+                      image={group.owner.image}
+                      size="sm"
+                      showName={true}
+                    />
+                  ) : (
+                    <span className="text-sm font-medium">Общие</span>
+                  )}
                   <div className="flex flex-col gap-2">
                     {group.accounts.map((account) => (
                       <AccountCard

@@ -362,6 +362,7 @@ export async function getDebts(
             name: true,
             currency: true,
             color: true,
+            icon: true,
           },
         },
       },

@@ -83,7 +83,7 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
 
     for (const [ownerId, accounts] of grouped.entries()) {
       const firstAccount = accounts[0];
-      const ownerName = firstAccount.owner?.name || firstAccount.owner?.email || "Без владельца";
+      const ownerName = firstAccount.owner?.name || firstAccount.owner?.email || "Общие";
       result.push({ ownerId, ownerName, owner: firstAccount.owner, accounts });
     }
 
@@ -136,15 +136,22 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
       );
 
       if (ownerGroup) {
+        if (ownerGroup.owner) {
+          return (
+            <div className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+              <UserDisplay
+                name={ownerGroup.owner.name}
+                email={ownerGroup.owner.email || undefined}
+                image={ownerGroup.owner.image}
+                size="sm"
+                showName={true}
+              />
+            </div>
+          );
+        }
         return (
-          <div className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
-            <UserDisplay
-              name={ownerGroup.owner?.name}
-              email={ownerGroup.owner?.email || undefined}
-              image={ownerGroup.owner?.image}
-              size="sm"
-              showName={true}
-            />
+          <div className="px-2 py-1.5 text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+            {ownerGroup.ownerName}
           </div>
         );
       }

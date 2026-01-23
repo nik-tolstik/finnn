@@ -2,15 +2,18 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Account } from "@prisma/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useEffect, useMemo } from "react";
 import { Controller } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { getWorkspace, getWorkspaceMembers } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/AccountCard";
+import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { updateAccountSchema, type UpdateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
 import {
@@ -33,6 +36,8 @@ import {
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Select } from "@/shared/ui/select/select";
+import { SelectOption } from "@/shared/ui/select/types";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 
@@ -49,6 +54,7 @@ interface EditAccountDialogProps {
 export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete, onCancel }: EditAccountDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
   const {
     register,
     handleSubmit,
@@ -62,13 +68,52 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
       name: account.name,
       color: account.color || undefined,
       icon: account.icon || "Wallet",
+      ownerId: account.ownerId || null,
       createdAt: new Date(account.createdAt),
     },
   });
 
+  const { data: membersData } = useQuery({
+    queryKey: ["workspace-members", account.workspaceId],
+    queryFn: () => getWorkspaceMembers(account.workspaceId),
+    enabled: open,
+    staleTime: 5000,
+    refetchInterval: 5000,
+  });
+
+  const { data: workspaceData } = useQuery({
+    queryKey: ["workspace", account.workspaceId],
+    queryFn: () => getWorkspace(account.workspaceId),
+    enabled: open,
+    staleTime: 5000,
+  });
+
+  const workspaceName = useMemo(() => {
+    return workspaceData && "data" in workspaceData && workspaceData.data
+      ? workspaceData.data.name
+      : "";
+  }, [workspaceData]);
+
+  const members = useMemo(() => {
+    return membersData?.data || [];
+  }, [membersData?.data]);
+
+  const sharedValue = "__shared__";
+  const ownerOptions = useMemo(() => {
+    const sharedLabel = workspaceName ? workspaceName : "Общие";
+    return [
+      { value: sharedValue, label: sharedLabel },
+      ...members.map((member) => ({
+        value: member.id,
+        label: member.name || member.email,
+      })),
+    ];
+  }, [workspaceName, members]);
+
   const selectedColor = useWatch({ control, name: "color" });
   const selectedIcon = useWatch({ control, name: "icon" });
   const accountName = useWatch({ control, name: "name" });
+  const ownerId = useWatch({ control, name: "ownerId" });
 
   useEffect(() => {
     if (open) {
@@ -76,10 +121,11 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
         name: account.name,
         color: account.color || undefined,
         icon: account.icon || "Wallet",
+        ownerId: account.ownerId || null,
         createdAt: new Date(account.createdAt),
       });
     }
-  }, [account.id, account.name, account.color, account.icon, account.createdAt, open, reset]);
+  }, [account.id, account.name, account.color, account.icon, account.ownerId, account.createdAt, open, reset]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
@@ -90,7 +136,10 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
 
   const onSubmit = async (data: UpdateAccountInput) => {
     onOpenChange(false);
-    const result = await updateAccount(account.id, data);
+    const result = await updateAccount(account.id, {
+      ...data,
+      ownerId: data.ownerId === sharedValue || data.ownerId === "" ? null : data.ownerId,
+    });
 
     if (result.error) {
       toast.error(result.error);
@@ -137,6 +186,61 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
                 aria-invalid={errors.name ? "true" : "false"}
               />
               {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ownerId">Владелец</Label>
+              <Controller
+                control={control}
+                name="ownerId"
+                render={({ field }) => {
+                  return (
+                    <Select
+                      options={ownerOptions}
+                      value={field.value === null || field.value === undefined ? sharedValue : field.value}
+                      onChange={(value) => field.onChange(value === sharedValue ? null : value)}
+                      placeholder="Выберите владельца"
+                      multiple={false}
+                      renderOption={({ option, selected }) => {
+                        if (option.value === sharedValue) {
+                          return <span className="font-normal">{option.label}</span>;
+                        }
+                        const member = members.find((m) => m.id === option.value);
+                        if (!member) return <span>{option.label}</span>;
+                        const displayName = member.name || member.email || "U";
+                        const initials = displayName
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2);
+                        return (
+                          <div className="flex items-center gap-2">
+                            {member.image ? (
+                              <img
+                                src={member.image}
+                                alt={displayName}
+                                className="h-5 w-5 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div
+                                className="flex h-5 w-5 items-center justify-center rounded-full text-white text-xs font-medium"
+                                style={{
+                                  backgroundColor: getAvatarColor(displayName),
+                                }}
+                              >
+                                {initials}
+                              </div>
+                            )}
+                            <span className="font-normal">{option.label}</span>
+                          </div>
+                        );
+                      }}
+                    />
+                  );
+                }}
+              />
+              {errors.ownerId && <p className="text-sm text-destructive">{errors.ownerId.message}</p>}
             </div>
 
             <div className="space-y-2">

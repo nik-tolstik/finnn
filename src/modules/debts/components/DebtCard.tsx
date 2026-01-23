@@ -7,6 +7,8 @@ import { ArrowDownLeft, ArrowUpRight, User } from "lucide-react";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
 import { Badge } from "@/shared/ui/badge";
 import { Card } from "@/shared/ui/card";
+import { IconWithBg } from "@/shared/ui/icon-with-bg";
+import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -30,14 +32,32 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
       >
         <div className="flex flex-col text-sm">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant={isClosed ? "secondary" : isLent ? "default" : "destructive"} className="text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge
+                variant={isClosed ? "secondary" : "outline"}
+                className={cn(
+                  "text-xs font-normal",
+                  !isClosed && isLent && "text-primary border-success-primary",
+                  !isClosed && !isLent && "text-primary border-error-primary"
+                )}
+              >
                 {isLent ? "Мне должны" : "Я должен"}
               </Badge>
               {isClosed && (
                 <Badge variant="outline" className="text-xs">
                   Закрыт
                 </Badge>
+              )}
+              {debt.account && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg">
+                  <IconWithBg
+                    icon={getAccountIcon(debt.account.icon)}
+                    color={debt.account.color}
+                    className="size-4 sm:size-5"
+                    iconClassName="size-2.5 sm:size-3"
+                  />
+                  <span className="text-xs text-white">{debt.account.name}</span>
+                </div>
               )}
             </div>
             <span className="text-xs text-muted-foreground">
@@ -64,7 +84,6 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
                   <User className="size-3.5 text-muted-foreground" />
                   <span className="font-medium">{debt.personName}</span>
                 </div>
-                {debt.account && <span className="text-xs text-muted-foreground">Счёт: {debt.account.name}</span>}
               </div>
             </div>
 

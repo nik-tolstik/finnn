@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import type { LucideIcon } from "lucide-react";
 
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
@@ -18,10 +19,18 @@ import type { TransactionWithRelations } from "../transaction.types";
 interface TransactionCardProps {
   transaction: TransactionWithRelations;
   onClick?: () => void;
+  workspaceName?: string;
+  workspaceIcon?: LucideIcon;
 }
 
-export function TransactionCard({ transaction, onClick }: TransactionCardProps) {
+export function TransactionCard({
+  transaction,
+  onClick,
+  workspaceName,
+  workspaceIcon: WorkspaceIcon,
+}: TransactionCardProps) {
   const AccountIcon = getAccountIcon(transaction.account.icon);
+  const isSharedAccount = transaction.account.ownerId === null;
 
   return (
     <AnimatedListItem>
@@ -39,15 +48,20 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
                 {transaction.category?.name || "Без категории"}
               </Badge>
 
-              {transaction.account.owner && (
+              {isSharedAccount && workspaceName && WorkspaceIcon ? (
+                <div className="flex items-center gap-2">
+                  <WorkspaceIcon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{workspaceName}</span>
+                </div>
+              ) : transaction.account.owner ? (
                 <UserDisplay
-                  name={transaction.account.owner?.name}
-                  email={transaction.account.owner?.email}
-                  image={transaction.account.owner?.image}
+                  name={transaction.account.owner.name}
+                  email={transaction.account.owner.email}
+                  image={transaction.account.owner.image}
                   size="sm"
                   showName={true}
                 />
-              )}
+              ) : null}
             </div>
             <span className="text-xs text-muted-foreground">
               {format(new Date(transaction.date), "HH:mm", { locale: ru })}

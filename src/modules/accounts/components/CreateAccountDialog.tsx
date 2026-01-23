@@ -3,7 +3,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Currency } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Wallet } from "lucide-react";
+import {
+  Building2,
+  Wallet,
+  HandCoins,
+  CreditCard,
+  Landmark,
+  type LucideIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
@@ -12,7 +19,6 @@ import { toast } from "sonner";
 
 import { getWorkspace, getWorkspaceMembers } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/AccountCard";
-import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { createAccountSchema, type CreateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
@@ -37,11 +43,26 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select/select";
-import { SelectOption } from "@/shared/ui/select/types";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
+import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { cn } from "@/shared/utils/cn";
 
 import { createAccount } from "../account.service";
+
+const WORKSPACE_ICONS: Record<string, LucideIcon> = {
+  Building2,
+  Wallet,
+  HandCoins,
+  CreditCard,
+  Landmark,
+} as const;
+
+function getWorkspaceIcon(iconName?: string | null): LucideIcon {
+  if (iconName && iconName in WORKSPACE_ICONS) {
+    return WORKSPACE_ICONS[iconName];
+  }
+  return Building2;
+}
 
 interface CreateAccountDialogProps {
   workspaceId: string;
@@ -98,6 +119,16 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
       ? (workspaceData.data.baseCurrency as Currency) || DEFAULT_CURRENCY
       : DEFAULT_CURRENCY;
 
+  const workspaceName = useMemo(() => {
+    return workspaceData && "data" in workspaceData && workspaceData.data ? workspaceData.data.name : "";
+  }, [workspaceData]);
+
+  const workspaceIcon = useMemo(() => {
+    return workspaceData && "data" in workspaceData && workspaceData.data
+      ? getWorkspaceIcon(workspaceData.data.icon)
+      : Building2;
+  }, [workspaceData]);
+
   const members = useMemo(() => {
     return membersData?.data || [];
   }, [membersData?.data]);
@@ -107,6 +138,18 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
     const currentUser = members.find((m) => m.id === session.user.id);
     return currentUser?.id;
   }, [session, members]);
+
+  const sharedValue = "__shared__";
+  const ownerOptions = useMemo(() => {
+    const sharedLabel = workspaceName ? workspaceName : "Общие";
+    return [
+      { value: sharedValue, label: sharedLabel },
+      ...members.map((member) => ({
+        value: member.id,
+        label: member.name || member.email,
+      })),
+    ];
+  }, [workspaceName, members]);
 
   const currency = useWatch({ control, name: "currency" });
   const selectedColor = useWatch({ control, name: "color" });
@@ -121,12 +164,12 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
   }, [open, currentUserId, setValue]);
 
   useEffect(() => {
-    if (open && currentUserId) {
+    if (open) {
       reset({
         name: "",
         balance: "0",
         currency: baseCurrency,
-        ownerId: currentUserId,
+        ownerId: currentUserId || null,
         color: undefined,
         icon: "Wallet",
         createdAt: (() => {
@@ -146,6 +189,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
     const result = await createAccount(workspaceId, {
       ...data,
       currency: data.currency,
+      ownerId: data.ownerId === sharedValue || data.ownerId === "" ? null : data.ownerId,
     });
     if (result.error) {
       toast.error(result.error);
@@ -231,25 +275,28 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ownerId">
-                Владелец <span className="text-destructive">*</span>
-              </Label>
+              <Label htmlFor="ownerId">Владелец</Label>
               <Controller
                 control={control}
                 name="ownerId"
                 render={({ field }) => {
-                  const ownerOptions: SelectOption[] = members.map((member) => ({
-                    value: member.id,
-                    label: member.name || member.email,
-                  }));
                   return (
                     <Select
                       options={ownerOptions}
-                      value={field.value || undefined}
-                      onChange={(value) => field.onChange(value)}
+                      value={field.value === null || field.value === undefined ? sharedValue : field.value}
+                      onChange={(value) => field.onChange(value === sharedValue ? null : value)}
                       placeholder="Выберите владельца"
                       multiple={false}
-                      renderOption={({ option, selected }) => {
+                      renderOption={({ option }) => {
+                        if (option.value === sharedValue) {
+                          const WorkspaceIcon = workspaceIcon;
+                          return (
+                            <div className="flex items-center gap-2">
+                              <WorkspaceIcon className="h-5 w-5 text-muted-foreground" />
+                              <span className="font-normal">{option.label}</span>
+                            </div>
+                          );
+                        }
                         const member = members.find((m) => m.id === option.value);
                         if (!member) return <span>{option.label}</span>;
                         const displayName = member.name || member.email || "U";

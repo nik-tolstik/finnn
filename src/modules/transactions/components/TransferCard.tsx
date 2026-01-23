@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowUpDown } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type React from "react";
 
 import { UserDisplay } from "@/shared/components/UserDisplay";
@@ -21,6 +22,7 @@ interface TransferAccount {
   currency: string;
   color: string | null;
   icon: string | null;
+  ownerId?: string | null;
   owner?: {
     id: string;
     name: string | null;
@@ -36,6 +38,8 @@ interface TransferCardProps {
     amount: string;
   };
   onClick?: () => void;
+  workspaceName?: string;
+  workspaceIcon?: LucideIcon;
 }
 
 type IconComponent = ReturnType<typeof getAccountIcon>;
@@ -44,24 +48,35 @@ function AccountName({
   account,
   icon: Icon,
   amount: _amount,
+  workspaceName,
+  workspaceIcon: WorkspaceIcon,
 }: {
   account: TransferAccount;
   icon: IconComponent;
   amount?: string;
+  workspaceName?: string;
+  workspaceIcon?: LucideIcon;
 }) {
+  const isSharedAccount = account.ownerId === null;
+
   return (
     <div className="flex items-center gap-2">
       <IconWithBg icon={Icon} color={account.color} className="size-6 sm:size-7" iconClassName="size-3.5 sm:size-4" />
       <div>{account.name}</div>
-      {account.owner && (
+      {isSharedAccount && workspaceName && WorkspaceIcon ? (
+        <div className="flex items-center gap-2">
+          <WorkspaceIcon className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">{workspaceName}</span>
+        </div>
+      ) : account.owner ? (
         <UserDisplay
-          name={account.owner?.name}
-          email={account.owner?.email}
-          image={account.owner?.image}
+          name={account.owner.name}
+          email={account.owner.email}
+          image={account.owner.image}
           size="sm"
           showName={true}
         />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -73,6 +88,8 @@ function AccountWithAmount({
   amountClassName,
   className,
   isNegative,
+  workspaceName,
+  workspaceIcon,
 }: {
   account: TransferAccount;
   amount: string;
@@ -80,10 +97,18 @@ function AccountWithAmount({
   amountClassName?: string;
   className?: string;
   isNegative: boolean;
+  workspaceName?: string;
+  workspaceIcon?: LucideIcon;
 }) {
   return (
     <div className={cn("flex items-center md:gap-4 gap-2", className)}>
-      <AccountName account={account} icon={Icon} amount={amount} />
+      <AccountName
+        account={account}
+        icon={Icon}
+        amount={amount}
+        workspaceName={workspaceName}
+        workspaceIcon={workspaceIcon}
+      />
       <span className={cn("text-muted-foreground text-sm", amountClassName)}>
         {isNegative ? "-" : "+"}
         {formatMoney(amount, account.currency)}
@@ -92,7 +117,13 @@ function AccountWithAmount({
   );
 }
 
-export function TransferCard({ transaction, transferTo, onClick }: TransferCardProps) {
+export function TransferCard({
+  transaction,
+  transferTo,
+  onClick,
+  workspaceName,
+  workspaceIcon,
+}: TransferCardProps) {
   const FromAccountIcon = getAccountIcon(transaction.account.icon);
   const ToAccountIcon = getAccountIcon(transferTo.account.icon);
 
@@ -103,6 +134,7 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
 
   const fromAccount: TransferAccount = {
     ...transaction.account,
+    ownerId: transaction.account.ownerId,
     owner: transaction.account.owner,
   };
 
@@ -127,6 +159,8 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
             amountClassName="text-error-primary"
             className="flex-1 justify-between"
             isNegative={true}
+            workspaceName={workspaceName}
+            workspaceIcon={workspaceIcon}
           />
           <div className="flex items-center gap-2">
             <div className="w-full h-px bg-primary/10" />
@@ -142,6 +176,8 @@ export function TransferCard({ transaction, transferTo, onClick }: TransferCardP
             amountClassName="text-success-primary"
             className={cn("flex-1 md:flex-row-reverse justify-between")}
             isNegative={false}
+            workspaceName={workspaceName}
+            workspaceIcon={workspaceIcon}
           />
         </div>
 
