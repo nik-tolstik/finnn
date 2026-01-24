@@ -19,6 +19,7 @@ export function FloatingActionButton() {
     return null;
   }
 
+  const isAccountsPage = pathname === "/dashboard";
   const isDebtsPage = pathname === "/debts";
 
   const handleClick = () => {
@@ -28,6 +29,10 @@ export function FloatingActionButton() {
       createTransactionDialog.openDialog(null);
     }
   };
+
+  if (!isAccountsPage && !isDebtsPage) {
+    return null;
+  }
 
   return (
     <>
