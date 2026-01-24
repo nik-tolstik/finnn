@@ -106,6 +106,38 @@ export async function getExchangeRate(
       return { data: 1 / inverseRate.rate };
     }
 
+    const baseCurrency = Currency.BYN;
+
+    if (fromCurrency !== baseCurrency && toCurrency !== baseCurrency) {
+      const fromRate = await prisma.exchangeRate.findUnique({
+        where: {
+          date_fromCurrency_toCurrency: {
+            date: targetDate,
+            fromCurrency,
+            toCurrency: baseCurrency,
+          },
+        },
+      });
+
+      const toRate = await prisma.exchangeRate.findUnique({
+        where: {
+          date_fromCurrency_toCurrency: {
+            date: targetDate,
+            fromCurrency: toCurrency,
+            toCurrency: baseCurrency,
+          },
+        },
+      });
+
+      if (fromRate && toRate) {
+        const crossRate = fromRate.rate / toRate.rate;
+        console.warn(
+          `[ExchangeRate] Курс ${fromCurrency}/${toCurrency} вычислен из базовых курсов: ${crossRate}`
+        );
+        return { data: crossRate };
+      }
+    }
+
     console.warn(
       `[ExchangeRate] Курс ${fromCurrency}/${toCurrency} на ${targetDate.toISOString()} не найден в БД, запрашиваем из API`
     );
@@ -116,7 +148,6 @@ export async function getExchangeRate(
       return { error: `Не удалось получить курс: ${ratesResult.error}` };
     }
 
-    const baseCurrency = Currency.BYN;
     const baseRates: Record<Currency, number> = {
       [Currency.BYN]: 1,
       [Currency.USD]: ratesResult.data[Currency.USD] || 0,
@@ -125,6 +156,35 @@ export async function getExchangeRate(
 
     if (!baseRates[fromCurrency] || !baseRates[toCurrency]) {
       return { error: `Курс для ${fromCurrency} или ${toCurrency} не найден в API` };
+    }
+
+    for (const currency of SUPPORTED_CURRENCIES) {
+      if (currency === baseCurrency || !baseRates[currency]) {
+        continue;
+      }
+
+      await prisma.exchangeRate.upsert({
+        where: {
+          date_fromCurrency_toCurrency: {
+            date: targetDate,
+            fromCurrency: currency,
+            toCurrency: baseCurrency,
+          },
+        },
+        update: {
+          rate: baseRates[currency],
+        },
+        create: {
+          date: targetDate,
+          fromCurrency: currency,
+          toCurrency: baseCurrency,
+          rate: baseRates[currency],
+        },
+      });
+
+      console.warn(
+        `[ExchangeRate] Курс ${currency}/${baseCurrency} на ${targetDate.toISOString()} сохранен в БД: ${baseRates[currency]}`
+      );
     }
 
     let calculatedRate: number;
@@ -137,33 +197,7 @@ export async function getExchangeRate(
       calculatedRate = baseRates[fromCurrency] / baseRates[toCurrency];
     }
 
-    if (toCurrency === baseCurrency && fromCurrency !== baseCurrency) {
-      rate = await prisma.exchangeRate.upsert({
-        where: {
-          date_fromCurrency_toCurrency: {
-            date: targetDate,
-            fromCurrency,
-            toCurrency,
-          },
-        },
-        update: {
-          rate: calculatedRate,
-        },
-        create: {
-          date: targetDate,
-          fromCurrency,
-          toCurrency,
-          rate: calculatedRate,
-        },
-      });
-
-      console.warn(
-        `[ExchangeRate] Курс ${fromCurrency}/${toCurrency} на ${targetDate.toISOString()} сохранен в БД: ${calculatedRate}`
-      );
-      return { data: rate.rate };
-    } else {
-      return { data: calculatedRate };
-    }
+    return { data: calculatedRate };
   }
 
   return { data: rate.rate };
