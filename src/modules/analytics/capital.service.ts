@@ -55,6 +55,26 @@ export async function getWorkspaceCapital(
       BYN: "0",
     };
 
+    const exchangeRateCache = new Map<string, number>();
+    
+    const getCachedExchangeRate = async (from: Currency, to: Currency): Promise<number | null> => {
+      if (from === to) return 1;
+      
+      const cacheKey = `${from}-${to}`;
+      if (exchangeRateCache.has(cacheKey)) {
+        return exchangeRateCache.get(cacheKey)!;
+      }
+      
+      const result = await getExchangeRate(today, from, to);
+      if ("error" in result) {
+        console.warn(`Не удалось получить курс ${from}/${to}: ${result.error}`);
+        return null;
+      }
+      
+      exchangeRateCache.set(cacheKey, result.data);
+      return result.data;
+    };
+
     for (const targetCurrency of targetCurrencies) {
       let totalCapital = "0";
 
@@ -63,14 +83,11 @@ export async function getWorkspaceCapital(
         let balanceInTargetCurrency = account.balance;
 
         if (accountCurrency !== targetCurrency) {
-          const exchangeRateResult = await getExchangeRate(today, accountCurrency, targetCurrency);
-          if ("error" in exchangeRateResult) {
-            console.warn(
-              `Не удалось получить курс для счёта ${account.id}: ${exchangeRateResult.error}`
-            );
+          const rate = await getCachedExchangeRate(accountCurrency, targetCurrency);
+          if (rate === null) {
             continue;
           }
-          balanceInTargetCurrency = multiplyMoney(account.balance, exchangeRateResult.data.toString());
+          balanceInTargetCurrency = multiplyMoney(account.balance, rate.toString());
         }
 
         totalCapital = addMoney(totalCapital, balanceInTargetCurrency);
@@ -81,17 +98,11 @@ export async function getWorkspaceCapital(
         let debtAmountInTargetCurrency = debt.remainingAmount;
 
         if (debtCurrency !== targetCurrency) {
-          const exchangeRateResult = await getExchangeRate(today, debtCurrency, targetCurrency);
-          if ("error" in exchangeRateResult) {
-            console.warn(
-              `Не удалось получить курс для долга ${debt.id}: ${exchangeRateResult.error}`
-            );
+          const rate = await getCachedExchangeRate(debtCurrency, targetCurrency);
+          if (rate === null) {
             continue;
           }
-          debtAmountInTargetCurrency = multiplyMoney(
-            debt.remainingAmount,
-            exchangeRateResult.data.toString()
-          );
+          debtAmountInTargetCurrency = multiplyMoney(debt.remainingAmount, rate.toString());
         }
 
         if (debt.type === DebtType.LENT) {

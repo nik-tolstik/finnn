@@ -135,15 +135,9 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
       );
 
       if (ownerGroup) {
-        const groupAccountIds = ownerGroup.accounts.map((acc) => acc.id);
-        const allSelected = multiple && groupAccountIds.every((id) => capitalAccountIds?.includes(id));
-        
         if (ownerGroup.owner) {
           return (
-            <div className="px-2 py-1.5 flex items-center gap-2">
-              {multiple && (
-                <Checkbox checked={allSelected} className="shrink-0" onClick={(e) => e.stopPropagation()} />
-              )}
+            <div className="px-2 py-1.5">
               <UserDisplay
                 name={ownerGroup.owner.name}
                 email={ownerGroup.owner.email || undefined}
@@ -155,19 +149,15 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
           );
         }
         return (
-          <div className="px-2 py-1.5 text-sm font-medium flex items-center gap-2">
-            {multiple && (
-              <Checkbox checked={allSelected} className="shrink-0" onClick={(e) => e.stopPropagation()} />
-            )}
-            <span>{ownerGroup.ownerName}</span>
+          <div className="px-2 py-1.5 text-sm font-medium">
+            {ownerGroup.ownerName}
           </div>
         );
       }
 
       return (
-        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          {multiple && <div className="w-4" />}
-          <span>{option.label}</span>
+        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {option.label}
         </div>
       );
     }
@@ -359,32 +349,34 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
         <div className="space-y-4">
           <div>
             <h2 className="text-xl font-semibold mb-4">Капитал</h2>
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-4">
-              <div className="w-full sm:w-auto">
-                <Select
-                  options={accountOptions}
-                  value={capitalAccountIds}
-                  onChange={(value) => setCapitalAccountIds(Array.isArray(value) && value.length > 0 ? value : undefined)}
-                  placeholder="Все счета"
-                  label="Счета"
-                  multiple
-                  allowClear
-                  renderOption={renderAccountOption}
-                  popoverClassName="w-fit max-w-[200px]"
-                />
+            {accountsData ? (
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-4">
+                <div className="w-full sm:w-auto">
+                  <Select
+                    options={accountOptions}
+                    value={capitalAccountIds}
+                    onChange={(value) => setCapitalAccountIds(Array.isArray(value) && value.length > 0 ? value : undefined)}
+                    placeholder="Все счета"
+                    label="Счета"
+                    multiple
+                    allowClear
+                    renderOption={renderAccountOption}
+                    popoverClassName="w-fit max-w-[200px]"
+                  />
+                </div>
+                <div className="w-full sm:w-auto">
+                  <Select
+                    options={debtTypeOptions}
+                    value={capitalDebtType}
+                    onChange={(value) => setCapitalDebtType(value as "lent" | "borrowed" | "all")}
+                    placeholder="Все долги"
+                    label="Долги"
+                    multiple={false}
+                    popoverClassName="w-fit max-w-[200px]"
+                  />
+                </div>
               </div>
-              <div className="w-full sm:w-auto">
-                <Select
-                  options={debtTypeOptions}
-                  value={capitalDebtType}
-                  onChange={(value) => setCapitalDebtType(value as "lent" | "borrowed" | "all")}
-                  placeholder="Все долги"
-                  label="Долги"
-                  multiple={false}
-                  popoverClassName="w-fit max-w-[200px]"
-                />
-              </div>
-            </div>
+            ) : null}
             {isCapitalLoading ? (
               <div className="text-center py-8 text-muted-foreground">Загрузка капитала...</div>
             ) : capital ? (
