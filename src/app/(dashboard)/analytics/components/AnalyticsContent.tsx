@@ -4,8 +4,8 @@ import { Currency } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { subDays, subMonths, startOfDay, endOfDay } from "date-fns";
 import { Check } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useState, useMemo } from "react";
 import * as React from "react";
 
@@ -49,7 +49,7 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [capitalAccountIds, setCapitalAccountIds] = useState<string[] | undefined>();
-  const [capitalDebtType, setCapitalDebtType] = useState<"lent" | "borrowed" | "all">("all");
+  const [excludeDebts, setExcludeDebts] = useState(false);
 
   const { data: workspaceData } = useQuery({
     queryKey: ["workspace", workspaceId],
@@ -148,11 +148,7 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
             </div>
           );
         }
-        return (
-          <div className="px-2 py-1.5 text-sm font-medium">
-            {ownerGroup.ownerName}
-          </div>
-        );
+        return <div className="px-2 py-1.5 text-sm font-medium">{ownerGroup.ownerName}</div>;
       }
 
       return (
@@ -187,9 +183,9 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
   const capitalFilters: CapitalFilters = useMemo(
     () => ({
       accountIds: capitalAccountIds && capitalAccountIds.length > 0 ? capitalAccountIds : undefined,
-      debtType: capitalDebtType,
+      excludeDebts,
     }),
-    [capitalAccountIds, capitalDebtType]
+    [capitalAccountIds, excludeDebts]
   );
 
   const { data: capitalData, isLoading: isCapitalLoading } = useQuery({
@@ -200,15 +196,6 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
   });
 
   const capital = capitalData && "data" in capitalData ? capitalData.data : null;
-
-  const debtTypeOptions: SelectOption<"lent" | "borrowed" | "all">[] = useMemo(
-    () => [
-      { value: "all", label: "Все" },
-      { value: "lent", label: "Мне должны" },
-      { value: "borrowed", label: "Я должен" },
-    ],
-    []
-  );
 
   const baseCurrency =
     workspaceData && "data" in workspaceData && workspaceData.data
@@ -350,12 +337,14 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
           <div>
             <h2 className="text-xl font-semibold mb-4">Капитал</h2>
             {accountsData ? (
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-4">
+              <div className="flex flex-col sm:flex-row gap-4 sm:items-center mb-4">
                 <div className="w-full sm:w-auto">
                   <Select
                     options={accountOptions}
                     value={capitalAccountIds}
-                    onChange={(value) => setCapitalAccountIds(Array.isArray(value) && value.length > 0 ? value : undefined)}
+                    onChange={(value) =>
+                      setCapitalAccountIds(Array.isArray(value) && value.length > 0 ? value : undefined)
+                    }
                     placeholder="Все счета"
                     label="Счета"
                     multiple
@@ -364,17 +353,16 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
                     popoverClassName="w-fit max-w-[200px]"
                   />
                 </div>
-                <div className="w-full sm:w-auto">
-                  <Select
-                    options={debtTypeOptions}
-                    value={capitalDebtType}
-                    onChange={(value) => setCapitalDebtType(value as "lent" | "borrowed" | "all")}
-                    placeholder="Все долги"
-                    label="Долги"
-                    multiple={false}
-                    popoverClassName="w-fit max-w-[200px]"
+                <label htmlFor="exclude-debts" className="flex items-center gap-2">
+                  <Checkbox
+                    id="exclude-debts"
+                    checked={excludeDebts}
+                    onCheckedChange={(checked) => setExcludeDebts(checked === true)}
                   />
-                </div>
+                  <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+                    Без долгов
+                  </span>
+                </label>
               </div>
             ) : null}
             {isCapitalLoading ? (

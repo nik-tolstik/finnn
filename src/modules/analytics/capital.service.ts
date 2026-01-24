@@ -38,11 +38,7 @@ export async function getWorkspaceCapital(
       return { error: "Не удалось загрузить долги" };
     }
 
-    let debts = debtsResult.data;
-    if (filters.debtType && filters.debtType !== "all") {
-      const debtType = filters.debtType === "lent" ? DebtType.LENT : DebtType.BORROWED;
-      debts = debts.filter((debt) => debt.type === debtType);
-    }
+    const debts = debtsResult.data;
 
     const capital: CapitalByCurrency = {
       USD: "0",
@@ -55,13 +51,15 @@ export async function getWorkspaceCapital(
       capital[accountCurrency] = addMoney(capital[accountCurrency], account.balance);
     }
 
-    for (const debt of debts) {
-      const debtCurrency = debt.currency as keyof CapitalByCurrency;
-      
-      if (debt.type === DebtType.LENT) {
-        capital[debtCurrency] = addMoney(capital[debtCurrency], debt.remainingAmount);
-      } else if (debt.type === DebtType.BORROWED) {
-        capital[debtCurrency] = subtractMoney(capital[debtCurrency], debt.remainingAmount);
+    if (!filters.excludeDebts) {
+      for (const debt of debts) {
+        const debtCurrency = debt.currency as keyof CapitalByCurrency;
+        
+        if (debt.type === DebtType.LENT) {
+          capital[debtCurrency] = addMoney(capital[debtCurrency], debt.remainingAmount);
+        } else if (debt.type === DebtType.BORROWED) {
+          capital[debtCurrency] = subtractMoney(capital[debtCurrency], debt.remainingAmount);
+        }
       }
     }
 
