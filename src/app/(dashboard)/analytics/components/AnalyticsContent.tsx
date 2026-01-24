@@ -9,6 +9,8 @@ import { useSession } from "next-auth/react";
 import { useState, useMemo } from "react";
 import * as React from "react";
 
+import { Button } from "@/shared/ui/button";
+
 import { getAccounts } from "@/modules/accounts/account.service";
 import {
   getCategoryAnalytics,
@@ -30,24 +32,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { getAccountIcon } from "@/shared/utils/account-icons";
 import { formatMoney } from "@/shared/utils/money";
 
-type PeriodType = "week" | "month" | "6months" | "year" | "custom";
-
-interface Period {
-  type: PeriodType;
-  label: string;
-  dateFrom?: Date;
-  dateTo?: Date;
-}
-
 export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
   const { data: session } = useSession();
   const [transactionType, setTransactionType] = useState<TransactionType.INCOME | TransactionType.EXPENSE>(
     TransactionType.EXPENSE
   );
-  const [periodType, setPeriodType] = useState<PeriodType>("month");
-  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
-  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
+  const now = useMemo(() => new Date(), []);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(startOfDay(subMonths(now, 1)));
+  const [dateTo, setDateTo] = useState<Date | undefined>(endOfDay(now));
   const [capitalAccountIds, setCapitalAccountIds] = useState<string[] | undefined>();
   const [excludeDebts, setExcludeDebts] = useState(false);
 
@@ -202,91 +195,53 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
       ? (workspaceData.data.baseCurrency as Currency) || DEFAULT_CURRENCY
       : DEFAULT_CURRENCY;
 
-  const period = useMemo<Period>(() => {
-    const now = new Date();
-    const today = endOfDay(now);
+  const setPeriod = (days: number) => {
+    const today = endOfDay(new Date());
+    setDateFrom(startOfDay(subDays(today, days)));
+    setDateTo(today);
+  };
 
-    switch (periodType) {
-      case "week":
-        return {
-          type: "week",
-          label: "За последнюю неделю",
-          dateFrom: startOfDay(subDays(now, 7)),
-          dateTo: today,
-        };
-      case "month":
-        return {
-          type: "month",
-          label: "За последний месяц",
-          dateFrom: startOfDay(subMonths(now, 1)),
-          dateTo: today,
-        };
-      case "6months":
-        return {
-          type: "6months",
-          label: "За последние 6 месяцев",
-          dateFrom: startOfDay(subMonths(now, 6)),
-          dateTo: today,
-        };
-      case "year":
-        return {
-          type: "year",
-          label: "За последний год",
-          dateFrom: startOfDay(subMonths(now, 12)),
-          dateTo: today,
-        };
-      case "custom":
-        return {
-          type: "custom",
-          label: "Произвольный период",
-          dateFrom: customDateFrom ? startOfDay(customDateFrom) : undefined,
-          dateTo: customDateTo ? endOfDay(customDateTo) : undefined,
-        };
-      default:
-        return {
-          type: "month",
-          label: "За последний месяц",
-          dateFrom: startOfDay(subMonths(now, 1)),
-          dateTo: today,
-        };
-    }
-  }, [periodType, customDateFrom, customDateTo]);
+  const setPeriodMonths = (months: number) => {
+    const today = endOfDay(new Date());
+    setDateFrom(startOfDay(subMonths(today, months)));
+    setDateTo(today);
+  };
 
   const filters: CategoryAnalyticsFilters = useMemo(
     () => ({
       type: transactionType,
-      dateFrom: period.dateFrom,
-      dateTo: period.dateTo,
+      dateFrom,
+      dateTo,
     }),
-    [transactionType, period.dateFrom, period.dateTo]
+    [transactionType, dateFrom, dateTo]
   );
 
   const dateFilters = useMemo(
     () => ({
-      dateFrom: period.dateFrom,
-      dateTo: period.dateTo,
+      dateFrom,
+      dateTo,
     }),
-    [period.dateFrom, period.dateTo]
+    [dateFrom, dateTo]
   );
 
   const { data: analyticsData, isLoading } = useQuery({
     queryKey: ["categoryAnalytics", workspaceId, filters],
     queryFn: () => getCategoryAnalytics(workspaceId, filters),
-    enabled: !!workspaceId && !!period.dateFrom && !!period.dateTo,
+    enabled: !!workspaceId && !!dateFrom && !!dateTo,
     staleTime: 5000,
   });
 
   const { data: totalIncomeData } = useQuery({
     queryKey: ["totalIncome", workspaceId, dateFilters],
     queryFn: () => getTotalAmount(workspaceId, TransactionType.INCOME, dateFilters),
-    enabled: !!workspaceId && !!period.dateFrom && !!period.dateTo,
+    enabled: !!workspaceId && !!dateFrom && !!dateTo,
     staleTime: 5000,
   });
 
   const { data: totalExpenseData } = useQuery({
     queryKey: ["totalExpense", workspaceId, dateFilters],
     queryFn: () => getTotalAmount(workspaceId, TransactionType.EXPENSE, dateFilters),
-    enabled: !!workspaceId && !!period.dateFrom && !!period.dateTo,
+    enabled: !!workspaceId && !!dateFrom && !!dateTo,
     staleTime: 5000,
   });
 
@@ -294,16 +249,18 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
   const totalIncome = totalIncomeData && "data" in totalIncomeData ? totalIncomeData.data : "0";
   const totalExpense = totalExpenseData && "data" in totalExpenseData ? totalExpenseData.data : "0";
 
-  const periodOptions: SelectOption<PeriodType>[] = useMemo(
-    () => [
-      { value: "week", label: "За последнюю неделю" },
-      { value: "month", label: "За последний месяц" },
-      { value: "6months", label: "За последние 6 месяцев" },
-      { value: "year", label: "За последний год" },
-      { value: "custom", label: "Произвольный период" },
-    ],
-    []
-  );
+  const daysDifference = useMemo(() => {
+    if (!dateFrom || !dateTo) return 0;
+    const diffTime = dateTo.getTime() - dateFrom.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays || 1;
+  }, [dateFrom, dateTo]);
+
+  const averageExpensePerDay = useMemo(() => {
+    if (daysDifference === 0) return "0";
+    const total = parseFloat(totalExpense);
+    return (total / daysDifference).toFixed(2);
+  }, [totalExpense, daysDifference]);
 
   const handleViewDetails = (categoryId: string | null) => {
     const params = new URLSearchParams();
@@ -313,12 +270,12 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
       params.set("categoryIds", categoryId);
     }
 
-    if (period.dateFrom) {
-      params.set("dateFrom", period.dateFrom.toISOString());
+    if (dateFrom) {
+      params.set("dateFrom", dateFrom.toISOString());
     }
 
-    if (period.dateTo) {
-      params.set("dateTo", period.dateTo.toISOString());
+    if (dateTo) {
+      params.set("dateTo", dateTo.toISOString());
     }
 
     params.set("types", transactionType);
@@ -401,35 +358,28 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
 
             <div className="flex-1" />
 
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Select
-                value={periodType}
-                onChange={(value) => setPeriodType(value as PeriodType)}
-                options={periodOptions}
-                placeholder="Выберите период"
-                multiple={false}
-              />
-
-              {periodType === "custom" && (
-                <>
-                  <DatePicker
-                    date={customDateFrom}
-                    onSelect={setCustomDateFrom}
-                    placeholder="От"
-                    className="w-full sm:w-[150px]"
-                  />
-                  <DatePicker
-                    date={customDateTo}
-                    onSelect={setCustomDateTo}
-                    placeholder="До"
-                    className="w-full sm:w-[150px]"
-                  />
-                </>
-              )}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-start sm:items-center">
+              <DatePicker date={dateFrom} onSelect={setDateFrom} placeholder="От" className="w-full sm:w-[150px]" />
+              <DatePicker date={dateTo} onSelect={setDateTo} placeholder="До" className="w-full sm:w-[150px]" />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPeriod(7)}>
+              7 дней
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPeriod(30)}>
+              30 дней
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPeriodMonths(6)}>
+              6 месяцев
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPeriodMonths(12)}>
+              1 год
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="border rounded-lg p-4">
               <div className="text-sm text-muted-foreground mb-1">Общий доход</div>
               <div className="text-2xl font-semibold text-success-primary">
@@ -439,6 +389,12 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
             <div className="border rounded-lg p-4">
               <div className="text-sm text-muted-foreground mb-1">Общий расход</div>
               <div className="text-2xl font-semibold text-error-primary">{formatMoney(totalExpense, baseCurrency)}</div>
+            </div>
+            <div className="border rounded-lg p-4">
+              <div className="text-sm text-muted-foreground mb-1">Ср. расход в день</div>
+              <div className="text-2xl font-semibold text-error-primary">
+                {formatMoney(averageExpensePerDay, baseCurrency)}
+              </div>
             </div>
           </div>
         </div>
