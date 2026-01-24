@@ -12,7 +12,7 @@ import { cn } from "@/shared/utils/cn";
 import { SelectDropdownProps } from "./types";
 
 export function SelectDropdown<TValue extends string | number = string>(props: SelectDropdownProps<TValue>) {
-  const { options, value, onChange, placeholder, multiple, allowClear, valueLabel, disabled, renderOption } = props;
+  const { options, value, onChange, placeholder, multiple, allowClear, valueLabel, disabled, renderOption, popoverClassName } = props;
   const [open, setOpen] = useState(false);
   
   const selectedValues: TValue[] = React.useMemo(() => {
@@ -59,7 +59,29 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
 
   const handleSelect = (optionValue: TValue) => {
     if (!onChange) return;
-    if (String(optionValue).startsWith("__group_")) return;
+    if (String(optionValue).startsWith("__group_")) {
+      if (!multiple) return;
+      
+      const groupIndex = options.findIndex((opt) => opt.value === optionValue);
+      if (groupIndex === -1) return;
+      
+      const groupAccounts: TValue[] = [];
+      for (let i = groupIndex + 1; i < options.length; i++) {
+        const opt = options[i];
+        if (String(opt.value).startsWith("__group_")) {
+          break;
+        }
+        groupAccounts.push(opt.value);
+      }
+      
+      const allSelected = groupAccounts.every((accId) => selectedValues.includes(accId));
+      const newValues = allSelected
+        ? selectedValues.filter((v) => !groupAccounts.includes(v))
+        : [...selectedValues.filter((v) => !groupAccounts.includes(v)), ...groupAccounts];
+      
+      (onChange as (value: TValue[]) => void)(newValues);
+      return;
+    }
     
     if (multiple) {
       const newValues = selectedValues.includes(optionValue)
@@ -119,11 +141,32 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-1" align="start" style={{ width: "var(--radix-popover-trigger-width)" }}>
-        <div className="max-h-96 overflow-y-auto">
-          {options.map((option) => {
+      <PopoverContent className={cn("p-1", popoverClassName)} align="start" style={popoverClassName ? undefined : { width: "var(--radix-popover-trigger-width)" }}>
+        <div className="max-h-96 overflow-y-auto flex flex-col gap-1">
+          {options.map((option, index) => {
             const selected = multiple ? selectedValues.includes(option.value) : currentValue === option.value;
             const isGroupHeader = String(option.value).startsWith("__group_");
+            
+            let isInGroup = false;
+            let hasPreviousGroup = false;
+            
+            if (!isGroupHeader) {
+              for (let i = index - 1; i >= 0; i--) {
+                const prevOption = options[i];
+                if (String(prevOption.value).startsWith("__group_")) {
+                  isInGroup = true;
+                  break;
+                }
+              }
+            } else {
+              for (let i = index - 1; i >= 0; i--) {
+                const prevOption = options[i];
+                if (String(prevOption.value).startsWith("__group_")) {
+                  hasPreviousGroup = true;
+                  break;
+                }
+              }
+            }
 
             if (renderOption) {
               return (
@@ -131,21 +174,36 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                   key={option.value.toString()}
                   className={cn(
                     !isGroupHeader &&
-                      "flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
-                    !isGroupHeader && selected && "bg-accent"
+                      "flex items-center gap-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
+                    !isGroupHeader && !isInGroup && "px-2",
+                    !isGroupHeader && isInGroup && "pl-[18px] pr-2",
+                    !isGroupHeader && selected && "bg-accent",
+                    isGroupHeader && multiple && "cursor-pointer hover:bg-accent/50 rounded-sm",
+                    isGroupHeader && hasPreviousGroup && "mt-2"
                   )}
                   onClick={(e) => {
-                    if (!isGroupHeader) {
-                      const target = e.target as HTMLElement;
-                      if (target.closest('button[data-radix-checkbox-root]')) {
-                        return;
+                    if (isGroupHeader) {
+                      if (multiple) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelect(option.value);
                       }
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSelect(option.value);
+                      return;
                     }
+                    const target = e.target as HTMLElement;
+                    if (target.closest('button[data-radix-checkbox-root]')) {
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSelect(option.value);
                   }}
                   onKeyDown={(e) => {
+                    if (isGroupHeader && multiple && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleSelect(option.value);
+                      return;
+                    }
                     if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
                       e.preventDefault();
                       handleSelect(option.value);
@@ -161,8 +219,11 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                 key={option.value.toString()}
                 className={cn(
                   !isGroupHeader &&
-                    "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
-                  !isGroupHeader && selected && "bg-accent"
+                    "flex items-center gap-2 rounded-sm py-1.5 text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
+                  !isGroupHeader && !isInGroup && "px-2",
+                  !isGroupHeader && isInGroup && "pl-[18px] pr-2",
+                  !isGroupHeader && selected && "bg-accent",
+                  isGroupHeader && hasPreviousGroup && "mt-2"
                 )}
               >
                 {isGroupHeader ? (

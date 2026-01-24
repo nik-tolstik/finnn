@@ -35,6 +35,7 @@ export type SelectProps<TValue extends string | number = string> = {
   renderOption?: RenderOption<TValue>;
   filter?: (search: string) => void;
   disabled?: boolean;
+  popoverClassName?: string;
 } & SelectValueProps<TValue>;
 
 export type SelectSheetProps<TValue extends string | number = string> = SelectProps<TValue>;
