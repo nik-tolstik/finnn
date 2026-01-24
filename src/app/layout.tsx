@@ -15,8 +15,8 @@ export const metadata: Metadata = {
     title: "FinHub",
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/icon-192.png",
+    icon: "/logo-dark.svg",
+    apple: "/logo-dark.svg",
   },
 };
 

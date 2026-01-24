@@ -6,9 +6,8 @@ import { getServerSession } from "next-auth";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { getDebts } from "@/modules/debts/debt.service";
 import { DebtStatus, DebtType } from "@/modules/debts/debt.constants";
-import { getExchangeRate } from "@/modules/currency/exchange-rate.service";
 import { authOptions } from "@/shared/lib/auth";
-import { addMoney, multiplyMoney, subtractMoney } from "@/shared/utils/money";
+import { addMoney, subtractMoney } from "@/shared/utils/money";
 
 import type { CapitalByCurrency, CapitalFilters } from "./capital.types";
 
@@ -21,9 +20,6 @@ export async function getWorkspaceCapital(
     if (!session?.user?.id) {
       return { error: "Не авторизован" };
     }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
     const accountsResult = await getAccounts(workspaceId);
     if ("error" in accountsResult) {
@@ -48,71 +44,25 @@ export async function getWorkspaceCapital(
       debts = debts.filter((debt) => debt.type === debtType);
     }
 
-    const targetCurrencies: Currency[] = [Currency.USD, Currency.EUR, Currency.BYN];
     const capital: CapitalByCurrency = {
       USD: "0",
       EUR: "0",
       BYN: "0",
     };
 
-    const exchangeRateCache = new Map<string, number>();
-    
-    const getCachedExchangeRate = async (from: Currency, to: Currency): Promise<number | null> => {
-      if (from === to) return 1;
+    for (const account of accounts) {
+      const accountCurrency = account.currency as keyof CapitalByCurrency;
+      capital[accountCurrency] = addMoney(capital[accountCurrency], account.balance);
+    }
+
+    for (const debt of debts) {
+      const debtCurrency = debt.currency as keyof CapitalByCurrency;
       
-      const cacheKey = `${from}-${to}`;
-      if (exchangeRateCache.has(cacheKey)) {
-        return exchangeRateCache.get(cacheKey)!;
+      if (debt.type === DebtType.LENT) {
+        capital[debtCurrency] = addMoney(capital[debtCurrency], debt.remainingAmount);
+      } else if (debt.type === DebtType.BORROWED) {
+        capital[debtCurrency] = subtractMoney(capital[debtCurrency], debt.remainingAmount);
       }
-      
-      const result = await getExchangeRate(today, from, to);
-      if ("error" in result) {
-        console.warn(`Не удалось получить курс ${from}/${to}: ${result.error}`);
-        return null;
-      }
-      
-      exchangeRateCache.set(cacheKey, result.data);
-      return result.data;
-    };
-
-    for (const targetCurrency of targetCurrencies) {
-      let totalCapital = "0";
-
-      for (const account of accounts) {
-        const accountCurrency = account.currency as Currency;
-        let balanceInTargetCurrency = account.balance;
-
-        if (accountCurrency !== targetCurrency) {
-          const rate = await getCachedExchangeRate(accountCurrency, targetCurrency);
-          if (rate === null) {
-            continue;
-          }
-          balanceInTargetCurrency = multiplyMoney(account.balance, rate.toString());
-        }
-
-        totalCapital = addMoney(totalCapital, balanceInTargetCurrency);
-      }
-
-      for (const debt of debts) {
-        const debtCurrency = debt.currency as Currency;
-        let debtAmountInTargetCurrency = debt.remainingAmount;
-
-        if (debtCurrency !== targetCurrency) {
-          const rate = await getCachedExchangeRate(debtCurrency, targetCurrency);
-          if (rate === null) {
-            continue;
-          }
-          debtAmountInTargetCurrency = multiplyMoney(debt.remainingAmount, rate.toString());
-        }
-
-        if (debt.type === DebtType.LENT) {
-          totalCapital = addMoney(totalCapital, debtAmountInTargetCurrency);
-        } else if (debt.type === DebtType.BORROWED) {
-          totalCapital = subtractMoney(totalCapital, debtAmountInTargetCurrency);
-        }
-      }
-
-      capital[targetCurrency] = totalCapital;
     }
 
     return { data: capital };

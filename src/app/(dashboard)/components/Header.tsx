@@ -1,6 +1,7 @@
 "use client";
 
 import { HandCoins, TrendingUp, Wallet } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -32,7 +33,10 @@ export function Header() {
       <div className="flex items-center justify-between px-4 sm:px-8 w-full">
         <div className="flex items-center gap-4 flex-1">
           <BurgerMenu />
-          <div className="hidden md:block text-2xl font-bold text-white">FinHub</div>
+          <div className="hidden md:flex items-center gap-2">
+            <Image src="/logo-light.svg" alt="FinHub" width={32} height={32} />
+            <span className="text-2xl font-bold text-white">FinHub</span>
+          </div>
           <nav className="hidden md:flex items-center gap-2 ml-4">
             <Link
               href={`${accountsPath}${basePath}`}
