@@ -1,10 +1,11 @@
 "use client";
 
-import type { Account } from "@prisma/client";
+import type { Account, Currency } from "@prisma/client";
 import { ArrowDown } from "lucide-react";
 import { useMemo } from "react";
 import { Controller, type UseFormReturn, useWatch } from "react-hook-form";
 
+import { useTransferAmountSync } from "@/modules/transactions/hooks/useTransferAmountSync";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
@@ -33,6 +34,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
   const toAccountId = useWatch({ control: form.control, name: "toAccountId" });
   const amount = useWatch({ control: form.control, name: "amount" });
   const toAmount = useWatch({ control: form.control, name: "toAmount" });
+  const date = useWatch({ control: form.control, name: "date" });
 
   const fromAccount = useMemo(() => {
     return accounts.find((acc) => acc.id === fromAccountId);
@@ -41,6 +43,13 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
   const toAccount = useMemo(() => {
     return accounts.find((acc) => acc.id === toAccountId);
   }, [accounts, toAccountId]);
+
+  const { handleAmountChange, handleToAmountChange, resetSync } = useTransferAmountSync({
+    form,
+    fromCurrency: fromAccount?.currency as Currency | undefined,
+    toCurrency: toAccount?.currency as Currency | undefined,
+    date: date || new Date(),
+  });
 
   const fromAccountBalanceBeforeTransfer = useMemo(() => {
     if (!fromAccount || !originalAmount) return null;
@@ -92,6 +101,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                 if (account.id === toAccountId) {
                   form.setValue("toAccountId", "");
                 }
+                resetSync();
               }}
               excludeAccountIds={toAccountId ? [toAccountId] : []}
               label=""
@@ -123,9 +133,9 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                   e.target.value = "";
                 }
                 if (fromAccount && value) {
-                  const amount = parseFloat(value);
+                  const amountValue = parseFloat(value);
                   const balanceToCheck = fromAccountBalanceBeforeTransfer || fromAccount.balance;
-                  if (!isNaN(amount) && compareMoney(amount, balanceToCheck) > 0) {
+                  if (!isNaN(amountValue) && compareMoney(amountValue, balanceToCheck) > 0) {
                     form.setError("amount", {
                       type: "manual",
                       message: `Сумма не может превышать баланс счёта (${balanceToCheck})`,
@@ -134,13 +144,14 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                     form.clearErrors("amount");
                   }
                 }
+                handleAmountChange(value);
               },
               validate: (value) => {
                 if (!fromAccount || !value) return true;
-                const amount = parseFloat(value);
-                if (isNaN(amount)) return true;
+                const amountValue = parseFloat(value);
+                if (isNaN(amountValue)) return true;
                 const balanceToCheck = fromAccountBalanceBeforeTransfer || fromAccount.balance;
-                if (compareMoney(amount, balanceToCheck) > 0) {
+                if (compareMoney(amountValue, balanceToCheck) > 0) {
                   return `Сумма не может превышать баланс счёта (${balanceToCheck})`;
                 }
                 return true;
@@ -188,6 +199,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                 if (account.id === fromAccountId) {
                   form.setValue("fromAccountId", "");
                 }
+                resetSync();
               }}
               excludeAccountIds={fromAccountId ? [fromAccountId] : []}
               label=""
@@ -218,6 +230,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                 if (value && parseFloat(value) < 0) {
                   e.target.value = "";
                 }
+                handleToAmountChange(value);
               },
             })}
             aria-invalid={form.formState.errors.toAmount ? "true" : "false"}
