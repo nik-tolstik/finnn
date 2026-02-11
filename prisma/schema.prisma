@@ -40,13 +40,14 @@ model Workspace {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  owner        User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
-  members      WorkspaceMember[]
-  accounts     Account[]
-  categories   Category[]
-  transactions Transaction[]
-  invites      WorkspaceInvite[]
-  debts        Debt[]
+  owner            User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members          WorkspaceMember[]
+  accounts         Account[]
+  categories       Category[]
+  transactions     Transaction[]
+  invites          WorkspaceInvite[]
+  debts            Debt[]
+  debtTransactions DebtTransaction[]
 
   @@map("workspaces")
 }
@@ -80,10 +81,11 @@ model Account {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace    Workspace         @relation(fields: [workspaceId], references: [id])
-  owner        User?             @relation(fields: [ownerId], references: [id])
-  transactions Transaction[]
-  debts        Debt[]
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id])
+  owner            User?             @relation(fields: [ownerId], references: [id])
+  transactions     Transaction[]
+  debts            Debt[]
+  debtTransactions DebtTransaction[]
 
   @@index([workspaceId, archived])
   @@map("accounts")
@@ -199,9 +201,30 @@ model Debt {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  account   Account?  @relation(fields: [accountId], references: [id])
+  workspace    Workspace         @relation(fields: [workspaceId], references: [id])
+  account      Account?          @relation(fields: [accountId], references: [id])
+  transactions DebtTransaction[]
 
   @@index([workspaceId, status])
   @@map("debts")
+}
+
+model DebtTransaction {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String   @db.ObjectId
+  debtId      String   @db.ObjectId
+  accountId   String?  @db.ObjectId
+  type        String
+  amount      String
+  toAmount    String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  debt      Debt      @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  account   Account?  @relation(fields: [accountId], references: [id])
+
+  @@index([workspaceId, date])
+  @@index([debtId])
+  @@map("debt_transactions")
 }

@@ -15,7 +15,7 @@ import {
 } from "@/shared/lib/validations/debt";
 import { addMoney, subtractMoney, compareMoney } from "@/shared/utils/money";
 
-import { DebtType, DebtStatus } from "./debt.constants";
+import { DebtType, DebtStatus, DebtTransactionType } from "./debt.constants";
 import type { DebtWithRelations } from "./debt.types";
 
 export async function createDebt(workspaceId: string, input: CreateDebtInput) {
@@ -86,8 +86,20 @@ export async function createDebt(workspaceId: string, input: CreateDebtInput) {
       },
     });
 
+    await prisma.debtTransaction.create({
+      data: {
+        workspaceId,
+        debtId: debt.id,
+        accountId,
+        type: DebtTransactionType.CREATED,
+        amount: validated.amount,
+        date: validated.date,
+      },
+    });
+
     revalidatePath("/debts");
     revalidatePath("/dashboard");
+    revalidatePath("/transactions");
     return { data: debt };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Не удалось создать долг";
@@ -176,8 +188,25 @@ export async function closeDebt(id: string, input: CloseDebtInput) {
       },
     });
 
+    const currenciesMatch = validated.accountId
+      ? (await prisma.account.findUnique({ where: { id: validated.accountId } }))?.currency === debt.currency
+      : true;
+
+    await prisma.debtTransaction.create({
+      data: {
+        workspaceId: debt.workspaceId,
+        debtId: debt.id,
+        accountId: validated.useAccount ? validated.accountId : null,
+        type: DebtTransactionType.CLOSED,
+        amount: validated.amount,
+        toAmount: !currenciesMatch ? validated.toAmount : null,
+        date: new Date(),
+      },
+    });
+
     revalidatePath("/debts");
     revalidatePath("/dashboard");
+    revalidatePath("/transactions");
     return { data: updatedDebt };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Не удалось закрыть долг";
@@ -241,8 +270,20 @@ export async function addToDebt(id: string, input: AddToDebtInput) {
       },
     });
 
+    await prisma.debtTransaction.create({
+      data: {
+        workspaceId: debt.workspaceId,
+        debtId: debt.id,
+        accountId: validated.useAccount && debt.accountId ? debt.accountId : null,
+        type: DebtTransactionType.ADDED,
+        amount: validated.amount,
+        date: new Date(),
+      },
+    });
+
     revalidatePath("/debts");
     revalidatePath("/dashboard");
+    revalidatePath("/transactions");
     return { data: updatedDebt };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Не удалось добавить к долгу";

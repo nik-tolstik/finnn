@@ -3,25 +3,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import {
-  Building2,
-  Wallet,
-  HandCoins,
-  CreditCard,
-  Landmark,
-  type LucideIcon,
-} from "lucide-react";
+import { Building2, Wallet, HandCoins, CreditCard, Landmark, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
+import { DebtTransactionCard } from "@/modules/debts/components/DebtTransactionCard";
 import { getWorkspace } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 
 import { TransactionType } from "../transaction.constants";
 import { deleteTransaction } from "../transaction.service";
-import type { TransactionWithRelations } from "../transaction.types";
+import type { TransactionWithRelations, CombinedTransaction } from "../transaction.types";
 
 import { CreateTransactionDialog } from "./CreateTransactionDialog";
 import { EditTransactionDialog } from "./EditTransactionDialog";
@@ -47,21 +41,21 @@ function getWorkspaceIcon(iconName?: string | null): LucideIcon {
   return Building2;
 }
 
-interface TransactionsListProps {
-  transactions: TransactionWithRelations[];
+interface CombinedTransactionsListProps {
+  transactions: CombinedTransaction[];
   showLoadMore?: boolean;
   onLoadMore?: () => void;
   workspaceId: string;
   isLoadingMore?: boolean;
 }
 
-export function TransactionsList({
+export function CombinedTransactionsList({
   transactions,
   showLoadMore,
   onLoadMore,
   workspaceId,
   isLoadingMore,
-}: TransactionsListProps) {
+}: CombinedTransactionsListProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const editTransactionDialog = useDialogState<{
@@ -121,12 +115,12 @@ export function TransactionsList({
 
   const handleDelete = async (transaction: TransactionWithRelations) => {
     const previousTransactions = queryClient.getQueryData<{
-      data: TransactionWithRelations[];
-    }>(["transactions", workspaceId]);
+      data: CombinedTransaction[];
+    }>(["combinedTransactions", workspaceId]);
 
     if (previousTransactions) {
-      queryClient.setQueryData(["transactions", workspaceId], {
-        data: previousTransactions.data.filter((t) => t.id !== transaction.id),
+      queryClient.setQueryData(["combinedTransactions", workspaceId], {
+        data: previousTransactions.data.filter((t) => !(t.kind === "transaction" && t.data.id === transaction.id)),
       });
     }
 
@@ -135,11 +129,11 @@ export function TransactionsList({
       if (result.error) {
         toast.error(result.error);
         if (previousTransactions) {
-          queryClient.setQueryData(["transactions", workspaceId], previousTransactions);
+          queryClient.setQueryData(["combinedTransactions", workspaceId], previousTransactions);
         }
       } else {
         await queryClient.invalidateQueries({
-          queryKey: ["transactions", workspaceId],
+          queryKey: ["combinedTransactions", workspaceId],
         });
         await queryClient.invalidateQueries({
           queryKey: ["accounts", workspaceId],
@@ -150,7 +144,7 @@ export function TransactionsList({
     } catch {
       toast.error("Не удалось удалить транзакцию");
       if (previousTransactions) {
-        queryClient.setQueryData(["transactions", workspaceId], previousTransactions);
+        queryClient.setQueryData(["combinedTransactions", workspaceId], previousTransactions);
       }
     }
   };
@@ -161,12 +155,12 @@ export function TransactionsList({
     if (transactions.length === 0) {
       return [];
     }
-    const groups: Array<{ date: Date; transactions: TransactionWithRelations[] }> = [];
+    const groups: Array<{ date: Date; transactions: CombinedTransaction[] }> = [];
     let currentDate: Date | null = null;
-    let currentGroup: TransactionWithRelations[] = [];
+    let currentGroup: CombinedTransaction[] = [];
 
     transactions.forEach((transaction) => {
-      const transactionDate = startOfDay(new Date(transaction.date));
+      const transactionDate = startOfDay(new Date(transaction.data.date));
 
       if (!currentDate || !isSameDay(currentDate, transactionDate)) {
         if (currentGroup.length > 0) {
@@ -200,6 +194,93 @@ export function TransactionsList({
     }
   };
 
+  const renderTransaction = (item: CombinedTransaction) => {
+    if (item.kind === "debtTransaction") {
+      return (
+        <DebtTransactionCard
+          key={`debt-${item.data.id}`}
+          debtTransaction={item.data}
+          workspaceName={workspaceName}
+          workspaceIcon={workspaceIcon}
+        />
+      );
+    }
+
+    const transaction = item.data;
+    const isTransfer = transaction.type === TransactionType.TRANSFER;
+
+    if (isTransfer) {
+      if (transaction.transferTo) {
+        return null;
+      }
+
+      if (processedTransactionIds.has(transaction.id)) {
+        return null;
+      }
+
+      let transferInfo:
+        | {
+            account: {
+              id: string;
+              name: string;
+              currency: string;
+              color: string | null;
+              icon: string | null;
+              ownerId?: string | null;
+              owner?: {
+                id: string;
+                name: string | null;
+                email: string;
+                image: string | null;
+              } | null;
+            };
+            amount: string;
+          }
+        | undefined;
+
+      if (transaction.transferFrom) {
+        transferInfo = {
+          account: {
+            ...transaction.transferFrom.toTransaction.account,
+            ownerId: transaction.transferFrom.toTransaction.account.ownerId,
+            owner: transaction.transferFrom.toTransaction.account.owner,
+          },
+          amount: transaction.transferFrom.toAmount,
+        };
+        processedTransactionIds.add(transaction.transferFrom.toTransaction.id);
+      }
+
+      if (!transferInfo) {
+        return null;
+      }
+
+      return (
+        <TransferCard
+          key={transaction.id}
+          transaction={transaction}
+          transferTo={transferInfo}
+          workspaceName={workspaceName}
+          workspaceIcon={workspaceIcon}
+          onClick={() => {
+            actionsDialog.openDialog({ transaction });
+          }}
+        />
+      );
+    }
+
+    return (
+      <TransactionCard
+        key={transaction.id}
+        transaction={transaction}
+        workspaceName={workspaceName}
+        workspaceIcon={workspaceIcon}
+        onClick={() => {
+          actionsDialog.openDialog({ transaction });
+        }}
+      />
+    );
+  };
+
   return (
     <div className="space-y-4">
       {groupedTransactions.length === 0 ? (
@@ -212,80 +293,7 @@ export function TransactionsList({
                 {formatDateHeader(group.date)}
               </h3>
             </div>
-            {group.transactions.map((transaction) => {
-              const isTransfer = transaction.type === TransactionType.TRANSFER;
-
-              if (isTransfer) {
-                if (transaction.transferTo) {
-                  return null;
-                }
-
-                if (processedTransactionIds.has(transaction.id)) {
-                  return null;
-                }
-
-                let transferInfo:
-                  | {
-                      account: {
-                        id: string;
-                        name: string;
-                        currency: string;
-                        color: string | null;
-                        icon: string | null;
-                        ownerId?: string | null;
-                        owner?: {
-                          id: string;
-                          name: string | null;
-                          email: string;
-                          image: string | null;
-                        } | null;
-                      };
-                      amount: string;
-                    }
-                  | undefined;
-
-                if (transaction.transferFrom) {
-                  transferInfo = {
-                    account: {
-                      ...transaction.transferFrom.toTransaction.account,
-                      ownerId: transaction.transferFrom.toTransaction.account.ownerId,
-                      owner: transaction.transferFrom.toTransaction.account.owner,
-                    },
-                    amount: transaction.transferFrom.toAmount,
-                  };
-                  processedTransactionIds.add(transaction.transferFrom.toTransaction.id);
-                }
-
-                if (!transferInfo) {
-                  return null;
-                }
-
-                return (
-                  <TransferCard
-                    key={transaction.id}
-                    transaction={transaction}
-                    transferTo={transferInfo}
-                    workspaceName={workspaceName}
-                    workspaceIcon={workspaceIcon}
-                    onClick={() => {
-                      actionsDialog.openDialog({ transaction });
-                    }}
-                  />
-                );
-              }
-
-              return (
-                <TransactionCard
-                  key={transaction.id}
-                  transaction={transaction}
-                  workspaceName={workspaceName}
-                  workspaceIcon={workspaceIcon}
-                  onClick={() => {
-                    actionsDialog.openDialog({ transaction });
-                  }}
-                />
-              );
-            })}
+            {group.transactions.map(renderTransaction)}
           </div>
         ))
       )}

@@ -1,5 +1,7 @@
 import { Transaction } from "@prisma/client";
 
+import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
+
 export type TransactionWithRelations = Transaction & {
   account: {
     id: string;
@@ -61,3 +63,7 @@ export type TransactionWithRelations = Transaction & {
     };
   } | null;
 };
+
+export type CombinedTransaction =
+  | { kind: "transaction"; data: TransactionWithRelations }
+  | { kind: "debtTransaction"; data: DebtTransactionWithRelations };

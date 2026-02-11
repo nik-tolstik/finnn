@@ -18,7 +18,7 @@ import {
 import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
 import { TransactionType } from "./transaction.constants";
-import type { TransactionWithRelations } from "./transaction.types";
+import type { TransactionWithRelations, CombinedTransaction } from "./transaction.types";
 
 export async function createTransaction(workspaceId: string, input: CreateTransactionInput) {
   try {
@@ -860,6 +860,210 @@ export async function getTransactions(
     const total = await prisma.transaction.count({ where });
 
     return { data: filteredTransactions, total };
+  } catch (error: any) {
+    return { error: error.message || "Не удалось загрузить транзакции" };
+  }
+}
+
+export interface CombinedTransactionFilters {
+  accountIds?: string[];
+  dateFrom?: Date;
+  dateTo?: Date;
+  skip?: number;
+  take?: number;
+  includeDebtTransactions?: boolean;
+}
+
+export async function getCombinedTransactions(
+  workspaceId: string,
+  filters?: CombinedTransactionFilters
+): Promise<{ data: CombinedTransaction[]; total: number } | { error: string }> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { error: "Не авторизован" };
+    }
+
+    const member = await prisma.workspaceMember.findFirst({
+      where: {
+        workspaceId,
+        userId: session.user.id,
+      },
+    });
+
+    if (!member) {
+      return { error: "Доступ запрещён" };
+    }
+
+    const transactionWhere: any = { workspaceId };
+    const debtTransactionWhere: any = { workspaceId };
+
+    if (filters?.accountIds && filters.accountIds.length > 0) {
+      transactionWhere.accountId = { in: filters.accountIds };
+      debtTransactionWhere.accountId = { in: filters.accountIds };
+    }
+
+    if (filters?.dateFrom || filters?.dateTo) {
+      transactionWhere.date = {};
+      debtTransactionWhere.date = {};
+      if (filters?.dateFrom) {
+        const dateFrom = new Date(filters.dateFrom);
+        dateFrom.setHours(0, 0, 0, 0);
+        transactionWhere.date.gte = dateFrom;
+        debtTransactionWhere.date.gte = dateFrom;
+      }
+      if (filters?.dateTo) {
+        const dateTo = new Date(filters.dateTo);
+        dateTo.setHours(23, 59, 59, 999);
+        transactionWhere.date.lte = dateTo;
+        debtTransactionWhere.date.lte = dateTo;
+      }
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: transactionWhere,
+      include: {
+        account: {
+          select: {
+            id: true,
+            name: true,
+            currency: true,
+            color: true,
+            icon: true,
+            ownerId: true,
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
+        },
+        transferFrom: {
+          include: {
+            toTransaction: {
+              select: {
+                id: true,
+                account: {
+                  select: {
+                    id: true,
+                    name: true,
+                    currency: true,
+                    color: true,
+                    icon: true,
+                    ownerId: true,
+                    owner: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        transferTo: {
+          include: {
+            fromTransaction: {
+              select: {
+                id: true,
+                account: {
+                  select: {
+                    id: true,
+                    name: true,
+                    currency: true,
+                    color: true,
+                    icon: true,
+                    ownerId: true,
+                    owner: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { date: "desc" },
+    });
+
+    let debtTransactions: any[] = [];
+    if (filters?.includeDebtTransactions !== false) {
+      debtTransactions = await prisma.debtTransaction.findMany({
+        where: debtTransactionWhere,
+        include: {
+          debt: {
+            select: {
+              id: true,
+              type: true,
+              personName: true,
+              currency: true,
+            },
+          },
+          account: {
+            select: {
+              id: true,
+              name: true,
+              currency: true,
+              color: true,
+              icon: true,
+              ownerId: true,
+              owner: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { date: "desc" },
+      });
+    }
+
+    const combined: CombinedTransaction[] = [
+      ...transactions.map((t) => ({ kind: "transaction" as const, data: t })),
+      ...debtTransactions.map((dt) => ({ kind: "debtTransaction" as const, data: dt })),
+    ];
+
+    combined.sort((a, b) => {
+      const dateA = new Date(a.data.date).getTime();
+      const dateB = new Date(b.data.date).getTime();
+      return dateB - dateA;
+    });
+
+    const skip = filters?.skip ?? 0;
+    const take = filters?.take ?? 50;
+    const paginated = combined.slice(skip, skip + take);
+
+    const transactionCount = await prisma.transaction.count({ where: transactionWhere });
+    const debtTransactionCount =
+      filters?.includeDebtTransactions !== false
+        ? await prisma.debtTransaction.count({ where: debtTransactionWhere })
+        : 0;
+
+    return { data: paginated, total: transactionCount + debtTransactionCount };
   } catch (error: any) {
     return { error: error.message || "Не удалось загрузить транзакции" };
   }

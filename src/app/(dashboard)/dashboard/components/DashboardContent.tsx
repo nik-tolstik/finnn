@@ -11,12 +11,16 @@ import * as React from "react";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountsCards } from "@/modules/accounts/components/AccountsCards";
 import { CreateAccountDialog } from "@/modules/accounts/components/CreateAccountDialog";
+import { CombinedTransactionsList } from "@/modules/transactions/components/CombinedTransactionsList";
 import { TransactionsFilters } from "@/modules/transactions/components/TransactionsFilters";
-import { TransactionsList } from "@/modules/transactions/components/TransactionsList";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/TransactionsListSkeleton";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
-import { getTransactions, type TransactionFilters } from "@/modules/transactions/transaction.service";
-import type { TransactionWithRelations } from "@/modules/transactions/transaction.types";
+import {
+  getCombinedTransactions,
+  type CombinedTransactionFilters,
+  type TransactionFilters,
+} from "@/modules/transactions/transaction.service";
+import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -42,7 +46,7 @@ interface DashboardContentProps {
 const TRANSACTIONS_PER_PAGE = 20;
 const DEBOUNCE_DELAY = 300;
 
-function isSuccessResponse(data: any): data is { data: TransactionWithRelations[]; total: number } {
+function isSuccessResponse(data: any): data is { data: CombinedTransaction[]; total: number } {
   return data && "data" in data && !("error" in data);
 }
 
@@ -98,7 +102,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
   const [localFilters, setLocalFilters] = useState<TransactionFilters>(() => parseFiltersFromURL());
   const [debouncedFilters, setDebouncedFilters] = useState<TransactionFilters>({});
   const [cachedTransactions, setCachedTransactions] = useState<{
-    data: TransactionWithRelations[];
+    data: CombinedTransaction[];
     total: number;
     filtersKey: string;
   } | null>(null);
@@ -155,7 +159,11 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
     return () => clearTimeout(timer);
   }, [localFilters]);
 
-  const { data: accountsData, isLoading: isLoadingAccounts, isFetching: isFetchingAccounts } = useQuery({
+  const {
+    data: accountsData,
+    isLoading: isLoadingAccounts,
+    isFetching: isFetchingAccounts,
+  } = useQuery({
     queryKey: ["accounts", workspaceId],
     queryFn: () => getAccounts(workspaceId),
     initialData: { data: allAccounts || accounts },
@@ -190,13 +198,14 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
     isLoading,
     isFetching,
   } = useQuery({
-    queryKey: ["transactions", workspaceId, debouncedFilters, displayedCount],
+    queryKey: ["combinedTransactions", workspaceId, debouncedFilters, displayedCount],
     queryFn: () =>
-      getTransactions(workspaceId, {
+      getCombinedTransactions(workspaceId, {
         ...debouncedFilters,
         skip: 0,
         take: displayedCount,
-      } as TransactionFilters),
+        includeDebtTransactions: true,
+      } as CombinedTransactionFilters),
     staleTime: 5000,
     refetchInterval: 5000,
   });
@@ -220,7 +229,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
     }
   }, [transactionsData, filtersKey, hasInitiallyLoaded]);
 
-  let displayedTransactions: TransactionWithRelations[] = [];
+  let displayedTransactions: CombinedTransaction[] = [];
   let total = 0;
 
   if (isSuccessResponse(transactionsData)) {
@@ -311,7 +320,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
               {isInitialLoading ? (
                 <TransactionsListSkeleton />
               ) : displayedTransactions && displayedTransactions.length > 0 ? (
-                <TransactionsList
+                <CombinedTransactionsList
                   transactions={displayedTransactions}
                   showLoadMore={hasMore}
                   onLoadMore={() => {
