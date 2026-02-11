@@ -15,7 +15,7 @@ import { useDialogState } from "@/shared/hooks/useDialogState";
 import { closeDebtSchema, type CloseDebtInput } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
-import { Input } from "@/shared/ui/input";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
 import { addMoney, subtractMoney, compareMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
 
@@ -227,21 +227,13 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                       {getCurrencySymbol(selectedAccount.currency)}
                     </span>
-                    <Input
+                    <NumberInput
                       id="toAmount"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
                       placeholder="0.00"
                       className="pl-9"
                       {...register("toAmount", {
                         required: !currenciesMatch ? "Сумма отправления обязательна" : false,
                       })}
-                      onKeyDown={(e) => {
-                        if (e.key === "-" || e.key === "e" || e.key === "E") {
-                          e.preventDefault();
-                        }
-                      }}
                     />
                   </div>
                   {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
@@ -255,19 +247,11 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                       {getCurrencySymbol(debt.currency)}
                     </span>
-                    <Input
+                    <NumberInput
                       id="amount"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
                       placeholder="0.00"
                       className="pl-9 pr-16"
                       {...register("amount")}
-                      onKeyDown={(e) => {
-                        if (e.key === "-" || e.key === "e" || e.key === "E") {
-                          e.preventDefault();
-                        }
-                      }}
                     />
                     <Button
                       type="button"
@@ -291,19 +275,11 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                     {getCurrencySymbol(debt.currency)}
                   </span>
-                  <Input
+                  <NumberInput
                     id="amount"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
                     placeholder="0.00"
                     className="pl-9 pr-16"
                     {...register("amount")}
-                    onKeyDown={(e) => {
-                      if (e.key === "-" || e.key === "e" || e.key === "E") {
-                        e.preventDefault();
-                      }
-                    }}
                   />
                   <Button
                     type="button"

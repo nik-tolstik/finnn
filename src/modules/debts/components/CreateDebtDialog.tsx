@@ -21,6 +21,7 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
 import { Segmented } from "@/shared/ui/segmented";
 import { Select } from "@/shared/ui/select";
@@ -257,19 +258,11 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                   {getCurrencySymbol(useAccount ? selectedAccount?.currency || DEFAULT_CURRENCY : currency || DEFAULT_CURRENCY)}
                 </span>
-                <Input
+                <NumberInput
                   id="amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
                   placeholder="0.00"
                   className="pl-9"
                   {...register("amount")}
-                  onKeyDown={(e) => {
-                    if (e.key === "-" || e.key === "e" || e.key === "E") {
-                      e.preventDefault();
-                    }
-                  }}
                 />
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}

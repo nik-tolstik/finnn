@@ -41,6 +41,7 @@ import {
   DialogContent,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select/select";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
@@ -263,10 +264,8 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
               <Label htmlFor="balance">
                 Начальный баланс <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <NumberInput
                 id="balance"
-                type="number"
-                step="0.01"
                 {...register("balance")}
                 placeholder="0.00"
                 aria-invalid={errors.balance ? "true" : "false"}

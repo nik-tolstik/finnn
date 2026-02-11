@@ -23,7 +23,7 @@ import { Button } from "@/shared/ui/button";
 import { type ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
-import { Input } from "@/shared/ui/input";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
 import { Segmented } from "@/shared/ui/segmented";
 import { Textarea } from "@/shared/ui/textarea";
@@ -447,11 +447,8 @@ export function CreateTransactionDialog({
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                     {getCurrencySymbol(selectedAccount?.currency || account.currency)}
                   </span>
-                  <Input
+                  <NumberInput
                     id="amount"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
                     placeholder="0.00"
                     className="pl-9 pr-12"
                     {...register("amount", {
@@ -496,11 +493,6 @@ export function CreateTransactionDialog({
                         return true;
                       },
                     })}
-                    onKeyDown={(e) => {
-                      if (e.key === "-" || e.key === "e" || e.key === "E") {
-                        e.preventDefault();
-                      }
-                    }}
                     aria-invalid={errors.amount ? "true" : "false"}
                   />
                   {selectedAccount &&

@@ -15,6 +15,7 @@ import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
 import { Input } from "@/shared/ui/input";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select/select";
 import { type SelectOption } from "@/shared/ui/select/types";
@@ -353,10 +354,8 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
         <Label className="text-sm font-medium">Сумма</Label>
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Input
+            <NumberInput
               id="minAmount"
-              type="number"
-              step="0.01"
               placeholder="От"
               value={filters.minAmount || ""}
               onChange={(e) => updateFilter("minAmount", e.target.value || undefined)}
@@ -374,10 +373,8 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
             )}
           </div>
           <div className="relative flex-1">
-            <Input
+            <NumberInput
               id="maxAmount"
-              type="number"
-              step="0.01"
               placeholder="До"
               value={filters.maxAmount || ""}
               onChange={(e) => updateFilter("maxAmount", e.target.value || undefined)}
@@ -539,10 +536,8 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
         <Label className="hidden lg:block text-sm font-medium">Сумма</Label>
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Input
+            <NumberInput
               id="minAmount"
-              type="number"
-              step="0.01"
               placeholder="От"
               value={filters.minAmount || ""}
               onChange={(e) => updateFilter("minAmount", e.target.value || undefined)}
@@ -560,10 +555,8 @@ export function TransactionsFilters({ workspaceId, filters, onFiltersChange }: T
             )}
           </div>
           <div className="relative flex-1">
-            <Input
+            <NumberInput
               id="maxAmount"
-              type="number"
-              step="0.01"
               placeholder="До"
               value={filters.maxAmount || ""}
               onChange={(e) => updateFilter("maxAmount", e.target.value || undefined)}

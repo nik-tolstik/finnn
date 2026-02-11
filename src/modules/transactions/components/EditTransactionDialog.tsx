@@ -28,7 +28,7 @@ import {
   DialogTitle,
   DialogContent,
 } from "@/shared/ui/dialog";
-import { Input } from "@/shared/ui/input";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 
@@ -209,11 +209,8 @@ export function EditTransactionDialog({
                     {getCurrencySymbol(selectedAccount.currency)}
                   </span>
                 )}
-                <Input
+                <NumberInput
                   id="amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
                   placeholder="0.00"
                   className={selectedAccount ? "pl-9 pr-12" : "pr-12"}
                   {...register("amount", {
@@ -244,11 +241,6 @@ export function EditTransactionDialog({
                       return true;
                     },
                   })}
-                  onKeyDown={(e) => {
-                    if (e.key === "-" || e.key === "e" || e.key === "E") {
-                      e.preventDefault();
-                    }
-                  }}
                   aria-invalid={errors.amount ? "true" : "false"}
                 />
                 {selectedAccount &&

@@ -12,7 +12,7 @@ import { AccountCard } from "@/shared/components/AccountCard";
 import { addToDebtSchema, type AddToDebtInput } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
-import { Input } from "@/shared/ui/input";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
 import { addMoney, subtractMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
 
@@ -139,19 +139,11 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                   {getCurrencySymbol(debt.currency)}
                 </span>
-                <Input
+                <NumberInput
                   id="addAmount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
                   placeholder="0.00"
                   className="pl-9"
                   {...register("amount")}
-                  onKeyDown={(e) => {
-                    if (e.key === "-" || e.key === "e" || e.key === "E") {
-                      e.preventDefault();
-                    }
-                  }}
                 />
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}

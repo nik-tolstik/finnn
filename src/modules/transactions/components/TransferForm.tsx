@@ -9,7 +9,7 @@ import { AccountSelector } from "@/shared/components/AccountSelector";
 import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Input } from "@/shared/ui/input";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { cn } from "@/shared/utils/cn";
@@ -112,11 +112,8 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
               {getCurrencySymbol(fromAccount.currency)}
             </span>
           )}
-          <Input
+          <NumberInput
             id="amount"
-            type="number"
-            step="0.01"
-            min="0.01"
             placeholder="0.00"
             className={cn(fromAccount ? "pl-9 pr-12" : "pr-12", "min-w-0 w-full")}
             {...form.register("amount", {
@@ -149,11 +146,6 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                 return true;
               },
             })}
-            onKeyDown={(e) => {
-              if (e.key === "-" || e.key === "e" || e.key === "E") {
-                e.preventDefault();
-              }
-            }}
             aria-invalid={form.formState.errors.amount ? "true" : "false"}
           />
           {fromAccount && parseFloat(fromAccountBalanceBeforeTransfer || fromAccount.balance) > 0 && (
@@ -216,11 +208,8 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
               {getCurrencySymbol(toAccount.currency)}
             </span>
           )}
-          <Input
+          <NumberInput
             id="toAmount"
-            type="number"
-            step="0.01"
-            min="0.01"
             placeholder="0.00"
             className={cn(toAccount ? "pl-9" : "", "min-w-0 w-full")}
             {...form.register("toAmount", {
@@ -231,11 +220,6 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                 }
               },
             })}
-            onKeyDown={(e) => {
-              if (e.key === "-" || e.key === "e" || e.key === "E") {
-                e.preventDefault();
-              }
-            }}
             aria-invalid={form.formState.errors.toAmount ? "true" : "false"}
           />
         </div>
