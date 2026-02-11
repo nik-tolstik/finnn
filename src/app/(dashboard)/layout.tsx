@@ -7,6 +7,7 @@ import { authOptions } from "@/shared/lib/auth";
 import { ExchangeRatesTicker } from "./components/ExchangeRatesTicker";
 import { FloatingActionButton } from "./components/FloatingActionButton";
 import { Header } from "./components/Header";
+import { WhatsNewGate } from "./components/WhatsNewGate";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -31,6 +32,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Header />
       <main className="flex-1 p-4 md:p-8">{children}</main>
       <FloatingActionButton />
+      <WhatsNewGate />
     </div>
   );
 }

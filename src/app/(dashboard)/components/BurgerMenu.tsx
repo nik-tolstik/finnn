@@ -1,6 +1,6 @@
 "use client";
 
-import { Grip, HandCoins, LogOut, Settings, TrendingUp, Wallet } from "lucide-react";
+import { Grip, HandCoins, LogOut, Settings, Sparkles, TrendingUp, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -12,11 +12,13 @@ import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";
+import { useUIStore } from "@/stores/ui-store";
 
 export function BurgerMenu() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const openModal = useUIStore((s) => s.openModal);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const workspaceId = searchParams.get("workspaceId") || undefined;
@@ -117,6 +119,18 @@ export function BurgerMenu() {
             </nav>
 
             <div className="mt-auto border-t p-4 space-y-1">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  openModal("whats-new");
+                }}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-3"
+                )}
+              >
+                <Sparkles className="h-5 w-5 text-muted-foreground" />
+                <span>Что нового</span>
+              </button>
               <button
                 onClick={() => {
                   setOpen(false);
