@@ -179,7 +179,7 @@ export function EditTransactionDialog({
           <DialogDescription>Измените данные транзакции.</DialogDescription>
         </DialogHeader>
         <DialogContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Controller
                 control={control}
@@ -219,7 +219,12 @@ export function EditTransactionDialog({
                       if (value && parseFloat(value) < 0) {
                         e.target.value = "";
                       }
-                      if (selectedAccount && transaction.type === TransactionType.EXPENSE && value && accountBalanceBeforeTransaction) {
+                      if (
+                        selectedAccount &&
+                        transaction.type === TransactionType.EXPENSE &&
+                        value &&
+                        accountBalanceBeforeTransaction
+                      ) {
                         const amount = parseFloat(value);
                         if (!isNaN(amount) && compareMoney(amount, accountBalanceBeforeTransaction) > 0) {
                           setError("amount", {
@@ -232,7 +237,13 @@ export function EditTransactionDialog({
                       }
                     },
                     validate: (value) => {
-                      if (!selectedAccount || transaction.type !== TransactionType.EXPENSE || !value || !accountBalanceBeforeTransaction) return true;
+                      if (
+                        !selectedAccount ||
+                        transaction.type !== TransactionType.EXPENSE ||
+                        !value ||
+                        !accountBalanceBeforeTransaction
+                      )
+                        return true;
                       const amount = parseFloat(value);
                       if (isNaN(amount)) return true;
                       if (compareMoney(amount, accountBalanceBeforeTransaction) > 0) {
@@ -253,7 +264,10 @@ export function EditTransactionDialog({
                       size="sm"
                       className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
                       onClick={() => {
-                        setValue("amount", accountBalanceBeforeTransaction, { shouldValidate: true, shouldTouch: true });
+                        setValue("amount", accountBalanceBeforeTransaction, {
+                          shouldValidate: true,
+                          shouldTouch: true,
+                        });
                       }}
                     >
                       Max

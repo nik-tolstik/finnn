@@ -89,9 +89,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
   });
 
   const workspaceName = useMemo(() => {
-    return workspaceData && "data" in workspaceData && workspaceData.data
-      ? workspaceData.data.name
-      : "";
+    return workspaceData && "data" in workspaceData && workspaceData.data ? workspaceData.data.name : "";
   }, [workspaceData]);
 
   const members = useMemo(() => {
@@ -164,7 +162,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
           <DialogDescription>Измените параметры счёта.</DialogDescription>
         </DialogHeader>
         <DialogContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <AccountCard
               account={{
                 ...account,
@@ -217,11 +215,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
                         return (
                           <div className="flex items-center gap-2">
                             {member.image ? (
-                              <img
-                                src={member.image}
-                                alt={displayName}
-                                className="h-5 w-5 rounded-full object-cover"
-                              />
+                              <img src={member.image} alt={displayName} className="h-5 w-5 rounded-full object-cover" />
                             ) : (
                               <div
                                 className="flex h-5 w-5 items-center justify-center rounded-full text-white text-xs font-medium"

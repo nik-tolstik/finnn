@@ -99,7 +99,7 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
           </DialogDescription>
         </DialogHeader>
         <DialogContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">
                 Название <span className="text-destructive">*</span>

@@ -3,14 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Currency } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Building2,
-  Wallet,
-  HandCoins,
-  CreditCard,
-  Landmark,
-  type LucideIcon,
-} from "lucide-react";
+import { Building2, Wallet, HandCoins, CreditCard, Landmark, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
@@ -211,7 +204,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
           <DialogDescription>Добавьте новый счёт для отслеживания ваших финансов</DialogDescription>
         </DialogHeader>
         <DialogContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <AccountCard
               account={{
                 id: "",
@@ -308,11 +301,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                         return (
                           <div className="flex items-center gap-2">
                             {member.image ? (
-                              <img
-                                src={member.image}
-                                alt={displayName}
-                                className="h-5 w-5 rounded-full object-cover"
-                              />
+                              <img src={member.image} alt={displayName} className="h-5 w-5 rounded-full object-cover" />
                             ) : (
                               <div
                                 className="flex h-5 w-5 items-center justify-center rounded-full text-white text-xs font-medium"

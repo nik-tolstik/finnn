@@ -158,7 +158,7 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
           <DialogTitle>Создать долг</DialogTitle>
         </DialogHeader>
         <DialogContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label>Тип долга</Label>
               <Segmented
@@ -256,14 +256,11 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                  {getCurrencySymbol(useAccount ? selectedAccount?.currency || DEFAULT_CURRENCY : currency || DEFAULT_CURRENCY)}
+                  {getCurrencySymbol(
+                    useAccount ? selectedAccount?.currency || DEFAULT_CURRENCY : currency || DEFAULT_CURRENCY
+                  )}
                 </span>
-                <NumberInput
-                  id="amount"
-                  placeholder="0.00"
-                  className="pl-9"
-                  {...register("amount")}
-                />
+                <NumberInput id="amount" placeholder="0.00" className="pl-9" {...register("amount")} />
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>

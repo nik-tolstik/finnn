@@ -39,9 +39,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     staleTime: 5000,
   });
 
-  const fullAccount = debt.accountId
-    ? accountsData?.data?.find((acc) => acc.id === debt.accountId)
-    : undefined;
+  const fullAccount = debt.accountId ? accountsData?.data?.find((acc) => acc.id === debt.accountId) : undefined;
 
   const {
     register,
@@ -120,7 +118,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
           <DialogTitle>{debt.type === DebtType.LENT ? "Дать ещё в долг" : "Взять ещё в долг"}</DialogTitle>
         </DialogHeader>
         <DialogContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="p-3 bg-muted rounded-lg space-y-1">
               <div className="text-sm text-muted-foreground">
                 {debt.type === DebtType.LENT ? "Должник" : "Кредитор"}
@@ -139,21 +137,14 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                   {getCurrencySymbol(debt.currency)}
                 </span>
-                <NumberInput
-                  id="addAmount"
-                  placeholder="0.00"
-                  className="pl-9"
-                  {...register("amount")}
-                />
+                <NumberInput id="addAmount" placeholder="0.00" className="pl-9" {...register("amount")} />
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
 
             {debt.accountId && previewAccount && (
               <div className="space-y-2">
-                <Label>
-                  {debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}
-                </Label>
+                <Label>{debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}</Label>
                 <AccountCard account={previewAccount} showOwner={false} />
               </div>
             )}

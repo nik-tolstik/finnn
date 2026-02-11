@@ -182,7 +182,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
           <DialogTitle>Закрыть долг</DialogTitle>
         </DialogHeader>
         <DialogContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="p-3 bg-muted rounded-lg space-y-1">
               <div className="text-sm text-muted-foreground">
                 {debt.type === DebtType.LENT ? "Должник" : "Кредитор"}
@@ -247,12 +247,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                       {getCurrencySymbol(debt.currency)}
                     </span>
-                    <NumberInput
-                      id="amount"
-                      placeholder="0.00"
-                      className="pl-9 pr-16"
-                      {...register("amount")}
-                    />
+                    <NumberInput id="amount" placeholder="0.00" className="pl-9 pr-16" {...register("amount")} />
                     <Button
                       type="button"
                       variant="ghost"
@@ -275,12 +270,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                     {getCurrencySymbol(debt.currency)}
                   </span>
-                  <NumberInput
-                    id="amount"
-                    placeholder="0.00"
-                    className="pl-9 pr-16"
-                    {...register("amount")}
-                  />
+                  <NumberInput id="amount" placeholder="0.00" className="pl-9 pr-16" {...register("amount")} />
                   <Button
                     type="button"
                     variant="ghost"

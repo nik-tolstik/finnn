@@ -111,20 +111,22 @@ export function CreateTransactionDialog({
       amount: initialAmount || "",
       type: defaultType,
       description: initialDescription || "",
-      date: initialDate || (() => {
-        const now = new Date();
-        if (!account) return now;
-        const accountCreatedDate = new Date(account.createdAt);
-        accountCreatedDate.setHours(0, 0, 0, 0);
-        const nowDateOnly = new Date(now);
-        nowDateOnly.setHours(0, 0, 0, 0);
-        if (nowDateOnly < accountCreatedDate) {
-          const result = new Date(accountCreatedDate);
-          result.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-          return result;
-        }
-        return now;
-      })(),
+      date:
+        initialDate ||
+        (() => {
+          const now = new Date();
+          if (!account) return now;
+          const accountCreatedDate = new Date(account.createdAt);
+          accountCreatedDate.setHours(0, 0, 0, 0);
+          const nowDateOnly = new Date(now);
+          nowDateOnly.setHours(0, 0, 0, 0);
+          if (nowDateOnly < accountCreatedDate) {
+            const result = new Date(accountCreatedDate);
+            result.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+            return result;
+          }
+          return now;
+        })(),
       categoryId: initialCategoryId || undefined,
     },
   });
@@ -253,7 +255,17 @@ export function CreateTransactionDialog({
       }
     }
     prevOpenRef.current = open;
-  }, [open, reset, defaultType, account, accountProp, initialAmount, initialDescription, initialDate, initialCategoryId]);
+  }, [
+    open,
+    reset,
+    defaultType,
+    account,
+    accountProp,
+    initialAmount,
+    initialDescription,
+    initialDate,
+    initialCategoryId,
+  ]);
 
   useEffect(() => {
     if (open && account && account.id !== accountIdRef.current) {
@@ -350,7 +362,7 @@ export function CreateTransactionDialog({
             <DialogTitle>Создать транзакцию</DialogTitle>
           </DialogHeader>
           <DialogContent>
-            <form className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label>Счёт</Label>
                 {previewAccount && "balance" in previewAccount && previewAccount.balance !== undefined && (
