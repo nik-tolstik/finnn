@@ -12,6 +12,11 @@ import { DEFAULT_CURRENCY } from "@/shared/constants/currency";
 export function ExchangeRatesTicker() {
   const searchParams = useSearchParams();
   const [workspaceId, setWorkspaceId] = useState<string | undefined>(undefined);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     setWorkspaceId(searchParams.get("workspaceId") || undefined);
@@ -41,11 +46,7 @@ export function ExchangeRatesTicker() {
     gcTime: 86400000,
   });
 
-  if (baseCurrency !== Currency.BYN) {
-    return null;
-  }
-
-  if (isLoading) {
+  if (!isMounted || isLoading) {
     return (
       <div className="h-8 bg-muted/50 border-b overflow-hidden">
         <div className="flex items-center h-full px-4 sm:px-8">
@@ -53,6 +54,10 @@ export function ExchangeRatesTicker() {
         </div>
       </div>
     );
+  }
+
+  if (baseCurrency !== Currency.BYN) {
+    return null;
   }
 
   if (ratesData && "error" in ratesData) {
