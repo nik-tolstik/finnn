@@ -26,6 +26,7 @@ model User {
   workspaces      WorkspaceMember[]
   ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
   accounts        Account[]
+  whatsNewStatus  WhatsNewStatus?
 
   @@map("users")
 }
@@ -227,4 +228,17 @@ model DebtTransaction {
   @@index([workspaceId, date])
   @@index([debtId])
   @@map("debt_transactions")
+}
+
+model WhatsNewStatus {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @unique @db.ObjectId
+  version   String
+  shown     Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("whats_new_status")
 }
