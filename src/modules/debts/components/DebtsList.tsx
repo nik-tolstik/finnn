@@ -6,6 +6,7 @@ import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
 
+import { DebtStatus } from "../debt.constants";
 import { getDebts } from "../debt.service";
 import type { DebtWithRelations } from "../debt.types";
 
@@ -33,7 +34,7 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
     refetchInterval: 5000,
   });
 
-  const debts = data?.data || [];
+  const debts = (data?.data || []).filter((d) => d.status === DebtStatus.OPEN);
 
   const handleDebtClick = (debt: DebtWithRelations) => {
     actionsDialog.openDialog(debt);

@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { History, Plus } from "lucide-react";
 
+import { ClosedDebtsHistoryDialog } from "@/modules/debts/components/ClosedDebtsHistoryDialog";
 import { CreateDebtDialog } from "@/modules/debts/components/CreateDebtDialog";
 import { DebtsList } from "@/modules/debts/components/DebtsList";
 import { DebtStatus, DebtType } from "@/modules/debts/debt.constants";
@@ -20,6 +21,7 @@ interface DebtsContentProps {
 export function DebtsContent({ workspaceId }: DebtsContentProps) {
   const { isMobile } = useBreakpoints();
   const createDebtDialog = useDialogState();
+  const historyDialog = useDialogState();
 
   const { data } = useQuery({
     queryKey: ["debts", workspaceId],
@@ -61,10 +63,16 @@ export function DebtsContent({ workspaceId }: DebtsContentProps) {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Долги</h1>
           {!isMobile && (
-            <Button onClick={() => createDebtDialog.openDialog(null)}>
-              <Plus className="size-4 mr-2" />
-              Добавить долг
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => historyDialog.openDialog(null)}>
+                <History className="size-4" />
+                История
+              </Button>
+              <Button onClick={() => createDebtDialog.openDialog(null)}>
+                <Plus className="size-4" />
+                Добавить долг
+              </Button>
+            </div>
           )}
         </div>
 
@@ -108,6 +116,15 @@ export function DebtsContent({ workspaceId }: DebtsContentProps) {
           open={createDebtDialog.open}
           onOpenChange={createDebtDialog.closeDialog}
           onCloseComplete={createDebtDialog.unmountDialog}
+        />
+      )}
+
+      {historyDialog.mounted && (
+        <ClosedDebtsHistoryDialog
+          workspaceId={workspaceId}
+          open={historyDialog.open}
+          onOpenChange={historyDialog.closeDialog}
+          onCloseComplete={historyDialog.unmountDialog}
         />
       )}
     </div>
