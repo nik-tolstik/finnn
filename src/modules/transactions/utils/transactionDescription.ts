@@ -1,0 +1,208 @@
+import { formatMoney } from "@/shared/utils/money";
+
+import { DebtType, DebtTransactionType } from "@/modules/debts/debt.constants";
+import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
+
+import { TransactionType } from "../transaction.constants";
+import type { CombinedTransaction, TransactionWithRelations } from "../transaction.types";
+
+export type AccountSegmentType = "account" | "accountFrom" | "accountTo";
+
+export type SegmentType = AccountSegmentType | "category";
+
+export type DescriptionSegment = {
+  text: string;
+  highlight: boolean;
+  segmentType?: SegmentType;
+};
+
+export type TransferContext = {
+  toAccountName: string;
+  toAmount: string;
+  toCurrency: string;
+};
+
+export function getTransactionDescriptionSegments(
+  item: CombinedTransaction,
+  workspaceName: string,
+  transferContext?: TransferContext
+): { segments: DescriptionSegment[] } {
+  if (item.kind === "debtTransaction") {
+    return getDebtDescriptionSegments(item.data, workspaceName);
+  }
+  const transaction = item.data;
+  if (transaction.type === TransactionType.TRANSFER && transferContext) {
+    return getTransferDescriptionSegments(transaction, workspaceName, transferContext);
+  }
+  if (transaction.type === TransactionType.TRANSFER) {
+    return { segments: [] };
+  }
+  return getIncomeExpenseDescriptionSegments(transaction, workspaceName);
+}
+
+function getActorName(
+  account: {
+    ownerId: string | null;
+    owner: { name: string | null; email: string } | null;
+  },
+  workspaceName: string
+): string {
+  if (account.ownerId === null) {
+    return workspaceName || "Общие";
+  }
+  return account.owner?.name ?? account.owner?.email ?? "Кто-то";
+}
+
+function getIncomeExpenseDescriptionSegments(
+  transaction: TransactionWithRelations,
+  workspaceName: string
+): { segments: DescriptionSegment[] } {
+  const actor = getActorName(transaction.account, workspaceName);
+  const amountStr = formatMoney(transaction.amount, transaction.account.currency);
+  const category = transaction.category?.name ?? "Без категории";
+  const accountName = transaction.account.name;
+
+  if (transaction.type === TransactionType.EXPENSE) {
+    return {
+      segments: [
+        { text: actor, highlight: true },
+        { text: " потратил ", highlight: false },
+        { text: amountStr, highlight: true },
+        { text: " на ", highlight: false },
+        { text: category, highlight: true, segmentType: "category" },
+        { text: " со счёта ", highlight: false },
+        { text: accountName, highlight: true, segmentType: "account" },
+      ],
+    };
+  }
+
+  return {
+    segments: [
+      { text: actor, highlight: true },
+      { text: " получил ", highlight: false },
+      { text: category, highlight: true, segmentType: "category" },
+      { text: " в размере ", highlight: false },
+      { text: amountStr, highlight: true },
+      { text: " на счёт ", highlight: false },
+      { text: accountName, highlight: true, segmentType: "account" },
+    ],
+  };
+}
+
+function getTransferDescriptionSegments(
+  transaction: TransactionWithRelations,
+  workspaceName: string,
+  ctx: TransferContext
+): { segments: DescriptionSegment[] } {
+  const actor = getActorName(transaction.account, workspaceName);
+  const amountStr = formatMoney(transaction.amount, transaction.account.currency);
+  const fromAccountName = transaction.account.name;
+
+  return {
+    segments: [
+      { text: actor, highlight: true },
+      { text: " перевёл ", highlight: false },
+      { text: amountStr, highlight: true },
+      { text: " со счёта ", highlight: false },
+      { text: fromAccountName, highlight: true, segmentType: "accountFrom" },
+      { text: " на счёт ", highlight: false },
+      { text: ctx.toAccountName, highlight: true, segmentType: "accountTo" },
+    ],
+  };
+}
+
+function getDebtActorName(
+  account: DebtTransactionWithRelations["account"],
+  workspaceName: string
+): string {
+  if (!account) return "Кто-то";
+  if (account.ownerId === null) return workspaceName || "Общие";
+  return account.owner?.name ?? account.owner?.email ?? "Кто-то";
+}
+
+function getDebtDescriptionSegments(
+  debtTransaction: DebtTransactionWithRelations,
+  workspaceName: string
+): { segments: DescriptionSegment[] } {
+  const personName = debtTransaction.debt.personName;
+  const amountStr = formatMoney(debtTransaction.amount, debtTransaction.debt.currency);
+  const accountName = debtTransaction.account?.name ?? "Мой кошелёк";
+  const actor = getDebtActorName(debtTransaction.account, workspaceName);
+
+  const debtType = debtTransaction.debt.type;
+  const transactionType = debtTransaction.type;
+
+  if (debtType === DebtType.LENT && transactionType === DebtTransactionType.CLOSED) {
+    return {
+      segments: [
+        { text: personName, highlight: true },
+        { text: " вернул долг в размере ", highlight: false },
+        { text: amountStr, highlight: true },
+        { text: " на счёт ", highlight: false },
+        { text: accountName, highlight: true, segmentType: "account" },
+      ],
+    };
+  }
+
+  if (debtType === DebtType.BORROWED && transactionType === DebtTransactionType.CLOSED) {
+    return {
+      segments: [
+        { text: actor, highlight: true },
+        { text: " вернул долг в размере ", highlight: false },
+        { text: amountStr, highlight: true },
+        { text: " на счёт ", highlight: false },
+        { text: accountName, highlight: true, segmentType: "account" },
+      ],
+    };
+  }
+
+  if (debtType === DebtType.LENT && transactionType === DebtTransactionType.CREATED) {
+    return {
+      segments: [
+        { text: actor, highlight: true },
+        { text: " дал в долг ", highlight: false },
+        { text: personName, highlight: true },
+        { text: " в размере ", highlight: false },
+        { text: amountStr, highlight: true },
+        { text: " со счёта ", highlight: false },
+        { text: accountName, highlight: true, segmentType: "account" },
+      ],
+    };
+  }
+
+  if (debtType === DebtType.BORROWED && transactionType === DebtTransactionType.CREATED) {
+    return {
+      segments: [
+        { text: personName, highlight: true },
+        { text: " дал в долг в размере ", highlight: false },
+        { text: amountStr, highlight: true },
+        { text: " на счёт ", highlight: false },
+        { text: accountName, highlight: true, segmentType: "account" },
+      ],
+    };
+  }
+
+  if (debtType === DebtType.LENT && transactionType === DebtTransactionType.ADDED) {
+    return {
+      segments: [
+        { text: actor, highlight: true },
+        { text: " добавил к долгу ", highlight: false },
+        { text: personName, highlight: true },
+        { text: " ", highlight: false },
+        { text: amountStr, highlight: true },
+        { text: " со счёта ", highlight: false },
+        { text: accountName, highlight: true, segmentType: "account" },
+      ],
+    };
+  }
+
+  return {
+    segments: [
+      { text: personName, highlight: true },
+      { text: " добавил к долгу ", highlight: false },
+      { text: amountStr, highlight: true },
+      { text: " на счёт ", highlight: false },
+      { text: accountName, highlight: true, segmentType: "account" },
+    ],
+  };
+}

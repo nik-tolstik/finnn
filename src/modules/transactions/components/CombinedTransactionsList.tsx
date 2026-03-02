@@ -3,28 +3,28 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Building2, Wallet, HandCoins, CreditCard, Landmark, type LucideIcon } from "lucide-react";
+import { Building2, CreditCard, HandCoins, Landmark, Wallet, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
-import { DebtTransactionCard } from "@/modules/debts/components/DebtTransactionCard";
+import { DebtType, DebtTransactionType } from "@/modules/debts/debt.constants";
 import { getWorkspace } from "@/modules/workspace/workspace.service";
+import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
+import { getAccountIcon } from "@/shared/utils/account-icons";
 
 import { TransactionType } from "../transaction.constants";
 import { deleteTransaction } from "../transaction.service";
 import type { TransactionWithRelations, CombinedTransaction } from "../transaction.types";
+import { getTransactionDescriptionSegments } from "../utils/transactionDescription";
 
 import { CreateTransactionDialog } from "./CreateTransactionDialog";
 import { EditTransactionDialog } from "./EditTransactionDialog";
 import { EditTransferDialog } from "./EditTransferDialog";
 import { TransactionActionsDialog } from "./TransactionActionsDialog";
-import { TransactionCard } from "./TransactionCard";
-import { TransactionCardSkeleton } from "./TransactionCardSkeleton";
-import { TransferCard } from "./TransferCard";
-import { TransferCardSkeleton } from "./TransferCardSkeleton";
+import { TransactionDescriptionLine } from "./TransactionDescriptionLine";
 
 const WORKSPACE_ICONS: Record<string, LucideIcon> = {
   Building2,
@@ -90,7 +90,7 @@ export function CombinedTransactionsList({
     return workspaceData && "data" in workspaceData && workspaceData.data ? workspaceData.data.name : "";
   }, [workspaceData]);
 
-  const workspaceIcon = useMemo(() => {
+  const WorkspaceIcon = useMemo(() => {
     return workspaceData && "data" in workspaceData && workspaceData.data
       ? getWorkspaceIcon(workspaceData.data.icon)
       : Building2;
@@ -196,12 +196,39 @@ export function CombinedTransactionsList({
 
   const renderTransaction = (item: CombinedTransaction) => {
     if (item.kind === "debtTransaction") {
+      const { segments } = getTransactionDescriptionSegments(item, workspaceName);
+      const dt = item.data;
+      const isAccountOwnerActor =
+        (dt.debt.type === DebtType.LENT && dt.type !== DebtTransactionType.CLOSED) ||
+        (dt.debt.type === DebtType.BORROWED && dt.type === DebtTransactionType.CLOSED);
+      const actorAvatar =
+        isAccountOwnerActor && dt.account?.owner ? (
+          <UserDisplay
+            name={dt.account.owner.name}
+            email={dt.account.owner.email}
+            image={dt.account.owner.image}
+            showName={false}
+            size="sm"
+          />
+        ) : (
+          <UserDisplay name={dt.debt.personName} image={null} showName={false} size="sm" />
+        );
+      const DebtAccountIcon = dt.account ? getAccountIcon(dt.account.icon) : null;
+      const accountChips =
+        dt.account != null && DebtAccountIcon
+          ? {
+              account: {
+                color: dt.account.color,
+                icon: <DebtAccountIcon className="size-3.5" />,
+              },
+            }
+          : undefined;
       return (
-        <DebtTransactionCard
+        <TransactionDescriptionLine
           key={`debt-${item.data.id}`}
-          debtTransaction={item.data}
-          workspaceName={workspaceName}
-          workspaceIcon={workspaceIcon}
+          segments={segments}
+          icon={actorAvatar}
+          accountChips={accountChips}
         />
       );
     }
@@ -254,13 +281,41 @@ export function CombinedTransactionsList({
         return null;
       }
 
+      const { segments } = getTransactionDescriptionSegments(item, workspaceName, {
+        toAccountName: transferInfo.account.name,
+        toAmount: transferInfo.amount,
+        toCurrency: transferInfo.account.currency,
+      });
+      const actorAvatar =
+        transaction.account.ownerId === null ? (
+          <WorkspaceIcon className="size-4" />
+        ) : (
+          <UserDisplay
+            name={transaction.account.owner?.name}
+            email={transaction.account.owner?.email}
+            image={transaction.account.owner?.image}
+            showName={false}
+            size="sm"
+          />
+        );
+      const FromAccountIcon = getAccountIcon(transaction.account.icon);
+      const ToAccountIcon = getAccountIcon(transferInfo.account.icon);
+      const accountChips = {
+        accountFrom: {
+          color: transaction.account.color,
+          icon: <FromAccountIcon className="size-3.5" />,
+        },
+        accountTo: {
+          color: transferInfo.account.color,
+          icon: <ToAccountIcon className="size-3.5" />,
+        },
+      };
       return (
-        <TransferCard
+        <TransactionDescriptionLine
           key={transaction.id}
-          transaction={transaction}
-          transferTo={transferInfo}
-          workspaceName={workspaceName}
-          workspaceIcon={workspaceIcon}
+          segments={segments}
+          icon={actorAvatar}
+          accountChips={accountChips}
           onClick={() => {
             actionsDialog.openDialog({ transaction });
           }}
@@ -268,12 +323,33 @@ export function CombinedTransactionsList({
       );
     }
 
+    const { segments } = getTransactionDescriptionSegments(item, workspaceName);
+    const actorAvatar =
+      transaction.account.ownerId === null ? (
+        <WorkspaceIcon className="size-4" />
+      ) : (
+        <UserDisplay
+          name={transaction.account.owner?.name}
+          email={transaction.account.owner?.email}
+          image={transaction.account.owner?.image}
+          showName={false}
+          size="sm"
+        />
+      );
+    const AccountIcon = getAccountIcon(transaction.account.icon);
+    const accountChips = {
+      account: {
+        color: transaction.account.color,
+        icon: <AccountIcon className="size-3.5" />,
+      },
+    };
     return (
-      <TransactionCard
+      <TransactionDescriptionLine
         key={transaction.id}
-        transaction={transaction}
-        workspaceName={workspaceName}
-        workspaceIcon={workspaceIcon}
+        segments={segments}
+        icon={actorAvatar}
+        accountChips={accountChips}
+        categoryColor={transaction.category?.color ?? undefined}
         onClick={() => {
           actionsDialog.openDialog({ transaction });
         }}
@@ -361,9 +437,9 @@ export function CombinedTransactionsList({
         />
       )}
       {isLoadingMore && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index}>{index % 3 === 0 ? <TransferCardSkeleton /> : <TransactionCardSkeleton />}</div>
+            <div key={index} className="h-5 rounded bg-muted/50 animate-pulse" />
           ))}
         </div>
       )}
