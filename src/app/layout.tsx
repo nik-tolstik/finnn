@@ -6,13 +6,13 @@ import { Toaster } from "@/shared/ui/sonner";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "FinHub - Учёт финансов",
+  title: "Finnn - Учёт финансов",
   description: "Ведите учёт своих финансов с лёгкостью",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "FinHub",
+    title: "Finnn",
   },
   icons: {
     icon: "/logo-dark.svg",

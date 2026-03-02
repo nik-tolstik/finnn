@@ -34,8 +34,8 @@ export function Header() {
         <div className="flex items-center gap-4 flex-1">
           <BurgerMenu />
           <div className="hidden md:flex items-center gap-2">
-            <Image src="/logo-light.svg" alt="FinHub" width={32} height={32} />
-            <span className="text-2xl font-bold text-white">FinHub</span>
+            <Image src="/logo-light.svg" alt="Finnn" width={32} height={32} />
+            <span className="text-2xl font-bold text-white">Finnn</span>
           </div>
           <nav className="hidden md:flex items-center gap-2 ml-4">
             <Link

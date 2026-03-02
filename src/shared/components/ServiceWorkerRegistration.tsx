@@ -13,7 +13,7 @@ export function ServiceWorkerRegistration() {
             if (newWorker) {
               newWorker.addEventListener("statechange", () => {
                 if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                  sessionStorage.setItem("finhub-whats-new-shown", "false");
+                  sessionStorage.setItem("finnn-whats-new-shown", "false");
                   newWorker.postMessage({ type: "SKIP_WAITING" });
                 }
               });
@@ -21,7 +21,7 @@ export function ServiceWorkerRegistration() {
           });
 
           if (registration.waiting) {
-            sessionStorage.setItem("finhub-whats-new-shown", "false");
+            sessionStorage.setItem("finnn-whats-new-shown", "false");
             registration.waiting.postMessage({ type: "SKIP_WAITING" });
           }
 

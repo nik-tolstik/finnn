@@ -1,4 +1,4 @@
-const CACHE_NAME = "finhub-v2";
+const CACHE_NAME = "finnn-v2";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

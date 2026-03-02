@@ -25,7 +25,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-64 flex-col border-r bg-muted/40">
       <div className="p-4">
-        <h2 className="mb-4 text-lg font-semibold">FinHub</h2>
+        <h2 className="mb-4 text-lg font-semibold">Finnn</h2>
         <nav>
           <ul className="space-y-2">
             {navigation.map((item) => {

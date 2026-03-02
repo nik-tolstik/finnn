@@ -82,7 +82,7 @@ export async function sendVerificationEmail(email: string, token: string, name?:
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Подтверждение email</h2>
           <p>${name ? `Здравствуйте, ${name}!` : "Здравствуйте!"}</p>
-          <p>Спасибо за регистрацию в FinHub. Для завершения регистрации подтвердите ваш email адрес.</p>
+          <p>Спасибо за регистрацию в Finnn. Для завершения регистрации подтвердите ваш email адрес.</p>
           <p>Для подтверждения перейдите по ссылке:</p>
           <p style="margin: 20px 0;">
             <a href="${verifyUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
@@ -93,7 +93,7 @@ export async function sendVerificationEmail(email: string, token: string, name?:
             Или скопируйте эту ссылку в браузер: ${verifyUrl}
           </p>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">
-            Если вы не регистрировались в FinHub, просто проигнорируйте это письмо.
+            Если вы не регистрировались в Finnn, просто проигнорируйте это письмо.
           </p>
         </div>
       `,
