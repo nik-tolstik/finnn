@@ -15,6 +15,7 @@ import { CloseDebtDialog } from "./CloseDebtDialog";
 import { DebtActionsDialog } from "./DebtActionsDialog";
 import { DebtCard } from "./DebtCard";
 import { DeleteDebtDialog } from "./DeleteDebtDialog";
+import { EditDebtDialog } from "./EditDebtDialog";
 
 interface DebtsListProps {
   workspaceId: string;
@@ -26,6 +27,7 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
   const closeDialog = useDialogState<DebtWithRelations>();
   const addMoreDialog = useDialogState<DebtWithRelations>();
   const deleteDialog = useDialogState<DebtWithRelations>();
+  const editDialog = useDialogState<DebtWithRelations>();
 
   const { data, isLoading } = useQuery({
     queryKey: ["debts", workspaceId],
@@ -63,6 +65,15 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
       actionsDialog.closeDialog();
       setTimeout(() => {
         deleteDialog.openDialog(actionsDialog.data);
+      }, 200);
+    }
+  };
+
+  const handleEdit = () => {
+    if (actionsDialog.data) {
+      actionsDialog.closeDialog();
+      setTimeout(() => {
+        editDialog.openDialog(actionsDialog.data);
       }, 200);
     }
   };
@@ -109,6 +120,17 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
           onClose={handleClose}
           onAddMore={handleAddMore}
           onDelete={handleDelete}
+          onEdit={handleEdit}
+        />
+      )}
+
+      {editDialog.mounted && editDialog.data && (
+        <EditDebtDialog
+          debt={editDialog.data}
+          workspaceId={workspaceId}
+          open={editDialog.open}
+          onOpenChange={editDialog.closeDialog}
+          onCloseComplete={editDialog.unmountDialog}
         />
       )}
 

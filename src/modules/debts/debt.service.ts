@@ -9,9 +9,11 @@ import {
   createDebtSchema,
   closeDebtSchema,
   addToDebtSchema,
+  updateDebtSchema,
   type CreateDebtInput,
   type CloseDebtInput,
   type AddToDebtInput,
+  type UpdateDebtInput,
 } from "@/shared/lib/validations/debt";
 import { addMoney, subtractMoney, compareMoney } from "@/shared/utils/money";
 
@@ -342,6 +344,224 @@ export async function deleteDebt(id: string) {
     return { success: true };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Не удалось удалить долг";
+    return { error: message };
+  }
+}
+
+export async function getDebtEditData(debtId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { error: "Не авторизован" };
+    }
+
+    const debt = await prisma.debt.findFirst({
+      where: {
+        id: debtId,
+        workspace: {
+          members: {
+            some: {
+              userId: session.user.id,
+            },
+          },
+        },
+      },
+    });
+
+    if (!debt) {
+      return { error: "Долг не найден или доступ запрещён" };
+    }
+
+    const createdTransaction = await prisma.debtTransaction.findFirst({
+      where: {
+        debtId,
+        type: DebtTransactionType.CREATED,
+      },
+    });
+
+    if (!createdTransaction) {
+      return {
+        data: {
+          personName: debt.personName,
+          initialAmount: debt.amount,
+          initialDate: debt.date.toISOString(),
+          currency: debt.currency,
+        },
+      };
+    }
+
+    return {
+      data: {
+        personName: debt.personName,
+        initialAmount: createdTransaction.amount,
+        initialDate: createdTransaction.date.toISOString(),
+        currency: debt.currency,
+      },
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Не удалось загрузить данные";
+    return { error: message };
+  }
+}
+
+export async function updateDebt(debtId: string, input: UpdateDebtInput) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { error: "Не авторизован" };
+    }
+
+    const debt = await prisma.debt.findFirst({
+      where: {
+        id: debtId,
+        workspace: {
+          members: {
+            some: {
+              userId: session.user.id,
+            },
+          },
+        },
+      },
+      include: { account: true },
+    });
+
+    if (!debt) {
+      return { error: "Долг не найден или доступ запрещён" };
+    }
+
+    if (debt.status === DebtStatus.CLOSED) {
+      return { error: "Нельзя редактировать закрытый долг" };
+    }
+
+    let initialTransaction = await prisma.debtTransaction.findFirst({
+      where: {
+        debtId,
+        type: DebtTransactionType.CREATED,
+      },
+    });
+
+    if (!initialTransaction) {
+      const firstByDate = await prisma.debtTransaction.findFirst({
+        where: { debtId },
+        orderBy: { date: "asc" },
+      });
+      if (!firstByDate) {
+        const validated = updateDebtSchema.parse(input);
+        const oldInitial = debt.amount;
+        const amountDelta = subtractMoney(validated.amount, oldInitial);
+        const newRemaining = addMoney(debt.remainingAmount, amountDelta);
+        if (compareMoney(newRemaining, "0") < 0) {
+          return {
+            error: `Новая изначальная сумма не может быть меньше ${subtractMoney(oldInitial, debt.remainingAmount)} (остаток долга учтён)`,
+          };
+        }
+    if (debt.accountId && compareMoney(validated.amount, oldInitial) !== 0) {
+      const account = await prisma.account.findUnique({ where: { id: debt.accountId } });
+      if (account) {
+        if (debt.type === DebtType.LENT) {
+          if (compareMoney(amountDelta, "0") > 0 && compareMoney(account.balance, amountDelta) < 0) {
+            return { error: `Сумма не может превышать баланс счёта (${account.balance})` };
+          }
+          await prisma.account.update({
+            where: { id: debt.accountId },
+            data: { balance: subtractMoney(account.balance, amountDelta) },
+          });
+        } else {
+          if (compareMoney(amountDelta, "0") < 0 && compareMoney(account.balance, subtractMoney("0", amountDelta)) < 0) {
+            return { error: `Недостаточно средств на счёте (${account.balance})` };
+          }
+          await prisma.account.update({
+            where: { id: debt.accountId },
+            data: { balance: addMoney(account.balance, amountDelta) },
+          });
+        }
+      }
+    }
+    await prisma.debt.update({
+      where: { id: debtId },
+      data: {
+        personName: validated.personName,
+        date: validated.date,
+        amount: addMoney(debt.amount, amountDelta),
+        remainingAmount: addMoney(debt.remainingAmount, amountDelta),
+      },
+    });
+    await prisma.debtTransaction.create({
+          data: {
+            workspaceId: debt.workspaceId,
+            debtId,
+            accountId: debt.accountId,
+            type: DebtTransactionType.CREATED,
+            amount: validated.amount,
+            date: validated.date,
+          },
+        });
+        revalidatePath("/debts");
+        revalidatePath("/dashboard");
+        revalidatePath("/transactions");
+        return { data: debt };
+      }
+      initialTransaction = firstByDate;
+    }
+
+    const validated = updateDebtSchema.parse(input);
+    const oldInitial = initialTransaction.amount;
+    const amountDelta = subtractMoney(validated.amount, oldInitial);
+    const newRemaining = addMoney(debt.remainingAmount, amountDelta);
+
+    if (compareMoney(newRemaining, "0") < 0) {
+      return {
+        error: `Новая изначальная сумма не может быть меньше ${subtractMoney(oldInitial, debt.remainingAmount)} (остаток долга учтён)`,
+      };
+    }
+
+    if (debt.accountId && compareMoney(validated.amount, oldInitial) !== 0) {
+      const account = await prisma.account.findUnique({ where: { id: debt.accountId } });
+      if (account) {
+        if (debt.type === DebtType.LENT) {
+          if (compareMoney(amountDelta, "0") > 0 && compareMoney(account.balance, amountDelta) < 0) {
+            return { error: `Сумма не может превышать баланс счёта (${account.balance})` };
+          }
+          await prisma.account.update({
+            where: { id: debt.accountId },
+            data: { balance: subtractMoney(account.balance, amountDelta) },
+          });
+        } else {
+          if (compareMoney(amountDelta, "0") < 0 && compareMoney(account.balance, subtractMoney("0", amountDelta)) < 0) {
+            return { error: `Недостаточно средств на счёте (${account.balance})` };
+          }
+          await prisma.account.update({
+            where: { id: debt.accountId },
+            data: { balance: addMoney(account.balance, amountDelta) },
+          });
+        }
+      }
+    }
+
+    await prisma.debt.update({
+      where: { id: debtId },
+      data: {
+        personName: validated.personName,
+        date: validated.date,
+        amount: addMoney(debt.amount, amountDelta),
+        remainingAmount: addMoney(debt.remainingAmount, amountDelta),
+      },
+    });
+
+    await prisma.debtTransaction.update({
+      where: { id: initialTransaction.id },
+      data: {
+        amount: validated.amount,
+        date: validated.date,
+      },
+    });
+
+    revalidatePath("/debts");
+    revalidatePath("/dashboard");
+    revalidatePath("/transactions");
+    return { data: debt };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Не удалось обновить долг";
     return { error: message };
   }
 }

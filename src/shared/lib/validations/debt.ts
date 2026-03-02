@@ -87,6 +87,22 @@ export const addToDebtSchema = z.object({
   useAccount: z.boolean(),
 });
 
+export const updateDebtSchema = z.object({
+  personName: z.string().min(1, "Имя обязательно"),
+  amount: z
+    .string()
+    .min(1, "Сумма обязательна")
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return !isNaN(num) && num > 0;
+      },
+      { message: "Сумма должна быть больше 0" }
+    ),
+  date: z.date(),
+});
+
 export type CreateDebtInput = z.infer<typeof createDebtSchema>;
 export type CloseDebtInput = z.infer<typeof closeDebtSchema>;
 export type AddToDebtInput = z.infer<typeof addToDebtSchema>;
+export type UpdateDebtInput = z.infer<typeof updateDebtSchema>;
