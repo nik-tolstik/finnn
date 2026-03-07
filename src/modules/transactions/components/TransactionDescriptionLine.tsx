@@ -16,6 +16,7 @@ interface TransactionDescriptionLineProps {
   icon?: ReactNode;
   accountChips?: AccountChipsMap;
   categoryColor?: string | null;
+  description?: string;
   onClick?: () => void;
   className?: string;
 }
@@ -34,6 +35,7 @@ export function TransactionDescriptionLine({
   icon,
   accountChips,
   categoryColor,
+  description,
   onClick,
   className,
 }: TransactionDescriptionLineProps) {
@@ -100,14 +102,24 @@ export function TransactionDescriptionLine({
   if (onClick) {
     return (
       <Card className={cn("py-4 px-4 hover:bg-white/10 cursor-pointer transition-colors", className)} onClick={onClick}>
-        {content}
+        <div className="space-y-1.5">
+          {content}
+          {description ? (
+            <p className="text-sm text-muted-foreground leading-snug wrap-break-word">{description}</p>
+          ) : null}
+        </div>
       </Card>
     );
   }
 
   return (
     <Card className={cn("py-2 px-4", className)}>
-      <div className="py-2">{content}</div>
+      <div className="py-2 space-y-1.5">
+        {content}
+        {description ? (
+          <p className="text-sm text-muted-foreground leading-snug wrap-break-word">{description}</p>
+        ) : null}
+      </div>
     </Card>
   );
 }
