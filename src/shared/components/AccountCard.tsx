@@ -82,9 +82,6 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
             >
               <AccountIcon
                 className="h-3.5 w-3.5"
-                style={{
-                  color: account.color || undefined,
-                }}
               />
             </div>
             <div className="flex flex-col gap-2">
