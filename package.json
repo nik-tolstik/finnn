@@ -11,12 +11,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "generate:transactions": "tsx scripts/generate-transactions.ts",
-    "script:create-user": "tsx scripts/create-user.ts",
-    "script:add-user-to-workspace": "tsx scripts/add-user-to-workspace.ts",
-    "script:change-password": "tsx scripts/change-password.ts",
-    "db:create-indexes": "tsx scripts/create-indexes.ts"
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
