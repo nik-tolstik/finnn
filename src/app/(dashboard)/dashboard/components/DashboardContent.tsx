@@ -3,23 +3,15 @@
 import type { Account } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useEffect, useState, useCallback, useMemo } from "react";
-import * as React from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountsCards } from "@/modules/accounts/components/AccountsCards";
 import { CreateAccountDialog } from "@/modules/accounts/components/CreateAccountDialog";
 import { CombinedTransactionsList } from "@/modules/transactions/components/CombinedTransactionsList";
-import { TransactionsFilters } from "@/modules/transactions/components/TransactionsFilters";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/TransactionsListSkeleton";
-import { TransactionType } from "@/modules/transactions/transaction.constants";
-import {
-  getCombinedTransactions,
-  type CombinedTransactionFilters,
-  type TransactionFilters,
-} from "@/modules/transactions/transaction.service";
+import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Badge } from "@/shared/ui/badge";
@@ -44,120 +36,18 @@ interface DashboardContentProps {
 }
 
 const TRANSACTIONS_PER_PAGE = 20;
-const DEBOUNCE_DELAY = 300;
 
 function isSuccessResponse(data: any): data is { data: CombinedTransaction[]; total: number } {
   return data && "data" in data && !("error" in data);
 }
 
 export function DashboardContent({ accounts, allAccounts, workspaceId }: DashboardContentProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [displayedCount, setDisplayedCount] = useState(TRANSACTIONS_PER_PAGE);
-
-  const parseFiltersFromURL = (): TransactionFilters => {
-    const filters: TransactionFilters = {};
-
-    const parseArray = (value: string | null): string[] | undefined => {
-      if (!value) return undefined;
-      const arr = value.split(",").filter(Boolean);
-      return arr.length > 0 ? arr : undefined;
-    };
-
-    const parseDate = (value: string | null): Date | undefined => {
-      if (!value) return undefined;
-      const date = new Date(value);
-      return !isNaN(date.getTime()) ? date : undefined;
-    };
-
-    const categoryIds = parseArray(searchParams.get("categoryIds"));
-    if (categoryIds) filters.categoryIds = categoryIds;
-
-    const accountIds = parseArray(searchParams.get("accountIds"));
-    if (accountIds) filters.accountIds = accountIds;
-
-    const types = parseArray(searchParams.get("types"));
-    if (types) filters.types = types as TransactionType[];
-
-    const dateFrom = parseDate(searchParams.get("dateFrom"));
-    if (dateFrom) filters.dateFrom = dateFrom;
-
-    const dateTo = parseDate(searchParams.get("dateTo"));
-    if (dateTo) filters.dateTo = dateTo;
-
-    const search = searchParams.get("search");
-    if (search) filters.search = search;
-
-    const minAmount = searchParams.get("minAmount");
-    if (minAmount) filters.minAmount = minAmount;
-
-    const maxAmount = searchParams.get("maxAmount");
-    if (maxAmount) filters.maxAmount = maxAmount;
-
-    return filters;
-  };
-
-  const [localFilters, setLocalFilters] = useState<TransactionFilters>(() => parseFiltersFromURL());
-  const [debouncedFilters, setDebouncedFilters] = useState<TransactionFilters>({});
-  const [cachedTransactions, setCachedTransactions] = useState<{
-    data: CombinedTransaction[];
-    total: number;
-    filtersKey: string;
-  } | null>(null);
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const createAccountDialog = useDialogState();
-
-  const filtersKey = JSON.stringify(debouncedFilters);
-
-  const updateFilters = useCallback(
-    (newFilters: TransactionFilters) => {
-      setLocalFilters(newFilters);
-
-      const params = new URLSearchParams();
-      params.set("workspaceId", workspaceId);
-
-      const setArrayParam = (key: string, value: string[] | undefined) => {
-        if (value && value.length > 0) {
-          params.set(key, value.join(","));
-        }
-      };
-
-      const setDateParam = (key: string, value: Date | undefined) => {
-        if (value) {
-          params.set(key, value.toISOString());
-        }
-      };
-
-      setArrayParam("categoryIds", newFilters.categoryIds);
-      setArrayParam("accountIds", newFilters.accountIds);
-      setArrayParam("types", newFilters.types);
-
-      setDateParam("dateFrom", newFilters.dateFrom);
-      setDateParam("dateTo", newFilters.dateTo);
-
-      if (newFilters.search) params.set("search", newFilters.search);
-      if (newFilters.minAmount) params.set("minAmount", newFilters.minAmount);
-      if (newFilters.maxAmount) params.set("maxAmount", newFilters.maxAmount);
-
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    },
-    [workspaceId, pathname, router]
-  );
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedFilters(localFilters);
-      setDisplayedCount(TRANSACTIONS_PER_PAGE);
-      setHasInitiallyLoaded(false);
-    }, DEBOUNCE_DELAY);
-
-    return () => clearTimeout(timer);
-  }, [localFilters]);
 
   const {
     data: accountsData,
@@ -198,14 +88,13 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
     isLoading,
     isFetching,
   } = useQuery({
-    queryKey: ["combinedTransactions", workspaceId, debouncedFilters, displayedCount],
+    queryKey: ["combinedTransactions", workspaceId, displayedCount],
     queryFn: () =>
       getCombinedTransactions(workspaceId, {
-        ...debouncedFilters,
         skip: 0,
         take: displayedCount,
         includeDebtTransactions: true,
-      } as CombinedTransactionFilters),
+      }),
     staleTime: 5000,
     refetchInterval: 5000,
   });
@@ -216,32 +105,11 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
     }
   }, [isFetching, isLoadingMore]);
 
-  useEffect(() => {
-    if (isSuccessResponse(transactionsData)) {
-      setCachedTransactions({
-        data: transactionsData.data,
-        total: transactionsData.total,
-        filtersKey,
-      });
-      if (!hasInitiallyLoaded && transactionsData.data.length > 0) {
-        setHasInitiallyLoaded(true);
-      }
-    }
-  }, [transactionsData, filtersKey, hasInitiallyLoaded]);
-
-  let displayedTransactions: CombinedTransaction[] = [];
-  let total = 0;
-
-  if (isSuccessResponse(transactionsData)) {
-    displayedTransactions = transactionsData.data;
-    total = transactionsData.total;
-  } else if (cachedTransactions && cachedTransactions.filtersKey === filtersKey) {
-    displayedTransactions = cachedTransactions.data;
-    total = cachedTransactions.total;
-  }
+  const displayedTransactions = isSuccessResponse(transactionsData) ? transactionsData.data : [];
+  const total = isSuccessResponse(transactionsData) ? transactionsData.total : 0;
 
   const hasMore = total > displayedCount;
-  const isInitialLoading = isLoading && !hasInitiallyLoaded && displayedTransactions.length === 0;
+  const isInitialLoading = isLoading && displayedTransactions.length === 0;
 
   return (
     <div className="w-full max-w-[1440px] mx-auto">
@@ -333,11 +201,6 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
               ) : (
                 <div className="text-center py-8 text-muted-foreground">Нет транзакций.</div>
               )}
-            </div>
-            <div className="order-1 lg:order-2 lg:w-80 lg:shrink-0">
-              <div className="lg:sticky lg:top-4 lg:bg-card lg:rounded-lg lg:p-4">
-                <TransactionsFilters workspaceId={workspaceId} filters={localFilters} onFiltersChange={updateFilters} />
-              </div>
             </div>
           </div>
         </div>

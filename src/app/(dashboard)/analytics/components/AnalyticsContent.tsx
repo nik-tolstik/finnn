@@ -4,7 +4,6 @@ import { Currency } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { subDays, subMonths, startOfDay, endOfDay } from "date-fns";
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState, useMemo } from "react";
 import * as React from "react";
@@ -33,7 +32,6 @@ import { getAccountIcon } from "@/shared/utils/account-icons";
 import { formatMoney } from "@/shared/utils/money";
 
 export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
-  const router = useRouter();
   const { data: session } = useSession();
   const [transactionType, setTransactionType] = useState<TransactionType.INCOME | TransactionType.EXPENSE>(
     TransactionType.EXPENSE
@@ -262,27 +260,6 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
     return (total / daysDifference).toFixed(2);
   }, [totalExpense, daysDifference]);
 
-  const handleViewDetails = (categoryId: string | null) => {
-    const params = new URLSearchParams();
-    params.set("workspaceId", workspaceId);
-
-    if (categoryId) {
-      params.set("categoryIds", categoryId);
-    }
-
-    if (dateFrom) {
-      params.set("dateFrom", dateFrom.toISOString());
-    }
-
-    if (dateTo) {
-      params.set("dateTo", dateTo.toISOString());
-    }
-
-    params.set("types", transactionType);
-
-    router.push(`/dashboard?${params.toString()}`);
-  };
-
   return (
     <div className="w-full max-w-[1440px] mx-auto">
       <div className="space-y-6">
@@ -423,11 +400,7 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
                 </TableRow>
               ) : (
                 analytics.map((item) => (
-                  <TableRow
-                    key={item.categoryId || "no-category"}
-                    onClick={() => handleViewDetails(item.categoryId)}
-                    className="cursor-pointer"
-                  >
+                  <TableRow key={item.categoryId || "no-category"}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {item.categoryColor && (
