@@ -112,7 +112,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
   const isInitialLoading = isLoading && displayedTransactions.length === 0;
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto">
+    <div className="w-full max-w-[1024px] mx-auto">
       <div className="space-y-8">
         <div>
           <div className="flex items-center justify-between mb-4">
