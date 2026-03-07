@@ -6,7 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 
 function getDatabaseUrl(): string {
   const mongoUri = process.env.MONGODB_URI || "";
-  const dbName = "finhub";
+  const dbName = "finnn";
 
   if (!mongoUri) return mongoUri;
 
