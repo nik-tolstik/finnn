@@ -26,7 +26,7 @@ function getDatabaseUrl(): string {
       return mongoUri;
     }
 
-    parsed.pathname = "/finhub";
+    parsed.pathname = "/finnn";
     return parsed.toString();
   } catch {
     return mongoUri;
