@@ -9,9 +9,14 @@ export function AccountCardSkeleton({ className }: AccountCardSkeletonProps) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden bg-card text-card-foreground flex flex-col rounded-xl shadow-sm",
+        "relative overflow-hidden border border-white/12 text-card-foreground flex flex-col rounded-xl shadow-sm backdrop-blur-sm backdrop-saturate-150",
         className
       )}
+      style={{
+        backgroundColor: "rgba(255, 255, 255, 0.05)",
+        backgroundImage: "linear-gradient(110deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 60%, rgba(255, 255, 255, 0.08) 100%)",
+        boxShadow: "0 12px 32px rgba(0, 0, 0, 0.22)",
+      }}
     >
       <div className="flex flex-col items-start gap-0 px-4 py-3">
         <div className="flex items-center justify-between gap-2 w-full">
