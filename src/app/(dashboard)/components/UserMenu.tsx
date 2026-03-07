@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Settings, Sparkles } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
@@ -9,7 +9,6 @@ import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog
 import { Button } from "@/shared/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
-import { useUIStore } from "@/stores/ui-store";
 
 interface UserMenuProps {
   name?: string | null;
@@ -20,7 +19,6 @@ interface UserMenuProps {
 export function UserMenu({ name, email, image }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const openModal = useUIStore((s) => s.openModal);
 
   const handleLogout = async () => {
     setOpen(false);
@@ -56,18 +54,6 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
             {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
           </div>
           <div className="mt-1 border-t pt-1 space-y-1">
-            <button
-              onClick={() => {
-                setOpen(false);
-                openModal("whats-new");
-              }}
-              className={cn(
-                "w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-              )}
-            >
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
-              <span>Что нового</span>
-            </button>
             <button
               onClick={() => {
                 setOpen(false);
