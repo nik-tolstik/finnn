@@ -1,7 +1,7 @@
 "use client";
 
 import type { Account } from "@prisma/client";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
@@ -95,6 +95,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
         take: displayedCount,
         includeDebtTransactions: true,
       }),
+    placeholderData: keepPreviousData,
     staleTime: 5000,
     refetchInterval: 5000,
   });
