@@ -78,7 +78,7 @@ export function DebtsContent({ workspaceId }: DebtsContentProps) {
 
         <div className="flex flex-col md:flex-row gap-4 text-sm">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <span className="text-muted-foreground shrink-0">Мне должны:</span>
+            <span className="text-muted-foreground shrink-0">Кредит:</span>
             {Object.entries(lentTotal).length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {Object.entries(lentTotal).map(([currency, amount]) => (
@@ -92,7 +92,7 @@ export function DebtsContent({ workspaceId }: DebtsContentProps) {
             )}
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <span className="text-muted-foreground shrink-0">Я должен:</span>
+            <span className="text-muted-foreground shrink-0">Дебет:</span>
             {Object.entries(borrowedTotal).length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {Object.entries(borrowedTotal).map(([currency, amount]) => (

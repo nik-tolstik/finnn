@@ -41,7 +41,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
                   !isClosed && !isLent && "text-primary border-error-primary"
                 )}
               >
-                {isLent ? "Мне должны" : "Я должен"}
+                {isLent ? "Кредит" : "Дебет"}
               </Badge>
               {isClosed && (
                 <Badge variant="outline" className="text-xs">

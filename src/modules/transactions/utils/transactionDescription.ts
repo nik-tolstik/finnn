@@ -1,7 +1,6 @@
-import { formatMoney } from "@/shared/utils/money";
-
 import { DebtType, DebtTransactionType } from "@/modules/debts/debt.constants";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
+import { formatMoney } from "@/shared/utils/money";
 
 import { TransactionType } from "../transaction.constants";
 import type { CombinedTransaction, TransactionWithRelations } from "../transaction.types";
@@ -120,6 +119,21 @@ function getDebtActorName(
   return account.owner?.name ?? account.owner?.email ?? "Кто-то";
 }
 
+function getDebtClosedAmountText(debtTransaction: DebtTransactionWithRelations): string {
+  const debtAmountText = formatMoney(debtTransaction.amount, debtTransaction.debt.currency);
+
+  if (
+    !debtTransaction.account ||
+    !debtTransaction.toAmount ||
+    debtTransaction.account.currency === debtTransaction.debt.currency
+  ) {
+    return debtAmountText;
+  }
+
+  const accountAmountText = formatMoney(debtTransaction.toAmount, debtTransaction.account.currency);
+  return `${debtAmountText} (${accountAmountText})`;
+}
+
 function getDebtDescriptionSegments(
   debtTransaction: DebtTransactionWithRelations,
   workspaceName: string
@@ -133,11 +147,12 @@ function getDebtDescriptionSegments(
   const transactionType = debtTransaction.type;
 
   if (debtType === DebtType.LENT && transactionType === DebtTransactionType.CLOSED) {
+    const closedAmountStr = getDebtClosedAmountText(debtTransaction);
     return {
       segments: [
         { text: personName, highlight: true },
         { text: " вернул долг в размере ", highlight: false },
-        { text: amountStr, highlight: true },
+        { text: closedAmountStr, highlight: true },
         { text: " на счёт ", highlight: false },
         { text: accountName, highlight: true, segmentType: "account" },
       ],
@@ -145,11 +160,12 @@ function getDebtDescriptionSegments(
   }
 
   if (debtType === DebtType.BORROWED && transactionType === DebtTransactionType.CLOSED) {
+    const closedAmountStr = getDebtClosedAmountText(debtTransaction);
     return {
       segments: [
         { text: actor, highlight: true },
         { text: " вернул долг в размере ", highlight: false },
-        { text: amountStr, highlight: true },
+        { text: closedAmountStr, highlight: true },
         { text: " на счёт ", highlight: false },
         { text: accountName, highlight: true, segmentType: "account" },
       ],
