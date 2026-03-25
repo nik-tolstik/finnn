@@ -2,13 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { createInvite } from "@/modules/workspace/workspace.service";
 import { sendInviteEmail } from "@/shared/lib/email";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -36,7 +36,6 @@ interface InviteMemberDialogProps {
 }
 
 export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenChange }: InviteMemberDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const {
     register,
@@ -70,13 +69,10 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
 
       return inviteResult.data;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Приглашение отправлено");
-      queryClient.invalidateQueries({
-        queryKey: ["workspace-members", workspaceId],
-      });
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["workspaceMembers"]);
       onOpenChange(false);
-      router.refresh();
     },
     onError: (error: Error) => {
       toast.error(error.message);

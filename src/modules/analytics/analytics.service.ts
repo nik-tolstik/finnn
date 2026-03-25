@@ -1,12 +1,11 @@
 "use server";
 
 import { Currency } from "@prisma/client";
-import { getServerSession } from "next-auth";
 
 import { getExchangeRate } from "@/modules/currency/exchange-rate.service";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
-import { authOptions } from "@/shared/lib/auth";
 import { prisma } from "@/shared/lib/prisma";
+import { requireWorkspaceAccess } from "@/shared/lib/server-access";
 import { addMoney, multiplyMoney } from "@/shared/utils/money";
 
 export interface CategoryAnalytics {
@@ -28,21 +27,7 @@ export async function getCategoryAnalytics(
   filters: CategoryAnalyticsFilters
 ): Promise<{ data: CategoryAnalytics[] } | { error: string }> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    await requireWorkspaceAccess(workspaceId);
 
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },
@@ -163,21 +148,7 @@ export async function getTotalAmount(
   filters: TotalAmountFilters
 ): Promise<{ data: string } | { error: string }> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    await requireWorkspaceAccess(workspaceId);
 
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },

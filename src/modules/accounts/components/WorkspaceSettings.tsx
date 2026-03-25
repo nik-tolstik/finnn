@@ -9,7 +9,9 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { getWorkspace, updateWorkspace } from "@/modules/workspace/workspace.service";
+import { getWorkspaceSummary, updateWorkspace } from "@/modules/workspace/workspace.service";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -39,10 +41,9 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
   const queryClient = useQueryClient();
 
   const { data: workspaceData } = useQuery({
-    queryKey: ["workspace", workspaceId],
-    queryFn: () => getWorkspace(workspaceId),
+    queryKey: workspaceKeys.summary(workspaceId),
+    queryFn: () => getWorkspaceSummary(workspaceId),
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const workspace = workspaceData?.data;
@@ -77,12 +78,17 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
 
   const updateMutation = useMutation({
     mutationFn: (data: WorkspaceSettingsInput) => updateWorkspace(workspaceId, data),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
       } else {
-        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
-        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+        await invalidateWorkspaceDomains(queryClient, workspaceId, [
+          "workspaces",
+          "workspaceSummary",
+          "workspaceMembers",
+          "capital",
+          "analytics",
+        ]);
         if (workspace) {
           reset({
             name: result.data?.name || workspace.name,

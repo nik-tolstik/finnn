@@ -2,12 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { accountKeys } from "@/shared/lib/query-keys";
 import { createTransferSchema, type CreateTransferInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogWindow, DialogHeader, DialogTitle, DialogFooter, DialogContent } from "@/shared/ui/dialog";
@@ -30,7 +31,6 @@ export function CreateTransferDialog({
   onOpenChange,
   defaultFromAccountId,
 }: CreateTransferDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const form = useForm<CreateTransferInput>({
     resolver: zodResolver(createTransferSchema),
@@ -45,11 +45,10 @@ export function CreateTransferDialog({
   });
 
   const { data: accountsData } = useQuery({
-    queryKey: ["accounts", workspaceId],
+    queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
     enabled: open,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const accounts = useMemo(() => {
@@ -79,13 +78,13 @@ export function CreateTransferDialog({
       toast.error(result.error);
     } else {
       onOpenChange(false);
-      await queryClient.invalidateQueries({
-        queryKey: ["transactions", workspaceId],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["accounts", workspaceId],
-      });
-      router.refresh();
+      await invalidateWorkspaceDomains(queryClient, workspaceId, [
+        "transactions",
+        "accounts",
+        "capital",
+        "analyticsCategory",
+        "analyticsTotal",
+      ]);
     }
   };
 

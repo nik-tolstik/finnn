@@ -27,6 +27,8 @@ import {
   updateCategoriesOrder,
 } from "@/modules/categories/category.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { categoryKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import {
   ColorPicker,
@@ -184,10 +186,9 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   );
 
   const { data: categoriesData } = useQuery({
-    queryKey: ["categories", workspaceId],
+    queryKey: categoryKeys.list(workspaceId),
     queryFn: () => getCategories(workspaceId),
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const categories = categoriesData?.data || [];
@@ -272,11 +273,11 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: { name?: string; color?: string } }) => updateCategory(id, data),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
       } else {
-        queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
         setEditingCategory(null);
         setEditingName("");
         setEditingColor("");
@@ -286,14 +287,21 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
   const updateOrderMutation = useMutation({
     mutationFn: (categoryIds: string[]) => updateCategoriesOrder(workspaceId, categoryIds),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
-        queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
+        await invalidateWorkspaceDomains(queryClient, workspaceId, [
+          "categories",
+          "transactions",
+          "analyticsCategory",
+        ]);
+        return;
       }
+
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
     },
-    onError: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
+    onError: async () => {
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
     },
   });
 
@@ -317,7 +325,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
       const updatedCategories = [...categories.filter((cat) => cat.type !== type), ...orderedItems];
 
-      queryClient.setQueryData(["categories", workspaceId], { data: updatedCategories });
+      queryClient.setQueryData(categoryKeys.list(workspaceId), { data: updatedCategories });
 
       updateOrderMutation.mutate(newItems.map((item) => item.id));
     }
@@ -325,11 +333,11 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
       } else {
-        queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
       }
       deleteDialog.closeDialog();
     },

@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { createWorkspaceSchema, type CreateWorkspaceInput } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogWindow, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -52,16 +53,21 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
 
   const createMutation = useMutation({
     mutationFn: (data: CreateWorkspaceInput) => createWorkspace(data),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
       } else {
         toast.success("Рабочий стол успешно создан!");
-        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
         onOpenChange(false);
         if (result.data) {
+          await invalidateWorkspaceDomains(queryClient, result.data.id, [
+            "workspaces",
+            "workspaceSummary",
+            "workspaceMembers",
+            "capital",
+            "analytics",
+          ]);
           router.push(`/dashboard?workspaceId=${result.data.id}`);
-          router.refresh();
         }
       }
     },

@@ -3,10 +3,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -35,7 +35,6 @@ export function DeleteTransactionDialog({
   open,
   onOpenChange,
 }: DeleteTransactionDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -47,13 +46,13 @@ export function DeleteTransactionDialog({
         toast.error(result.error);
       } else {
         onOpenChange(false);
-        await queryClient.invalidateQueries({
-          queryKey: ["transactions", workspaceId],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["accounts", workspaceId],
-        });
-        router.refresh();
+        await invalidateWorkspaceDomains(queryClient, workspaceId, [
+          "transactions",
+          "accounts",
+          "capital",
+          "analyticsCategory",
+          "analyticsTotal",
+        ]);
       }
     } catch {
       toast.error("Не удалось удалить транзакцию");

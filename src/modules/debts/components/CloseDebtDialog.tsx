@@ -1,22 +1,23 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { SelectAccountDialog } from "@/modules/accounts/components/SelectAccountDialog";
 import { getAccounts } from "@/modules/accounts/account.service";
-import type { Account } from "@prisma/client";
+import { SelectAccountDialog } from "@/modules/accounts/components/SelectAccountDialog";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { accountKeys } from "@/shared/lib/query-keys";
 import { closeDebtSchema, type CloseDebtInput } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
-import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
+import { NumberInput } from "@/shared/ui/number-input";
 import { addMoney, subtractMoney, compareMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { DebtType } from "../debt.constants";
@@ -32,18 +33,17 @@ interface CloseDebtDialogProps {
 }
 
 export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: CloseDebtDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const selectAccountDialog = useDialogState();
 
   const { data: accountsData } = useQuery({
-    queryKey: ["accounts", workspaceId],
+    queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
     enabled: open,
     staleTime: 5000,
   });
 
-  const accounts = accountsData?.data || [];
+  const accounts = useMemo(() => accountsData?.data || [], [accountsData?.data]);
 
   const {
     register,
@@ -156,11 +156,12 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     } else {
       toast.success("Долг закрыт");
       onOpenChange(false);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["debts", workspaceId] }),
-        queryClient.invalidateQueries({ queryKey: ["accounts", workspaceId] }),
+      await invalidateWorkspaceDomains(queryClient, workspaceId, [
+        "debts",
+        "transactions",
+        "accounts",
+        "capital",
       ]);
-      router.refresh();
     }
   };
 

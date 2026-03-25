@@ -4,15 +4,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Currency } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Wallet, HandCoins, CreditCard, Landmark, type LucideIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { getWorkspace, getWorkspaceMembers } from "@/modules/workspace/workspace.service";
+import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { workspaceKeys } from "@/shared/lib/query-keys";
 import { createAccountSchema, type CreateAccountInput } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
 import {
@@ -34,8 +36,8 @@ import {
   DialogContent,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
-import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select/select";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { getAvatarColor } from "@/shared/utils/avatar-colors";
@@ -66,7 +68,6 @@ interface CreateAccountDialogProps {
 }
 
 export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseComplete }: CreateAccountDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const {
@@ -94,16 +95,15 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
   });
 
   const { data: membersData } = useQuery({
-    queryKey: ["workspace-members", workspaceId],
+    queryKey: workspaceKeys.members(workspaceId),
     queryFn: () => getWorkspaceMembers(workspaceId),
     enabled: open,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const { data: workspaceData } = useQuery({
-    queryKey: ["workspace", workspaceId],
-    queryFn: () => getWorkspace(workspaceId),
+    queryKey: workspaceKeys.summary(workspaceId),
+    queryFn: () => getWorkspaceSummary(workspaceId),
     enabled: open,
     staleTime: 5000,
   });
@@ -189,10 +189,12 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
       toast.error(result.error);
     } else {
       onOpenChange(false);
-      await queryClient.invalidateQueries({
-        queryKey: ["accounts", workspaceId],
-      });
-      router.refresh();
+      await invalidateWorkspaceDomains(queryClient, workspaceId, [
+        "accounts",
+        "archivedAccounts",
+        "transactions",
+        "capital",
+      ]);
     }
   };
 
@@ -301,7 +303,14 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                         return (
                           <div className="flex items-center gap-2">
                             {member.image ? (
-                              <img src={member.image} alt={displayName} className="h-5 w-5 rounded-full object-cover" />
+                              <Image
+                                src={member.image}
+                                alt={displayName}
+                                width={20}
+                                height={20}
+                                className="h-5 w-5 rounded-full object-cover"
+                                unoptimized
+                              />
                             ) : (
                               <div
                                 className="flex h-5 w-5 items-center justify-center rounded-full text-white text-xs font-medium"

@@ -8,7 +8,6 @@ import { useSession } from "next-auth/react";
 import { useState, useMemo } from "react";
 import * as React from "react";
 
-import { Button } from "@/shared/ui/button";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import {
@@ -19,9 +18,11 @@ import {
 import { getWorkspaceCapital } from "@/modules/analytics/capital.service";
 import type { CapitalFilters } from "@/modules/analytics/capital.types";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
-import { getWorkspace } from "@/modules/workspace/workspace.service";
+import { getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { DEFAULT_CURRENCY } from "@/shared/constants/currency";
+import { accountKeys, analyticsKeys, workspaceKeys } from "@/shared/lib/query-keys";
+import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
 import { Segmented } from "@/shared/ui/segmented";
@@ -43,14 +44,14 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
   const [excludeDebts, setExcludeDebts] = useState(false);
 
   const { data: workspaceData } = useQuery({
-    queryKey: ["workspace", workspaceId],
-    queryFn: () => getWorkspace(workspaceId),
+    queryKey: workspaceKeys.summary(workspaceId),
+    queryFn: () => getWorkspaceSummary(workspaceId),
     enabled: !!workspaceId,
     staleTime: 5000,
   });
 
   const { data: accountsData } = useQuery({
-    queryKey: ["accounts", workspaceId],
+    queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
     enabled: !!workspaceId,
     staleTime: 5000,
@@ -180,7 +181,7 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
   );
 
   const { data: capitalData, isLoading: isCapitalLoading } = useQuery({
-    queryKey: ["capital", workspaceId, capitalFilters],
+    queryKey: analyticsKeys.capital(workspaceId, capitalFilters),
     queryFn: () => getWorkspaceCapital(workspaceId, capitalFilters),
     enabled: !!workspaceId,
     staleTime: 5000,
@@ -223,21 +224,21 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
   );
 
   const { data: analyticsData, isLoading } = useQuery({
-    queryKey: ["categoryAnalytics", workspaceId, filters],
+    queryKey: analyticsKeys.category(workspaceId, filters),
     queryFn: () => getCategoryAnalytics(workspaceId, filters),
     enabled: !!workspaceId && !!dateFrom && !!dateTo,
     staleTime: 5000,
   });
 
   const { data: totalIncomeData } = useQuery({
-    queryKey: ["totalIncome", workspaceId, dateFilters],
+    queryKey: analyticsKeys.total(workspaceId, TransactionType.INCOME, dateFilters),
     queryFn: () => getTotalAmount(workspaceId, TransactionType.INCOME, dateFilters),
     enabled: !!workspaceId && !!dateFrom && !!dateTo,
     staleTime: 5000,
   });
 
   const { data: totalExpenseData } = useQuery({
-    queryKey: ["totalExpense", workspaceId, dateFilters],
+    queryKey: analyticsKeys.total(workspaceId, TransactionType.EXPENSE, dateFilters),
     queryFn: () => getTotalAmount(workspaceId, TransactionType.EXPENSE, dateFilters),
     enabled: !!workspaceId && !!dateFrom && !!dateTo,
     staleTime: 5000,

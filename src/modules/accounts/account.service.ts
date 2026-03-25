@@ -1,10 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
-
-import { authOptions } from "@/shared/lib/auth";
 import { prisma } from "@/shared/lib/prisma";
+import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
+import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
 import {
   createAccountSchema,
   updateAccountSchema,
@@ -16,21 +14,7 @@ import {
 
 export async function createAccount(workspaceId: string, input: CreateAccountInput) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    await requireWorkspaceAccess(workspaceId);
 
     const validated = createAccountSchema.parse(input);
 
@@ -52,7 +36,7 @@ export async function createAccount(workspaceId: string, input: CreateAccountInp
       },
     });
 
-    revalidatePath("/accounts");
+    revalidateAccountingRoutes();
     return { data: account };
   } catch (error: any) {
     return { error: error.message || "Не удалось создать счёт" };
@@ -61,27 +45,17 @@ export async function createAccount(workspaceId: string, input: CreateAccountInp
 
 export async function updateAccount(id: string, input: UpdateAccountInput) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
+    await requireUserId();
 
-    const account = await prisma.account.findFirst({
-      where: {
-        id,
-        workspace: {
-          members: {
-            some: {
-              userId: session.user.id,
-            },
-          },
-        },
-      },
+    const account = await prisma.account.findUnique({
+      where: { id },
     });
 
-    if (!account) {
-      return { error: "Счёт не найден или доступ запрещён" };
+    if (!account || account.archived) {
+      return { error: "Счёт не найден" };
     }
+
+    await requireWorkspaceAccess(account.workspaceId);
 
     const validated = updateAccountSchema.parse(input);
 
@@ -100,7 +74,7 @@ export async function updateAccount(id: string, input: UpdateAccountInput) {
       data: updateData,
     });
 
-    revalidatePath("/accounts");
+    revalidateAccountingRoutes();
     return { data: updated };
   } catch (error: any) {
     return { error: error.message || "Не удалось обновить счёт" };
@@ -109,30 +83,20 @@ export async function updateAccount(id: string, input: UpdateAccountInput) {
 
 export async function archiveAccount(id: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
+    await requireUserId();
 
-    const account = await prisma.account.findFirst({
-      where: {
-        id,
-        workspace: {
-          members: {
-            some: {
-              userId: session.user.id,
-            },
-          },
-        },
-      },
+    const account = await prisma.account.findUnique({
+      where: { id },
     });
 
     if (!account) {
-      return { error: "Счёт не найден или доступ запрещён" };
+      return { error: "Счёт не найден" };
     }
 
+    await requireWorkspaceAccess(account.workspaceId);
+
     if (account.archived) {
-      revalidatePath("/accounts");
+      revalidateAccountingRoutes();
       return { success: true };
     }
 
@@ -141,7 +105,7 @@ export async function archiveAccount(id: string) {
       data: { archived: true },
     });
 
-    revalidatePath("/accounts");
+    revalidateAccountingRoutes();
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Не удалось архивировать счёт" };
@@ -150,21 +114,7 @@ export async function archiveAccount(id: string) {
 
 export async function getAccounts(workspaceId: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    await requireWorkspaceAccess(workspaceId);
 
     const accounts = await prisma.account.findMany({
       where: {
@@ -192,10 +142,7 @@ export async function getAccounts(workspaceId: string) {
 
 export async function getAccount(id: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
+    await requireUserId();
 
     const account = await prisma.account.findUnique({
       where: { id },
@@ -209,16 +156,7 @@ export async function getAccount(id: string) {
       return { error: "Счёт не найден" };
     }
 
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId: account.workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    await requireWorkspaceAccess(account.workspaceId);
 
     return { data: account };
   } catch (error: any) {
@@ -228,21 +166,7 @@ export async function getAccount(id: string) {
 
 export async function updateAccountsOrder(workspaceId: string, input: UpdateAccountsOrderInput) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    const { userId } = await requireWorkspaceAccess(workspaceId);
 
     const validated = updateAccountsOrderSchema.parse(input);
 
@@ -255,7 +179,7 @@ export async function updateAccountsOrder(workspaceId: string, input: UpdateAcco
             workspace: {
               members: {
                 some: {
-                  userId: session.user.id,
+                  userId,
                 },
               },
             },
@@ -265,7 +189,7 @@ export async function updateAccountsOrder(workspaceId: string, input: UpdateAcco
       )
     );
 
-    revalidatePath("/accounts");
+    revalidateAccountingRoutes();
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Не удалось обновить порядок счетов" };
@@ -274,21 +198,7 @@ export async function updateAccountsOrder(workspaceId: string, input: UpdateAcco
 
 export async function getArchivedAccounts(workspaceId: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    await requireWorkspaceAccess(workspaceId);
 
     const accounts = await prisma.account.findMany({
       where: {
@@ -316,30 +226,20 @@ export async function getArchivedAccounts(workspaceId: string) {
 
 export async function unarchiveAccount(id: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
+    await requireUserId();
 
-    const account = await prisma.account.findFirst({
-      where: {
-        id,
-        workspace: {
-          members: {
-            some: {
-              userId: session.user.id,
-            },
-          },
-        },
-      },
+    const account = await prisma.account.findUnique({
+      where: { id },
     });
 
     if (!account) {
-      return { error: "Счёт не найден или доступ запрещён" };
+      return { error: "Счёт не найден" };
     }
 
+    await requireWorkspaceAccess(account.workspaceId);
+
     if (!account.archived) {
-      revalidatePath("/accounts");
+      revalidateAccountingRoutes();
       return { success: true };
     }
 
@@ -352,7 +252,7 @@ export async function unarchiveAccount(id: string) {
       data: { archived: false, order: accountsCount },
     });
 
-    revalidatePath("/accounts");
+    revalidateAccountingRoutes();
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Не удалось удалить счёт из архива" };

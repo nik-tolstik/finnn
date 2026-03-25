@@ -14,6 +14,7 @@ import { TransactionsListSkeleton } from "@/modules/transactions/components/Tran
 import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { accountKeys, transactionKeys } from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
@@ -54,11 +55,10 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
     isLoading: isLoadingAccounts,
     isFetching: isFetchingAccounts,
   } = useQuery({
-    queryKey: ["accounts", workspaceId],
+    queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
     initialData: { data: allAccounts || accounts },
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const currentUserId = session?.user?.id;
@@ -82,22 +82,24 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
   }, [accountsData?.data, allAccounts, accounts, showAllAccounts, currentUserId]);
 
   const isAccountsLoading = isLoadingAccounts || (isFetchingAccounts && accounts.length === 0);
+  const transactionFilters = useMemo(
+    () => ({
+      skip: 0,
+      take: displayedCount,
+      includeDebtTransactions: true,
+    }),
+    [displayedCount]
+  );
 
   const {
     data: transactionsData,
     isLoading,
     isFetching,
   } = useQuery({
-    queryKey: ["combinedTransactions", workspaceId, displayedCount],
-    queryFn: () =>
-      getCombinedTransactions(workspaceId, {
-        skip: 0,
-        take: displayedCount,
-        includeDebtTransactions: true,
-      }),
+    queryKey: transactionKeys.list(workspaceId, transactionFilters),
+    queryFn: () => getCombinedTransactions(workspaceId, transactionFilters),
     placeholderData: keepPreviousData,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   useEffect(() => {

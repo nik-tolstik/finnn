@@ -26,3 +26,11 @@ export type WorkspaceWithMembers = Workspace & {
     };
   })[];
 };
+
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  icon: string | null;
+  baseCurrency: string;
+  ownerId: string;
+}

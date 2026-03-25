@@ -1,12 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Building2, Hash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { createWorkspaceSchema, type CreateWorkspaceInput } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -18,6 +20,7 @@ import { generateSlug } from "../workspace.utils";
 
 export function CreateWorkspacePrompt() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -54,7 +57,16 @@ export function CreateWorkspacePrompt() {
       }
 
       toast.success("Рабочий стол успешно создан!");
-      router.refresh();
+      if (result?.data) {
+        await invalidateWorkspaceDomains(queryClient, result.data.id, [
+          "workspaces",
+          "workspaceSummary",
+          "workspaceMembers",
+          "capital",
+          "analytics",
+        ]);
+        router.push(`/dashboard?workspaceId=${result.data.id}`);
+      }
     } catch {
       toast.error("Что-то пошло не так");
     } finally {

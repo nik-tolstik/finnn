@@ -3,11 +3,12 @@
 import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Redo2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AccountCard } from "@/shared/components/AccountCard";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { accountKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 
@@ -26,16 +27,14 @@ export function ArchivedAccountsDialog({
   onOpenChange,
   onCloseComplete,
 }: ArchivedAccountsDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [unarchivingIds, setUnarchivingIds] = useState<Set<string>>(new Set());
 
   const { data: archivedAccountsData, isLoading } = useQuery({
-    queryKey: ["archivedAccounts", workspaceId],
+    queryKey: accountKeys.archived(workspaceId),
     queryFn: () => getArchivedAccounts(workspaceId),
     enabled: open,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const archivedAccounts = archivedAccountsData?.data || [];
@@ -51,13 +50,12 @@ export function ArchivedAccountsDialog({
       if (result.error) {
         toast.error(result.error);
       } else {
-        await queryClient.invalidateQueries({
-          queryKey: ["accounts", workspaceId],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["archivedAccounts", workspaceId],
-        });
-        router.refresh();
+        await invalidateWorkspaceDomains(queryClient, workspaceId, [
+          "accounts",
+          "archivedAccounts",
+          "transactions",
+          "capital",
+        ]);
       }
     } catch {
       toast.error("Произошла ошибка при удалении из архива");

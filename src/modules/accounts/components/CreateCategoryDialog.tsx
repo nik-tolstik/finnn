@@ -2,13 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { CategoryType } from "@/modules/categories/category.constants";
 import { createCategory } from "@/modules/categories/category.service";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { createCategorySchema, type CreateCategoryInput } from "@/shared/lib/validations/category";
 import { Button } from "@/shared/ui/button";
 import {
@@ -40,7 +40,6 @@ interface CreateCategoryDialogProps {
 }
 
 export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: CreateCategoryDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const {
     register,
@@ -72,15 +71,12 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
 
   const createMutation = useMutation({
     mutationFn: (data: CreateCategoryInput) => createCategory(workspaceId, data),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
       } else {
-        queryClient.invalidateQueries({
-          queryKey: ["categories", workspaceId],
-        });
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
         onOpenChange(false);
-        router.refresh();
       }
     },
   });

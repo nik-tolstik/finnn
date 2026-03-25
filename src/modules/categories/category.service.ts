@@ -1,10 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
-
-import { authOptions } from "@/shared/lib/auth";
 import { prisma } from "@/shared/lib/prisma";
+import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
+import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -14,21 +12,7 @@ import {
 
 export async function createCategory(workspaceId: string, input: CreateCategoryInput) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    await requireWorkspaceAccess(workspaceId);
 
     const validated = createCategorySchema.parse(input);
 
@@ -50,7 +34,7 @@ export async function createCategory(workspaceId: string, input: CreateCategoryI
       },
     });
 
-    revalidatePath("/categories");
+    revalidateAccountingRoutes();
     return { data: category };
   } catch (error: any) {
     return { error: error.message || "Не удалось создать категорию" };
@@ -59,27 +43,17 @@ export async function createCategory(workspaceId: string, input: CreateCategoryI
 
 export async function updateCategory(id: string, input: UpdateCategoryInput) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
+    await requireUserId();
 
-    const category = await prisma.category.findFirst({
-      where: {
-        id,
-        workspace: {
-          members: {
-            some: {
-              userId: session.user.id,
-            },
-          },
-        },
-      },
+    const category = await prisma.category.findUnique({
+      where: { id },
     });
 
     if (!category) {
-      return { error: "Категория не найдена или доступ запрещён" };
+      return { error: "Категория не найдена" };
     }
+
+    await requireWorkspaceAccess(category.workspaceId);
 
     const validated = updateCategorySchema.parse(input);
 
@@ -88,7 +62,7 @@ export async function updateCategory(id: string, input: UpdateCategoryInput) {
       data: validated,
     });
 
-    revalidatePath("/categories");
+    revalidateAccountingRoutes();
     return { data: updated };
   } catch (error: any) {
     return { error: error.message || "Не удалось обновить категорию" };
@@ -97,33 +71,23 @@ export async function updateCategory(id: string, input: UpdateCategoryInput) {
 
 export async function deleteCategory(id: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
+    await requireUserId();
 
-    const category = await prisma.category.findFirst({
-      where: {
-        id,
-        workspace: {
-          members: {
-            some: {
-              userId: session.user.id,
-            },
-          },
-        },
-      },
+    const category = await prisma.category.findUnique({
+      where: { id },
     });
 
     if (!category) {
-      return { error: "Категория не найдена или доступ запрещён" };
+      return { error: "Категория не найдена" };
     }
+
+    await requireWorkspaceAccess(category.workspaceId);
 
     await prisma.category.delete({
       where: { id },
     });
 
-    revalidatePath("/categories");
+    revalidateAccountingRoutes();
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Не удалось удалить категорию" };
@@ -132,21 +96,7 @@ export async function deleteCategory(id: string) {
 
 export async function getCategories(workspaceId: string, type?: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    await requireWorkspaceAccess(workspaceId);
 
     const categories = await prisma.category.findMany({
       where: {
@@ -171,21 +121,7 @@ export async function getCategories(workspaceId: string, type?: string) {
 
 export async function updateCategoriesOrder(workspaceId: string, categoryIds: string[]) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: {
-        workspaceId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!member) {
-      return { error: "Доступ запрещён" };
-    }
+    await requireWorkspaceAccess(workspaceId);
 
     if (categoryIds.length === 0) {
       return { success: true };
@@ -222,7 +158,7 @@ export async function updateCategoriesOrder(workspaceId: string, categoryIds: st
 
     await Promise.all(updates);
 
-    revalidatePath("/categories");
+    revalidateAccountingRoutes();
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Не удалось обновить порядок категорий" };
@@ -231,27 +167,17 @@ export async function updateCategoriesOrder(workspaceId: string, categoryIds: st
 
 export async function getCategoryTransactionCount(categoryId: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
+    await requireUserId();
 
-    const category = await prisma.category.findFirst({
-      where: {
-        id: categoryId,
-        workspace: {
-          members: {
-            some: {
-              userId: session.user.id,
-            },
-          },
-        },
-      },
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
     });
 
     if (!category) {
-      return { error: "Категория не найдена или доступ запрещён" };
+      return { error: "Категория не найдена" };
     }
+
+    await requireWorkspaceAccess(category.workspaceId);
 
     const count = await prisma.transaction.count({
       where: {

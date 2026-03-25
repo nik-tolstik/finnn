@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -12,9 +11,10 @@ import { toast } from "sonner";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { getCategories } from "@/modules/categories/category.service";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
-import { AccountCard } from "@/shared/components/AccountCard";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import { updateTransactionSchema, type UpdateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { type ComboboxOption } from "@/shared/ui/combobox";
@@ -28,10 +28,9 @@ import {
   DialogTitle,
   DialogContent,
 } from "@/shared/ui/dialog";
-import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
-
 import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { updateTransaction } from "../transaction.service";
@@ -52,7 +51,6 @@ export function EditTransactionDialog({
   onOpenChange,
   onCloseComplete,
 }: EditTransactionDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const {
     register,
@@ -74,19 +72,17 @@ export function EditTransactionDialog({
   });
 
   const { data: categoriesData } = useQuery({
-    queryKey: ["categories", workspaceId],
+    queryKey: categoryKeys.list(workspaceId),
     queryFn: () => getCategories(workspaceId),
     enabled: open,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const { data: accountsData } = useQuery({
-    queryKey: ["accounts", workspaceId],
+    queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
     enabled: open,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const accounts = useMemo(() => {
@@ -159,11 +155,13 @@ export function EditTransactionDialog({
     if (result.error) {
       toast.error(result.error);
     } else {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] }),
-        queryClient.invalidateQueries({ queryKey: ["accounts", workspaceId] }),
+      await invalidateWorkspaceDomains(queryClient, workspaceId, [
+        "transactions",
+        "accounts",
+        "capital",
+        "analyticsCategory",
+        "analyticsTotal",
       ]);
-      router.refresh();
     }
   };
 

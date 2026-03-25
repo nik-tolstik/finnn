@@ -5,8 +5,9 @@ import { User, UserPlus } from "lucide-react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 
-import { getWorkspace, getWorkspaceMembers } from "@/modules/workspace/workspace.service";
+import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 
 import { InviteMemberDialog } from "./InviteMemberDialog";
@@ -23,17 +24,15 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
   }>();
 
   const { data: membersData } = useQuery({
-    queryKey: ["workspace-members", workspaceId],
+    queryKey: workspaceKeys.members(workspaceId),
     queryFn: () => getWorkspaceMembers(workspaceId),
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const { data: workspaceData } = useQuery({
-    queryKey: ["workspace", workspaceId],
-    queryFn: () => getWorkspace(workspaceId),
+    queryKey: workspaceKeys.summary(workspaceId),
+    queryFn: () => getWorkspaceSummary(workspaceId),
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const members = membersData?.data || [];

@@ -1,10 +1,10 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -28,7 +28,6 @@ interface DeleteDebtDialogProps {
 }
 
 export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: DeleteDebtDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -41,8 +40,12 @@ export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: Dele
       } else {
         toast.success("Долг удалён");
         onOpenChange(false);
-        await queryClient.invalidateQueries({ queryKey: ["debts", workspaceId] });
-        router.refresh();
+        await invalidateWorkspaceDomains(queryClient, workspaceId, [
+          "debts",
+          "transactions",
+          "accounts",
+          "capital",
+        ]);
       }
     } catch {
       toast.error("Не удалось удалить долг");

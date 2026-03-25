@@ -6,7 +6,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowDown, ArrowUp, X } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -18,13 +17,15 @@ import { getCategories } from "@/modules/categories/category.service";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import { createTransactionSchema, type CreateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { type ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
-import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Segmented } from "@/shared/ui/segmented";
 import { Textarea } from "@/shared/ui/textarea";
 import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
@@ -57,17 +58,15 @@ export function CreateTransactionDialog({
   initialDate,
   initialCategoryId,
 }: CreateTransactionDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const selectAccountDialog = useDialogState();
 
   const { data: accountsData } = useQuery({
-    queryKey: ["accounts", workspaceId],
+    queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
     enabled: open,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const account = useMemo(() => {
@@ -178,11 +177,10 @@ export function CreateTransactionDialog({
   }, [selectedAccount, account, amount, transactionType]);
 
   const { data: categoriesData } = useQuery({
-    queryKey: ["categories", workspaceId],
+    queryKey: categoryKeys.list(workspaceId),
     queryFn: () => getCategories(workspaceId),
     enabled: open,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const allCategories = useMemo(() => {
@@ -258,6 +256,7 @@ export function CreateTransactionDialog({
   }, [
     open,
     reset,
+    setValue,
     defaultType,
     account,
     accountProp,
@@ -324,20 +323,14 @@ export function CreateTransactionDialog({
     } else {
       onOpenChange(false);
 
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["transactions", workspaceId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["accounts", workspaceId],
-        }),
-        data.newCategory
-          ? queryClient.invalidateQueries({
-              queryKey: ["categories", workspaceId],
-            })
-          : Promise.resolve(),
+      await invalidateWorkspaceDomains(queryClient, workspaceId, [
+        "transactions",
+        "accounts",
+        "capital",
+        "analyticsCategory",
+        "analyticsTotal",
+        ...(data.newCategory ? (["categories"] as const) : []),
       ]);
-      router.refresh();
     }
   };
 

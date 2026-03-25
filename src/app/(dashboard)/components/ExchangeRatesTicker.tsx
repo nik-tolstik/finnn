@@ -6,8 +6,9 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { getTodayExchangeRates } from "@/modules/currency/exchange-rate.service";
-import { getWorkspace } from "@/modules/workspace/workspace.service";
+import { getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { DEFAULT_CURRENCY } from "@/shared/constants/currency";
+import { exchangeRateKeys, workspaceKeys } from "@/shared/lib/query-keys";
 
 export function ExchangeRatesTicker() {
   const searchParams = useSearchParams();
@@ -23,8 +24,8 @@ export function ExchangeRatesTicker() {
   }, [searchParams]);
 
   const { data: workspaceData } = useQuery({
-    queryKey: ["workspace", workspaceId],
-    queryFn: () => (workspaceId ? getWorkspace(workspaceId) : null),
+    queryKey: workspaceKeys.summary(workspaceId ?? "pending"),
+    queryFn: () => (workspaceId ? getWorkspaceSummary(workspaceId) : null),
     enabled: !!workspaceId,
     staleTime: 5000,
   });
@@ -35,7 +36,7 @@ export function ExchangeRatesTicker() {
       : DEFAULT_CURRENCY;
 
   const { data: ratesData, isLoading } = useQuery({
-    queryKey: ["exchange-rates-today"],
+    queryKey: exchangeRateKeys.today(),
     queryFn: () => getTodayExchangeRates(),
     staleTime: 3600000,
     refetchInterval: false,

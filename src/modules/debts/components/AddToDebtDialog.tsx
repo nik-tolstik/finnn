@@ -2,18 +2,19 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/AccountCard";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { accountKeys } from "@/shared/lib/query-keys";
 import { addToDebtSchema, type AddToDebtInput } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
-import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
+import { NumberInput } from "@/shared/ui/number-input";
 import { addMoney, subtractMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { DebtType } from "../debt.constants";
@@ -29,11 +30,10 @@ interface AddToDebtDialogProps {
 }
 
 export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: AddToDebtDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data: accountsData } = useQuery({
-    queryKey: ["accounts", workspaceId],
+    queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
     enabled: open && !!debt.accountId,
     staleTime: 5000,
@@ -103,11 +103,12 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     } else {
       toast.success("Сумма добавлена к долгу");
       onOpenChange(false);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["debts", workspaceId] }),
-        queryClient.invalidateQueries({ queryKey: ["accounts", workspaceId] }),
+      await invalidateWorkspaceDomains(queryClient, workspaceId, [
+        "debts",
+        "transactions",
+        "accounts",
+        "capital",
       ]);
-      router.refresh();
     }
   };
 

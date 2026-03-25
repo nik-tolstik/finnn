@@ -10,6 +10,7 @@ import { DebtStatus, DebtType } from "@/modules/debts/debt.constants";
 import { getDebts } from "@/modules/debts/debt.service";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { debtKeys } from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { formatMoney, addMoney } from "@/shared/utils/money";
@@ -24,10 +25,9 @@ export function DebtsContent({ workspaceId }: DebtsContentProps) {
   const historyDialog = useDialogState();
 
   const { data } = useQuery({
-    queryKey: ["debts", workspaceId],
+    queryKey: debtKeys.list(workspaceId),
     queryFn: () => getDebts(workspaceId),
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const debts = "data" in (data || {}) ? data?.data : [];

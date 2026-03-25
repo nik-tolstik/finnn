@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { debtKeys } from "@/shared/lib/query-keys";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
 
 import { DebtStatus } from "../debt.constants";
@@ -30,10 +31,9 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
   const editDialog = useDialogState<DebtWithRelations>();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["debts", workspaceId],
+    queryKey: debtKeys.list(workspaceId),
     queryFn: () => getDebts(workspaceId),
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const debts = (data?.data || []).filter((d) => d.status === DebtStatus.OPEN);

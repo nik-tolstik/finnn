@@ -4,14 +4,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Building2, CreditCard, HandCoins, Landmark, Wallet, type LucideIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
 import { DebtType, DebtTransactionType } from "@/modules/debts/debt.constants";
-import { getWorkspace } from "@/modules/workspace/workspace.service";
+import { getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import { getAccountIcon } from "@/shared/utils/account-icons";
 
@@ -56,7 +57,6 @@ export function CombinedTransactionsList({
   workspaceId,
   isLoadingMore,
 }: CombinedTransactionsListProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const editTransactionDialog = useDialogState<{
     transaction: TransactionWithRelations;
@@ -80,10 +80,9 @@ export function CombinedTransactionsList({
   }>();
 
   const { data: workspaceData } = useQuery({
-    queryKey: ["workspace", workspaceId],
-    queryFn: () => getWorkspace(workspaceId),
+    queryKey: workspaceKeys.summary(workspaceId),
+    queryFn: () => getWorkspaceSummary(workspaceId),
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const workspaceName = useMemo(() => {
@@ -114,38 +113,22 @@ export function CombinedTransactionsList({
   };
 
   const handleDelete = async (transaction: TransactionWithRelations) => {
-    const previousTransactions = queryClient.getQueryData<{
-      data: CombinedTransaction[];
-    }>(["combinedTransactions", workspaceId]);
-
-    if (previousTransactions) {
-      queryClient.setQueryData(["combinedTransactions", workspaceId], {
-        data: previousTransactions.data.filter((t) => !(t.kind === "transaction" && t.data.id === transaction.id)),
-      });
-    }
-
     try {
       const result = await deleteTransaction(transaction.id);
       if (result.error) {
         toast.error(result.error);
-        if (previousTransactions) {
-          queryClient.setQueryData(["combinedTransactions", workspaceId], previousTransactions);
-        }
       } else {
-        await queryClient.invalidateQueries({
-          queryKey: ["combinedTransactions", workspaceId],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["accounts", workspaceId],
-        });
-        router.refresh();
+        await invalidateWorkspaceDomains(queryClient, workspaceId, [
+          "transactions",
+          "accounts",
+          "capital",
+          "analyticsCategory",
+          "analyticsTotal",
+        ]);
         actionsDialog.closeDialog();
       }
     } catch {
       toast.error("Не удалось удалить транзакцию");
-      if (previousTransactions) {
-        queryClient.setQueryData(["combinedTransactions", workspaceId], previousTransactions);
-      }
     }
   };
 

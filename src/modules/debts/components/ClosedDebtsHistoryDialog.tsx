@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { debtKeys } from "@/shared/lib/query-keys";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
 import { Dialog, DialogWindow, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 
@@ -23,12 +24,15 @@ export function ClosedDebtsHistoryDialog({
   onOpenChange,
   onCloseComplete,
 }: ClosedDebtsHistoryDialogProps) {
+  const debtFilters = {
+    status: DebtStatus.CLOSED,
+  };
+
   const { data, isLoading } = useQuery({
-    queryKey: ["debts", workspaceId, "closed"],
-    queryFn: () => getDebts(workspaceId, { status: DebtStatus.CLOSED }),
+    queryKey: debtKeys.list(workspaceId, debtFilters),
+    queryFn: () => getDebts(workspaceId, debtFilters),
     enabled: open,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const closedDebts = data?.data || [];

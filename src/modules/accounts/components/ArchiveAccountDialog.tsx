@@ -2,10 +2,10 @@
 
 import type { Account } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -34,7 +34,6 @@ export function ArchiveAccountDialog({
   onCloseComplete,
   onSuccess,
 }: ArchiveAccountDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [isArchiving, setIsArchiving] = useState(false);
   const hasArchivedRef = useRef(false);
@@ -60,18 +59,12 @@ export function ArchiveAccountDialog({
       } else {
         toast.success("Счёт успешно архивирован");
         onOpenChange(false);
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: ["accounts", account.workspaceId],
-          }),
-          queryClient.invalidateQueries({
-            queryKey: ["archivedAccounts", account.workspaceId],
-          }),
-          queryClient.invalidateQueries({
-            queryKey: ["transactions", account.workspaceId],
-          }),
+        await invalidateWorkspaceDomains(queryClient, account.workspaceId, [
+          "accounts",
+          "archivedAccounts",
+          "transactions",
+          "capital",
         ]);
-        router.refresh();
         onSuccess?.();
       }
     } catch {

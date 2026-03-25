@@ -24,6 +24,7 @@ import { SettingsDialog } from "@/modules/accounts/components/SettingsDialog";
 import { CreateWorkspaceDialog } from "@/modules/workspace/components/CreateWorkspaceDialog";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { workspacesKeys } from "@/shared/lib/query-keys";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
@@ -64,10 +65,9 @@ export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDr
   const switchCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: workspacesData } = useQuery({
-    queryKey: ["workspaces"],
+    queryKey: workspacesKeys.list(),
     queryFn: () => getWorkspaces(),
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const workspaces = workspacesData?.data || [];

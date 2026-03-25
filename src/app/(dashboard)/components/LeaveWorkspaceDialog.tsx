@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { leaveWorkspace } from "@/modules/workspace/workspace.service";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -29,13 +30,19 @@ export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenC
 
   const leaveMutation = useMutation({
     mutationFn: () => leaveWorkspace(workspaceId),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      await invalidateWorkspaceDomains(queryClient, workspaceId, [
+        "workspaces",
+        "workspaceSummary",
+        "workspaceMembers",
+        "capital",
+        "analytics",
+      ]);
       toast.success("Вы покинули рабочий стол");
       onOpenChange(false);
       router.push("/dashboard");

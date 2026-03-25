@@ -2,21 +2,22 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/AccountCard";
-import { addMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { accountKeys } from "@/shared/lib/query-keys";
 import { updateDebtSchema, type UpdateDebtInput } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
-import { NumberInput } from "@/shared/ui/number-input";
 import { Label } from "@/shared/ui/label";
+import { NumberInput } from "@/shared/ui/number-input";
+import { addMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { DebtType } from "../debt.constants";
 import { getDebtEditData, updateDebt } from "../debt.service";
@@ -31,11 +32,10 @@ interface EditDebtDialogProps {
 }
 
 export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: EditDebtDialogProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data: accountsData } = useQuery({
-    queryKey: ["accounts", workspaceId],
+    queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
     enabled: open && !!debt.accountId,
     staleTime: 5000,
@@ -87,11 +87,12 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
     } else {
       toast.success("Долг обновлён");
       onOpenChange(false);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["debts", workspaceId] }),
-        queryClient.invalidateQueries({ queryKey: ["accounts", workspaceId] }),
+      await invalidateWorkspaceDomains(queryClient, workspaceId, [
+        "debts",
+        "transactions",
+        "accounts",
+        "capital",
       ]);
-      router.refresh();
     }
   };
 

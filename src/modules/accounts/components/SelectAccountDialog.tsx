@@ -8,6 +8,7 @@ import { useMemo } from "react";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
+import { accountKeys } from "@/shared/lib/query-keys";
 import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 
 interface SelectAccountDialogProps {
@@ -33,11 +34,10 @@ export function SelectAccountDialog({
 }: SelectAccountDialogProps) {
   const { data: session } = useSession();
   const { data: accountsData } = useQuery({
-    queryKey: ["accounts", workspaceId],
+    queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
     enabled: open,
     staleTime: 5000,
-    refetchInterval: 5000,
   });
 
   const accountsByOwner = useMemo(() => {

@@ -1,12 +1,8 @@
 "use server";
 
-import { Currency } from "@prisma/client";
-import { getServerSession } from "next-auth";
-
-import { getAccounts } from "@/modules/accounts/account.service";
-import { getDebts } from "@/modules/debts/debt.service";
 import { DebtStatus, DebtType } from "@/modules/debts/debt.constants";
-import { authOptions } from "@/shared/lib/auth";
+import { prisma } from "@/shared/lib/prisma";
+import { requireWorkspaceAccess } from "@/shared/lib/server-access";
 import { addMoney, subtractMoney } from "@/shared/utils/money";
 
 import type { CapitalByCurrency, CapitalFilters } from "./capital.types";
@@ -16,29 +12,37 @@ export async function getWorkspaceCapital(
   filters: CapitalFilters = {}
 ): Promise<{ data: CapitalByCurrency } | { error: string }> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return { error: "Не авторизован" };
-    }
+    await requireWorkspaceAccess(workspaceId);
 
-    const accountsResult = await getAccounts(workspaceId);
-    if ("error" in accountsResult) {
-      return { error: accountsResult.error };
-    }
-
-    let accounts = accountsResult.data;
-    if (filters.accountIds && filters.accountIds.length > 0) {
-      accounts = accounts.filter((account) => filters.accountIds!.includes(account.id));
-    }
-
-    const debtsResult = await getDebts(workspaceId, {
-      status: DebtStatus.OPEN,
+    const accounts = await prisma.account.findMany({
+      where: {
+        workspaceId,
+        archived: false,
+        ...(filters.accountIds?.length
+          ? {
+              id: {
+                in: filters.accountIds,
+              },
+            }
+          : {}),
+      },
+      select: {
+        balance: true,
+        currency: true,
+      },
     });
-    if ("error" in debtsResult) {
-      return { error: "Не удалось загрузить долги" };
-    }
 
-    const debts = debtsResult.data;
+    const debts = await prisma.debt.findMany({
+      where: {
+        workspaceId,
+        status: DebtStatus.OPEN,
+      },
+      select: {
+        type: true,
+        remainingAmount: true,
+        currency: true,
+      },
+    });
 
     const capital: CapitalByCurrency = {
       USD: "0",
