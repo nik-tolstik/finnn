@@ -93,14 +93,14 @@ export function EditTransactionDialog({
     return categoriesData?.data || [];
   }, [categoriesData?.data]);
 
-  // Фильтруем категории по типу транзакции
+  // Filter categories by transaction type
   const filteredCategories = useMemo(() => {
     return allCategories.filter(
       (cat) => cat.type === transaction.type || transaction.type === TransactionType.TRANSFER
     );
   }, [allCategories, transaction.type]);
 
-  // Опции для Combobox
+  // Options for the combobox
   const comboboxOptions = useMemo<ComboboxOption[]>(() => {
     return filteredCategories.map((cat) => ({
       value: cat.id,

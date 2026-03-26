@@ -46,7 +46,7 @@ export function DateTimePicker({
   const [isTimeInputFocused, setIsTimeInputFocused] = React.useState(false);
 
   React.useEffect(() => {
-    // Обновляем timeValue только если поле времени не в фокусе, чтобы не перезаписывать ввод пользователя
+    // Update timeValue only when the time field is not focused to avoid overwriting user input
     if (date && !isTimeInputFocused) {
       const hours = date.getHours().toString().padStart(2, "0");
       const minutes = date.getMinutes().toString().padStart(2, "0");
@@ -57,12 +57,12 @@ export function DateTimePicker({
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
       const newDate = new Date(selectedDate);
-      // Используем время из поля ввода, если оно валидно, иначе из текущей даты или 00:00
+      // Use the input time when valid, otherwise use the current date time or 00:00
       if (timeValue.match(/^\d{2}:\d{2}$/)) {
         const [hours, minutes] = timeValue.split(":").map(Number);
         newDate.setHours(hours, minutes, 0, 0);
       } else if (date) {
-        // Сохраняем время из текущей даты
+        // Use the time from the current date
         newDate.setHours(date.getHours(), date.getMinutes(), 0, 0);
       } else {
         newDate.setHours(0, 0, 0, 0);
@@ -77,7 +77,7 @@ export function DateTimePicker({
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setTimeValue(value);
-    // Обновляем дату только если время полностью введено (формат HH:mm)
+    // Update the date only when the time is fully entered (HH:mm format)
     if (date && value.match(/^\d{2}:\d{2}$/)) {
       const [hours, minutes] = value.split(":").map(Number);
       const newDate = new Date(date);
@@ -92,14 +92,14 @@ export function DateTimePicker({
 
   const handleTimeBlur = () => {
     setIsTimeInputFocused(false);
-    // Валидируем и исправляем время при потере фокуса
+    // Validate and correct the time when the field loses focus
     if (!timeValue.match(/^\d{2}:\d{2}$/)) {
       const hours = date?.getHours() || 0;
       const minutes = date?.getMinutes() || 0;
       const correctedValue = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
       setTimeValue(correctedValue);
     } else if (date) {
-      // Убеждаемся, что дата синхронизирована с введенным временем
+      // Ensure the date is synchronized with the entered time
       const [hours, minutes] = timeValue.split(":").map(Number);
       const newDate = new Date(date);
       newDate.setHours(hours, minutes, 0, 0);

@@ -187,7 +187,7 @@ export function CreateTransactionDialog({
     return categoriesData?.data || [];
   }, [categoriesData?.data]);
 
-  // Фильтруем категории по типу транзакции
+  // Filter categories by transaction type
   const filteredCategories = useMemo(() => {
     return allCategories.filter((cat) => cat.type === transactionType || transactionType === TransactionType.TRANSFER);
   }, [allCategories, transactionType]);
