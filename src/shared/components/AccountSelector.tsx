@@ -6,7 +6,7 @@ import { SelectAccountDialog } from "@/modules/accounts/components/SelectAccount
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 
-import { AccountCard } from "./AccountCard";
+import { AccountCard } from "./account-card/AccountCard";
 
 interface AccountSelectorProps {
   workspaceId: string;

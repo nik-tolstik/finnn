@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import { AccountCard } from "@/shared/components/AccountCard";
+import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";

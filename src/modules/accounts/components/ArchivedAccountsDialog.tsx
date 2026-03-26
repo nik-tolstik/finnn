@@ -6,7 +6,7 @@ import { Redo2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { AccountCard } from "@/shared/components/AccountCard";
+import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";

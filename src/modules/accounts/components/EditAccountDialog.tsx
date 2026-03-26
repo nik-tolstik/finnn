@@ -9,7 +9,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
-import { AccountCard } from "@/shared/components/AccountCard";
+import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { type UpdateAccountInput, updateAccountSchema } from "@/shared/lib/validations/account";

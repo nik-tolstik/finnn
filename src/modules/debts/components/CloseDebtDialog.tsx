@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { SelectAccountDialog } from "@/modules/accounts/components/SelectAccountDialog";
-import { AccountCard } from "@/shared/components/AccountCard";
+import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";

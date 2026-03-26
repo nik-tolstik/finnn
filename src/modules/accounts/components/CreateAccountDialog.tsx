@@ -11,7 +11,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
-import { AccountCard } from "@/shared/components/AccountCard";
+import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { workspaceKeys } from "@/shared/lib/query-keys";

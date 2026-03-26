@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { CreateTransactionDialog } from "@/modules/transactions/components/CreateTransactionDialog";
 import { CreateTransferDialog } from "@/modules/transactions/components/CreateTransferDialog";
 import { TransactionType } from "@/modules/transactions/transaction.constants";
-import { AccountCard } from "@/shared/components/AccountCard";
+import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";

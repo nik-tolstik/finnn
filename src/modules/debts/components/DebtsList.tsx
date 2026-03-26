@@ -9,9 +9,7 @@ import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { debtKeys } from "@/shared/lib/query-keys";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { IconWithBg } from "@/shared/ui/icon-with-bg";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { getAccountIcon } from "@/shared/utils/account-icons";
@@ -21,7 +19,6 @@ import { formatMoney } from "@/shared/utils/money";
 import { DebtStatus, DebtType } from "../debt.constants";
 import { getDebts } from "../debt.service";
 import type { DebtWithRelations } from "../debt.types";
-
 import { AddToDebtDialog } from "./AddToDebtDialog";
 import { CloseDebtDialog } from "./CloseDebtDialog";
 import { DebtActionsDialog } from "./DebtActionsDialog";
@@ -53,26 +50,17 @@ function hexToRgba(hex: string | null, alpha: number): string | undefined {
 
 function DebtTypeBadge({ debt }: { debt: DebtWithRelations }) {
   const isLent = debt.type === DebtType.LENT;
-  const isClosed = debt.status === DebtStatus.CLOSED;
+  const label = isLent ? "Кредит" : "Дебет";
 
-  return (
-    <Badge
-      variant={isClosed ? "secondary" : "outline"}
-      className={cn(
-        "h-6 px-2 text-[11px] font-medium",
-        !isClosed && isLent && "text-primary border-success-primary bg-success-primary/10",
-        !isClosed && !isLent && "text-primary border-error-primary bg-error-primary/10"
-      )}
-    >
-      {isLent ? "Кредит" : "Дебет"}
-    </Badge>
-  );
+  return <div className="text-sm">{label}</div>;
 }
 
 function DebtAccountChip({ debt }: { debt: DebtWithRelations }) {
   if (!debt.account) {
     return <span className="text-sm text-muted-foreground">Без счёта</span>;
   }
+
+  const AccountIcon = getAccountIcon(debt.account.icon);
 
   return (
     <div
@@ -82,13 +70,7 @@ function DebtAccountChip({ debt }: { debt: DebtWithRelations }) {
         backgroundColor: hexToRgba(debt.account.color, 0.1),
       }}
     >
-      <IconWithBg
-        icon={getAccountIcon(debt.account.icon)}
-        color={debt.account.color}
-        size="sm"
-        className="size-4 rounded-sm"
-        iconClassName="size-2.5"
-      />
+      <AccountIcon className="size-3.5" style={{ color: debt.account.color ?? undefined }} />
       <span className="truncate text-xs font-medium">{debt.account.name}</span>
     </div>
   );
@@ -195,8 +177,6 @@ function DebtsTable({
         </TableHeader>
         <TableBody>
           {debts.map((debt) => {
-            const isLent = debt.type === DebtType.LENT;
-
             return (
               <TableRow
                 key={debt.id}
@@ -208,17 +188,8 @@ function DebtsTable({
                 </TableCell>
                 <TableCell className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
-                    <div
-                      className={cn(
-                        "flex size-7 items-center justify-center rounded-full border",
-                        isLent ? "border-success-primary/30 bg-success-primary/10" : "border-error-primary/30 bg-error-primary/10"
-                      )}
-                    >
-                      <User className={cn("size-3.5", isLent ? "text-success-primary" : "text-error-primary")} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{debt.personName}</div>
-                    </div>
+                    <User className={cn("size-3.5", "text-foreground")} />
+                    <div className="truncate text-sm">{debt.personName}</div>
                   </div>
                 </TableCell>
                 <TableCell className="px-4 py-3">
@@ -228,10 +199,10 @@ function DebtsTable({
                   {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}
                 </TableCell>
                 <TableCell className="px-4 py-3 text-right">
-                  <div className="text-sm font-medium text-foreground">{formatMoney(debt.amount, debt.currency)}</div>
+                  <div className="text-sm font-semibold text-foreground">{formatMoney(debt.amount, debt.currency)}</div>
                 </TableCell>
                 <TableCell className="px-4 py-3 text-right">
-                  <div className={cn("text-sm font-semibold", isLent ? "text-success-primary" : "text-error-primary")}>
+                  <div className="text-sm font-semibold text-foreground">
                     {formatMoney(debt.remainingAmount, debt.currency)}
                   </div>
                 </TableCell>
