@@ -4,9 +4,9 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowDownLeft, ArrowUpRight, User } from "lucide-react";
 
+import { AccountChip } from "@/shared/components/AccountChip";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
 import { Card } from "@/shared/ui/card";
-import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -18,21 +18,9 @@ interface DebtCardProps {
   onClick?: () => void;
 }
 
-function hexToRgba(hex: string, alpha: number): string | undefined {
-  const normalized = hex.replace(/^#/, "");
-  if (normalized.length !== 6 || !/^[0-9a-fA-F]+$/.test(normalized)) return undefined;
-
-  const r = parseInt(normalized.slice(0, 2), 16);
-  const g = parseInt(normalized.slice(2, 4), 16);
-  const b = parseInt(normalized.slice(4, 6), 16);
-
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 export function DebtCard({ debt, onClick }: DebtCardProps) {
   const isLent = debt.type === DebtType.LENT;
   const isClosed = debt.status === DebtStatus.CLOSED;
-  const AccountIcon = getAccountIcon(debt.account?.icon);
 
   return (
     <AnimatedListItem>
@@ -44,22 +32,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 flex-wrap">
               <div className="text-xs font-medium">{isLent ? "Кредит" : "Дебет"}</div>
-              {debt.account && (
-                <div
-                  className="flex items-center gap-1.5 rounded-lg border px-2 py-0.5"
-                  style={
-                    debt.account.color
-                      ? {
-                          backgroundColor: hexToRgba(debt.account.color, 0.08),
-                          borderColor: hexToRgba(debt.account.color, 0.22),
-                        }
-                      : undefined
-                  }
-                >
-                  <AccountIcon className="size-3.5" style={{ color: debt.account.color ?? undefined }} />
-                  <span className="text-xs text-foreground">{debt.account.name}</span>
-                </div>
-              )}
+              {debt.account && <AccountChip account={debt.account} />}
             </div>
             <span className="text-xs text-muted-foreground">
               {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}

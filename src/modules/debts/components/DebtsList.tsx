@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { MoreHorizontal, User } from "lucide-react";
 
+import { AccountChip } from "@/shared/components/AccountChip";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { debtKeys } from "@/shared/lib/query-keys";
@@ -12,7 +13,6 @@ import { AnimatedListItem } from "@/shared/ui/animated-list";
 import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
-import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -30,24 +30,6 @@ interface DebtsListProps {
   workspaceId: string;
 }
 
-function hexToRgba(hex: string | null, alpha: number): string | undefined {
-  if (!hex) {
-    return undefined;
-  }
-
-  const normalized = hex.replace(/^#/, "");
-
-  if (normalized.length !== 6 || !/^[0-9a-fA-F]+$/.test(normalized)) {
-    return undefined;
-  }
-
-  const r = parseInt(normalized.slice(0, 2), 16);
-  const g = parseInt(normalized.slice(2, 4), 16);
-  const b = parseInt(normalized.slice(4, 6), 16);
-
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 function DebtTypeBadge({ debt }: { debt: DebtWithRelations }) {
   const isLent = debt.type === DebtType.LENT;
   const label = isLent ? "Кредит" : "Дебет";
@@ -60,20 +42,7 @@ function DebtAccountChip({ debt }: { debt: DebtWithRelations }) {
     return <span className="text-sm text-muted-foreground">Без счёта</span>;
   }
 
-  const AccountIcon = getAccountIcon(debt.account.icon);
-
-  return (
-    <div
-      className="inline-flex max-w-[190px] items-center gap-1.5 rounded-md border px-2 py-1"
-      style={{
-        borderColor: hexToRgba(debt.account.color, 0.45),
-        backgroundColor: hexToRgba(debt.account.color, 0.1),
-      }}
-    >
-      <AccountIcon className="size-3.5" style={{ color: debt.account.color ?? undefined }} />
-      <span className="truncate text-xs font-medium">{debt.account.name}</span>
-    </div>
-  );
+  return <AccountChip account={debt.account} />;
 }
 
 function DebtsTableSkeleton() {
