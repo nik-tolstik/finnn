@@ -47,7 +47,10 @@
       "correctness": {
         "recommended": true,
         "noUnusedFunctionParameters": "warn",
-        "noUnusedImports": "warn",
+        "noUnusedImports": {
+          "level": "warn",
+          "fix": "safe"
+        },
         "noUnusedVariables": "warn",
         "useExhaustiveDependencies": "warn"
       },

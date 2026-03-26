@@ -4,8 +4,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-sans:
+    "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -18,6 +22,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -41,8 +46,57 @@
   --color-error-primary: var(--color-pink-500);
 }
 
-:root {
+:root,
+html.light {
   --radius: 0.625rem;
+  --background: #f7f9fc;
+  --foreground: #172033;
+  --card: #ffffff;
+  --card-foreground: #172033;
+  --popover: #ffffff;
+  --popover-foreground: #172033;
+  --primary: #2f6bff;
+  --primary-foreground: #ffffff;
+  --secondary: #e9eef8;
+  --secondary-foreground: #172033;
+  --muted: #f1f4fa;
+  --muted-foreground: #667085;
+  --accent: #eef3ff;
+  --accent-foreground: #172033;
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: #ffffff;
+  --border: #d8e0f0;
+  --input: #d8e0f0;
+  --ring: #7aa2ff;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #172033;
+  --sidebar-primary: #2f6bff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef3ff;
+  --sidebar-accent-foreground: #172033;
+  --sidebar-border: #d8e0f0;
+  --sidebar-ring: #7aa2ff;
+  --account-card-bg: rgba(255, 255, 255, 0.92);
+  --account-card-border: rgba(216, 224, 240, 0.95);
+  --account-card-icon: rgba(233, 238, 248, 0.96);
+  --account-card-gradient: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(241, 244, 250, 0.94) 60%,
+    rgba(233, 238, 248, 0.88) 100%
+  );
+  --account-card-shadow: 0 14px 38px rgba(68, 84, 117, 0.12);
+  --account-card-skeleton-bg: rgba(255, 255, 255, 0.96);
+  --account-card-skeleton-gradient: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(241, 244, 250, 0.92) 60%,
+    rgba(233, 238, 248, 0.82) 100%
+  );
+  --account-card-skeleton-shadow: 0 12px 32px rgba(68, 84, 117, 0.1);
+}
+
+html.dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -58,6 +112,7 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: #ffffff;
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -69,6 +124,24 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --account-card-bg: rgba(255, 255, 255, 0.05);
+  --account-card-border: rgba(255, 255, 255, 0.14);
+  --account-card-icon: rgba(255, 255, 255, 0.1);
+  --account-card-gradient: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0.24) 0%,
+    rgba(255, 255, 255, 0.06) 60%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  --account-card-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
+  --account-card-skeleton-bg: rgba(255, 255, 255, 0.05);
+  --account-card-skeleton-gradient: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.04) 60%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  --account-card-skeleton-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
 }
 
 @layer base {
@@ -84,10 +157,10 @@
 @layer base {
   :root {
     --rdp-cell-size: 40px;
-    --rdp-accent-color: hsl(var(--primary));
-    --rdp-background-color: hsl(var(--background));
-    --rdp-accent-color-dark: hsl(var(--primary));
-    --rdp-background-color-dark: hsl(var(--background));
+    --rdp-accent-color: var(--primary);
+    --rdp-background-color: var(--background);
+    --rdp-accent-color-dark: var(--primary);
+    --rdp-background-color-dark: var(--background);
     --rdp-outline: 2px solid var(--rdp-accent-color);
     --rdp-outline-selected: 2px solid var(--rdp-accent-color);
   }

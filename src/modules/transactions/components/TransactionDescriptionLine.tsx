@@ -77,15 +77,15 @@ export function TransactionDescriptionLine({
             <span
               key={i}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium text-xs text-white border border-border",
+                "inline-flex items-center gap-1.5 rounded-lg border border-border px-2 py-1 text-xs font-medium text-foreground",
                 !chip.color && "bg-muted"
               )}
               style={{
                 borderColor: chip.color ? hexToRgba(chip.color, 0.5) : undefined,
-                backgroundColor: chip.color ? hexToRgba(chip.color, 0.05) : undefined,
+                backgroundColor: chip.color ? hexToRgba(chip.color, 0.08) : undefined,
               }}
             >
-              {chip.icon}
+              <span style={{ color: chip.color ?? undefined }}>{chip.icon}</span>
               <span className="truncate">{seg.text}</span>
             </span>
           );
@@ -101,7 +101,10 @@ export function TransactionDescriptionLine({
 
   if (onClick) {
     return (
-      <Card className={cn("py-4 px-4 hover:bg-white/10 cursor-pointer transition-colors", className)} onClick={onClick}>
+      <Card
+        className={cn("cursor-pointer px-4 py-4 transition-colors hover:bg-accent/70", className)}
+        onClick={onClick}
+      >
         <div className="space-y-1.5">
           {content}
           {description ? (

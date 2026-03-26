@@ -5,6 +5,7 @@ import Image from "next/image";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 
+import { AppearanceSettings } from "@/modules/auth/components/AppearanceSettings";
 import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog";
 import { Button } from "@/shared/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
@@ -63,13 +64,16 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
           <span className="hidden md:block max-w-[150px] truncate text-sm">{displayName}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-0" align="end">
+      <PopoverContent className="w-80 p-0" align="end">
         <div className="p-2">
           <div className="px-2 py-1.5">
             <div className="text-sm font-medium">{displayName}</div>
             {resolvedEmail && <div className="text-xs text-muted-foreground truncate">{resolvedEmail}</div>}
           </div>
-          <div className="mt-1 border-t pt-1 space-y-1">
+          <div className="mt-1 border-t px-2 py-3">
+            <AppearanceSettings title="Тема" description={null} className="space-y-2" />
+          </div>
+          <div className="border-t pt-1 space-y-1">
             <button
               type="button"
               onClick={() => {

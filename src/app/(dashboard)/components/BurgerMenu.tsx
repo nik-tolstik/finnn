@@ -7,6 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 
+import { AppearanceSettings } from "@/modules/auth/components/AppearanceSettings";
 import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog";
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
@@ -74,6 +75,12 @@ export function BurgerMenu() {
                   <div className="text-sm font-medium truncate">{displayName}</div>
                   {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
                 </div>
+              </div>
+            </div>
+
+            <div className="px-4 mt-4">
+              <div className="rounded-lg border p-3">
+                <AppearanceSettings title="Тема" description={null} className="space-y-2" />
               </div>
             </div>
 

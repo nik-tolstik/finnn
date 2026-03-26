@@ -12,12 +12,23 @@ import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
-import { DebtType, DebtStatus } from "../debt.constants";
+import { DebtStatus, DebtType } from "../debt.constants";
 import type { DebtWithRelations } from "../debt.types";
 
 interface DebtCardProps {
   debt: DebtWithRelations;
   onClick?: () => void;
+}
+
+function hexToRgba(hex: string, alpha: number): string | undefined {
+  const normalized = hex.replace(/^#/, "");
+  if (normalized.length !== 6 || !/^[0-9a-fA-F]+$/.test(normalized)) return undefined;
+
+  const r = parseInt(normalized.slice(0, 2), 16);
+  const g = parseInt(normalized.slice(2, 4), 16);
+  const b = parseInt(normalized.slice(4, 6), 16);
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export function DebtCard({ debt, onClick }: DebtCardProps) {
@@ -49,14 +60,24 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
                 </Badge>
               )}
               {debt.account && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg">
+                <div
+                  className="flex items-center gap-1.5 rounded-lg border px-2 py-0.5"
+                  style={
+                    debt.account.color
+                      ? {
+                          backgroundColor: hexToRgba(debt.account.color, 0.08),
+                          borderColor: hexToRgba(debt.account.color, 0.22),
+                        }
+                      : undefined
+                  }
+                >
                   <IconWithBg
                     icon={getAccountIcon(debt.account.icon)}
                     color={debt.account.color}
                     className="size-4 sm:size-5"
                     iconClassName="size-2.5 sm:size-3"
                   />
-                  <span className="text-xs text-white">{debt.account.name}</span>
+                  <span className="text-xs text-foreground">{debt.account.name}</span>
                 </div>
               )}
             </div>
