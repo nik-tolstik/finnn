@@ -1,14 +1,14 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { User, UserPlus } from "lucide-react";
-import Image from "next/image";
+import { UserPlus } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
+import { getAvatarColor } from "@/shared/utils/avatar-colors";
 
 import { InviteMemberDialog } from "./InviteMemberDialog";
 
@@ -66,21 +66,15 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
         ) : (
           <div className="space-y-1.5">
             {members.map((member) => (
-              <div key={member.id} className="flex items-center gap-3 p-2 border rounded-md">
-                {member.image ? (
-                  <Image
-                    src={member.image}
-                    alt={member.name || member.email}
-                    width={32}
-                    height={32}
-                    className="h-8 w-8 rounded-full"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                )}
+              <div key={member.id} className="flex items-center gap-3 rounded-md border p-2">
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium text-white"
+                  style={{
+                    backgroundColor: getAvatarColor(member.name || member.email),
+                  }}
+                >
+                  {(member.name || member.email || "U").trim().charAt(0).toUpperCase() || "U"}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{member.name || "Без имени"}</p>
                   <p className="text-xs text-muted-foreground truncate">{member.email}</p>

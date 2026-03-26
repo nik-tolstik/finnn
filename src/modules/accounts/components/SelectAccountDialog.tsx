@@ -54,7 +54,6 @@ export function SelectAccountDialog({
                   id: account.owner.id,
                   name: account.owner.name,
                   email: account.owner.email,
-                  image: account.owner.image,
                 }
               : null,
             accounts: [],
@@ -66,7 +65,7 @@ export function SelectAccountDialog({
       {} as Record<
         string,
         {
-          owner: { id: string; name: string | null; email: string; image: string | null } | null;
+          owner: { id: string; name: string | null; email: string } | null;
           accounts: typeof filtered;
         }
       >
@@ -119,7 +118,6 @@ export function SelectAccountDialog({
                     <UserDisplay
                       name={group.owner.name}
                       email={group.owner.email}
-                      image={group.owner.image}
                       size="sm"
                       showName={true}
                     />

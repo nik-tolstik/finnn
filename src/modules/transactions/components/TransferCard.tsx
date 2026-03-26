@@ -26,7 +26,6 @@ interface TransferAccount {
     id: string;
     name: string | null;
     email: string;
-    image: string | null;
   } | null;
 }
 
@@ -71,7 +70,6 @@ function AccountName({
         <UserDisplay
           name={account.owner.name}
           email={account.owner.email}
-          image={account.owner.image}
           size="sm"
           showName={true}
         />

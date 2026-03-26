@@ -176,7 +176,6 @@ export async function getWorkspaces() {
             id: true,
             name: true,
             email: true,
-            image: true,
           },
         },
         _count: {
@@ -233,7 +232,6 @@ export async function getWorkspace(id: string) {
             id: true,
             name: true,
             email: true,
-            image: true,
           },
         },
         members: {
@@ -243,7 +241,6 @@ export async function getWorkspace(id: string) {
                 id: true,
                 name: true,
                 email: true,
-                image: true,
               },
             },
           },
@@ -273,7 +270,6 @@ export async function getWorkspaceMembers(workspaceId: string) {
             id: true,
             name: true,
             email: true,
-            image: true,
           },
         },
         members: {
@@ -283,7 +279,6 @@ export async function getWorkspaceMembers(workspaceId: string) {
                 id: true,
                 name: true,
                 email: true,
-                image: true,
               },
             },
           },
@@ -300,13 +295,11 @@ export async function getWorkspaceMembers(workspaceId: string) {
         id: workspace.owner.id,
         name: workspace.owner.name,
         email: workspace.owner.email,
-        image: workspace.owner.image,
       },
       ...workspace.members.map((m) => ({
         id: m.user.id,
         name: m.user.name,
         email: m.user.email,
-        image: m.user.image,
       })),
     ];
 

@@ -22,12 +22,9 @@ openssl rand -base64 32
 MONGODB_URI="mongodb://localhost:27017/finhub"
 NEXTAUTH_URL="http://localhost:9999"
 NEXTAUTH_SECRET="paste-generated-secret-here"
-UPLOADTHING_SECRET="your-uploadthing-secret-here"
 ```
 
-**Note:** For production, add `UPLOADTHING_SECRET` to use cloud storage for avatar uploads. You can use your `UPLOADTHING_TOKEN` as the value for `UPLOADTHING_SECRET`. In development, files are stored locally in `public/uploads/avatars/`.
-
-3. Generate Prisma client and push the schema:
+4. Generate Prisma client and push the schema:
 
 ```bash
 npm run db:generate

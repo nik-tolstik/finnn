@@ -5,9 +5,7 @@ import { ru } from "date-fns/locale";
 import { ArrowDownLeft, ArrowUpRight, User } from "lucide-react";
 
 import { AnimatedListItem } from "@/shared/ui/animated-list";
-import { Badge } from "@/shared/ui/badge";
 import { Card } from "@/shared/ui/card";
-import { IconWithBg } from "@/shared/ui/icon-with-bg";
 import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
@@ -34,6 +32,7 @@ function hexToRgba(hex: string, alpha: number): string | undefined {
 export function DebtCard({ debt, onClick }: DebtCardProps) {
   const isLent = debt.type === DebtType.LENT;
   const isClosed = debt.status === DebtStatus.CLOSED;
+  const AccountIcon = getAccountIcon(debt.account?.icon);
 
   return (
     <AnimatedListItem>
@@ -44,21 +43,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
         <div className="flex flex-col text-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge
-                variant={isClosed ? "secondary" : "outline"}
-                className={cn(
-                  "text-xs font-normal",
-                  !isClosed && isLent && "text-primary border-success-primary",
-                  !isClosed && !isLent && "text-primary border-error-primary"
-                )}
-              >
-                {isLent ? "Кредит" : "Дебет"}
-              </Badge>
-              {isClosed && (
-                <Badge variant="outline" className="text-xs">
-                  Закрыт
-                </Badge>
-              )}
+              <div className="text-xs font-medium">{isLent ? "Кредит" : "Дебет"}</div>
               {debt.account && (
                 <div
                   className="flex items-center gap-1.5 rounded-lg border px-2 py-0.5"
@@ -71,12 +56,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
                       : undefined
                   }
                 >
-                  <IconWithBg
-                    icon={getAccountIcon(debt.account.icon)}
-                    color={debt.account.color}
-                    className="size-4 sm:size-5"
-                    iconClassName="size-2.5 sm:size-3"
-                  />
+                  <AccountIcon className="size-3.5" style={{ color: debt.account.color ?? undefined }} />
                   <span className="text-xs text-foreground">{debt.account.name}</span>
                 </div>
               )}

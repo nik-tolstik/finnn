@@ -39,7 +39,6 @@ type AccountWithOwner = Account & {
     id: string;
     name: string | null;
     email: string;
-    image: string | null;
   } | null;
 };
 
@@ -275,7 +274,6 @@ export function AccountsCards({
                 id: account.owner.id,
                 name: account.owner.name,
                 email: account.owner.email,
-                image: account.owner.image,
               }
             : null,
           ownerName,
@@ -288,7 +286,7 @@ export function AccountsCards({
     {} as Record<
       string,
       {
-        owner: { id: string; name: string | null; email: string; image: string | null } | null;
+        owner: { id: string; name: string | null; email: string } | null;
         ownerName: string;
         accounts: typeof items;
       }
@@ -332,7 +330,6 @@ export function AccountsCards({
                         <UserDisplay
                           name={owner.name}
                           email={owner.email}
-                          image={owner.image}
                           size="sm"
                           showName={true}
                         />

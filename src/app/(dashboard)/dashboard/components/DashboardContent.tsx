@@ -26,7 +26,6 @@ type AccountWithOwner = Account & {
     id: string;
     name: string | null;
     email: string;
-    image: string | null;
   } | null;
 };
 

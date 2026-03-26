@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Currency } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
-import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -297,25 +296,14 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                           .slice(0, 2);
                         return (
                           <div className="flex items-center gap-2">
-                            {member.image ? (
-                              <Image
-                                src={member.image}
-                                alt={displayName}
-                                width={20}
-                                height={20}
-                                className="h-5 w-5 rounded-full object-cover"
-                                unoptimized
-                              />
-                            ) : (
-                              <div
-                                className="flex h-5 w-5 items-center justify-center rounded-full text-white text-xs font-medium"
-                                style={{
-                                  backgroundColor: getAvatarColor(displayName),
-                                }}
-                              >
-                                {initials}
-                              </div>
-                            )}
+                            <div
+                              className="flex h-5 w-5 items-center justify-center rounded-full text-white text-xs font-medium"
+                              style={{
+                                backgroundColor: getAvatarColor(displayName),
+                              }}
+                            >
+                              {initials}
+                            </div>
                             <span className="font-normal">{option.label}</span>
                           </div>
                         );

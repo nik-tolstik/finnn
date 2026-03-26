@@ -57,7 +57,6 @@ export function TransactionCard({
                 <UserDisplay
                   name={transaction.account.owner.name}
                   email={transaction.account.owner.email}
-                  image={transaction.account.owner.image}
                   size="sm"
                   showName={true}
                 />

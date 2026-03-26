@@ -8,7 +8,6 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/shared/lib/auth";
 import { sendVerificationEmail } from "@/shared/lib/email";
-import { deleteAvatar } from "@/shared/lib/file-upload";
 import { prisma } from "@/shared/lib/prisma";
 
 import { registerSchema, updateUserSchema, type RegisterInput, type UpdateUserInput } from "./auth.validations";
@@ -136,29 +135,15 @@ export async function updateUser(input: UpdateUserInput) {
 
     const validated = updateUserSchema.parse(input);
 
-    const currentUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { image: true },
-    });
-
-    const oldImage = currentUser?.image;
-    const newImage = validated.image ?? null;
-
-    if (oldImage && oldImage !== newImage) {
-      await deleteAvatar(oldImage);
-    }
-
     const updated = await prisma.user.update({
       where: { id: session.user.id },
       data: {
         name: validated.name,
-        image: newImage,
       },
       select: {
         id: true,
         name: true,
         email: true,
-        image: true,
       },
     });
 

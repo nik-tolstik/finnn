@@ -17,7 +17,6 @@ interface AccountCardProps {
       id: string;
       name: string | null;
       email: string;
-      image: string | null;
     } | null;
   };
   className?: string;
@@ -42,7 +41,6 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
                 <UserDisplay
                   name={account.owner.name}
                   email={account.owner.email}
-                  image={account.owner.image}
                   size="sm"
                   showName={true}
                 />
