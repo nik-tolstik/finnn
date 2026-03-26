@@ -13,7 +13,9 @@ import {
   closeDebtSchema,
   createDebtSchema,
   type UpdateDebtInput,
+  type UpdateDebtTransactionInput,
   updateDebtSchema,
+  updateDebtTransactionSchema,
 } from "@/shared/lib/validations/debt";
 import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
@@ -26,7 +28,23 @@ type AccessibleDebt = Prisma.DebtGetPayload<{
   include: { account: true };
 }>;
 
+type AccessibleDebtTransaction = Prisma.DebtTransactionGetPayload<{
+  include: {
+    debt: {
+      include: {
+        account: true;
+      };
+    };
+    account: true;
+  };
+}>;
+
 type DebtTransactionBalanceEffect = Pick<DebtTransaction, "accountId" | "type" | "amount" | "toAmount">;
+
+type DebtTransactionTotalsDelta = {
+  amountDelta: string;
+  remainingDelta: string;
+};
 
 async function getWorkspaceAccountOrThrow(
   tx: PrismaTx,
@@ -70,6 +88,43 @@ async function getAccessibleDebtOrThrow(tx: PrismaTx, userId: string, debtId: st
   return debt;
 }
 
+async function getAccessibleDebtTransactionOrThrow(
+  tx: PrismaTx,
+  userId: string,
+  debtTransactionId: string
+): Promise<AccessibleDebtTransaction> {
+  const debtTransaction = await tx.debtTransaction.findFirst({
+    where: {
+      id: debtTransactionId,
+      workspace: {
+        members: {
+          some: {
+            userId,
+          },
+        },
+      },
+    },
+    include: {
+      debt: {
+        include: {
+          account: true,
+        },
+      },
+      account: true,
+    },
+  });
+
+  if (!debtTransaction) {
+    throw new Error("Транзакция долга не найдена или доступ запрещён");
+  }
+
+  return debtTransaction;
+}
+
+function getDebtStatusFromRemainingAmount(remainingAmount: string) {
+  return compareMoney(remainingAmount, "0") <= 0 ? DebtStatus.CLOSED : DebtStatus.OPEN;
+}
+
 async function applyInitialAmountDeltaToAccount(tx: PrismaTx, debt: AccessibleDebt, amountDelta: string) {
   if (!debt.accountId || compareMoney(amountDelta, "0") === 0) {
     return;
@@ -111,14 +166,116 @@ function getDebtTransactionAccountAmount(transaction: DebtTransactionBalanceEffe
     : transaction.amount;
 }
 
-function getDebtDeletionBalanceDelta(debtType: string, transaction: DebtTransactionBalanceEffect) {
+function getDebtTransactionBalanceDelta(debtType: string, transaction: DebtTransactionBalanceEffect) {
   const accountAmount = getDebtTransactionAccountAmount(transaction);
 
   if (transaction.type === DebtTransactionType.CLOSED) {
-    return debtType === DebtType.LENT ? subtractMoney("0", accountAmount) : accountAmount;
+    return debtType === DebtType.LENT ? accountAmount : subtractMoney("0", accountAmount);
   }
 
-  return debtType === DebtType.LENT ? accountAmount : subtractMoney("0", accountAmount);
+  return debtType === DebtType.LENT ? subtractMoney("0", accountAmount) : accountAmount;
+}
+
+function getDebtDeletionBalanceDelta(debtType: string, transaction: DebtTransactionBalanceEffect) {
+  return subtractMoney("0", getDebtTransactionBalanceDelta(debtType, transaction));
+}
+
+function getDebtTransactionTotalsDelta(transactionType: string, amount: string): DebtTransactionTotalsDelta {
+  if (transactionType === DebtTransactionType.CLOSED) {
+    return {
+      amountDelta: "0",
+      remainingDelta: subtractMoney("0", amount),
+    };
+  }
+
+  return {
+    amountDelta: amount,
+    remainingDelta: amount,
+  };
+}
+
+function addBalanceDelta(
+  balanceDeltasByAccount: Map<string, string>,
+  accountId: string | null | undefined,
+  delta: string
+) {
+  if (!accountId || compareMoney(delta, "0") === 0) {
+    return;
+  }
+
+  const currentDelta = balanceDeltasByAccount.get(accountId) || "0";
+  balanceDeltasByAccount.set(accountId, addMoney(currentDelta, delta));
+}
+
+async function applyAccountBalanceDeltas(
+  tx: PrismaTx,
+  workspaceId: string,
+  balanceDeltasByAccount: Map<string, string>
+) {
+  const accountIds = [...balanceDeltasByAccount.keys()];
+
+  if (accountIds.length === 0) {
+    return;
+  }
+
+  const accounts = await tx.account.findMany({
+    where: {
+      workspaceId,
+      id: { in: accountIds },
+    },
+  });
+
+  const accountsById = new Map(accounts.map((account) => [account.id, account]));
+
+  for (const [accountId, delta] of balanceDeltasByAccount) {
+    if (compareMoney(delta, "0") === 0) {
+      continue;
+    }
+
+    const account = accountsById.get(accountId);
+
+    if (!account) {
+      throw new Error("Счёт не найден");
+    }
+
+    const nextBalance = addMoney(account.balance, delta);
+
+    if (compareMoney(nextBalance, "0") < 0) {
+      throw new Error(`Недостаточно средств на счёте "${account.name}" (${account.balance})`);
+    }
+
+    await tx.account.update({
+      where: { id: accountId },
+      data: { balance: nextBalance },
+    });
+  }
+}
+
+async function reconcileDebtTransactionBalanceEffect(
+  tx: PrismaTx,
+  debt: Pick<AccessibleDebt, "workspaceId" | "type">,
+  previousTransaction?: DebtTransactionBalanceEffect | null,
+  nextTransaction?: DebtTransactionBalanceEffect | null
+) {
+  const balanceDeltasByAccount = new Map<string, string>();
+
+  if (previousTransaction?.accountId) {
+    addBalanceDelta(
+      balanceDeltasByAccount,
+      previousTransaction.accountId,
+      getDebtDeletionBalanceDelta(debt.type, previousTransaction)
+    );
+  }
+
+  if (nextTransaction?.accountId) {
+    addBalanceDelta(
+      balanceDeltasByAccount,
+      nextTransaction.accountId,
+      getDebtTransactionBalanceDelta(debt.type, nextTransaction)
+    );
+  }
+
+  await applyAccountBalanceDeltas(tx, debt.workspaceId, balanceDeltasByAccount);
 }
 
 export async function createDebt(workspaceId: string, input: CreateDebtInput) {
@@ -353,47 +510,14 @@ export async function deleteDebt(id: string) {
           continue;
         }
 
-        const nextDelta = getDebtDeletionBalanceDelta(debt.type, transaction);
-        const currentDelta = balanceDeltasByAccount.get(transaction.accountId) || "0";
-
-        balanceDeltasByAccount.set(transaction.accountId, addMoney(currentDelta, nextDelta));
+        addBalanceDelta(
+          balanceDeltasByAccount,
+          transaction.accountId,
+          getDebtDeletionBalanceDelta(debt.type, transaction)
+        );
       }
 
-      const accountIds = [...balanceDeltasByAccount.keys()];
-
-      if (accountIds.length > 0) {
-        const accounts = await tx.account.findMany({
-          where: {
-            workspaceId: debt.workspaceId,
-            id: { in: accountIds },
-          },
-        });
-
-        const accountsById = new Map(accounts.map((account) => [account.id, account]));
-
-        for (const [accountId, delta] of balanceDeltasByAccount) {
-          if (compareMoney(delta, "0") === 0) {
-            continue;
-          }
-
-          const account = accountsById.get(accountId);
-
-          if (!account) {
-            throw new Error("Счёт не найден");
-          }
-
-          const nextBalance = addMoney(account.balance, delta);
-
-          if (compareMoney(nextBalance, "0") < 0) {
-            throw new Error(`Недостаточно средств на счёте "${account.name}" (${account.balance}) для удаления долга`);
-          }
-
-          await tx.account.update({
-            where: { id: accountId },
-            data: { balance: nextBalance },
-          });
-        }
-      }
+      await applyAccountBalanceDeltas(tx, debt.workspaceId, balanceDeltasByAccount);
 
       await tx.debtTransaction.deleteMany({
         where: { debtId: debt.id },
@@ -473,10 +597,6 @@ export async function updateDebt(debtId: string, input: UpdateDebtInput) {
     const updatedDebt = await prisma.$transaction(async (tx) => {
       const debt = await getAccessibleDebtOrThrow(tx, userId, debtId);
 
-      if (debt.status === DebtStatus.CLOSED) {
-        throw new Error("Нельзя редактировать закрытый долг");
-      }
-
       let initialTransaction = await tx.debtTransaction.findFirst({
         where: {
           debtId,
@@ -510,6 +630,7 @@ export async function updateDebt(debtId: string, input: UpdateDebtInput) {
           date: validated.date,
           amount: addMoney(debt.amount, amountDelta),
           remainingAmount: newRemaining,
+          status: getDebtStatusFromRemainingAmount(newRemaining),
         },
       });
 
@@ -541,6 +662,151 @@ export async function updateDebt(debtId: string, input: UpdateDebtInput) {
     return { data: updatedDebt };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Не удалось обновить долг";
+    return { error: message };
+  }
+}
+
+export async function updateDebtTransaction(id: string, input: UpdateDebtTransactionInput) {
+  try {
+    const userId = await requireUserId();
+    const validated = updateDebtTransactionSchema.parse(input);
+
+    const updatedDebtTransaction = await prisma.$transaction(async (tx) => {
+      const debtTransaction = await getAccessibleDebtTransactionOrThrow(tx, userId, id);
+      const debt = debtTransaction.debt;
+
+      if (debtTransaction.type === DebtTransactionType.CREATED) {
+        throw new Error("Начальную транзакцию нужно редактировать через редактирование долга");
+      }
+
+      const currentTotals = getDebtTransactionTotalsDelta(debtTransaction.type, debtTransaction.amount);
+      const nextTotals = getDebtTransactionTotalsDelta(debtTransaction.type, validated.amount);
+      const nextDebtAmount = addMoney(debt.amount, subtractMoney(nextTotals.amountDelta, currentTotals.amountDelta));
+      const nextRemainingAmount = addMoney(
+        debt.remainingAmount,
+        subtractMoney(nextTotals.remainingDelta, currentTotals.remainingDelta)
+      );
+
+      if (compareMoney(nextRemainingAmount, "0") < 0) {
+        if (debtTransaction.type === DebtTransactionType.ADDED) {
+          throw new Error(
+            `Новая сумма не может быть меньше ${subtractMoney(debtTransaction.amount, debt.remainingAmount)} (остаток долга учтён)`
+          );
+        }
+
+        throw new Error(
+          `Сумма не может превышать остаток долга (${addMoney(debt.remainingAmount, debtTransaction.amount)})`
+        );
+      }
+
+      let nextTransactionAccountId = debtTransaction.accountId;
+      let nextTransactionToAmount: string | null = debtTransaction.toAmount;
+
+      if (debtTransaction.type === DebtTransactionType.CLOSED) {
+        if (!validated.accountId) {
+          throw new Error("Выберите счёт");
+        }
+
+        const nextAccount = await getWorkspaceAccountOrThrow(tx, debt.workspaceId, validated.accountId);
+        const currenciesMatch = nextAccount.currency === debt.currency;
+
+        if (!currenciesMatch && !validated.toAmount) {
+          throw new Error("Укажите сумму отправления");
+        }
+
+        nextTransactionAccountId = nextAccount.id;
+        nextTransactionToAmount = currenciesMatch ? null : validated.toAmount || null;
+      }
+
+      await reconcileDebtTransactionBalanceEffect(
+        tx,
+        debt,
+        debtTransaction,
+        debtTransaction.type === DebtTransactionType.CLOSED
+          ? {
+              accountId: nextTransactionAccountId,
+              type: debtTransaction.type,
+              amount: validated.amount,
+              toAmount: nextTransactionToAmount,
+            }
+          : {
+              accountId: debtTransaction.accountId,
+              type: debtTransaction.type,
+              amount: validated.amount,
+              toAmount: null,
+            }
+      );
+
+      await tx.debt.update({
+        where: { id: debt.id },
+        data: {
+          amount: nextDebtAmount,
+          remainingAmount: nextRemainingAmount,
+          status: getDebtStatusFromRemainingAmount(nextRemainingAmount),
+        },
+      });
+
+      return tx.debtTransaction.update({
+        where: { id },
+        data: {
+          accountId: nextTransactionAccountId,
+          amount: validated.amount,
+          toAmount: nextTransactionToAmount,
+          date: validated.date,
+        },
+      });
+    });
+
+    revalidateDebtRoutes();
+    return { data: updatedDebtTransaction };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Не удалось обновить транзакцию долга";
+    return { error: message };
+  }
+}
+
+export async function deleteDebtTransaction(id: string) {
+  try {
+    const userId = await requireUserId();
+
+    const deleted = await prisma.$transaction(async (tx) => {
+      const debtTransaction = await getAccessibleDebtTransactionOrThrow(tx, userId, id);
+      const debt = debtTransaction.debt;
+
+      if (debtTransaction.type === DebtTransactionType.CREATED) {
+        throw new Error("Начальную транзакцию долга нужно удалять вместе с долгом");
+      }
+
+      const totals = getDebtTransactionTotalsDelta(debtTransaction.type, debtTransaction.amount);
+      const nextDebtAmount = addMoney(debt.amount, subtractMoney("0", totals.amountDelta));
+      const nextRemainingAmount = addMoney(debt.remainingAmount, subtractMoney("0", totals.remainingDelta));
+
+      if (compareMoney(nextRemainingAmount, "0") < 0) {
+        throw new Error("Нельзя удалить транзакцию: её сумма уже учтена в погашенной части долга");
+      }
+
+      await reconcileDebtTransactionBalanceEffect(tx, debt, debtTransaction, null);
+
+      await tx.debt.update({
+        where: { id: debt.id },
+        data: {
+          amount: nextDebtAmount,
+          remainingAmount: nextRemainingAmount,
+          status: getDebtStatusFromRemainingAmount(nextRemainingAmount),
+        },
+      });
+
+      await tx.debtTransaction.delete({
+        where: { id },
+      });
+
+      return { success: true as const };
+    });
+
+    revalidateDebtRoutes();
+    return deleted;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Не удалось удалить транзакцию долга";
     return { error: message };
   }
 }

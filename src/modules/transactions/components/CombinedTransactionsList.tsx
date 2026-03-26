@@ -7,7 +7,13 @@ import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } f
 import { useMemo } from "react";
 import { toast } from "sonner";
 
+import { DebtTransactionActionsDialog } from "@/modules/debts/components/DebtTransactionActionsDialog";
+import { DeleteDebtDialog } from "@/modules/debts/components/DeleteDebtDialog";
+import { EditDebtDialog } from "@/modules/debts/components/EditDebtDialog";
+import { EditDebtTransactionDialog } from "@/modules/debts/components/EditDebtTransactionDialog";
 import { DebtTransactionType, DebtType } from "@/modules/debts/debt.constants";
+import { deleteDebtTransaction } from "@/modules/debts/debt.service";
+import type { DebtTransactionWithRelations, DebtWithRelations } from "@/modules/debts/debt.types";
 import { getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
@@ -41,6 +47,22 @@ function getWorkspaceIcon(iconName?: string | null): LucideIcon {
   return Building2;
 }
 
+function getDebtFromTransaction(debtTransaction: DebtTransactionWithRelations): DebtWithRelations {
+  return {
+    ...debtTransaction.debt,
+    account:
+      debtTransaction.debt.accountId && debtTransaction.account
+        ? {
+            id: debtTransaction.account.id,
+            name: debtTransaction.account.name,
+            currency: debtTransaction.account.currency,
+            color: debtTransaction.account.color,
+            icon: debtTransaction.account.icon,
+          }
+        : null,
+  };
+}
+
 interface CombinedTransactionsListProps {
   transactions: CombinedTransaction[];
   showLoadMore?: boolean;
@@ -65,8 +87,22 @@ export function CombinedTransactionsList({
     transaction: TransactionWithRelations;
     workspaceId: string;
   }>();
+  const editDebtDialog = useDialogState<{
+    debt: DebtWithRelations;
+    workspaceId: string;
+  }>();
+  const editDebtTransactionDialog = useDialogState<{
+    debtTransaction: DebtTransactionWithRelations;
+    workspaceId: string;
+  }>();
+  const deleteDebtDialog = useDialogState<{
+    debt: DebtWithRelations;
+  }>();
   const actionsDialog = useDialogState<{
     transaction: TransactionWithRelations;
+  }>();
+  const debtActionsDialog = useDialogState<{
+    debtTransaction: DebtTransactionWithRelations;
   }>();
   const createTransactionDialog = useDialogState<{
     workspaceId: string;
@@ -123,6 +159,49 @@ export function CombinedTransactionsList({
     } catch {
       toast.error("Не удалось удалить транзакцию");
     }
+  };
+
+  const handleDebtTransactionDelete = async (debtTransaction: DebtTransactionWithRelations) => {
+    if (debtTransaction.type === DebtTransactionType.CREATED) {
+      debtActionsDialog.closeDialog();
+      setTimeout(() => {
+        deleteDebtDialog.openDialog({
+          debt: getDebtFromTransaction(debtTransaction),
+        });
+      }, 200);
+      return;
+    }
+
+    try {
+      const result = await deleteDebtTransaction(debtTransaction.id);
+      if ("error" in result) {
+        toast.error(result.error);
+      } else {
+        toast.success("Транзакция долга удалена");
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
+        debtActionsDialog.closeDialog();
+      }
+    } catch {
+      toast.error("Не удалось удалить транзакцию долга");
+    }
+  };
+
+  const handleDebtTransactionEdit = (debtTransaction: DebtTransactionWithRelations) => {
+    debtActionsDialog.closeDialog();
+    setTimeout(() => {
+      if (debtTransaction.type === DebtTransactionType.CREATED) {
+        editDebtDialog.openDialog({
+          debt: getDebtFromTransaction(debtTransaction),
+          workspaceId,
+        });
+        return;
+      }
+
+      editDebtTransactionDialog.openDialog({
+        debtTransaction,
+        workspaceId,
+      });
+    }, 200);
   };
 
   const processedTransactionIds = new Set<string>();
@@ -211,6 +290,9 @@ export function CombinedTransactionsList({
           segments={segments}
           icon={actorAvatar}
           accountChips={accountChips}
+          onClick={() => {
+            debtActionsDialog.openDialog({ debtTransaction: dt });
+          }}
         />
       );
     }
@@ -385,6 +467,20 @@ export function CombinedTransactionsList({
           }}
         />
       )}
+      {debtActionsDialog.mounted && (
+        <DebtTransactionActionsDialog
+          debtTransaction={debtActionsDialog.data.debtTransaction}
+          open={debtActionsDialog.open}
+          onOpenChange={debtActionsDialog.closeDialog}
+          onCloseComplete={debtActionsDialog.unmountDialog}
+          onEdit={() => {
+            handleDebtTransactionEdit(debtActionsDialog.data.debtTransaction);
+          }}
+          onDelete={() => {
+            handleDebtTransactionDelete(debtActionsDialog.data.debtTransaction);
+          }}
+        />
+      )}
       {editTransactionDialog.mounted && (
         <EditTransactionDialog
           transaction={editTransactionDialog.data.transaction}
@@ -403,6 +499,32 @@ export function CombinedTransactionsList({
           open={editTransferDialog.open}
           onOpenChange={editTransferDialog.closeDialog}
           onCloseComplete={editTransferDialog.unmountDialog}
+        />
+      )}
+      {editDebtDialog.mounted && (
+        <EditDebtDialog
+          debt={editDebtDialog.data.debt}
+          workspaceId={editDebtDialog.data.workspaceId}
+          open={editDebtDialog.open}
+          onOpenChange={editDebtDialog.closeDialog}
+          onCloseComplete={editDebtDialog.unmountDialog}
+        />
+      )}
+      {editDebtTransactionDialog.mounted && (
+        <EditDebtTransactionDialog
+          debtTransaction={editDebtTransactionDialog.data.debtTransaction}
+          workspaceId={editDebtTransactionDialog.data.workspaceId}
+          open={editDebtTransactionDialog.open}
+          onOpenChange={editDebtTransactionDialog.closeDialog}
+          onCloseComplete={editDebtTransactionDialog.unmountDialog}
+        />
+      )}
+      {deleteDebtDialog.mounted && (
+        <DeleteDebtDialog
+          debt={deleteDebtDialog.data.debt}
+          workspaceId={workspaceId}
+          open={deleteDebtDialog.open}
+          onOpenChange={deleteDebtDialog.closeDialog}
         />
       )}
       {createTransactionDialog.mounted && (

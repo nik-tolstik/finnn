@@ -687,9 +687,17 @@ export async function getCombinedTransactions(
           debt: {
             select: {
               id: true,
+              workspaceId: true,
               type: true,
               personName: true,
+              amount: true,
+              remainingAmount: true,
               currency: true,
+              accountId: true,
+              date: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
           account: {

@@ -102,7 +102,34 @@ export const updateDebtSchema = z.object({
   date: z.date(),
 });
 
+export const updateDebtTransactionSchema = z.object({
+  amount: z
+    .string()
+    .min(1, "Сумма обязательна")
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return !Number.isNaN(num) && num > 0;
+      },
+      { message: "Сумма должна быть больше 0" }
+    ),
+  toAmount: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const num = parseFloat(val);
+        return !Number.isNaN(num) && num > 0;
+      },
+      { message: "Сумма должна быть больше 0" }
+    ),
+  accountId: z.string().optional(),
+  date: z.date(),
+});
+
 export type CreateDebtInput = z.infer<typeof createDebtSchema>;
 export type CloseDebtInput = z.infer<typeof closeDebtSchema>;
 export type AddToDebtInput = z.infer<typeof addToDebtSchema>;
 export type UpdateDebtInput = z.infer<typeof updateDebtSchema>;
+export type UpdateDebtTransactionInput = z.infer<typeof updateDebtTransactionSchema>;
