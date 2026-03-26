@@ -12,21 +12,21 @@ import { toast } from "sonner";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { SelectAccountDialog } from "@/modules/accounts/components/SelectAccountDialog";
 import { AccountCard } from "@/shared/components/AccountCard";
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY, type Currency } from "@/shared/constants/currency";
+import { CURRENCY_OPTIONS, type Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { createDebtSchema, type CreateDebtInput } from "@/shared/lib/validations/debt";
+import { type CreateDebtInput, createDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Segmented } from "@/shared/ui/segmented";
 import { Select } from "@/shared/ui/select";
-import { addMoney, subtractMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { addMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { DebtType } from "../debt.constants";
 import { createDebt } from "../debt.service";
@@ -139,12 +139,7 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
     } else {
       toast.success("Долг создан");
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "debts",
-        "transactions",
-        "accounts",
-        "capital",
-      ]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
     }
   };
 

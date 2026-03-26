@@ -1,20 +1,20 @@
 "use client";
 
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  type DragEndEvent,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Account } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { CreateTransactionDialog } from "@/modules/transactions/components/CreateTransactionDialog";
@@ -29,7 +29,6 @@ import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/utils/cn";
 
 import { updateAccountsOrder } from "../account.service";
-
 import { AccountActionsDialog } from "./AccountActionsDialog";
 import { AccountsCardsSkeleton } from "./AccountsCardsSkeleton";
 import { ArchiveAccountDialog } from "./ArchiveAccountDialog";
@@ -95,10 +94,10 @@ function SortableAccountCard({
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="w-full min-w-0">
       <div
         {...(isReorderMode ? { ...attributes, ...listeners } : {})}
-        className={cn("select-none", isReorderMode && "touch-none cursor-grab active:cursor-grabbing")}
+        className={cn("w-full min-w-0 select-none", isReorderMode && "touch-none cursor-grab active:cursor-grabbing")}
         style={{
           WebkitUserSelect: "none",
           WebkitTouchCallout: "none",
@@ -231,12 +230,7 @@ export function AccountsCards({
     } else {
       setOriginalItems(items);
       onReorderModeChange?.(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "accounts",
-        "archivedAccounts",
-        "transactions",
-        "capital",
-      ]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["accounts", "archivedAccounts", "transactions"]);
     }
   }, [items, originalItems, workspaceId, queryClient, onReorderModeChange]);
 
@@ -351,7 +345,7 @@ export function AccountsCards({
                     </div>
                   )}
                   <SortableContext items={ownerAccounts.map((account: AccountWithOwner) => account.id)}>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fill,300px)]">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
                       {ownerAccounts.map((account: AccountWithOwner) => (
                         <SortableAccountCard
                           key={account.id}

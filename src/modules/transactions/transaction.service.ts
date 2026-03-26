@@ -6,14 +6,14 @@ import { prisma } from "@/shared/lib/prisma";
 import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
 import {
-  createTransactionSchema,
-  createTransferSchema,
-  updateTransactionSchema,
-  updateTransferSchema,
   type CreateTransactionInput,
   type CreateTransferInput,
+  createTransactionSchema,
+  createTransferSchema,
   type UpdateTransactionInput,
   type UpdateTransferInput,
+  updateTransactionSchema,
+  updateTransferSchema,
 } from "@/shared/lib/validations/transaction";
 import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
@@ -584,7 +584,14 @@ export async function getCombinedTransactions(
     await requireWorkspaceAccess(workspaceId);
 
     const transactionWhere: any = { workspaceId };
-    const debtTransactionWhere: any = { workspaceId };
+    const debtTransactionWhere: any = {
+      workspaceId,
+      debt: {
+        is: {
+          workspaceId,
+        },
+      },
+    };
 
     const transactions = await prisma.transaction.findMany({
       where: transactionWhere,

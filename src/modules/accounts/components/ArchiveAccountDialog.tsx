@@ -10,11 +10,11 @@ import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogClose,
-  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogWindow,
 } from "@/shared/ui/dialog";
 
 import { archiveAccount } from "../account.service";
@@ -63,7 +63,6 @@ export function ArchiveAccountDialog({
           "accounts",
           "archivedAccounts",
           "transactions",
-          "capital",
         ]);
         onSuccess?.();
       }

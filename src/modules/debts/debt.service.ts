@@ -1,23 +1,23 @@
 "use server";
 
-import type { Prisma } from "@prisma/client";
+import type { DebtTransaction, Prisma } from "@prisma/client";
 
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateDebtRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
 import {
-  createDebtSchema,
-  closeDebtSchema,
-  addToDebtSchema,
-  updateDebtSchema,
-  type CreateDebtInput,
-  type CloseDebtInput,
   type AddToDebtInput,
+  addToDebtSchema,
+  type CloseDebtInput,
+  type CreateDebtInput,
+  closeDebtSchema,
+  createDebtSchema,
   type UpdateDebtInput,
+  updateDebtSchema,
 } from "@/shared/lib/validations/debt";
-import { addMoney, subtractMoney, compareMoney } from "@/shared/utils/money";
+import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
-import { DebtType, DebtStatus, DebtTransactionType } from "./debt.constants";
+import { DebtStatus, DebtTransactionType, DebtType } from "./debt.constants";
 import type { DebtWithRelations } from "./debt.types";
 
 type PrismaTx = Prisma.TransactionClient;
@@ -25,6 +25,8 @@ type PrismaTx = Prisma.TransactionClient;
 type AccessibleDebt = Prisma.DebtGetPayload<{
   include: { account: true };
 }>;
+
+type DebtTransactionBalanceEffect = Pick<DebtTransaction, "accountId" | "type" | "amount" | "toAmount">;
 
 async function getWorkspaceAccountOrThrow(
   tx: PrismaTx,
@@ -101,6 +103,22 @@ async function applyInitialAmountDeltaToAccount(tx: PrismaTx, debt: AccessibleDe
     where: { id: debt.accountId },
     data: { balance: addMoney(account.balance, amountDelta) },
   });
+}
+
+function getDebtTransactionAccountAmount(transaction: DebtTransactionBalanceEffect) {
+  return transaction.type === DebtTransactionType.CLOSED
+    ? transaction.toAmount || transaction.amount
+    : transaction.amount;
+}
+
+function getDebtDeletionBalanceDelta(debtType: string, transaction: DebtTransactionBalanceEffect) {
+  const accountAmount = getDebtTransactionAccountAmount(transaction);
+
+  if (transaction.type === DebtTransactionType.CLOSED) {
+    return debtType === DebtType.LENT ? subtractMoney("0", accountAmount) : accountAmount;
+  }
+
+  return debtType === DebtType.LENT ? accountAmount : subtractMoney("0", accountAmount);
 }
 
 export async function createDebt(workspaceId: string, input: CreateDebtInput) {
@@ -318,26 +336,68 @@ export async function deleteDebt(id: string) {
 
     await prisma.$transaction(async (tx) => {
       const debt = await getAccessibleDebtOrThrow(tx, userId, id);
+      const debtTransactions = await tx.debtTransaction.findMany({
+        where: { debtId: debt.id },
+        select: {
+          accountId: true,
+          type: true,
+          amount: true,
+          toAmount: true,
+        },
+      });
 
-      if (debt.accountId && debt.account) {
-        const account = await getWorkspaceAccountOrThrow(tx, debt.workspaceId, debt.accountId);
+      const balanceDeltasByAccount = new Map<string, string>();
 
-        if (debt.type === DebtType.LENT) {
-          await tx.account.update({
-            where: { id: debt.accountId },
-            data: { balance: addMoney(account.balance, debt.remainingAmount) },
-          });
-        } else {
-          if (compareMoney(debt.remainingAmount, account.balance) > 0) {
-            throw new Error(`Недостаточно средств на счёте для возврата долга (${account.balance})`);
+      for (const transaction of debtTransactions) {
+        if (!transaction.accountId) {
+          continue;
+        }
+
+        const nextDelta = getDebtDeletionBalanceDelta(debt.type, transaction);
+        const currentDelta = balanceDeltasByAccount.get(transaction.accountId) || "0";
+
+        balanceDeltasByAccount.set(transaction.accountId, addMoney(currentDelta, nextDelta));
+      }
+
+      const accountIds = [...balanceDeltasByAccount.keys()];
+
+      if (accountIds.length > 0) {
+        const accounts = await tx.account.findMany({
+          where: {
+            workspaceId: debt.workspaceId,
+            id: { in: accountIds },
+          },
+        });
+
+        const accountsById = new Map(accounts.map((account) => [account.id, account]));
+
+        for (const [accountId, delta] of balanceDeltasByAccount) {
+          if (compareMoney(delta, "0") === 0) {
+            continue;
+          }
+
+          const account = accountsById.get(accountId);
+
+          if (!account) {
+            throw new Error("Счёт не найден");
+          }
+
+          const nextBalance = addMoney(account.balance, delta);
+
+          if (compareMoney(nextBalance, "0") < 0) {
+            throw new Error(`Недостаточно средств на счёте "${account.name}" (${account.balance}) для удаления долга`);
           }
 
           await tx.account.update({
-            where: { id: debt.accountId },
-            data: { balance: subtractMoney(account.balance, debt.remainingAmount) },
+            where: { id: accountId },
+            data: { balance: nextBalance },
           });
         }
       }
+
+      await tx.debtTransaction.deleteMany({
+        where: { debtId: debt.id },
+      });
 
       await tx.debt.delete({
         where: { id },

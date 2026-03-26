@@ -28,7 +28,7 @@ async function getNBRBRates(): Promise<{ data: Record<string, number> } | { erro
         next: { revalidate: 86400 },
         signal: controller.signal,
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
         },
       });
 
@@ -75,7 +75,7 @@ async function getExchangeRateAPIRates(): Promise<{ data: Record<string, number>
         next: { revalidate: 86400 },
         signal: controller.signal,
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
         },
       });
 
@@ -156,7 +156,9 @@ export async function getNBRBExchangeRate(currencyCode: string): Promise<{ data:
   }
 }
 
-export async function getNBRBExchangeRatesByDate(date: Date): Promise<{ data: Record<string, number> } | { error: string }> {
+export async function getNBRBExchangeRatesByDate(
+  date: Date
+): Promise<{ data: Record<string, number> } | { error: string }> {
   const dateStr = date.toISOString().split("T")[0];
   const url = `https://www.nbrb.by/api/exrates/rates?periodicity=0&ondate=${dateStr}`;
   console.warn("[NBRB] Получение курсов на дату:", url);
@@ -169,7 +171,7 @@ export async function getNBRBExchangeRatesByDate(date: Date): Promise<{ data: Re
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
         },
       });
 

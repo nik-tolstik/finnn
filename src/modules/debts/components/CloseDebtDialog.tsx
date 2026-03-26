@@ -13,12 +13,12 @@ import { AccountCard } from "@/shared/components/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { closeDebtSchema, type CloseDebtInput } from "@/shared/lib/validations/debt";
+import { type CloseDebtInput, closeDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { addMoney, subtractMoney, compareMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { addMoney, compareMoney, formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { DebtType } from "../debt.constants";
 import { closeDebt } from "../debt.service";
@@ -156,12 +156,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     } else {
       toast.success("Долг закрыт");
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "debts",
-        "transactions",
-        "accounts",
-        "capital",
-      ]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
     }
   };
 

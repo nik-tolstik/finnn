@@ -10,16 +10,6 @@ export interface DebtListFilters {
   personName?: string;
 }
 
-export interface AnalyticsDateFilters {
-  dateFrom?: Date;
-  dateTo?: Date;
-}
-
-export interface CapitalQueryFilters {
-  accountIds?: string[];
-  excludeDebts?: boolean;
-}
-
 export const workspacesKeys = {
   list: () => ["workspaces"] as const,
 };
@@ -49,16 +39,6 @@ export const transactionKeys = {
 export const debtKeys = {
   all: (workspaceId: string) => ["debts", workspaceId] as const,
   list: (workspaceId: string, filters: DebtListFilters = {}) => ["debts", workspaceId, filters] as const,
-};
-
-export const analyticsKeys = {
-  capital: (workspaceId: string, filters: CapitalQueryFilters = {}) => ["capital", workspaceId, filters] as const,
-  categoryPrefix: (workspaceId: string) => ["analytics", workspaceId, "category"] as const,
-  category: (workspaceId: string, filters: AnalyticsDateFilters & { type: string }) =>
-    ["analytics", workspaceId, "category", filters] as const,
-  totalPrefix: (workspaceId: string) => ["analytics", workspaceId, "total"] as const,
-  total: (workspaceId: string, type: string, filters: AnalyticsDateFilters = {}) =>
-    ["analytics", workspaceId, "total", type, filters] as const,
 };
 
 export const exchangeRateKeys = {

@@ -19,11 +19,11 @@ import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
-import { createTransactionSchema, type CreateTransactionInput } from "@/shared/lib/validations/transaction";
+import { type CreateTransactionInput, createTransactionSchema } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Segmented } from "@/shared/ui/segmented";
@@ -326,9 +326,6 @@ export function CreateTransactionDialog({
       await invalidateWorkspaceDomains(queryClient, workspaceId, [
         "transactions",
         "accounts",
-        "capital",
-        "analyticsCategory",
-        "analyticsTotal",
         ...(data.newCategory ? (["categories"] as const) : []),
       ]);
     }

@@ -4,12 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Building2, Hash } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
-import { createWorkspaceSchema, type CreateWorkspaceInput } from "@/shared/lib/validations/workspace";
+import { type CreateWorkspaceInput, createWorkspaceSchema } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
@@ -62,8 +62,6 @@ export function CreateWorkspacePrompt() {
           "workspaces",
           "workspaceSummary",
           "workspaceMembers",
-          "capital",
-          "analytics",
         ]);
         router.push(`/dashboard?workspaceId=${result.data.id}`);
       }

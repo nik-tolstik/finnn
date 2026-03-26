@@ -10,11 +10,11 @@ import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogClose,
-  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogWindow,
 } from "@/shared/ui/dialog";
 
 interface LeaveWorkspaceDialogProps {
@@ -40,8 +40,6 @@ export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenC
         "workspaces",
         "workspaceSummary",
         "workspaceMembers",
-        "capital",
-        "analytics",
       ]);
       toast.success("Вы покинули рабочий стол");
       onOpenChange(false);

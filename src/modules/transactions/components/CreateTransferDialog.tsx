@@ -9,12 +9,11 @@ import { toast } from "sonner";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { createTransferSchema, type CreateTransferInput } from "@/shared/lib/validations/transaction";
+import { type CreateTransferInput, createTransferSchema } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogWindow, DialogHeader, DialogTitle, DialogFooter, DialogContent } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
 import { createTransfer } from "../transaction.service";
-
 import { TransferForm } from "./TransferForm";
 import { TransferFormSubmitButton } from "./TransferFormSubmitButton";
 
@@ -78,13 +77,7 @@ export function CreateTransferDialog({
       toast.error(result.error);
     } else {
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "transactions",
-        "accounts",
-        "capital",
-        "analyticsCategory",
-        "analyticsTotal",
-      ]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["transactions", "accounts"]);
     }
   };
 

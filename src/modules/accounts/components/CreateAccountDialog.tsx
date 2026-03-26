@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Currency } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Wallet, HandCoins, CreditCard, Landmark, type LucideIcon } from "lucide-react";
+import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
@@ -15,25 +15,25 @@ import { AccountCard } from "@/shared/components/AccountCard";
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { workspaceKeys } from "@/shared/lib/query-keys";
-import { createAccountSchema, type CreateAccountInput } from "@/shared/lib/validations/account";
+import { type CreateAccountInput, createAccountSchema } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
 import {
   ColorPicker,
-  ColorPickerTrigger,
-  ColorPickerContent,
   ColorPickerArea,
+  ColorPickerContent,
   ColorPickerFormatSelect,
   ColorPickerInput,
+  ColorPickerTrigger,
 } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
-  DialogWindow,
+  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogContent,
+  DialogWindow,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -189,12 +189,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
       toast.error(result.error);
     } else {
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "accounts",
-        "archivedAccounts",
-        "transactions",
-        "capital",
-      ]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["accounts", "archivedAccounts", "transactions"]);
     }
   };
 

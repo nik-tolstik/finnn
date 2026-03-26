@@ -9,11 +9,11 @@ import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogClose,
-  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogWindow,
 } from "@/shared/ui/dialog";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -40,12 +40,7 @@ export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: Dele
       } else {
         toast.success("Долг удалён");
         onOpenChange(false);
-        await invalidateWorkspaceDomains(queryClient, workspaceId, [
-          "debts",
-          "transactions",
-          "accounts",
-          "capital",
-        ]);
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
       }
     } catch {
       toast.error("Не удалось удалить долг");

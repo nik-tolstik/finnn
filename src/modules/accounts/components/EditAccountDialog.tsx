@@ -5,34 +5,32 @@ import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useEffect, useMemo } from "react";
-import { Controller } from "react-hook-form";
-import { useForm } from "react-hook-form";
-import { useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { workspaceKeys } from "@/shared/lib/query-keys";
-import { updateAccountSchema, type UpdateAccountInput } from "@/shared/lib/validations/account";
+import { type UpdateAccountInput, updateAccountSchema } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
 import {
   ColorPicker,
-  ColorPickerTrigger,
-  ColorPickerContent,
   ColorPickerArea,
+  ColorPickerContent,
   ColorPickerFormatSelect,
   ColorPickerInput,
+  ColorPickerTrigger,
 } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
-  DialogWindow,
+  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogContent,
+  DialogWindow,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -142,7 +140,6 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
         "accounts",
         "archivedAccounts",
         "transactions",
-        "capital",
       ]);
     }
   };

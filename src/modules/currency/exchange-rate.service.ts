@@ -2,17 +2,12 @@
 
 import { Currency } from "@prisma/client";
 
-import { getNBRBExchangeRates, getNBRBExchangeRatesByDate } from "@/modules/analytics/currency.service";
+import { getNBRBExchangeRates, getNBRBExchangeRatesByDate } from "@/modules/currency/currency.service";
 import { prisma } from "@/shared/lib/prisma";
 
 const SUPPORTED_CURRENCIES: Currency[] = [Currency.USD, Currency.EUR, Currency.BYN];
 
-async function saveExchangeRate(
-  date: Date,
-  fromCurrency: Currency,
-  toCurrency: Currency,
-  rate: number
-) {
+async function saveExchangeRate(date: Date, fromCurrency: Currency, toCurrency: Currency, rate: number) {
   return await prisma.exchangeRate.upsert({
     where: {
       date_fromCurrency_toCurrency: {
@@ -38,7 +33,7 @@ export async function saveDailyExchangeRates() {
   today.setHours(0, 0, 0, 0);
 
   const ratesResult = await getNBRBExchangeRates();
-  
+
   if ("error" in ratesResult) {
     throw new Error(ratesResult.error);
   }
@@ -131,9 +126,7 @@ export async function getExchangeRate(
 
       if (fromRate && toRate) {
         const crossRate = fromRate.rate / toRate.rate;
-        console.warn(
-          `[ExchangeRate] Курс ${fromCurrency}/${toCurrency} вычислен из базовых курсов: ${crossRate}`
-        );
+        console.warn(`[ExchangeRate] Курс ${fromCurrency}/${toCurrency} вычислен из базовых курсов: ${crossRate}`);
         return { data: crossRate };
       }
     }

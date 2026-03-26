@@ -10,7 +10,7 @@ import { AccountCard } from "@/shared/components/AccountCard";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
 import { getArchivedAccounts, unarchiveAccount } from "../account.service";
 
@@ -50,12 +50,7 @@ export function ArchivedAccountsDialog({
       if (result.error) {
         toast.error(result.error);
       } else {
-        await invalidateWorkspaceDomains(queryClient, workspaceId, [
-          "accounts",
-          "archivedAccounts",
-          "transactions",
-          "capital",
-        ]);
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["accounts", "archivedAccounts", "transactions"]);
       }
     } catch {
       toast.error("Произошла ошибка при удалении из архива");

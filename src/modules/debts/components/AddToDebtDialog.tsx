@@ -10,12 +10,12 @@ import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { addToDebtSchema, type AddToDebtInput } from "@/shared/lib/validations/debt";
+import { type AddToDebtInput, addToDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { addMoney, subtractMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { addMoney, formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { DebtType } from "../debt.constants";
 import { addToDebt } from "../debt.service";
@@ -103,12 +103,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     } else {
       toast.success("Сумма добавлена к долгу");
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "debts",
-        "transactions",
-        "accounts",
-        "capital",
-      ]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
     }
   };
 

@@ -11,11 +11,11 @@ import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogClose,
-  DialogWindow,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogWindow,
 } from "@/shared/ui/dialog";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -46,13 +46,7 @@ export function DeleteTransactionDialog({
         toast.error(result.error);
       } else {
         onOpenChange(false);
-        await invalidateWorkspaceDomains(queryClient, workspaceId, [
-          "transactions",
-          "accounts",
-          "capital",
-          "analyticsCategory",
-          "analyticsTotal",
-        ]);
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["transactions", "accounts"]);
       }
     } catch {
       toast.error("Не удалось удалить транзакцию");

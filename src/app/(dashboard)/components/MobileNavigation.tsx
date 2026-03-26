@@ -1,8 +1,8 @@
 "use client";
 
-import { HandCoins, Plus, TrendingUp, Wallet } from "lucide-react";
+import { HandCoins, Plus, Wallet } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams, usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { CreateTransactionDialog } from "@/modules/transactions/components/CreateTransactionDialog";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
@@ -21,11 +21,9 @@ export function MobileNavigation() {
   }
 
   const accountsPath = "/dashboard";
-  const analyticsPath = "/analytics";
   const debtsPath = "/debts";
 
   const isAccountsActive = pathname === accountsPath;
-  const isAnalyticsActive = pathname === analyticsPath;
   const isDebtsActive = pathname === debtsPath;
 
   const basePath = `?workspaceId=${workspaceId}`;
@@ -43,16 +41,6 @@ export function MobileNavigation() {
           >
             <Wallet className="size-5" />
             <span className="text-xs">Счета</span>
-          </Link>
-          <Link
-            href={`${analyticsPath}${basePath}`}
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 transition-colors size-16 py-3",
-              isAnalyticsActive ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            <TrendingUp className="size-5" />
-            <span className="text-xs">Аналитика</span>
           </Link>
           <button
             type="button"
@@ -74,10 +62,6 @@ export function MobileNavigation() {
             <HandCoins className="size-5" />
             <span className="text-xs">Долги</span>
           </Link>
-          <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground opacity-50 size-16 py-3">
-            <div className="size-5" />
-            <span className="text-xs">—</span>
-          </div>
         </div>
       </nav>
       {createTransactionDialog.mounted && workspaceId && (

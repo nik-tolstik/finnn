@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Wallet, HandCoins, CreditCard, Landmark, type LucideIcon } from "lucide-react";
+import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -86,8 +86,6 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
           "workspaces",
           "workspaceSummary",
           "workspaceMembers",
-          "capital",
-          "analytics",
         ]);
         if (workspace) {
           reset({

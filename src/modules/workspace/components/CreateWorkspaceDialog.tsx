@@ -9,9 +9,9 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
-import { createWorkspaceSchema, type CreateWorkspaceInput } from "@/shared/lib/validations/workspace";
+import { type CreateWorkspaceInput, createWorkspaceSchema } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogWindow, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
@@ -64,8 +64,6 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
             "workspaces",
             "workspaceSummary",
             "workspaceMembers",
-            "capital",
-            "analytics",
           ]);
           router.push(`/dashboard?workspaceId=${result.data.id}`);
         }

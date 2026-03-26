@@ -9,24 +9,24 @@ import { toast } from "sonner";
 import { CategoryType } from "@/modules/categories/category.constants";
 import { createCategory } from "@/modules/categories/category.service";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
-import { createCategorySchema, type CreateCategoryInput } from "@/shared/lib/validations/category";
+import { type CreateCategoryInput, createCategorySchema } from "@/shared/lib/validations/category";
 import { Button } from "@/shared/ui/button";
 import {
   ColorPicker,
-  ColorPickerTrigger,
-  ColorPickerContent,
   ColorPickerArea,
+  ColorPickerContent,
   ColorPickerFormatSelect,
   ColorPickerInput,
+  ColorPickerTrigger,
 } from "@/shared/ui/color-picker";
 import {
   Dialog,
-  DialogWindow,
+  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogContent,
+  DialogWindow,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -75,7 +75,7 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
       if (result.error) {
         toast.error(result.error);
       } else {
-        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
         onOpenChange(false);
       }
     },

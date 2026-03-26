@@ -10,10 +10,10 @@ import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/AccountCard";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { updateDebtSchema, type UpdateDebtInput } from "@/shared/lib/validations/debt";
+import { type UpdateDebtInput, updateDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
@@ -43,7 +43,12 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
 
   const fullAccount = debt.accountId ? accountsData?.data?.find((acc) => acc.id === debt.accountId) : undefined;
 
-  const { data: editData, isLoading: isLoadingAmount, isError: isEditDataError, error: editDataError } = useQuery({
+  const {
+    data: editData,
+    isLoading: isLoadingAmount,
+    isError: isEditDataError,
+    error: editDataError,
+  } = useQuery({
     queryKey: ["debtEditData", debt.id],
     queryFn: async () => {
       const result = await getDebtEditData(debt.id);
@@ -87,12 +92,7 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
     } else {
       toast.success("Долг обновлён");
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "debts",
-        "transactions",
-        "accounts",
-        "capital",
-      ]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
     }
   };
 
@@ -109,9 +109,7 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
     const delta = subtractMoney(amount, initialAmount);
     if (delta === "0") return fullAccount;
     const newBalance =
-      debt.type === DebtType.LENT
-        ? subtractMoney(fullAccount.balance, delta)
-        : addMoney(fullAccount.balance, delta);
+      debt.type === DebtType.LENT ? subtractMoney(fullAccount.balance, delta) : addMoney(fullAccount.balance, delta);
     return { ...fullAccount, balance: newBalance };
   }, [fullAccount, debt.accountId, debt.type, amount, initialAmount]);
 
@@ -135,9 +133,7 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
                 {previewAccount ? (
                   <AccountCard account={previewAccount} showOwner={false} />
                 ) : (
-                  <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-                    {debt.account.name}
-                  </div>
+                  <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">{debt.account.name}</div>
                 )}
               </div>
             )}
@@ -163,7 +159,13 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                   {getCurrencySymbol(currency)}
                 </span>
-                <NumberInput id="amount" placeholder="0.00" className="pl-9" {...register("amount")} disabled={isLoadingAmount && !isEditDataError} />
+                <NumberInput
+                  id="amount"
+                  placeholder="0.00"
+                  className="pl-9"
+                  {...register("amount")}
+                  disabled={isLoadingAmount && !isEditDataError}
+                />
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
@@ -180,13 +182,13 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
         </DialogContent>
 
         <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Отмена
-            </Button>
-            <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-              {isSubmitting ? "Сохранение..." : "Сохранить"}
-            </Button>
-          </DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Отмена
+          </Button>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+            {isSubmitting ? "Сохранение..." : "Сохранить"}
+          </Button>
+        </DialogFooter>
       </DialogWindow>
     </Dialog>
   );

@@ -2,7 +2,7 @@
 
 import { LogOut, Settings } from "lucide-react";
 import Image from "next/image";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 
 import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog";
@@ -17,15 +17,24 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ name, email, image }: UserMenuProps) {
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+
+  const resolvedName = session?.user?.name ?? name;
+  const resolvedEmail = session?.user?.email ?? email;
+  const resolvedImage = session?.user?.image ?? image;
 
   const handleLogout = async () => {
     setOpen(false);
     await signOut({ callbackUrl: "/login" });
   };
 
-  const displayName = name || email || "User";
+  if (!resolvedName && !resolvedEmail && !resolvedImage) {
+    return null;
+  }
+
+  const displayName = resolvedName || resolvedEmail || "User";
   const initials = displayName
     .split(" ")
     .map((n) => n[0])
@@ -37,8 +46,15 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" className="h-auto gap-2 p-0 hover:bg-accent">
-          {image ? (
-            <Image src={image} alt={displayName} width={32} height={32} className="h-8 w-8 rounded-full" unoptimized />
+          {resolvedImage ? (
+            <Image
+              src={resolvedImage}
+              alt={displayName}
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-full"
+              unoptimized
+            />
           ) : (
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
               {initials}
@@ -51,7 +67,7 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
         <div className="p-2">
           <div className="px-2 py-1.5">
             <div className="text-sm font-medium">{displayName}</div>
-            {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
+            {resolvedEmail && <div className="text-xs text-muted-foreground truncate">{resolvedEmail}</div>}
           </div>
           <div className="mt-1 border-t pt-1 space-y-1">
             <button

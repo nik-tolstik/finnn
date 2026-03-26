@@ -1,19 +1,42 @@
 "use client";
 
-import { HandCoins, TrendingUp, Wallet } from "lucide-react";
+import { Building2, ChevronDown, Grip, HandCoins, Wallet } from "lucide-react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 
 import { cn } from "@/shared/utils/cn";
 
-import { BurgerMenu } from "./BurgerMenu";
-import { UserMenu } from "./UserMenu";
-import { WorkspaceDropdown } from "./WorkspaceDropdown";
+const BurgerMenu = dynamic(() => import("./BurgerMenu").then((mod) => mod.BurgerMenu), {
+  ssr: false,
+  loading: () => (
+    <div aria-hidden="true" className="inline-flex items-center justify-center rounded-md md:hidden p-0 size-6">
+      <Grip className="size-5" />
+    </div>
+  ),
+});
+
+const WorkspaceDropdown = dynamic(() => import("./WorkspaceDropdown").then((mod) => mod.WorkspaceDropdown), {
+  ssr: false,
+  loading: () => (
+    <div
+      aria-hidden="true"
+      className="cursor-default flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground"
+    >
+      <Building2 className="h-4 w-4" />
+      <span className="max-w-[200px] truncate">Workspace</span>
+      <ChevronDown className="h-4 w-4" />
+    </div>
+  ),
+});
+
+const UserMenu = dynamic(() => import("./UserMenu").then((mod) => mod.UserMenu), {
+  ssr: false,
+  loading: () => <div aria-hidden="true" className="h-8 w-8 rounded-full bg-muted" />,
+});
 
 export function Header() {
-  const { data: session } = useSession();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const workspaceId = searchParams.get("workspaceId") || undefined;
@@ -21,11 +44,9 @@ export function Header() {
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
 
   const accountsPath = "/dashboard";
-  const analyticsPath = "/analytics";
   const debtsPath = "/debts";
 
   const isAccountsActive = pathname === accountsPath;
-  const isAnalyticsActive = pathname === analyticsPath;
   const isDebtsActive = pathname === debtsPath;
 
   return (
@@ -51,18 +72,6 @@ export function Header() {
               <span>Счета</span>
             </Link>
             <Link
-              href={`${analyticsPath}${basePath}`}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                isAnalyticsActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-            >
-              <TrendingUp className="h-4 w-4" />
-              <span>Аналитика</span>
-            </Link>
-            <Link
               href={`${debtsPath}${basePath}`}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
@@ -81,7 +90,7 @@ export function Header() {
           <WorkspaceDropdown currentWorkspaceId={workspaceId} className="md:hidden ml-auto" />
         </div>
         <div className="items-center gap-4 hidden md:flex">
-          {session?.user && <UserMenu name={session.user.name} email={session.user.email} image={session.user.image} />}
+          <UserMenu />
         </div>
       </div>
     </header>

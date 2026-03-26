@@ -1,21 +1,20 @@
 "use client";
 
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  type DragEndEvent,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Category } from "@prisma/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
-import { ArrowDown, ArrowUp } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { ArrowDown, ArrowUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { CategoryType } from "@/modules/categories/category.constants";
@@ -23,8 +22,8 @@ import {
   deleteCategory,
   getCategories,
   getCategoryTransactionCount,
-  updateCategory,
   updateCategoriesOrder,
+  updateCategory,
 } from "@/modules/categories/category.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
@@ -32,11 +31,11 @@ import { categoryKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import {
   ColorPicker,
-  ColorPickerTrigger,
-  ColorPickerContent,
   ColorPickerArea,
+  ColorPickerContent,
   ColorPickerFormatSelect,
   ColorPickerInput,
+  ColorPickerTrigger,
 } from "@/shared/ui/color-picker";
 import { Input } from "@/shared/ui/input";
 import { Segmented } from "@/shared/ui/segmented";
@@ -277,7 +276,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       if (result.error) {
         toast.error(result.error);
       } else {
-        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
         setEditingCategory(null);
         setEditingName("");
         setEditingColor("");
@@ -290,18 +289,14 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
-        await invalidateWorkspaceDomains(queryClient, workspaceId, [
-          "categories",
-          "transactions",
-          "analyticsCategory",
-        ]);
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
         return;
       }
 
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
     },
     onError: async () => {
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
     },
   });
 
@@ -337,7 +332,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       if (result.error) {
         toast.error(result.error);
       } else {
-        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions", "analyticsCategory"]);
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
       }
       deleteDialog.closeDialog();
     },

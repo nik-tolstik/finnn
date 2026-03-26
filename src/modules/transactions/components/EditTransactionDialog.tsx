@@ -15,18 +15,18 @@ import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
-import { updateTransactionSchema, type UpdateTransactionInput } from "@/shared/lib/validations/transaction";
+import { type UpdateTransactionInput, updateTransactionSchema } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import {
   Dialog,
-  DialogWindow,
+  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogContent,
+  DialogWindow,
 } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
@@ -155,13 +155,7 @@ export function EditTransactionDialog({
     if (result.error) {
       toast.error(result.error);
     } else {
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "transactions",
-        "accounts",
-        "capital",
-        "analyticsCategory",
-        "analyticsTotal",
-      ]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["transactions", "accounts"]);
     }
   };
 

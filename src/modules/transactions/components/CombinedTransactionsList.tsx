@@ -3,11 +3,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Building2, CreditCard, HandCoins, Landmark, Wallet, type LucideIcon } from "lucide-react";
+import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
-import { DebtType, DebtTransactionType } from "@/modules/debts/debt.constants";
+import { DebtTransactionType, DebtType } from "@/modules/debts/debt.constants";
 import { getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
@@ -18,9 +18,8 @@ import { getAccountIcon } from "@/shared/utils/account-icons";
 
 import { TransactionType } from "../transaction.constants";
 import { deleteTransaction } from "../transaction.service";
-import type { TransactionWithRelations, CombinedTransaction } from "../transaction.types";
+import type { CombinedTransaction, TransactionWithRelations } from "../transaction.types";
 import { getTransactionDescriptionSegments } from "../utils/transactionDescription";
-
 import { CreateTransactionDialog } from "./CreateTransactionDialog";
 import { EditTransactionDialog } from "./EditTransactionDialog";
 import { EditTransferDialog } from "./EditTransferDialog";
@@ -118,13 +117,7 @@ export function CombinedTransactionsList({
       if (result.error) {
         toast.error(result.error);
       } else {
-        await invalidateWorkspaceDomains(queryClient, workspaceId, [
-          "transactions",
-          "accounts",
-          "capital",
-          "analyticsCategory",
-          "analyticsTotal",
-        ]);
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["transactions", "accounts"]);
         actionsDialog.closeDialog();
       }
     } catch {
@@ -144,6 +137,12 @@ export function CombinedTransactionsList({
 
     transactions.forEach((transaction) => {
       const transactionDate = startOfDay(new Date(transaction.data.date));
+
+      if (!currentDate) {
+        currentDate = transactionDate;
+        currentGroup = [transaction];
+        return;
+      }
 
       if (currentDate && !isSameDay(currentDate, transactionDate)) {
         if (currentGroup.length > 0) {

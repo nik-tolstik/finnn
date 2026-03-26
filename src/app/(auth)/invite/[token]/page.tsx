@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 export default function InvitePage() {
   const router = useRouter();
   const params = useParams();
+  const token = Array.isArray(params.token) ? params.token[0] : params.token;
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [inviteData, setInviteData] = useState<{
@@ -23,7 +24,6 @@ export default function InvitePage() {
   useEffect(() => {
     const loadInvite = async () => {
       try {
-        const token = params.token as string;
         if (!token) {
           setError("Токен не найден");
           setIsLoading(false);
@@ -36,9 +36,16 @@ export default function InvitePage() {
           setIsLoading(false);
           return;
         }
+
+        if (!result.data) {
+          setError("Не удалось загрузить приглашение");
+          setIsLoading(false);
+          return;
+        }
+
         setInviteData({
-          email: result.data?.email,
-          workspaceName: result.data?.workspaceName,
+          email: result.data.email,
+          workspaceName: result.data.workspaceName,
         });
         setIsLoading(false);
       } catch {
@@ -48,7 +55,7 @@ export default function InvitePage() {
     };
 
     loadInvite();
-  }, [params.token]);
+  }, [token]);
 
   useEffect(() => {
     const acceptInviteIfLoggedIn = async () => {
@@ -59,7 +66,6 @@ export default function InvitePage() {
         }
 
         try {
-          const token = params.token as string;
           if (!token) {
             setError("Токен не найден");
             return;
@@ -81,7 +87,7 @@ export default function InvitePage() {
     };
 
     acceptInviteIfLoggedIn();
-  }, [status, session, inviteData, params.token, router]);
+  }, [status, session, inviteData, token, router]);
 
   if (isLoading) {
     return (
@@ -138,7 +144,6 @@ export default function InvitePage() {
           <p className="text-sm text-muted-foreground">Для принятия приглашения необходимо войти в систему.</p>
           <Button
             onClick={() => {
-              const token = params.token as string;
               router.push(`/login?inviteToken=${token}`);
             }}
             className="w-full"

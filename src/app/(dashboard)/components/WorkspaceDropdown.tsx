@@ -2,18 +2,18 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  Archive,
+  ArrowRight,
   Building2,
   ChevronDown,
+  CreditCard,
+  HandCoins,
+  Landmark,
   LogOut,
+  type LucideIcon,
   Plus,
   Settings,
   Wallet,
-  HandCoins,
-  CreditCard,
-  Landmark,
-  ArrowRight,
-  Archive,
-  type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -114,7 +114,8 @@ export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDr
         }}
       >
         <PopoverTrigger asChild>
-          <div
+          <button
+            type="button"
             className={cn(
               "cursor-pointer flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent",
               className
@@ -123,7 +124,7 @@ export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDr
             <CurrentWorkspaceIcon className="h-4 w-4" />
             <span className="max-w-[200px] truncate">{currentWorkspace?.name || "Выберите workspace"}</span>
             <ChevronDown className="h-4 w-4" />
-          </div>
+          </button>
         </PopoverTrigger>
         <PopoverContent className="w-64 p-0" align="start">
           <div className="p-2">

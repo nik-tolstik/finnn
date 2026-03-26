@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import { accountKeys, analyticsKeys, categoryKeys, debtKeys, transactionKeys, workspaceKeys, workspacesKeys } from "./query-keys";
+import { accountKeys, categoryKeys, debtKeys, transactionKeys, workspaceKeys, workspacesKeys } from "./query-keys";
 
 type WorkspaceDomain =
   | "workspaces"
@@ -10,11 +10,7 @@ type WorkspaceDomain =
   | "archivedAccounts"
   | "categories"
   | "transactions"
-  | "debts"
-  | "capital"
-  | "analytics"
-  | "analyticsCategory"
-  | "analyticsTotal";
+  | "debts";
 
 export async function invalidateWorkspaceDomains(
   queryClient: QueryClient,
@@ -22,11 +18,6 @@ export async function invalidateWorkspaceDomains(
   domains: WorkspaceDomain[]
 ) {
   const domainSet = new Set(domains);
-
-  if (domainSet.has("analytics")) {
-    domainSet.add("analyticsCategory");
-    domainSet.add("analyticsTotal");
-  }
 
   const invalidations: Promise<unknown>[] = [];
 
@@ -60,18 +51,6 @@ export async function invalidateWorkspaceDomains(
 
   if (domainSet.has("debts")) {
     invalidations.push(queryClient.invalidateQueries({ queryKey: debtKeys.all(workspaceId) }));
-  }
-
-  if (domainSet.has("capital")) {
-    invalidations.push(queryClient.invalidateQueries({ queryKey: analyticsKeys.capital(workspaceId) }));
-  }
-
-  if (domainSet.has("analyticsCategory")) {
-    invalidations.push(queryClient.invalidateQueries({ queryKey: analyticsKeys.categoryPrefix(workspaceId) }));
-  }
-
-  if (domainSet.has("analyticsTotal")) {
-    invalidations.push(queryClient.invalidateQueries({ queryKey: analyticsKeys.totalPrefix(workspaceId) }));
   }
 
   await Promise.all(invalidations);

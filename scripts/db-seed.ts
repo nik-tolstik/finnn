@@ -269,7 +269,8 @@ async function main() {
       },
     });
 
-    balances.set(account.id, balances.get(account.id)?.plus(amount));
+    const currentBalance = balances.get(account.id) ?? new Big(0);
+    balances.set(account.id, currentBalance.plus(amount));
     createdTransactions += 1;
   }
 
