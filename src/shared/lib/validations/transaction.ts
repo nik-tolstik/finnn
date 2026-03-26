@@ -11,7 +11,7 @@ export const createTransactionSchema = z.object({
     .refine(
       (val) => {
         const num = parseFloat(val);
-        return !isNaN(num) && num > 0;
+        return !Number.isNaN(num) && num > 0;
       },
       { message: "Сумма должна быть больше 0" }
     ),
@@ -37,7 +37,7 @@ export const createTransferSchema = z.object({
     .refine(
       (val) => {
         const num = parseFloat(val);
-        return !isNaN(num) && num > 0;
+        return !Number.isNaN(num) && num > 0;
       },
       { message: "Сумма должна быть больше 0" }
     ),
@@ -47,7 +47,7 @@ export const createTransferSchema = z.object({
     .refine(
       (val) => {
         const num = parseFloat(val);
-        return !isNaN(num) && num > 0;
+        return !Number.isNaN(num) && num > 0;
       },
       { message: "Сумма должна быть больше 0" }
     ),
@@ -64,7 +64,7 @@ export const updateTransactionSchema = z.object({
       (val) => {
         if (!val) return true;
         const num = parseFloat(val);
-        return !isNaN(num) && num > 0;
+        return !Number.isNaN(num) && num > 0;
       },
       { message: "Сумма должна быть больше 0" }
     ),
@@ -82,7 +82,7 @@ export const updateTransferSchema = z.object({
     .refine(
       (val) => {
         const num = parseFloat(val);
-        return !isNaN(num) && num > 0;
+        return !Number.isNaN(num) && num > 0;
       },
       { message: "Сумма должна быть больше 0" }
     ),
@@ -92,7 +92,7 @@ export const updateTransferSchema = z.object({
     .refine(
       (val) => {
         const num = parseFloat(val);
-        return !isNaN(num) && num > 0;
+        return !Number.isNaN(num) && num > 0;
       },
       { message: "Сумма должна быть больше 0" }
     ),

@@ -86,7 +86,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
         return selectedAccount;
       }
       const toAmountNum = parseFloat(toAmount);
-      if (isNaN(toAmountNum)) return selectedAccount;
+      if (Number.isNaN(toAmountNum)) return selectedAccount;
 
       let newBalance = selectedAccount.balance;
       if (debt.type === DebtType.LENT) {
@@ -108,7 +108,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       return selectedAccount;
     }
     const amountNum = parseFloat(amount);
-    if (isNaN(amountNum)) return selectedAccount;
+    if (Number.isNaN(amountNum)) return selectedAccount;
 
     let newBalance = selectedAccount.balance;
     if (debt.type === DebtType.LENT) {

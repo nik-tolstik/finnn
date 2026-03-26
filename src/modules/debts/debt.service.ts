@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateDebtRoutes } from "@/shared/lib/revalidate-app-routes";

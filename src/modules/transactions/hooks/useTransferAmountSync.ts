@@ -1,6 +1,6 @@
 "use client";
 
-import { Currency } from "@prisma/client";
+import type { Currency } from "@prisma/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 

@@ -46,7 +46,7 @@ async function getNBRBRates(): Promise<{ data: Record<string, number> } | { erro
         ratesMap[rate.Cur_Abbreviation] = ratePerUnit;
       }
 
-      ratesMap["BYN"] = 1;
+      ratesMap.BYN = 1;
 
       console.warn("[NBRB] Успешно получены курсы от НБРБ");
       return { data: ratesMap };
@@ -93,10 +93,10 @@ async function getExchangeRateAPIRates(): Promise<{ data: Record<string, number>
 
       if (data.rates) {
         if (data.rates.USD) {
-          ratesMap["USD"] = 1 / data.rates.USD;
+          ratesMap.USD = 1 / data.rates.USD;
         }
         if (data.rates.EUR) {
-          ratesMap["EUR"] = 1 / data.rates.EUR;
+          ratesMap.EUR = 1 / data.rates.EUR;
         }
       }
 
@@ -193,7 +193,7 @@ export async function getNBRBExchangeRatesByDate(date: Date): Promise<{ data: Re
         ratesMap[rate.Cur_Abbreviation] = ratePerUnit;
       }
 
-      ratesMap["BYN"] = 1;
+      ratesMap.BYN = 1;
 
       console.warn("[NBRB] Успешно получены курсы на дату", dateStr);
       return { data: ratesMap };

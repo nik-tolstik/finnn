@@ -23,7 +23,7 @@ export function useCountUp({ duration = 1000, start = 0, end, enabled = true }: 
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+      const easeOutCubic = 1 - (1 - progress) ** 3;
       const current = start + difference * easeOutCubic;
 
       setCount(current);

@@ -1,4 +1,4 @@
-import { Transaction } from "@prisma/client";
+import type { Transaction } from "@prisma/client";
 
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 

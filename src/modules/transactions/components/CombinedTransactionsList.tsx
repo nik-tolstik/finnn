@@ -145,9 +145,9 @@ export function CombinedTransactionsList({
     transactions.forEach((transaction) => {
       const transactionDate = startOfDay(new Date(transaction.data.date));
 
-      if (!currentDate || !isSameDay(currentDate, transactionDate)) {
+      if (currentDate && !isSameDay(currentDate, transactionDate)) {
         if (currentGroup.length > 0) {
-          groups.push({ date: currentDate!, transactions: currentGroup });
+          groups.push({ date: currentDate, transactions: currentGroup });
         }
         currentDate = transactionDate;
         currentGroup = [transaction];

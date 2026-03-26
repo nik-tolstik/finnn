@@ -105,7 +105,7 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
     if (!amount || !initialAmount) return fullAccount;
     const amountNum = parseFloat(amount);
     const initialNum = parseFloat(initialAmount);
-    if (isNaN(amountNum) || isNaN(initialNum)) return fullAccount;
+    if (Number.isNaN(amountNum) || Number.isNaN(initialNum)) return fullAccount;
     const delta = subtractMoney(amount, initialAmount);
     if (delta === "0") return fullAccount;
     const newBalance =

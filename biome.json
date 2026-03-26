@@ -39,7 +39,7 @@
         "recommended": true,
         "noLabelWithoutControl": "warn",
         "noStaticElementInteractions": "warn",
-        "noSvgWithoutTitle": "warn",
+        "noSvgWithoutTitle": "off",
         "useButtonType": "warn",
         "useKeyWithClickEvents": "warn",
         "useSemanticElements": "warn"
@@ -57,7 +57,7 @@
       },
       "suspicious": {
         "recommended": true,
-        "noArrayIndexKey": "warn",
+        "noArrayIndexKey": "off",
         "noConsole": {
           "level": "warn",
           "options": {

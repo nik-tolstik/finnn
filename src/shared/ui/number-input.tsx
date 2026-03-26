@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 
 import { cn } from "@/shared/utils/cn";
 
@@ -14,7 +14,7 @@ function NumberInput({ className, onChange, ...props }: NumberInputProps) {
 
     const parts = value.split(".");
     if (parts.length > 2) {
-      value = parts[0] + "." + parts.slice(1).join("");
+      value = `${parts[0]}.${parts.slice(1).join("")}`;
     }
 
     input.value = value;

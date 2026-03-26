@@ -60,7 +60,7 @@ export async function GET() {
         ratesMap[rate.Cur_Abbreviation] = ratePerUnit;
       }
 
-      ratesMap["BYN"] = 1;
+      ratesMap.BYN = 1;
 
       console.warn("[NBRB API Route] Успешно получены курсы:", Object.keys(ratesMap));
       return NextResponse.json({ data: ratesMap });

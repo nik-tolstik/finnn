@@ -17,7 +17,7 @@ import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import { updateTransactionSchema, type UpdateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
-import { type ComboboxOption } from "@/shared/ui/combobox";
+import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import {
   Dialog,
@@ -130,7 +130,7 @@ export function EditTransactionDialog({
   const previewAccount = useMemo(() => {
     if (!selectedAccount || !amount) return selectedAccount;
     const amountNum = parseFloat(amount);
-    if (isNaN(amountNum)) return selectedAccount;
+    if (Number.isNaN(amountNum)) return selectedAccount;
 
     let newBalance = accountBalanceBeforeTransaction || selectedAccount.balance;
     if (transaction.type === TransactionType.INCOME) {
@@ -224,7 +224,7 @@ export function EditTransactionDialog({
                         accountBalanceBeforeTransaction
                       ) {
                         const amount = parseFloat(value);
-                        if (!isNaN(amount) && compareMoney(amount, accountBalanceBeforeTransaction) > 0) {
+                        if (!Number.isNaN(amount) && compareMoney(amount, accountBalanceBeforeTransaction) > 0) {
                           setError("amount", {
                             type: "manual",
                             message: `Сумма не может превышать баланс счёта (${accountBalanceBeforeTransaction})`,
@@ -243,7 +243,7 @@ export function EditTransactionDialog({
                       )
                         return true;
                       const amount = parseFloat(value);
-                      if (isNaN(amount)) return true;
+                      if (Number.isNaN(amount)) return true;
                       if (compareMoney(amount, accountBalanceBeforeTransaction) > 0) {
                         return `Сумма не может превышать баланс счёта (${accountBalanceBeforeTransaction})`;
                       }

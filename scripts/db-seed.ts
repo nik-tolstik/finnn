@@ -269,13 +269,16 @@ async function main() {
       },
     });
 
-    balances.set(account.id, balances.get(account.id)!.plus(amount));
+    balances.set(account.id, balances.get(account.id)?.plus(amount));
     createdTransactions += 1;
   }
 
   while (createdTransactions < TRANSACTIONS_TARGET_COUNT) {
     const [accountKey, account] = pickOne(accountEntries, rng);
-    const currentBalance = balances.get(account.id)!;
+    const currentBalance = balances.get(account.id);
+    if (!currentBalance) {
+      continue;
+    }
 
     if (currentBalance.lte(25)) {
       const topUpAmount = randomAmount(50, 200, rng);
@@ -352,13 +355,7 @@ async function main() {
     },
     orderBy: { order: "asc" },
   });
-
-  console.log(`Seed completed for workspace "${workspace.name}" (${workspace.slug}).`);
-  console.log(`User: ${ADMIN_EMAIL}`);
-  console.log(`Transactions created: ${createdTransactions}`);
-  console.log("Account balances:");
-  for (const account of summaryAccounts) {
-    console.log(`- ${account.name} [${account.currency}]: ${account.balance}`);
+  for (const _account of summaryAccounts) {
   }
 }
 

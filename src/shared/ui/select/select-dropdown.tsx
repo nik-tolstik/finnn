@@ -1,27 +1,26 @@
 "use client";
 
-import { CheckIcon, ChevronDownIcon, X } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
 
-import { Button } from "@/shared/ui/button";
-import { Checkbox } from "@/shared/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { SelectTriggerButton } from "@/shared/ui/select/select-trigger-button";
 import { cn } from "@/shared/utils/cn";
 
-import { SelectDropdownProps } from "./types";
+import type { SelectDropdownProps } from "./types";
 
 export function SelectDropdown<TValue extends string | number = string>(props: SelectDropdownProps<TValue>) {
   const { options, value, onChange, placeholder, multiple, allowClear, valueLabel, disabled, renderOption, popoverClassName } = props;
   const [open, setOpen] = useState(false);
-  
+
   const selectedValues: TValue[] = React.useMemo(() => {
     if (multiple) {
       return Array.isArray(value) ? (value as TValue[]) : [];
     }
     return value !== undefined ? [value as TValue] : [];
   }, [value, multiple]);
-  
+
   const currentValue = React.useMemo(() => {
     return multiple ? undefined : (value as TValue | undefined);
   }, [value, multiple]);
@@ -61,10 +60,10 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
     if (!onChange) return;
     if (String(optionValue).startsWith("__group_")) {
       if (!multiple) return;
-      
+
       const groupIndex = options.findIndex((opt) => opt.value === optionValue);
       if (groupIndex === -1) return;
-      
+
       const groupAccounts: TValue[] = [];
       for (let i = groupIndex + 1; i < options.length; i++) {
         const opt = options[i];
@@ -73,16 +72,16 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
         }
         groupAccounts.push(opt.value);
       }
-      
+
       const allSelected = groupAccounts.every((accId) => selectedValues.includes(accId));
       const newValues = allSelected
         ? selectedValues.filter((v) => !groupAccounts.includes(v))
         : [...selectedValues.filter((v) => !groupAccounts.includes(v)), ...groupAccounts];
-      
+
       (onChange as (value: TValue[]) => void)(newValues);
       return;
     }
-    
+
     if (multiple) {
       const newValues = selectedValues.includes(optionValue)
         ? selectedValues.filter((v) => v !== optionValue)
@@ -108,48 +107,25 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
+        <SelectTriggerButton
+          value={hasSelection ? "selected" : undefined}
           disabled={disabled}
+          onClear={allowClear && hasSelection ? handleClear : undefined}
+          showClearButton={allowClear && hasSelection}
           className={cn("w-full justify-start", !hasSelection && "text-muted-foreground")}
         >
-          <span className={cn("truncate flex items-center gap-2 flex-1 min-w-0 text-left", renderOption && "flex-1 min-w-0")}>
-            {displayLabel}
-          </span>
-          <div className="flex items-center gap-1 shrink-0">
-            {allowClear && hasSelection && (
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClear();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleClear();
-                  }
-                }}
-                className="rounded-full opacity-70 transition-opacity hover:opacity-100 focus:opacity-100 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-              >
-                <X className="h-3 w-3" />
-              </div>
-            )}
-            <ChevronDownIcon className="h-4 w-4 opacity-50" />
-          </div>
-        </Button>
+          <span className={cn("truncate flex items-center gap-2 flex-1 min-w-0 text-left", renderOption && "flex-1 min-w-0")}>{displayLabel}</span>
+        </SelectTriggerButton>
       </PopoverTrigger>
       <PopoverContent className={cn("p-1", popoverClassName)} align="start" style={popoverClassName ? undefined : { width: "var(--radix-popover-trigger-width)" }}>
         <div className="max-h-96 overflow-y-auto flex flex-col gap-1">
           {options.map((option, index) => {
             const selected = multiple ? selectedValues.includes(option.value) : currentValue === option.value;
             const isGroupHeader = String(option.value).startsWith("__group_");
-            
+
             let isInGroup = false;
             let hasPreviousGroup = false;
-            
+
             if (!isGroupHeader) {
               for (let i = index - 1; i >= 0; i--) {
                 const prevOption = options[i];
@@ -169,112 +145,103 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
             }
 
             if (renderOption) {
+              if (isGroupHeader) {
+                if (!multiple) {
+                  return (
+                    <div
+                      key={option.value.toString()}
+                      className={cn(
+                        "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                        hasPreviousGroup && "mt-2"
+                      )}
+                    >
+                      {renderOption({ option, props, selected })}
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    type="button"
+                    key={option.value.toString()}
+                    onClick={() => {
+                      handleSelect(option.value);
+                    }}
+                    className={cn(
+                      "w-full rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-accent/50",
+                      hasPreviousGroup && "mt-2"
+                    )}
+                  >
+                    {renderOption({ option, props, selected })}
+                  </button>
+                );
+              }
+
+              return (
+                <button
+                  type="button"
+                  key={option.value.toString()}
+                  onClick={() => {
+                    handleSelect(option.value);
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-sm py-1.5 px-2 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
+                    isInGroup && "pl-[18px] pr-2",
+                    selected && "bg-accent"
+                  )}
+                >
+                  {renderOption({ option, props, selected })}
+                </button>
+              );
+            }
+
+            if (isGroupHeader) {
               return (
                 <div
                   key={option.value.toString()}
                   className={cn(
-                    !isGroupHeader &&
-                      "flex items-center gap-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
-                    !isGroupHeader && !isInGroup && "px-2",
-                    !isGroupHeader && isInGroup && "pl-[18px] pr-2",
-                    !isGroupHeader && selected && "bg-accent",
-                    isGroupHeader && multiple && "cursor-pointer hover:bg-accent/50 rounded-sm",
-                    isGroupHeader && hasPreviousGroup && "mt-2"
+                    "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                    hasPreviousGroup && "mt-2"
                   )}
-                  onClick={(e) => {
-                    if (isGroupHeader) {
-                      if (multiple) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleSelect(option.value);
-                      }
-                      return;
-                    }
-                    const target = e.target as HTMLElement;
-                    if (target.closest('button[data-radix-checkbox-root]')) {
-                      return;
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleSelect(option.value);
-                  }}
-                  onKeyDown={(e) => {
-                    if (isGroupHeader && multiple && (e.key === "Enter" || e.key === " ")) {
-                      e.preventDefault();
-                      handleSelect(option.value);
-                      return;
-                    }
-                    if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
-                      e.preventDefault();
-                      handleSelect(option.value);
-                    }
-                  }}
                 >
-                  {renderOption({ option, props, selected })}
+                  {option.label}
                 </div>
               );
             }
+
             return (
-              <div
+              <button
+                type="button"
                 key={option.value.toString()}
+                onClick={() => {
+                  handleSelect(option.value);
+                }}
                 className={cn(
-                  !isGroupHeader &&
-                    "flex items-center gap-2 rounded-sm py-1.5 text-sm cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
-                  !isGroupHeader && !isInGroup && "px-2",
-                  !isGroupHeader && isInGroup && "pl-[18px] pr-2",
-                  !isGroupHeader && selected && "bg-accent",
-                  isGroupHeader && hasPreviousGroup && "mt-2"
+                  "flex w-full items-center gap-2 rounded-sm py-1.5 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
+                  !isInGroup && "px-2",
+                  isInGroup && "pl-[18px] pr-2",
+                  selected && "bg-accent"
                 )}
               >
-                {isGroupHeader ? (
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {option.label}
-                  </div>
-                ) : (
+                {multiple ? (
                   <>
-                    {multiple ? (
-                      <>
-                        <Checkbox
-                          checked={selected}
-                          onCheckedChange={() => handleSelect(option.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="shrink-0"
-                        />
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => handleSelect(option.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              handleSelect(option.value);
-                            }
-                          }}
-                          className="flex-1"
-                        >
-                          {option.label}
-                        </span>
-                      </>
-                    ) : (
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleSelect(option.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            handleSelect(option.value);
-                          }
-                        }}
-                        className="flex items-center gap-2 flex-1 min-w-0"
-                      >
-                        <span className="flex-1">{option.label}</span>
-                        {selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
-                      </div>
-                    )}
+                    <span
+                      className={cn(
+                        "h-4 w-4 shrink-0 rounded-sm border border-primary shadow text-primary-foreground",
+                        selected ? "bg-primary text-primary-foreground" : "text-transparent"
+                      )}
+                    >
+                      {selected && <CheckIcon className="h-4 w-4" />}
+                    </span>
+                    <span className="flex-1">{option.label}</span>
                   </>
+                ) : (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="flex-1">{option.label}</span>
+                    {selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
+                  </div>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>

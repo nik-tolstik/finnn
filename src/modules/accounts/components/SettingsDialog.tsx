@@ -33,8 +33,9 @@ export function SettingsDialog({ workspaceId, open, onOpenChange }: SettingsDial
           <DialogTitle className="mb-4">Настройки</DialogTitle>
         </DialogHeader>
         <div className="flex gap-1 border-b mb-4 px-6">
-          {sections.map((section) => (
+              {sections.map((section) => (
             <button
+              type="button"
               key={section.id}
               onClick={() => setSelectedSection(section.id)}
               className={cn(

@@ -29,6 +29,7 @@ export function UserSettingsDialog({ open, onOpenChange }: UserSettingsDialogPro
           <div className="flex gap-1 border-b mb-4">
             {sections.map((section) => (
               <button
+                type="button"
                 key={section.id}
                 onClick={() => setSelectedSection(section.id)}
                 className={cn(

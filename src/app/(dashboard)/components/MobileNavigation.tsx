@@ -55,6 +55,7 @@ export function MobileNavigation() {
             <span className="text-xs">Аналитика</span>
           </Link>
           <button
+            type="button"
             onClick={() => createTransactionDialog.openDialog(null)}
             className="flex flex-col items-center justify-center gap-1 transition-colors size-16 py-3 relative"
           >

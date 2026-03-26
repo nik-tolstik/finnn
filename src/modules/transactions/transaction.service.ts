@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
@@ -323,7 +323,7 @@ export async function updateTransfer(fromTransactionId: string, input: UpdateTra
         },
       });
 
-      if (!fromTransaction || !fromTransaction.transferFrom) {
+      if (!fromTransaction?.transferFrom) {
         throw new Error("Перевод не найден или доступ запрещён");
       }
 

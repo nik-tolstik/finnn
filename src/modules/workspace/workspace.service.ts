@@ -1,6 +1,6 @@
 "use server";
 
-import { randomBytes } from "crypto";
+import { randomBytes } from "node:crypto";
 
 import { Currency } from "@prisma/client";
 

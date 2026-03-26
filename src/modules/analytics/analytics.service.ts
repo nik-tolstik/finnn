@@ -3,7 +3,7 @@
 import { Currency } from "@prisma/client";
 
 import { getExchangeRate } from "@/modules/currency/exchange-rate.service";
-import { TransactionType } from "@/modules/transactions/transaction.constants";
+import type { TransactionType } from "@/modules/transactions/transaction.constants";
 import { prisma } from "@/shared/lib/prisma";
 import { requireWorkspaceAccess } from "@/shared/lib/server-access";
 import { addMoney, multiplyMoney } from "@/shared/utils/money";

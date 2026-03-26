@@ -27,7 +27,7 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
 import { Segmented } from "@/shared/ui/segmented";
 import { Select } from "@/shared/ui/select/select";
-import { type SelectOption, type RenderOption } from "@/shared/ui/select/types";
+import type { SelectOption, RenderOption } from "@/shared/ui/select/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { getAccountIcon } from "@/shared/utils/account-icons";
 import { formatMoney } from "@/shared/utils/money";
@@ -79,7 +79,7 @@ export function AnalyticsContent({ workspaceId }: { workspaceId: string }) {
       if (!grouped.has(ownerId)) {
         grouped.set(ownerId, []);
       }
-      grouped.get(ownerId)!.push(account);
+      grouped.get(ownerId)?.push(account);
     }
 
     const result: Array<{

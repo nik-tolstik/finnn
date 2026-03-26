@@ -21,7 +21,7 @@ import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import { createTransactionSchema, type CreateTransactionInput } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
-import { type ComboboxOption } from "@/shared/ui/combobox";
+import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Dialog, DialogWindow, DialogFooter, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
@@ -161,7 +161,7 @@ export function CreateTransactionDialog({
       return currentAccount;
     }
     const amountNum = parseFloat(amount);
-    if (isNaN(amountNum)) return currentAccount;
+    if (Number.isNaN(amountNum)) return currentAccount;
 
     let newBalance = currentAccount.balance;
     if (transactionType === TransactionType.INCOME) {
@@ -471,7 +471,7 @@ export function CreateTransactionDialog({
                           value
                         ) {
                           const amount = parseFloat(value);
-                          if (!isNaN(amount) && compareMoney(amount, currentAccount.balance) > 0) {
+                          if (!Number.isNaN(amount) && compareMoney(amount, currentAccount.balance) > 0) {
                             setError("amount", {
                               type: "manual",
                               message: `Сумма не может превышать баланс счёта (${currentAccount.balance})`,
@@ -491,7 +491,7 @@ export function CreateTransactionDialog({
                         )
                           return true;
                         const amount = parseFloat(value);
-                        if (isNaN(amount)) return true;
+                        if (Number.isNaN(amount)) return true;
                         if (compareMoney(amount, currentAccount.balance) > 0) {
                           return `Сумма не может превышать баланс счёта (${currentAccount.balance})`;
                         }

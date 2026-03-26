@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowUpDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type React from "react";
 
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { AnimatedListItem } from "@/shared/ui/animated-list";

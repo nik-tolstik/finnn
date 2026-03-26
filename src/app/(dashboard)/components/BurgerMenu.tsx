@@ -118,6 +118,7 @@ export function BurgerMenu() {
 
             <div className="mt-auto border-t p-4 space-y-1">
               <button
+                type="button"
                 onClick={() => {
                   setOpen(false);
                   setSettingsDialogOpen(true);
@@ -130,6 +131,7 @@ export function BurgerMenu() {
                 <span>Настройки</span>
               </button>
               <button
+                type="button"
                 onClick={handleLogout}
                 className={cn(
                   "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-3"

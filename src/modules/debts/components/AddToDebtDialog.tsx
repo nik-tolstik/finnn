@@ -62,7 +62,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       return fullAccount;
     }
     const amountNum = parseFloat(amount);
-    if (isNaN(amountNum)) return fullAccount;
+    if (Number.isNaN(amountNum)) return fullAccount;
 
     let newBalance = fullAccount.balance;
     if (debt.type === DebtType.LENT) {

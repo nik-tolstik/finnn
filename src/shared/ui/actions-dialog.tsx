@@ -44,6 +44,7 @@ function ActionButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 py-4 text-left transition-colors cursor-pointer",

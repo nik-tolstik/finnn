@@ -55,6 +55,7 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
           </div>
           <div className="mt-1 border-t pt-1 space-y-1">
             <button
+              type="button"
               onClick={() => {
                 setOpen(false);
                 setSettingsDialogOpen(true);
@@ -67,6 +68,7 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
               <span>Настройки</span>
             </button>
             <button
+              type="button"
               onClick={handleLogout}
               className={cn(
                 "w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"

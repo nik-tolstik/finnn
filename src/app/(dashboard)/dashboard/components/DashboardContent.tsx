@@ -144,9 +144,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
             </div>
             <AccountsMenu
               isReorderMode={isReorderMode}
-              showAllAccounts={showAllAccounts}
               onReorderModeChange={setIsReorderMode}
-              onShowAllAccountsChange={setShowAllAccounts}
               onCreateAccount={() => createAccountDialog.openDialog(null)}
               onCancelReorder={() => {
                 const event = new CustomEvent("cancelReorder");

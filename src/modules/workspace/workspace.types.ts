@@ -1,4 +1,4 @@
-import { Workspace, WorkspaceMember } from "@prisma/client";
+import type { Workspace, WorkspaceMember } from "@prisma/client";
 
 export type WorkspaceWithOwner = Workspace & {
   owner: {

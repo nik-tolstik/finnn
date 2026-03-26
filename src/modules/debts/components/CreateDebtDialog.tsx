@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { SelectAccountDialog } from "@/modules/accounts/components/SelectAccountDialog";
 import { AccountCard } from "@/shared/components/AccountCard";
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY, Currency } from "@/shared/constants/currency";
+import { CURRENCY_OPTIONS, DEFAULT_CURRENCY, type Currency } from "@/shared/constants/currency";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
@@ -94,7 +94,7 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
       return selectedAccount;
     }
     const amountNum = parseFloat(amount);
-    if (isNaN(amountNum)) return selectedAccount;
+    if (Number.isNaN(amountNum)) return selectedAccount;
 
     let newBalance = selectedAccount.balance;
     if (debtType === DebtType.LENT) {

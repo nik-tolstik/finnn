@@ -50,29 +50,14 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
   const borderTint = hasColor ? hexToRgba(account.color as string, 0.34) : "rgba(255, 255, 255, 0.14)";
   const iconTint = hasColor ? hexToRgba(account.color as string, 0.24) : "rgba(255, 255, 255, 0.10)";
   const focusGlow = hasColor ? hexToRgba(account.color as string, 0.18) : "rgba(255, 255, 255, 0.08)";
-
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden border text-card-foreground flex flex-col rounded-xl shadow-sm backdrop-blur-md backdrop-saturate-150",
-        onClick && "cursor-pointer",
-
-        className
-      )}
-      style={{
-        backgroundColor: cardTint,
-        borderColor: borderTint,
-        backgroundImage: hasColor
-          ? `linear-gradient(110deg, ${hexToRgba(account.color as string, 0.24)} 0%, ${hexToRgba(account.color as string, 0.06)} 60%, rgba(255, 255, 255, 0.06) 100%)`
-          : undefined,
-        boxShadow: `0 14px 38px ${focusGlow}`,
-        WebkitUserSelect: "none",
-        WebkitTouchCallout: "none",
-        userSelect: "none",
-        touchAction: "pan-y",
-      }}
-      onClick={onClick}
-    >
+  const isInteractive = Boolean(onClick);
+  const cardClassName = cn(
+    "relative overflow-hidden border text-card-foreground flex flex-col rounded-xl shadow-sm backdrop-blur-md backdrop-saturate-150",
+    isInteractive && "cursor-pointer",
+    className
+  );
+  const cardContent = (
+    <>
       <div className="flex flex-col items-start gap-0 px-4 py-3">
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -113,6 +98,48 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
           </div>
         </div>
       </div>
+    </>
+  );
+
+  return (
+    isInteractive ? (
+      <button
+      type="button"
+      className={cardClassName}
+      style={{
+        backgroundColor: cardTint,
+        borderColor: borderTint,
+        backgroundImage: hasColor
+          ? `linear-gradient(110deg, ${hexToRgba(account.color as string, 0.24)} 0%, ${hexToRgba(account.color as string, 0.06)} 60%, rgba(255, 255, 255, 0.06) 100%)`
+          : undefined,
+        boxShadow: `0 14px 38px ${focusGlow}`,
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+        userSelect: "none",
+        touchAction: "pan-y",
+      }}
+      onClick={onClick}
+    >
+      {cardContent}
+    </button>
+    ) : (
+    <div
+      className={cardClassName}
+      style={{
+        backgroundColor: cardTint,
+        borderColor: borderTint,
+        backgroundImage: hasColor
+          ? `linear-gradient(110deg, ${hexToRgba(account.color as string, 0.24)} 0%, ${hexToRgba(account.color as string, 0.06)} 60%, rgba(255, 255, 255, 0.06) 100%)`
+          : undefined,
+        boxShadow: `0 14px 38px ${focusGlow}`,
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+        userSelect: "none",
+        touchAction: "pan-y",
+      }}
+    >
+      {cardContent}
     </div>
+    )
   );
 }

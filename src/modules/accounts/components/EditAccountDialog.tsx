@@ -119,7 +119,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
         createdAt: new Date(account.createdAt),
       });
     }
-  }, [account.id, account.name, account.color, account.icon, account.ownerId, account.createdAt, open, reset]);
+  }, [account.name, account.color, account.icon, account.ownerId, account.createdAt, open, reset]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);

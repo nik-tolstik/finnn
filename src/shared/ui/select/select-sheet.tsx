@@ -5,13 +5,12 @@ import * as React from "react";
 import { useState } from "react";
 
 import { Button } from "@/shared/ui/button";
-import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { SelectTriggerButton } from "@/shared/ui/select/select-trigger-button";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";
 
-import { SelectOption, SelectProps } from "./types";
+import type { SelectOption, SelectProps } from "./types";
 
 export function SelectSheet<TValue extends string | number = string>(props: SelectProps<TValue>) {
   const { options, value, onChange, filter, multiple, allowClear, valueLabel, renderOption, placeholder, label } =
@@ -174,64 +173,64 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                   const isGroupHeader = String(option.value).startsWith("__group_");
 
                   if (renderOption) {
+                    if (isGroupHeader) {
+                      return (
+                        <div
+                          key={option.value}
+                          className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                        >
+                          {renderOption({ option, props, selected })}
+                        </div>
+                      );
+                    }
+
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={option.value}
-                        role={isGroupHeader ? undefined : "button"}
-                        tabIndex={isGroupHeader ? undefined : 0}
-                        onClick={() => !isGroupHeader && handleSelect(option)}
-                        onKeyDown={(e) => {
-                          if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
-                            e.preventDefault();
-                            handleSelect(option);
-                          }
-                        }}
+                        onClick={() => handleSelect(option)}
                         className={cn(
-                          !isGroupHeader && "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
-                          !isGroupHeader && selected && "bg-accent"
+                          "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
+                          selected && "bg-accent"
                         )}
                       >
                         {renderOption({ option, props, selected })}
-                      </div>
+                      </button>
                     );
                   }
 
                   return (
-                    <div
-                      key={option.value}
-                      role={isGroupHeader ? undefined : "button"}
-                      tabIndex={isGroupHeader ? undefined : 0}
-                      onClick={() => !isGroupHeader && handleSelect(option)}
-                      onKeyDown={(e) => {
-                        if (!isGroupHeader && (e.key === "Enter" || e.key === " ")) {
-                          e.preventDefault();
-                          handleSelect(option);
-                        }
-                      }}
-                      className={cn(
-                        !isGroupHeader && "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
-                        !isGroupHeader && selected && "bg-accent"
-                      )}
-                    >
-                      {isGroupHeader ? (
-                        <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          {option.label}
-                        </div>
-                      ) : (
-                        <>
-                          {multiple && (
-                            <Checkbox
-                              checked={selected}
-                              onCheckedChange={() => handleSelect(option)}
-                              className="shrink-0"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          )}
-                          <span className="flex-1 text-sm">{option.label}</span>
-                          {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                        </>
-                      )}
-                    </div>
+                    isGroupHeader ? (
+                      <div
+                        key={option.value}
+                        className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                      >
+                        {option.label}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={() => handleSelect(option)}
+                        className={cn(
+                          "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
+                          selected && "bg-accent"
+                        )}
+                      >
+                        {multiple && (
+                          <span
+                            className={cn(
+                              "h-4 w-4 shrink-0 rounded-sm border border-primary shadow text-primary-foreground",
+                              selected ? "bg-primary text-primary-foreground" : "text-transparent"
+                            )}
+                          >
+                            {selected && <Check className="h-4 w-4" />}
+                          </span>
+                        )}
+                        <span className="flex-1 text-sm">{option.label}</span>
+                        {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                      </button>
+                    )
                   );
                 })
               )}

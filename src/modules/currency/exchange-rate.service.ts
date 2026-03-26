@@ -81,7 +81,7 @@ export async function getExchangeRate(
   const targetDate = new Date(date);
   targetDate.setHours(0, 0, 0, 0);
 
-  let rate = await prisma.exchangeRate.findUnique({
+  const rate = await prisma.exchangeRate.findUnique({
     where: {
       date_fromCurrency_toCurrency: {
         date: targetDate,

@@ -37,8 +37,8 @@ export default function InvitePage() {
           return;
         }
         setInviteData({
-          email: result.data!.email,
-          workspaceName: result.data!.workspaceName,
+          email: result.data?.email,
+          workspaceName: result.data?.workspaceName,
         });
         setIsLoading(false);
       } catch {

@@ -1,5 +1,5 @@
-import { unlink } from "fs/promises";
-import { join } from "path";
+import { unlink } from "node:fs/promises";
+import { join } from "node:path";
 
 import { UTApi } from "uploadthing/server";
 

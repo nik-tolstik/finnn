@@ -59,7 +59,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
   const previewFromAccount = useMemo(() => {
     if (!fromAccount || !amount) return fromAccount;
     const amountNum = parseFloat(amount);
-    if (isNaN(amountNum)) return fromAccount;
+    if (Number.isNaN(amountNum)) return fromAccount;
 
     const balanceToUse = fromAccountBalanceBeforeTransfer || fromAccount.balance;
     const newBalance = subtractMoney(balanceToUse, amount);
@@ -73,7 +73,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
   const previewToAccount = useMemo(() => {
     if (!toAccount || !toAmount) return toAccount;
     const toAmountNum = parseFloat(toAmount);
-    if (isNaN(toAmountNum)) return toAccount;
+    if (Number.isNaN(toAmountNum)) return toAccount;
 
     const newBalance = addMoney(toAccount.balance, toAmount);
 
@@ -135,7 +135,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                 if (fromAccount && value) {
                   const amountValue = parseFloat(value);
                   const balanceToCheck = fromAccountBalanceBeforeTransfer || fromAccount.balance;
-                  if (!isNaN(amountValue) && compareMoney(amountValue, balanceToCheck) > 0) {
+                  if (!Number.isNaN(amountValue) && compareMoney(amountValue, balanceToCheck) > 0) {
                     form.setError("amount", {
                       type: "manual",
                       message: `Сумма не может превышать баланс счёта (${balanceToCheck})`,
@@ -149,7 +149,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
               validate: (value) => {
                 if (!fromAccount || !value) return true;
                 const amountValue = parseFloat(value);
-                if (isNaN(amountValue)) return true;
+                if (Number.isNaN(amountValue)) return true;
                 const balanceToCheck = fromAccountBalanceBeforeTransfer || fromAccount.balance;
                 if (compareMoney(amountValue, balanceToCheck) > 0) {
                   return `Сумма не может превышать баланс счёта (${balanceToCheck})`;

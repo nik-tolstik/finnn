@@ -9,7 +9,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Select } from "@/shared/ui/select/select";
-import { SelectOption } from "@/shared/ui/select/types";
+import type { SelectOption } from "@/shared/ui/select/types";
 import { cn } from "@/shared/utils/cn";
 import { hexToRgb, rgbToHex, rgbToHsl, hslToRgb, rgbToCmyk, cmykToRgb } from "@/shared/utils/color-utils";
 

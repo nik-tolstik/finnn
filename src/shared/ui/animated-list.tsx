@@ -1,7 +1,7 @@
 "use client"
 
-import { motion, MotionProps } from "motion/react"
-import React from "react"
+import { motion, type MotionProps } from "motion/react"
+import type React from "react"
 
 import { cn } from "@/shared/utils/cn"
 

@@ -35,10 +35,10 @@ export function AccountSelector({
     <>
       <div className="space-y-2">
         {label && (
-          <label className="text-sm font-medium">
+          <div className="text-sm font-medium">
             {label}
             {required && <span className="text-destructive ml-1">*</span>}
-          </label>
+          </div>
         )}
         {account ? (
           <AccountCard

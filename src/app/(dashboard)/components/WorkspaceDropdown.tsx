@@ -131,6 +131,7 @@ export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDr
               {currentWorkspaceId && (
                 <>
                   <button
+                    type="button"
                     onClick={() => {
                       setOpen(false);
                       if (currentWorkspaceId) {
@@ -147,6 +148,7 @@ export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDr
                   <Popover open={switchOpen} onOpenChange={setSwitchOpen}>
                     <PopoverTrigger asChild>
                       <button
+                        type="button"
                         className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
                         onMouseEnter={handleSwitchMouseEnter}
                         onMouseLeave={handleSwitchMouseLeave}
@@ -175,6 +177,7 @@ export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDr
                               const WorkspaceIcon = getWorkspaceIcon(workspace.icon);
                               return (
                                 <button
+                                  type="button"
                                   key={workspace.id}
                                   onClick={() => handleWorkspaceSelect(workspace.id)}
                                   className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
@@ -187,6 +190,7 @@ export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDr
                         </div>
                         <div className="mt-2 pt-2 border-t">
                           <button
+                            type="button"
                             onClick={handleCreateWorkspace}
                             className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
                           >
@@ -198,6 +202,7 @@ export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDr
                     </PopoverContent>
                   </Popover>
                   <button
+                    type="button"
                     onClick={() => {
                       setOpen(false);
                       if (currentWorkspaceId) {
@@ -213,6 +218,7 @@ export function WorkspaceDropdown({ currentWorkspaceId, className }: WorkspaceDr
               )}
               {currentWorkspaceId && !isOwner && (
                 <button
+                  type="button"
                   onClick={() => {
                     setOpen(false);
                     if (currentWorkspaceId && currentWorkspace) {

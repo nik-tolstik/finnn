@@ -60,7 +60,7 @@ export function Segmented<TValue extends string | number = string>({
     requestAnimationFrame(() => {
       updateIndicator();
     });
-  }, [updateIndicator, options]);
+  }, [updateIndicator]);
 
   useLayoutEffect(() => {
     window.addEventListener("resize", updateIndicator);
@@ -95,12 +95,11 @@ export function Segmented<TValue extends string | number = string>({
         const isSelected = option.value === value;
 
         return (
-          <button
-            key={String(option.value)}
-            type="button"
-            role="radio"
-            aria-checked={isSelected}
-            onClick={() => {
+            <button
+              key={String(option.value)}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => {
               if (disabled) return;
               option.onClick?.();
               onChange(option.value);

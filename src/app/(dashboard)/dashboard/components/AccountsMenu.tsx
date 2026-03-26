@@ -9,9 +9,7 @@ import { cn } from "@/shared/utils/cn";
 
 interface AccountsMenuProps {
   isReorderMode: boolean;
-  showAllAccounts: boolean;
   onReorderModeChange: (isReorderMode: boolean) => void;
-  onShowAllAccountsChange: (show: boolean) => void;
   onCreateAccount: () => void;
   onCancelReorder: () => void;
   onSaveReorder: () => void;
@@ -19,9 +17,7 @@ interface AccountsMenuProps {
 
 export function AccountsMenu({
   isReorderMode,
-  showAllAccounts,
   onReorderModeChange,
-  onShowAllAccountsChange,
   onCreateAccount,
   onCancelReorder,
   onSaveReorder,
@@ -51,8 +47,9 @@ export function AccountsMenu({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-54 p-1" align="end">
-        <div className="space-y-1">
+      <div className="space-y-1">
           <button
+            type="button"
             onClick={() => {
               onCreateAccount();
               setMenuOpen(false);
@@ -65,6 +62,7 @@ export function AccountsMenu({
             Новый
           </button>
           <button
+            type="button"
             onClick={() => {
               onReorderModeChange(true);
               setMenuOpen(false);
