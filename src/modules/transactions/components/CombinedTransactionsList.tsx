@@ -31,6 +31,7 @@ import { EditTransactionDialog } from "./EditTransactionDialog";
 import { EditTransferDialog } from "./EditTransferDialog";
 import { TransactionActionsDialog } from "./TransactionActionsDialog";
 import { TransactionDescriptionLine } from "./TransactionDescriptionLine";
+import { TransactionsListSkeleton } from "./TransactionsListSkeleton";
 
 const WORKSPACE_ICONS: Record<string, LucideIcon> = {
   Building2,
@@ -541,13 +542,7 @@ export function CombinedTransactionsList({
           initialCategoryId={createTransactionDialog.data.initialCategoryId}
         />
       )}
-      {isLoadingMore && (
-        <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="h-5 rounded bg-muted/50 animate-pulse" />
-          ))}
-        </div>
-      )}
+      {isLoadingMore && <TransactionsListSkeleton count={3} />}
       {showLoadMore && onLoadMore && !isLoadingMore && (
         <div className="flex justify-center">
           <Button variant="outline" onClick={onLoadMore}>
