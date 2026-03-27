@@ -3,14 +3,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { MoreHorizontal, User } from "lucide-react";
+import { User } from "lucide-react";
 
 import { AccountChip } from "@/shared/components/AccountChip";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { debtKeys } from "@/shared/lib/query-keys";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
-import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { cn } from "@/shared/utils/cn";
@@ -69,9 +68,6 @@ function DebtsTableSkeleton() {
             <TableHead className="h-10 px-4 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Остаток
             </TableHead>
-            <TableHead className="h-10 w-12 px-4 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              <span className="sr-only">Действия</span>
-            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -97,9 +93,6 @@ function DebtsTableSkeleton() {
               </TableCell>
               <TableCell className="px-4 py-3 text-right">
                 <Skeleton className="ml-auto h-4 w-24" />
-              </TableCell>
-              <TableCell className="px-4 py-3 text-right">
-                <Skeleton className="ml-auto size-7 rounded-md" />
               </TableCell>
             </TableRow>
           ))}
@@ -139,9 +132,6 @@ function DebtsTable({
             <TableHead className="h-10 px-4 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Остаток
             </TableHead>
-            <TableHead className="h-10 w-12 px-4 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              <span className="sr-only">Действия</span>
-            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -174,20 +164,6 @@ function DebtsTable({
                   <div className="text-sm font-semibold text-foreground">
                     {formatMoney(debt.remainingAmount, debt.currency)}
                   </div>
-                </TableCell>
-                <TableCell className="px-4 py-3 text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="size-7 text-muted-foreground hover:text-foreground"
-                    aria-label={`Открыть действия для долга ${debt.personName}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onDebtClick(debt);
-                    }}
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
                 </TableCell>
               </TableRow>
             );
