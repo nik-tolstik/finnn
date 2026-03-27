@@ -32,8 +32,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --color-success-primary: var(--color-green-600);
-  --color-error-primary: var(--color-red-600);
+  --color-success-primary: var(--success-primary);
+  --color-error-primary: var(--error-primary);
 
   /* Radius */
   --radius-sm: 4;
@@ -72,6 +72,8 @@ html.light {
     rgba(233, 238, 248, 0.82) 100%
   );
   --account-card-skeleton-shadow: 0 12px 32px rgba(68, 84, 117, 0.1);
+  --success-primary: var(--color-green-600);
+  --error-primary: var(--color-red-600);
 }
 
 html.dark {
@@ -103,6 +105,8 @@ html.dark {
     rgba(255, 255, 255, 0.08) 100%
   );
   --account-card-skeleton-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  --success-primary: var(--color-green-400);
+  --error-primary: var(--color-red-400);
 }
 
 @layer base {
