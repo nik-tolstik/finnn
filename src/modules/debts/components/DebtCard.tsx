@@ -44,13 +44,13 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
               <div
                 className={cn(
                   "size-8 rounded-full flex items-center justify-center",
-                  isLent ? "bg-success-primary/10" : "bg-error-primary/10"
+                  isLent ? "bg-success/10" : "bg-destructive/10"
                 )}
               >
                 {isLent ? (
-                  <ArrowDownLeft className="size-4 text-success-primary" />
+                  <ArrowDownLeft className="size-4 text-success" />
                 ) : (
-                  <ArrowUpRight className="size-4 text-error-primary" />
+                  <ArrowUpRight className="size-4 text-destructive" />
                 )}
               </div>
               <div className="flex flex-col">
@@ -62,7 +62,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
             </div>
 
             <div className="text-right">
-              <div className={cn("font-medium", isLent ? "text-success-primary" : "text-error-primary")}>
+              <div className={cn("font-medium", isLent ? "text-success" : "text-destructive")}>
                 {formatMoney(debt.remainingAmount, debt.currency)}
               </div>
               {debt.remainingAmount !== debt.amount && (

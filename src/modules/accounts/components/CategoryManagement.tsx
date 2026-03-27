@@ -424,7 +424,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
               value: CategoryType.EXPENSE,
               label: "Расходы",
               icon: <ArrowDown className="h-4 w-4" />,
-              selectedClassName: "text-error-primary",
+              selectedClassName: "text-destructive",
             },
             {
               value: CategoryType.INCOME,

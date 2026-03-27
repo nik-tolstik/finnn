@@ -374,13 +374,13 @@ export function CreateTransactionDialog({
                       value: TransactionType.EXPENSE,
                       label: "Расход",
                       icon: <ArrowDown className="h-4 w-4" />,
-                      selectedClassName: "text-error-primary",
+                      selectedClassName: "text-destructive",
                     },
                     {
                       value: TransactionType.INCOME,
                       label: "Доход",
                       icon: <ArrowUp className="h-4 w-4" />,
-                      selectedClassName: "text-success-primary",
+                      selectedClassName: "text-success",
                     },
                   ]}
                   value={transactionType}
