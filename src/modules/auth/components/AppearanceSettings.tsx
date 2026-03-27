@@ -38,6 +38,8 @@ export function AppearanceSettings({
   const selectedTheme: ThemeMode =
     mounted && (theme === "system" || theme === "light" || theme === "dark") ? theme : "system";
 
+  const optionClassName = "px-2";
+
   return (
     <div className={cn("space-y-4", className)}>
       {(title || description) && (
@@ -50,12 +52,18 @@ export function AppearanceSettings({
       <Segmented
         className={cn("w-full", segmentedClassName)}
         disabled={!mounted}
+        layout="fill"
         value={selectedTheme}
         onChange={(value) => setTheme(value)}
         options={[
-          { value: "system", label: THEME_LABELS.system, icon: <Monitor className="size-4" /> },
-          { value: "light", label: THEME_LABELS.light, icon: <Sun className="size-4" /> },
-          { value: "dark", label: THEME_LABELS.dark, icon: <Moon className="size-4" /> },
+          {
+            value: "system",
+            label: THEME_LABELS.system,
+            icon: <Monitor />,
+            className: optionClassName,
+          },
+          { value: "light", label: THEME_LABELS.light, icon: <Sun />, className: optionClassName },
+          { value: "dark", label: THEME_LABELS.dark, icon: <Moon />, className: optionClassName },
         ]}
       />
     </div>

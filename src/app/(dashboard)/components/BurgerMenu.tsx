@@ -8,9 +8,9 @@ import { useState } from "react";
 
 import { AppearanceSettings } from "@/modules/auth/components/AppearanceSettings";
 import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog";
+import { UserAvatar } from "@/shared/components/UserAvatar";
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
-import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { cn } from "@/shared/utils/cn";
 
 export function BurgerMenu() {
@@ -36,7 +36,6 @@ export function BurgerMenu() {
 
   const displayName = session?.user?.name || session?.user?.email || "User";
   const email = session?.user?.email;
-  const avatarInitial = displayName.trim().charAt(0).toUpperCase() || "U";
 
   return (
     <>
@@ -51,12 +50,7 @@ export function BurgerMenu() {
           <div className="flex h-full flex-col">
             <div className="px-4 mt-10">
               <div className="flex items-center gap-3 p-2 border rounded-lg">
-                <div
-                  className="flex size-8 items-center justify-center rounded-full text-sm font-medium text-white"
-                  style={{ backgroundColor: getAvatarColor(displayName) }}
-                >
-                  {avatarInitial}
-                </div>
+                <UserAvatar name={session?.user?.name} email={email} image={session?.user?.image} size="lg" />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{displayName}</div>
                   {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}

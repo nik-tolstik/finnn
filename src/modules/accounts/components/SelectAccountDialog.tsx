@@ -9,7 +9,7 @@ import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
 interface SelectAccountDialogProps {
   workspaceId: string;
@@ -54,6 +54,7 @@ export function SelectAccountDialog({
                   id: account.owner.id,
                   name: account.owner.name,
                   email: account.owner.email,
+                  image: account.owner.image,
                 }
               : null,
             accounts: [],
@@ -65,7 +66,7 @@ export function SelectAccountDialog({
       {} as Record<
         string,
         {
-          owner: { id: string; name: string | null; email: string } | null;
+          owner: { id: string; name: string | null; email: string; image: string | null } | null;
           accounts: typeof filtered;
         }
       >
@@ -118,6 +119,7 @@ export function SelectAccountDialog({
                     <UserDisplay
                       name={group.owner.name}
                       email={group.owner.email}
+                      image={group.owner.image}
                       size="sm"
                       showName={true}
                     />

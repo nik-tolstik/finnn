@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { UserAvatar } from "@/shared/components/UserAvatar";
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { workspaceKeys } from "@/shared/lib/query-keys";
@@ -39,7 +40,6 @@ import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select/select";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
-import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { cn } from "@/shared/utils/cn";
 
 import { createAccount } from "../account.service";
@@ -287,23 +287,9 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                         }
                         const member = members.find((m) => m.id === option.value);
                         if (!member) return <span>{option.label}</span>;
-                        const displayName = member.name || member.email || "U";
-                        const initials = displayName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
-                          .slice(0, 2);
                         return (
                           <div className="flex items-center gap-2">
-                            <div
-                              className="flex h-5 w-5 items-center justify-center rounded-full text-white text-xs font-medium"
-                              style={{
-                                backgroundColor: getAvatarColor(displayName),
-                              }}
-                            >
-                              {initials}
-                            </div>
+                            <UserAvatar name={member.name} email={member.email} image={member.image} size="sm" />
                             <span className="font-normal">{option.label}</span>
                           </div>
                         );

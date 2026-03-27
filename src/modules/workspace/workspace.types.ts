@@ -5,6 +5,7 @@ export type WorkspaceWithOwner = Workspace & {
     id: string;
     name: string | null;
     email: string;
+    image: string | null;
   };
   _count: {
     members: number;
@@ -16,12 +17,14 @@ export type WorkspaceWithMembers = Workspace & {
     id: string;
     name: string | null;
     email: string;
+    image: string | null;
   };
   members: (WorkspaceMember & {
     user: {
       id: string;
       name: string | null;
       email: string;
+      image: string | null;
     };
   })[];
 };

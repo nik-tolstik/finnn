@@ -14,6 +14,7 @@ export type TransactionWithRelations = Transaction & {
       id: string;
       name: string | null;
       email: string;
+      image: string | null;
     } | null;
   };
   category: {
@@ -36,6 +37,7 @@ export type TransactionWithRelations = Transaction & {
           id: string;
           name: string | null;
           email: string;
+          image: string | null;
         } | null;
       };
     };
@@ -55,6 +57,7 @@ export type TransactionWithRelations = Transaction & {
           id: string;
           name: string | null;
           email: string;
+          image: string | null;
         } | null;
       };
     };

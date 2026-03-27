@@ -15,6 +15,7 @@ export interface AccountChipAccount {
     id: string;
     name: string | null;
     email: string;
+    image: string | null;
   } | null;
 }
 

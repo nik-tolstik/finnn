@@ -267,6 +267,7 @@ export function CombinedTransactionsList({
           <UserDisplay
             name={dt.account.owner.name}
             email={dt.account.owner.email}
+            image={dt.account.owner.image}
             showName={false}
             size="sm"
           />
@@ -321,6 +322,7 @@ export function CombinedTransactionsList({
                 id: string;
                 name: string | null;
                 email: string;
+                image: string | null;
               } | null;
             };
             amount: string;
@@ -355,6 +357,7 @@ export function CombinedTransactionsList({
           <UserDisplay
             name={transaction.account.owner?.name}
             email={transaction.account.owner?.email}
+            image={transaction.account.owner?.image}
             showName={false}
             size="sm"
           />
@@ -392,6 +395,7 @@ export function CombinedTransactionsList({
         <UserDisplay
           name={transaction.account.owner?.name}
           email={transaction.account.owner?.email}
+          image={transaction.account.owner?.image}
           showName={false}
           size="sm"
         />

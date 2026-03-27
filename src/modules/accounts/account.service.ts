@@ -4,12 +4,12 @@ import { prisma } from "@/shared/lib/prisma";
 import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
 import {
-  createAccountSchema,
-  updateAccountSchema,
-  updateAccountsOrderSchema,
   type CreateAccountInput,
+  createAccountSchema,
   type UpdateAccountInput,
   type UpdateAccountsOrderInput,
+  updateAccountSchema,
+  updateAccountsOrderSchema,
 } from "@/shared/lib/validations/account";
 
 export async function createAccount(workspaceId: string, input: CreateAccountInput) {
@@ -127,6 +127,7 @@ export async function getAccounts(workspaceId: string) {
             id: true,
             name: true,
             email: true,
+            image: true,
           },
         },
       },
@@ -210,6 +211,7 @@ export async function getArchivedAccounts(workspaceId: string) {
             id: true,
             name: true,
             email: true,
+            image: true,
           },
         },
       },

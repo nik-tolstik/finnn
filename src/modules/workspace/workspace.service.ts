@@ -1,19 +1,18 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
-
 import { Currency } from "@prisma/client";
 
 import { CategoryType } from "@/modules/categories/category.constants";
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateWorkspaceRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
-import { createInviteSchema, type CreateInviteInput } from "@/shared/lib/validations/invite";
+import { type CreateInviteInput, createInviteSchema } from "@/shared/lib/validations/invite";
 import {
-  createWorkspaceSchema,
-  updateWorkspaceSchema,
   type CreateWorkspaceInput,
+  createWorkspaceSchema,
   type UpdateWorkspaceInput,
+  updateWorkspaceSchema,
 } from "@/shared/lib/validations/workspace";
 
 import { WORKSPACE_ROLES } from "./workspace.constants";
@@ -176,6 +175,7 @@ export async function getWorkspaces() {
             id: true,
             name: true,
             email: true,
+            image: true,
           },
         },
         _count: {
@@ -232,6 +232,7 @@ export async function getWorkspace(id: string) {
             id: true,
             name: true,
             email: true,
+            image: true,
           },
         },
         members: {
@@ -241,6 +242,7 @@ export async function getWorkspace(id: string) {
                 id: true,
                 name: true,
                 email: true,
+                image: true,
               },
             },
           },
@@ -270,6 +272,7 @@ export async function getWorkspaceMembers(workspaceId: string) {
             id: true,
             name: true,
             email: true,
+            image: true,
           },
         },
         members: {
@@ -279,6 +282,7 @@ export async function getWorkspaceMembers(workspaceId: string) {
                 id: true,
                 name: true,
                 email: true,
+                image: true,
               },
             },
           },
@@ -295,11 +299,13 @@ export async function getWorkspaceMembers(workspaceId: string) {
         id: workspace.owner.id,
         name: workspace.owner.name,
         email: workspace.owner.email,
+        image: workspace.owner.image,
       },
       ...workspace.members.map((m) => ({
         id: m.user.id,
         name: m.user.name,
         email: m.user.email,
+        image: m.user.image,
       })),
     ];
 

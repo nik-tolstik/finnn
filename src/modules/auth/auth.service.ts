@@ -1,16 +1,15 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
-
 import bcrypt from "bcryptjs";
-import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/shared/lib/auth";
 import { sendVerificationEmail } from "@/shared/lib/email";
 import { prisma } from "@/shared/lib/prisma";
+import { revalidateWorkspaceRoutes } from "@/shared/lib/revalidate-app-routes";
 
-import { registerSchema, updateUserSchema, type RegisterInput, type UpdateUserInput } from "./auth.validations";
+import { type RegisterInput, registerSchema, type UpdateUserInput, updateUserSchema } from "./auth.validations";
 
 export async function registerAction(input: RegisterInput) {
   try {
@@ -139,15 +138,17 @@ export async function updateUser(input: UpdateUserInput) {
       where: { id: session.user.id },
       data: {
         name: validated.name,
+        image: validated.image,
       },
       select: {
         id: true,
         name: true,
         email: true,
+        image: true,
       },
     });
 
-    revalidatePath("/dashboard");
+    revalidateWorkspaceRoutes();
     return { data: updated };
   } catch (error: any) {
     return { error: error.message || "Не удалось обновить пользователя" };

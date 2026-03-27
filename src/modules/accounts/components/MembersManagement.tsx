@@ -5,10 +5,10 @@ import { UserPlus } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
+import { UserAvatar } from "@/shared/components/UserAvatar";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
-import { getAvatarColor } from "@/shared/utils/avatar-colors";
 
 import { InviteMemberDialog } from "./InviteMemberDialog";
 
@@ -67,14 +67,7 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
           <div className="space-y-1.5">
             {members.map((member) => (
               <div key={member.id} className="flex items-center gap-3 rounded-md border p-2">
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium text-white"
-                  style={{
-                    backgroundColor: getAvatarColor(member.name || member.email),
-                  }}
-                >
-                  {(member.name || member.email || "U").trim().charAt(0).toUpperCase() || "U"}
-                </div>
+                <UserAvatar name={member.name} email={member.email} image={member.image} size="lg" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{member.name || "Без имени"}</p>
                   <p className="text-xs text-muted-foreground truncate">{member.email}</p>

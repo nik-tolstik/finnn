@@ -6,22 +6,24 @@ import { useState } from "react";
 
 import { AppearanceSettings } from "@/modules/auth/components/AppearanceSettings";
 import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog";
+import { UserAvatar } from "@/shared/components/UserAvatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { cn } from "@/shared/utils/cn";
 
 interface UserMenuProps {
   name?: string | null;
   email?: string | null;
+  image?: string | null;
 }
 
-export function UserMenu({ name, email }: UserMenuProps) {
+export function UserMenu({ name, email, image }: UserMenuProps) {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
   const resolvedName = session?.user?.name ?? name;
   const resolvedEmail = session?.user?.email ?? email;
+  const resolvedImage = session?.user?.image ?? image;
 
   const handleLogout = async () => {
     setOpen(false);
@@ -33,18 +35,12 @@ export function UserMenu({ name, email }: UserMenuProps) {
   }
 
   const displayName = resolvedName || resolvedEmail || "User";
-  const avatarInitial = displayName.trim().charAt(0).toUpperCase() || "U";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button type="button" className="flex items-center py-1.5 px-2">
-          <div
-            className="flex size-5 items-center justify-center rounded-full text-xs font-medium text-white"
-            style={{ backgroundColor: getAvatarColor(displayName) }}
-          >
-            {avatarInitial}
-          </div>
+          <UserAvatar name={resolvedName} email={resolvedEmail} image={resolvedImage} size="sm" />
           <span className="hidden md:block max-w-[150px] truncate text-sm ml-2">{displayName}</span>
           <ChevronDown className="size-4 text-foreground ml-1" />
         </button>

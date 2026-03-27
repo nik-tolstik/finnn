@@ -1,4 +1,4 @@
-import { DebtType, DebtTransactionType } from "@/modules/debts/debt.constants";
+import { DebtTransactionType, DebtType } from "@/modules/debts/debt.constants";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -42,7 +42,7 @@ export function getTransactionDescriptionSegments(
 function getActorName(
   account: {
     ownerId: string | null;
-    owner: { name: string | null; email: string } | null;
+    owner: { name: string | null; email: string; image: string | null } | null;
   },
   workspaceName: string
 ): string {
@@ -110,10 +110,7 @@ function getTransferDescriptionSegments(
   };
 }
 
-function getDebtActorName(
-  account: DebtTransactionWithRelations["account"],
-  workspaceName: string
-): string {
+function getDebtActorName(account: DebtTransactionWithRelations["account"], workspaceName: string): string {
   if (!account) return "Кто-то";
   if (account.ownerId === null) return workspaceName || "Общие";
   return account.owner?.name ?? account.owner?.email ?? "Кто-то";

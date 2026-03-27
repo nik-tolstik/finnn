@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isUserAvatarSrc } from "@/shared/constants/user-avatars";
+
 export const loginSchema = z.object({
   email: z.string().email("Неверный адрес электронной почты"),
   password: z.string().min(1, "Пароль обязателен"),
@@ -27,6 +29,10 @@ export type LoginInput = z.infer<typeof loginSchema>;
 
 export const updateUserSchema = z.object({
   name: z.string().min(1, "Имя обязательно").max(100, "Имя не должно превышать 100 символов"),
+  image: z
+    .string()
+    .nullable()
+    .refine((value) => value === null || isUserAvatarSrc(value), "Выберите аватар из предложенного списка"),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
