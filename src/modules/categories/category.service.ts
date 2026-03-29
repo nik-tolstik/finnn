@@ -4,10 +4,10 @@ import { prisma } from "@/shared/lib/prisma";
 import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
 import {
-  createCategorySchema,
-  updateCategorySchema,
   type CreateCategoryInput,
+  createCategorySchema,
   type UpdateCategoryInput,
+  updateCategorySchema,
 } from "@/shared/lib/validations/category";
 
 export async function createCategory(workspaceId: string, input: CreateCategoryInput) {

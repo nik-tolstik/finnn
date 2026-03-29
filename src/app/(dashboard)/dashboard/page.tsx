@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import { CreateWorkspacePrompt } from "@/modules/workspace/components/CreateWorkspacePrompt";
+import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
 import { authOptions } from "@/shared/lib/auth";
 

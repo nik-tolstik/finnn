@@ -4,8 +4,8 @@ import { ChevronDown, LogOut, Settings } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 
-import { AppearanceSettings } from "@/modules/auth/components/AppearanceSettings";
-import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog";
+import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
+import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";

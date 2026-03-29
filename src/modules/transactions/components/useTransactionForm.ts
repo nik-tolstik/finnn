@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { createTransactionSchema, type CreateTransactionInput } from "@/shared/lib/validations/transaction";
+import { type CreateTransactionInput, createTransactionSchema } from "@/shared/lib/validations/transaction";
 
 import { TransactionType } from "../transaction.constants";
 

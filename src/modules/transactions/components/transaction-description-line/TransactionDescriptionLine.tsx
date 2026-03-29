@@ -1,0 +1,101 @@
+"use client";
+
+import type { ReactNode } from "react";
+
+import { Card } from "@/shared/ui/card";
+import { cn } from "@/shared/utils/cn";
+import { hexToRgba } from "@/shared/utils/color-utils";
+
+import type { AccountSegmentType, DescriptionSegment } from "../../utils/transactionDescription";
+
+export type AccountChipData = { color: string | null; icon: ReactNode };
+
+export type AccountChipsMap = Partial<Record<AccountSegmentType, AccountChipData>>;
+
+interface TransactionDescriptionLineProps {
+  segments: DescriptionSegment[];
+  icon?: ReactNode;
+  accountChips?: AccountChipsMap;
+  description?: string;
+  onClick?: () => void;
+  className?: string;
+}
+
+export function TransactionDescriptionLine({
+  segments,
+  icon,
+  accountChips,
+  description,
+  onClick,
+  className,
+}: TransactionDescriptionLineProps) {
+  const [firstSegment, ...restSegments] = segments;
+  const content = (
+    <span className="text-sm leading-relaxed inline-flex flex-wrap items-center gap-x-1 gap-y-1.5">
+      <span className="inline-flex items-center gap-1">
+        {icon ? <span className="text-muted-foreground [&>svg]:size-4">{icon}</span> : null}
+        <span className={firstSegment?.highlight ? "font-semibold" : undefined}>{firstSegment?.text ?? ""}</span>
+      </span>
+      {restSegments.map((seg, i) => {
+        const chip = seg.segmentType && seg.segmentType !== "category" && accountChips?.[seg.segmentType];
+        if (seg.segmentType === "category") {
+          return (
+            <span key={i} className="inline-flex font-semibold">
+              {seg.text}
+            </span>
+          );
+        }
+        if (chip) {
+          return (
+            <span
+              key={i}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-foreground",
+                !chip.color && "bg-muted"
+              )}
+              style={{
+                borderColor: chip.color ? hexToRgba(chip.color, 0.5) : undefined,
+                backgroundColor: chip.color ? hexToRgba(chip.color, 0.08) : undefined,
+              }}
+            >
+              <span style={{ color: chip.color ?? undefined }}>{chip.icon}</span>
+              <span className="truncate">{seg.text}</span>
+            </span>
+          );
+        }
+        return (
+          <span key={i} className="inline-flex items-center gap-1">
+            {seg.highlight ? <span className="font-semibold">{seg.text}</span> : <span>{seg.text}</span>}
+          </span>
+        );
+      })}
+    </span>
+  );
+
+  if (onClick) {
+    return (
+      <Card
+        className={cn("cursor-pointer px-4 py-4 transition-colors hover:bg-accent/70", className)}
+        onClick={onClick}
+      >
+        <div className="space-y-1.5">
+          {content}
+          {description ? (
+            <p className="text-sm text-muted-foreground leading-snug wrap-break-word">{description}</p>
+          ) : null}
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className={cn("py-2 px-4", className)}>
+      <div className="py-2 space-y-1.5">
+        {content}
+        {description ? (
+          <p className="text-sm text-muted-foreground leading-snug wrap-break-word">{description}</p>
+        ) : null}
+      </div>
+    </Card>
+  );
+}

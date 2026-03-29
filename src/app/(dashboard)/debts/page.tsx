@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { CreateWorkspacePrompt } from "@/modules/workspace/components/CreateWorkspacePrompt";
+import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
 
 import { DebtsContent } from "./components/DebtsContent";

@@ -1,1 +1,1 @@
-export { EditDebtTransactionDialog } from "./EditDebtTransactionDialog";
+export { EditDebtTransactionDialog } from "./edit-debt-transaction-dialog/EditDebtTransactionDialog";

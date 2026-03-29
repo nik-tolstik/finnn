@@ -19,9 +19,9 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useRef, useState } from "react";
 
-import { ArchivedAccountsDialog } from "@/modules/accounts/components/ArchivedAccountsDialog";
-import { SettingsDialog } from "@/modules/accounts/components/SettingsDialog";
-import { CreateWorkspaceDialog } from "@/modules/workspace/components/CreateWorkspaceDialog";
+import { ArchivedAccountsDialog } from "@/modules/accounts/components/archived-accounts-dialog";
+import { SettingsDialog } from "@/modules/accounts/components/settings-dialog";
+import { CreateWorkspaceDialog } from "@/modules/workspace/components/create-workspace-dialog";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { workspacesKeys } from "@/shared/lib/query-keys";

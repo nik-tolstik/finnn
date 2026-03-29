@@ -2,9 +2,9 @@
 
 import { History, Plus } from "lucide-react";
 
-import { ClosedDebtsHistoryDialog } from "@/modules/debts/components/ClosedDebtsHistoryDialog";
-import { CreateDebtDialog } from "@/modules/debts/components/CreateDebtDialog";
-import { DebtsList } from "@/modules/debts/components/DebtsList";
+import { ClosedDebtsHistoryDialog } from "@/modules/debts/components/closed-debts-history-dialog";
+import { CreateDebtDialog } from "@/modules/debts/components/create-debt-dialog";
+import { DebtsList } from "@/modules/debts/components/debts-list";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 

@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { createTransferSchema, type CreateTransferInput } from "@/shared/lib/validations/transaction";
+import { type CreateTransferInput, createTransferSchema } from "@/shared/lib/validations/transaction";
 
 interface UseTransferFormProps {
   defaultAccountId?: string;

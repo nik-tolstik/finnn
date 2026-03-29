@@ -3,8 +3,8 @@
 import { Plus } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-import { CreateDebtDialog } from "@/modules/debts/components/CreateDebtDialog";
-import { CreateTransactionDialog } from "@/modules/transactions/components/CreateTransactionDialog";
+import { CreateDebtDialog } from "@/modules/debts/components/create-debt-dialog";
+import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 

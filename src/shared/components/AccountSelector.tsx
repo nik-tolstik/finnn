@@ -2,7 +2,7 @@
 
 import type { Account } from "@prisma/client";
 
-import { SelectAccountDialog } from "@/modules/accounts/components/SelectAccountDialog";
+import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 

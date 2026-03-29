@@ -6,8 +6,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 
-import { AppearanceSettings } from "@/modules/auth/components/AppearanceSettings";
-import { UserSettingsDialog } from "@/modules/auth/components/UserSettingsDialog";
+import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
+import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";

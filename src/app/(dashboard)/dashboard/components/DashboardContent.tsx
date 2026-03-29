@@ -7,11 +7,11 @@ import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import { AccountsCards } from "@/modules/accounts/components/AccountsCards";
-import { CreateAccountDialog } from "@/modules/accounts/components/CreateAccountDialog";
+import { AccountsCards } from "@/modules/accounts/components/accounts-cards";
+import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog";
 import { getCategories } from "@/modules/categories/category.service";
-import { CombinedTransactionsList } from "@/modules/transactions/components/CombinedTransactionsList";
-import { TransactionsListSkeleton } from "@/modules/transactions/components/TransactionsListSkeleton";
+import { CombinedTransactionsList } from "@/modules/transactions/components/combined-transactions-list";
+import { TransactionsListSkeleton } from "@/modules/transactions/components/transactions-list-skeleton";
 import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
 import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
