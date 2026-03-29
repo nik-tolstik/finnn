@@ -13,7 +13,6 @@ import { UserDisplay } from "../UserDisplay";
 interface AccountCardProps {
   account: Account & {
     owner?: {
-      id: string;
       name: string | null;
       email: string;
       image: string | null;

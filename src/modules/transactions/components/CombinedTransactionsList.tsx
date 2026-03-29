@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { DebtTransactionActionsDialog } from "@/modules/debts/components/DebtTransactionActionsDialog";
 import { DeleteDebtDialog } from "@/modules/debts/components/DeleteDebtDialog";
 import { EditDebtDialog } from "@/modules/debts/components/EditDebtDialog";
-import { EditDebtTransactionDialog } from "@/modules/debts/components/EditDebtTransactionDialog";
+import { EditDebtTransactionDialog } from "@/modules/debts/components/edit-debt-transaction-dialog";
 import { DebtTransactionType, DebtType } from "@/modules/debts/debt.constants";
 import { deleteDebtTransaction } from "@/modules/debts/debt.service";
 import type { DebtTransactionWithRelations, DebtWithRelations } from "@/modules/debts/debt.types";
