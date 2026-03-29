@@ -17,8 +17,11 @@ import {
 } from "@/shared/lib/validations/transaction";
 import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
+import type { DebtTransactionWithRelations } from "../debts/debt.types";
 import { TransactionType } from "./transaction.constants";
 import type { CombinedTransaction } from "./transaction.types";
+import type { TransactionListFilters } from "./transaction-filter.types";
+import { filterCombinedTransactions } from "./utils/combined-transaction-filtering";
 
 type PrismaTx = Prisma.TransactionClient;
 
@@ -569,11 +572,7 @@ export async function deleteTransaction(id: string) {
   }
 }
 
-export interface CombinedTransactionFilters {
-  skip?: number;
-  take?: number;
-  includeDebtTransactions?: boolean;
-}
+export type CombinedTransactionFilters = TransactionListFilters;
 
 export async function getCombinedTransactions(
   workspaceId: string,
@@ -624,6 +623,7 @@ export async function getCombinedTransactions(
             toTransaction: {
               select: {
                 id: true,
+                description: true,
                 account: {
                   select: {
                     id: true,
@@ -651,6 +651,7 @@ export async function getCombinedTransactions(
             fromTransaction: {
               select: {
                 id: true,
+                description: true,
                 account: {
                   select: {
                     id: true,
@@ -677,7 +678,7 @@ export async function getCombinedTransactions(
       orderBy: { date: "desc" },
     });
 
-    let debtTransactions: any[] = [];
+    let debtTransactions: DebtTransactionWithRelations[] = [];
     if (filters?.includeDebtTransactions !== false) {
       debtTransactions = await prisma.debtTransaction.findMany({
         where: debtTransactionWhere,
@@ -726,7 +727,9 @@ export async function getCombinedTransactions(
       ...debtTransactions.map((dt) => ({ kind: "debtTransaction" as const, data: dt })),
     ];
 
-    combined.sort((a, b) => {
+    const filteredCombined = filterCombinedTransactions(combined, filters);
+
+    filteredCombined.sort((a, b) => {
       const dateA = new Date(a.data.date).getTime();
       const dateB = new Date(b.data.date).getTime();
       return dateB - dateA;
@@ -734,15 +737,9 @@ export async function getCombinedTransactions(
 
     const skip = filters?.skip ?? 0;
     const take = filters?.take ?? 50;
-    const paginated = combined.slice(skip, skip + take);
+    const paginated = filteredCombined.slice(skip, skip + take);
 
-    const transactionCount = await prisma.transaction.count({ where: transactionWhere });
-    const debtTransactionCount =
-      filters?.includeDebtTransactions !== false
-        ? await prisma.debtTransaction.count({ where: debtTransactionWhere })
-        : 0;
-
-    return { data: paginated, total: transactionCount + debtTransactionCount };
+    return { data: paginated, total: filteredCombined.length };
   } catch (error: any) {
     return { error: error.message || "Не удалось загрузить транзакции" };
   }

@@ -9,17 +9,24 @@ import { useEffect, useMemo, useState } from "react";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountsCards } from "@/modules/accounts/components/AccountsCards";
 import { CreateAccountDialog } from "@/modules/accounts/components/CreateAccountDialog";
+import { getCategories } from "@/modules/categories/category.service";
 import { CombinedTransactionsList } from "@/modules/transactions/components/CombinedTransactionsList";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/TransactionsListSkeleton";
 import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
+import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { accountKeys, transactionKeys } from "@/shared/lib/query-keys";
+import { accountKeys, categoryKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 
 import { AccountsMenu } from "./AccountsMenu";
+import {
+  TransactionsFilterButton,
+  TransactionsFilterDrawer,
+  useDashboardTransactionFilters,
+} from "./transactions-filters";
 
 type AccountWithOwner = Account & {
   owner: {
@@ -48,7 +55,18 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
+  const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
   const createAccountDialog = useDialogState();
+
+  const {
+    appliedFilters,
+    appliedFiltersCount,
+    appliedFiltersKey,
+    includeDebtTransactions,
+    isNavigationPending: isFiltersNavigationPending,
+    applyFilters,
+    resetFilters,
+  } = useDashboardTransactionFilters();
 
   const {
     data: accountsData,
@@ -61,34 +79,41 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
     staleTime: 5000,
   });
 
+  const { data: membersData } = useQuery({
+    queryKey: workspaceKeys.members(workspaceId),
+    queryFn: () => getWorkspaceMembers(workspaceId),
+    staleTime: 5000,
+  });
+
+  const { data: categoriesData } = useQuery({
+    queryKey: categoryKeys.list(workspaceId),
+    queryFn: () => getCategories(workspaceId),
+    staleTime: 5000,
+  });
+
   const currentUserId = session?.user?.id;
+  const availableAccounts = useMemo(
+    () => accountsData?.data || allAccounts || accounts,
+    [accountsData?.data, allAccounts, accounts]
+  );
 
   const displayAccounts = useMemo(() => {
-    if (showAllAccounts) {
-      const allAccountsToUse = accountsData?.data || allAccounts;
-      if (allAccountsToUse) {
-        return allAccountsToUse;
-      }
-      return accounts;
+    if (showAllAccounts || !currentUserId) {
+      return availableAccounts;
     }
 
-    if (!currentUserId) {
-      return accounts;
-    }
-
-    const allAccountsToUse = accountsData?.data || allAccounts;
-    const accountsToFilter = allAccountsToUse || accounts;
-    return accountsToFilter.filter((account) => account.ownerId === currentUserId);
-  }, [accountsData?.data, allAccounts, accounts, showAllAccounts, currentUserId]);
+    return availableAccounts.filter((account) => account.ownerId === currentUserId);
+  }, [availableAccounts, currentUserId, showAllAccounts]);
 
   const isAccountsLoading = isLoadingAccounts || (isFetchingAccounts && accounts.length === 0);
   const transactionFilters = useMemo(
     () => ({
+      ...appliedFilters,
       skip: 0,
       take: displayedCount,
-      includeDebtTransactions: true,
+      includeDebtTransactions,
     }),
-    [displayedCount]
+    [appliedFilters, displayedCount, includeDebtTransactions]
   );
 
   const {
@@ -103,6 +128,15 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
   });
 
   useEffect(() => {
+    if (!appliedFiltersKey) {
+      return;
+    }
+
+    setDisplayedCount(TRANSACTIONS_PER_PAGE);
+    setIsLoadingMore(false);
+  }, [appliedFiltersKey]);
+
+  useEffect(() => {
     if (!isFetching && isLoadingMore) {
       setIsLoadingMore(false);
     }
@@ -114,13 +148,27 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
   const hasMore = total > displayedCount;
   const isInitialLoading = isLoading && displayedTransactions.length === 0;
 
+  const handleApplyFilters = (nextFilters: Parameters<typeof applyFilters>[0]) => {
+    setDisplayedCount(TRANSACTIONS_PER_PAGE);
+    setIsLoadingMore(false);
+    setIsFiltersDrawerOpen(false);
+    applyFilters(nextFilters);
+  };
+
+  const handleResetFilters = () => {
+    setDisplayedCount(TRANSACTIONS_PER_PAGE);
+    setIsLoadingMore(false);
+    setIsFiltersDrawerOpen(false);
+    resetFilters();
+  };
+
   return (
     <div className="w-full max-w-[1024px] mx-auto">
       <div className="space-y-8">
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">{showAllAccounts ? "Все счета" : "Ваши счета"}</h2>
+              <h2 className="text-xl md:text-2xl font-semibold">{showAllAccounts ? "Все счета" : "Ваши счета"}</h2>
               <Badge variant="secondary" className="text-xs">
                 {displayAccounts.length}
               </Badge>
@@ -183,7 +231,16 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
         )}
 
         <div>
-          <h2 className="mb-4 text-2xl font-semibold">Последние транзакции</h2>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-xl md:text-2xl font-semibold">Последние транзакции</h2>
+            <TransactionsFilterButton
+              appliedFiltersCount={appliedFiltersCount}
+              disabled={isFiltersNavigationPending}
+              onClick={() => {
+                setIsFiltersDrawerOpen(true);
+              }}
+            />
+          </div>
           <div className="flex flex-col lg:flex-row lg:items-start gap-4">
             <div className="flex-1 min-w-0 order-2 lg:order-1">
               {isInitialLoading ? (
@@ -206,6 +263,17 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
           </div>
         </div>
       </div>
+
+      <TransactionsFilterDrawer
+        open={isFiltersDrawerOpen}
+        onOpenChange={setIsFiltersDrawerOpen}
+        appliedFilters={appliedFilters}
+        members={membersData?.data || []}
+        categories={categoriesData?.data || []}
+        accounts={availableAccounts}
+        onApply={handleApplyFilters}
+        onReset={handleResetFilters}
+      />
     </div>
   );
 }

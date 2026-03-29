@@ -13,8 +13,19 @@ import { cn } from "@/shared/utils/cn";
 import type { SelectOption, SelectProps } from "./types";
 
 export function SelectSheet<TValue extends string | number = string>(props: SelectProps<TValue>) {
-  const { options, value, onChange, filter, multiple, allowClear, valueLabel, renderOption, placeholder, label } =
-    props;
+  const {
+    options,
+    value,
+    onChange,
+    filter,
+    multiple,
+    allowClear,
+    valueLabel,
+    renderOption,
+    placeholder,
+    label,
+    disabled,
+  } = props;
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const currentValues = React.useMemo(
@@ -141,6 +152,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
   return (
     <>
       <SelectTriggerButton
+        disabled={disabled}
         onClick={() => setOpen(true)}
         placeholder={placeholder}
         value={hasSelection ? "selected" : undefined}
@@ -199,38 +211,36 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                     );
                   }
 
-                  return (
-                    isGroupHeader ? (
-                      <div
-                        key={option.value}
-                        className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
-                      >
-                        {option.label}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        key={option.value}
-                        onClick={() => handleSelect(option)}
-                        className={cn(
-                          "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
-                          selected && "bg-accent"
-                        )}
-                      >
-                        {multiple && (
-                          <span
-                            className={cn(
-                              "h-4 w-4 shrink-0 rounded-sm border border-primary shadow text-primary-foreground",
-                              selected ? "bg-primary text-primary-foreground" : "text-transparent"
-                            )}
-                          >
-                            {selected && <Check className="h-4 w-4" />}
-                          </span>
-                        )}
-                        <span className="flex-1 text-sm">{option.label}</span>
-                        {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                      </button>
-                    )
+                  return isGroupHeader ? (
+                    <div
+                      key={option.value}
+                      className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                    >
+                      {option.label}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      key={option.value}
+                      onClick={() => handleSelect(option)}
+                      className={cn(
+                        "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
+                        selected && "bg-accent"
+                      )}
+                    >
+                      {multiple && (
+                        <span
+                          className={cn(
+                            "h-4 w-4 shrink-0 rounded-sm border border-primary shadow text-primary-foreground",
+                            selected ? "bg-primary text-primary-foreground" : "text-transparent"
+                          )}
+                        >
+                          {selected && <Check className="h-4 w-4" />}
+                        </span>
+                      )}
+                      <span className="flex-1 text-sm">{option.label}</span>
+                      {!multiple && selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                    </button>
                   );
                 })
               )}

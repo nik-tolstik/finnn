@@ -7,9 +7,14 @@ import { getWorkspaces } from "@/modules/workspace/workspace.service";
 import { authOptions } from "@/shared/lib/auth";
 
 import { DashboardContent } from "./components/DashboardContent";
+import {
+  buildWorkspaceRedirectQueryString,
+  type DashboardPageSearchParams,
+  getFirstSearchParamValue,
+} from "./utils/workspace-search-params";
 
 interface DashboardPageProps {
-  searchParams: Promise<{ workspaceId?: string }>;
+  searchParams: Promise<DashboardPageSearchParams>;
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
@@ -20,20 +25,20 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   const resolvedSearchParams = await searchParams;
-  const requestedWorkspaceId = resolvedSearchParams.workspaceId;
+  const requestedWorkspaceId = getFirstSearchParamValue(resolvedSearchParams.workspaceId);
   const workspaceId =
     requestedWorkspaceId && workspacesResult.data.some((w) => w.id === requestedWorkspaceId)
       ? requestedWorkspaceId
       : workspacesResult.data[0].id;
 
   if (!requestedWorkspaceId || !workspacesResult.data.some((w) => w.id === requestedWorkspaceId)) {
-    redirect(`/dashboard?workspaceId=${workspaceId}`);
+    redirect(`/dashboard?${buildWorkspaceRedirectQueryString(resolvedSearchParams, workspaceId)}`);
   }
 
   const session = await getServerSession(authOptions);
   const accountsResult = await getAccounts(workspaceId);
   const allAccounts = accountsResult.data || [];
-  
+
   const currentUserId = session?.user?.id;
   const initialAccounts = currentUserId
     ? allAccounts.filter((account) => account.ownerId === currentUserId)

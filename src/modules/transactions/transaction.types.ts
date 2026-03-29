@@ -25,6 +25,7 @@ export type TransactionWithRelations = Transaction & {
     toAmount: string;
     toTransaction: {
       id: string;
+      description?: string | null;
       account: {
         id: string;
         name: string;
@@ -45,6 +46,7 @@ export type TransactionWithRelations = Transaction & {
     amount: string;
     fromTransaction: {
       id: string;
+      description?: string | null;
       account: {
         id: string;
         name: string;

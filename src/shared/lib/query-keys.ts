@@ -1,8 +1,4 @@
-export interface TransactionListFilters {
-  skip?: number;
-  take?: number;
-  includeDebtTransactions?: boolean;
-}
+import type { TransactionListFilters } from "@/modules/transactions/transaction-filter.types";
 
 export interface DebtListFilters {
   status?: string;
