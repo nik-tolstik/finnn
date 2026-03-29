@@ -2,17 +2,56 @@
 
 import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Redo2 } from "lucide-react";
+import { Redo2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 
 import { getArchivedAccounts, unarchiveAccount } from "../account.service";
+import { DeleteArchivedAccountDialog } from "./DeleteArchivedAccountDialog";
+
+type ArchivedAccount = Account & {
+  owner?: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  } | null;
+  _count: {
+    transactions: number;
+    debts: number;
+    debtTransactions: number;
+  };
+};
+
+function getDeleteDisabledReason(account: ArchivedAccount) {
+  const parts = [];
+
+  if (account._count.transactions > 0) {
+    parts.push(`транзакции (${account._count.transactions})`);
+  }
+
+  if (account._count.debts > 0) {
+    parts.push(`долги (${account._count.debts})`);
+  }
+
+  if (account._count.debtTransactions > 0) {
+    parts.push(`долговые операции (${account._count.debtTransactions})`);
+  }
+
+  if (parts.length === 0) {
+    return null;
+  }
+
+  return `Удаление недоступно: есть связанные ${parts.join(", ")}.`;
+}
 
 interface ArchivedAccountsDialogProps {
   workspaceId: string;
@@ -28,6 +67,7 @@ export function ArchivedAccountsDialog({
   onCloseComplete,
 }: ArchivedAccountsDialogProps) {
   const queryClient = useQueryClient();
+  const deleteDialog = useDialogState<ArchivedAccount>();
   const [unarchivingIds, setUnarchivingIds] = useState<Set<string>>(new Set());
 
   const { data: archivedAccountsData, isLoading } = useQuery({
@@ -37,9 +77,9 @@ export function ArchivedAccountsDialog({
     staleTime: 5000,
   });
 
-  const archivedAccounts = archivedAccountsData?.data || [];
+  const archivedAccounts = (archivedAccountsData?.data || []) as ArchivedAccount[];
 
-  const handleUnarchive = async (account: Account) => {
+  const handleUnarchive = async (account: ArchivedAccount) => {
     if (unarchivingIds.has(account.id)) return;
 
     setUnarchivingIds((prev) => new Set(prev).add(account.id));
@@ -64,43 +104,90 @@ export function ArchivedAccountsDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow onCloseComplete={onCloseComplete}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">Архивированные счета</DialogTitle>
-          <DialogDescription>
-            Список всех архивированных счетов. Вы можете удалить счёт из архива, чтобы восстановить его.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogContent>
-          <div className="mt-4 max-h-[60vh] overflow-y-auto">
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Загрузка...</div>
-            ) : archivedAccounts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">Нет архивированных счетов</div>
-            ) : (
-              <div className="space-y-3">
-                {archivedAccounts.map((account) => (
-                  <div key={account.id} className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <AccountCard account={account} />
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleUnarchive(account)}
-                      disabled={unarchivingIds.has(account.id)}
-                      className="gap-2 shrink-0"
-                    >
-                      <Redo2 className="h-4 w-4" />
-                    </Button>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogWindow onCloseComplete={onCloseComplete}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">Архивированные счета</DialogTitle>
+            <DialogDescription>
+              Список всех архивированных счетов. Вы можете восстановить пустой счёт или удалить его навсегда.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogContent>
+            <div className="mt-4 max-h-[60vh] overflow-y-auto">
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Загрузка...</div>
+              ) : archivedAccounts.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">Нет архивированных счетов</div>
+              ) : (
+                <TooltipProvider>
+                  <div className="space-y-3">
+                    {archivedAccounts.map((account) => {
+                      const deleteDisabledReason = getDeleteDisabledReason(account);
+
+                      return (
+                        <div key={account.id} className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <AccountCard account={account} />
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleUnarchive(account)}
+                              disabled={unarchivingIds.has(account.id)}
+                              className="gap-2"
+                            >
+                              <Redo2 className="h-4 w-4" />
+                            </Button>
+                            {deleteDisabledReason ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={true}
+                                      className="gap-2 text-destructive"
+                                      type="button"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>{deleteDisabledReason}</TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => deleteDialog.openDialog(account)}
+                                className="gap-2 text-destructive hover:text-destructive"
+                                type="button"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </DialogWindow>
-    </Dialog>
+                </TooltipProvider>
+              )}
+            </div>
+          </DialogContent>
+        </DialogWindow>
+      </Dialog>
+
+      {deleteDialog.mounted && (
+        <DeleteArchivedAccountDialog
+          account={deleteDialog.data}
+          open={deleteDialog.open}
+          onOpenChange={deleteDialog.closeDialog}
+          onCloseComplete={deleteDialog.unmountDialog}
+        />
+      )}
+    </>
   );
 }

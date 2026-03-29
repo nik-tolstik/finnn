@@ -12,6 +12,50 @@ import {
   updateAccountsOrderSchema,
 } from "@/shared/lib/validations/account";
 
+type AccountDependencyCounts = {
+  transactions: number;
+  debts: number;
+  debtTransactions: number;
+};
+
+async function getAccountDependencyCounts(accountId: string): Promise<AccountDependencyCounts> {
+  const [transactions, debts, debtTransactions] = await Promise.all([
+    prisma.transaction.count({
+      where: { accountId },
+    }),
+    prisma.debt.count({
+      where: { accountId },
+    }),
+    prisma.debtTransaction.count({
+      where: { accountId },
+    }),
+  ]);
+
+  return {
+    transactions,
+    debts,
+    debtTransactions,
+  };
+}
+
+function formatAccountDependencyBreakdown(counts: AccountDependencyCounts) {
+  const parts = [];
+
+  if (counts.transactions > 0) {
+    parts.push(`транзакции (${counts.transactions})`);
+  }
+
+  if (counts.debts > 0) {
+    parts.push(`долги (${counts.debts})`);
+  }
+
+  if (counts.debtTransactions > 0) {
+    parts.push(`долговые операции (${counts.debtTransactions})`);
+  }
+
+  return parts.join(", ");
+}
+
 export async function createAccount(workspaceId: string, input: CreateAccountInput) {
   try {
     await requireWorkspaceAccess(workspaceId);
@@ -214,6 +258,13 @@ export async function getArchivedAccounts(workspaceId: string) {
             image: true,
           },
         },
+        _count: {
+          select: {
+            transactions: true,
+            debts: true,
+            debtTransactions: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -256,5 +307,43 @@ export async function unarchiveAccount(id: string) {
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Не удалось удалить счёт из архива" };
+  }
+}
+
+export async function deleteArchivedAccount(id: string) {
+  try {
+    await requireUserId();
+
+    const account = await prisma.account.findUnique({
+      where: { id },
+    });
+
+    if (!account) {
+      return { error: "Счёт не найден" };
+    }
+
+    await requireWorkspaceAccess(account.workspaceId);
+
+    if (!account.archived) {
+      return { error: "Можно удалить только архивный счёт" };
+    }
+
+    const dependencyCounts = await getAccountDependencyCounts(account.id);
+
+    if (Object.values(dependencyCounts).some((count) => count > 0)) {
+      const dependencyBreakdown = formatAccountDependencyBreakdown(dependencyCounts);
+      return {
+        error: `Нельзя удалить счёт из архива: у счёта есть связанные ${dependencyBreakdown}.`,
+      };
+    }
+
+    await prisma.account.delete({
+      where: { id },
+    });
+
+    revalidateAccountingRoutes();
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Не удалось удалить архивный счёт" };
   }
 }
