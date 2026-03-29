@@ -9,7 +9,7 @@ export function AccountCardSkeleton({ className }: AccountCardSkeletonProps) {
   return (
     <div
       className={cn(
-        "relative flex flex-col overflow-hidden rounded-xl border border-[rgba(216,224,240,0.95)] bg-[rgba(255,255,255,0.96)] text-card-foreground shadow-[0_12px_32px_rgba(68,84,117,0.1)] [background-image:linear-gradient(110deg,rgba(255,255,255,0.98)_0%,rgba(241,244,250,0.92)_60%,rgba(233,238,248,0.82)_100%)] backdrop-blur-sm backdrop-saturate-150 dark:border-[rgba(255,255,255,0.14)] dark:bg-[rgba(255,255,255,0.05)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.22)] dark:[background-image:linear-gradient(110deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.04)_60%,rgba(255,255,255,0.08)_100%)]",
+        "relative flex flex-col overflow-hidden rounded-xl border border-[rgba(216,224,240,0.95)] bg-[rgba(255,255,255,0.96)] text-card-foreground shadow-[0_12px_32px_rgba(68,84,117,0.1)] bg-[linear-gradient(110deg,rgba(255,255,255,0.98)_0%,rgba(241,244,250,0.92)_60%,rgba(233,238,248,0.82)_100%)] backdrop-blur-sm backdrop-saturate-150 dark:border-[rgba(255,255,255,0.14)] dark:bg-[rgba(255,255,255,0.05)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.22)] dark:bg-[linear-gradient(110deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.04)_60%,rgba(255,255,255,0.08)_100%)]",
         className
       )}
     >

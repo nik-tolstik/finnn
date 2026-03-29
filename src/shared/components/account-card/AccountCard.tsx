@@ -5,10 +5,10 @@ import type { CSSProperties, HTMLAttributes } from "react";
 
 import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
+import { hexToRgba } from "@/shared/utils/color-utils";
 import { formatMoney } from "@/shared/utils/money";
 
 import { UserDisplay } from "../UserDisplay";
-import { hexToRgba } from "./account-card.utils";
 
 interface AccountCardProps {
   account: Account & {
@@ -27,6 +27,7 @@ interface AccountCardProps {
 export function AccountCard({ account, className, onClick, showOwner = true }: AccountCardProps) {
   const AccountIcon = getAccountIcon(account.icon);
   const accountColor = account.color ?? "";
+  const getAccountTint = (alpha: number) => hexToRgba(accountColor, alpha) ?? `rgba(255, 255, 255, ${alpha})`;
 
   const cardContent = (
     <>
@@ -56,10 +57,10 @@ export function AccountCard({ account, className, onClick, showOwner = true }: A
   );
 
   const style = {
-    "--account-bg": hexToRgba(accountColor, 0.16),
-    "--account-border": hexToRgba(accountColor, 0.28),
-    "--account-bg-gradient": `linear-gradient(110deg, ${hexToRgba(accountColor, 0.18)} 0%, ${hexToRgba(accountColor, 0.06)} 60%, ${hexToRgba(accountColor, 0.02)} 100%)`,
-    "--account-shadow": hexToRgba(accountColor, 0.14),
+    "--account-bg": getAccountTint(0.16),
+    "--account-border": getAccountTint(0.28),
+    "--account-bg-gradient": `linear-gradient(110deg, ${getAccountTint(0.18)} 0%, ${getAccountTint(0.06)} 60%, ${getAccountTint(0.02)} 100%)`,
+    "--account-shadow": getAccountTint(0.14),
   } as CSSProperties;
 
   if (!account.color) {

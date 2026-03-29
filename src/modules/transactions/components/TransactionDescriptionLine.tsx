@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { Card } from "@/shared/ui/card";
 import { cn } from "@/shared/utils/cn";
+import { hexToRgba } from "@/shared/utils/color-utils";
 
 import type { AccountSegmentType, DescriptionSegment } from "../utils/transactionDescription";
 
@@ -18,15 +19,6 @@ interface TransactionDescriptionLineProps {
   description?: string;
   onClick?: () => void;
   className?: string;
-}
-
-function hexToRgba(hex: string, alpha: number): string | undefined {
-  const n = hex.replace(/^#/, "");
-  if (n.length !== 6 || !/^[0-9a-fA-F]+$/.test(n)) return undefined;
-  const r = parseInt(n.slice(0, 2), 16);
-  const g = parseInt(n.slice(2, 4), 16);
-  const b = parseInt(n.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export function TransactionDescriptionLine({

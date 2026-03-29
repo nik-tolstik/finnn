@@ -23,15 +23,39 @@ export interface CMYK {
   k: number;
 }
 
+function normalizeHex(hex: string): string | null {
+  const normalized = hex.trim().replace(/^#/, "");
+  const normalizedHex =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((char) => char + char)
+          .join("")
+      : normalized;
+
+  if (!/^[0-9a-fA-F]{6}$/.test(normalizedHex)) {
+    return null;
+  }
+
+  return normalizedHex;
+}
+
 export function hexToRgb(hex: string): RGB | null {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : null;
+  const normalizedHex = normalizeHex(hex);
+  if (!normalizedHex) return null;
+
+  return {
+    r: parseInt(normalizedHex.slice(0, 2), 16),
+    g: parseInt(normalizedHex.slice(2, 4), 16),
+    b: parseInt(normalizedHex.slice(4, 6), 16),
+  };
+}
+
+export function hexToRgba(hex: string, alpha: number): string | undefined {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return undefined;
+
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 }
 
 export function rgbToHex(rgb: RGB): string {

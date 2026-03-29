@@ -2,8 +2,7 @@
 
 import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
-
-import { hexToRgba } from "./account-card/account-card.utils";
+import { hexToRgba } from "@/shared/utils/color-utils";
 
 export interface AccountChipAccount {
   id: string;
