@@ -36,24 +36,6 @@ const STANDARD_CATEGORIES = [
 
 const INCOME_CATEGORIES = ["Зарплата"];
 
-const CATEGORY_COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#06b6d4",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#10b981",
-  "#14b8a6",
-  "#6366f1",
-  "#84cc16",
-  "#78716c",
-  "#6b7280",
-  "#ffffff",
-];
-
 export async function createWorkspace(input: CreateWorkspaceInput) {
   try {
     const userId = await requireUserId();
@@ -83,19 +65,14 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
       },
     });
 
-    let colorIndex = 0;
-
     for (const categoryName of STANDARD_CATEGORIES) {
-      const color = categoryName === "Перевод" ? "#eab308" : CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
       await prisma.category.create({
         data: {
           workspaceId: workspace.id,
           name: categoryName,
           type: CategoryType.EXPENSE,
-          color,
         },
       });
-      colorIndex++;
     }
 
     for (const categoryName of INCOME_CATEGORIES) {
@@ -104,10 +81,8 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
           workspaceId: workspace.id,
           name: categoryName,
           type: CategoryType.INCOME,
-          color: CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length],
         },
       });
-      colorIndex++;
     }
 
     revalidateWorkspaceRoutes();

@@ -61,15 +61,15 @@ const seedAccounts: SeedAccount[] = [
   { key: "eur", name: "Счёт EUR", currency: "EUR", color: "#F59E0B", icon: "landmark" },
 ];
 
-const seedCategories: Array<{ name: string; type: CategoryType; color: string; icon: string; order: number }> = [
-  { name: "Зарплата", type: "income", color: "#16A34A", icon: "briefcase", order: 1 },
-  { name: "Подработка", type: "income", color: "#22C55E", icon: "wallet", order: 2 },
-  { name: "Кэшбэк", type: "income", color: "#4ADE80", icon: "piggy-bank", order: 3 },
-  { name: "Продукты", type: "expense", color: "#EF4444", icon: "shopping-cart", order: 1 },
-  { name: "Транспорт", type: "expense", color: "#F97316", icon: "car", order: 2 },
-  { name: "Кафе", type: "expense", color: "#DC2626", icon: "coffee", order: 3 },
-  { name: "Коммунальные", type: "expense", color: "#B91C1C", icon: "building-2", order: 4 },
-  { name: "Подписки", type: "expense", color: "#FB7185", icon: "tv", order: 5 },
+const seedCategories: Array<{ name: string; type: CategoryType; icon: string; order: number }> = [
+  { name: "Зарплата", type: "income", icon: "briefcase", order: 1 },
+  { name: "Подработка", type: "income", icon: "wallet", order: 2 },
+  { name: "Кэшбэк", type: "income", icon: "piggy-bank", order: 3 },
+  { name: "Продукты", type: "expense", icon: "shopping-cart", order: 1 },
+  { name: "Транспорт", type: "expense", icon: "car", order: 2 },
+  { name: "Кафе", type: "expense", icon: "coffee", order: 3 },
+  { name: "Коммунальные", type: "expense", icon: "building-2", order: 4 },
+  { name: "Подписки", type: "expense", icon: "tv", order: 5 },
 ];
 
 function createRng(seed: number) {
@@ -222,7 +222,6 @@ async function main() {
         workspaceId: workspace.id,
         name: category.name,
         type: category.type,
-        color: category.color,
         icon: category.icon,
         order: category.order,
       },

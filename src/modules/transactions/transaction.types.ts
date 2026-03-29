@@ -20,7 +20,6 @@ export type TransactionWithRelations = Transaction & {
   category: {
     id: string;
     name: string;
-    color: string | null;
   } | null;
   transferFrom?: {
     toAmount: string;

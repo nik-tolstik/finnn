@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { CategoryType } from "@/modules/categories/category.constants";
@@ -11,14 +11,6 @@ import { createCategory } from "@/modules/categories/category.service";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { type CreateCategoryInput, createCategorySchema } from "@/shared/lib/validations/category";
 import { Button } from "@/shared/ui/button";
-import {
-  ColorPicker,
-  ColorPickerArea,
-  ColorPickerContent,
-  ColorPickerFormatSelect,
-  ColorPickerInput,
-  ColorPickerTrigger,
-} from "@/shared/ui/color-picker";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +22,6 @@ import {
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
 
 interface CreateCategoryDialogProps {
   workspaceId: string;
@@ -46,25 +37,19 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-    setValue,
-    control,
   } = useForm<CreateCategoryInput>({
     resolver: zodResolver(createCategorySchema),
     defaultValues: {
       name: "",
       type,
-      color: CATEGORY_COLORS[0],
     },
   });
-
-  const selectedColor = useWatch({ control, name: "color" });
 
   useEffect(() => {
     if (open) {
       reset({
         name: "",
         type,
-        color: CATEGORY_COLORS[0],
       });
     }
   }, [open, type, reset]);
@@ -108,21 +93,6 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
                 aria-invalid={errors.name ? "true" : "false"}
               />
               {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Цвет</Label>
-              <ColorPicker value={selectedColor} onChange={(color) => setValue("color", color)}>
-                <ColorPickerTrigger />
-                <ColorPickerContent>
-                  <ColorPickerArea />
-                  <div className="flex items-center gap-2 mt-2">
-                    <ColorPickerFormatSelect />
-                    <ColorPickerInput />
-                  </div>
-                </ColorPickerContent>
-              </ColorPicker>
-              {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
             </div>
           </form>
         </DialogContent>

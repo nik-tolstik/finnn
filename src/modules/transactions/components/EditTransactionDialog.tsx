@@ -105,7 +105,6 @@ export function EditTransactionDialog({
     return filteredCategories.map((cat) => ({
       value: cat.id,
       label: cat.name,
-      color: cat.color || undefined,
     }));
   }, [filteredCategories]);
 
@@ -291,12 +290,7 @@ export function EditTransactionDialog({
                   onClick={() => setCategoryModalOpen(true)}
                 >
                   {selectedCategory ? (
-                    <div className="flex items-center gap-2">
-                      {selectedCategory.color && (
-                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: selectedCategory.color }} />
-                      )}
-                      <span className="truncate">{selectedCategory.label}</span>
-                    </div>
+                    <span className="truncate">{selectedCategory.label}</span>
                   ) : (
                     <span className="text-muted-foreground">Выберите категорию</span>
                   )}

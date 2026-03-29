@@ -4,7 +4,7 @@ import { Check, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { ComboboxOption } from "@/shared/ui/combobox";
-import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { cn } from "@/shared/utils/cn";
 
@@ -82,9 +82,6 @@ export function CategorySelectModal({
                     value === option.value && "bg-accent"
                   )}
                 >
-                  {option.color && (
-                    <div className="h-4 w-4 rounded-full shrink-0" style={{ backgroundColor: option.color }} />
-                  )}
                   <span className="flex-1 text-sm">{option.label}</span>
                   {value === option.value && <Check className="h-4 w-4 shrink-0 text-primary" />}
                 </button>

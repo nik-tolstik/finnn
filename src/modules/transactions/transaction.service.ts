@@ -96,7 +96,6 @@ export async function createTransaction(workspaceId: string, input: CreateTransa
           data: {
             workspaceId,
             name: validated.newCategory.name,
-            color: validated.newCategory.color,
             type: validated.newCategory.type,
           },
         });
@@ -618,7 +617,6 @@ export async function getCombinedTransactions(
           select: {
             id: true,
             name: true,
-            color: true,
           },
         },
         transferFrom: {

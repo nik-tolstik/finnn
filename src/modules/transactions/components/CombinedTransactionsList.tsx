@@ -414,7 +414,6 @@ export function CombinedTransactionsList({
         segments={segments}
         icon={actorAvatar}
         accountChips={accountChips}
-        categoryColor={transaction.category?.color ?? undefined}
         description={transaction.description?.trim() || undefined}
         onClick={() => {
           actionsDialog.openDialog({ transaction });

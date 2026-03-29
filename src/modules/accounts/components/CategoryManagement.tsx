@@ -29,17 +29,8 @@ import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { categoryKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
-import {
-  ColorPicker,
-  ColorPickerArea,
-  ColorPickerContent,
-  ColorPickerFormatSelect,
-  ColorPickerInput,
-  ColorPickerTrigger,
-} from "@/shared/ui/color-picker";
 import { Input } from "@/shared/ui/input";
 import { Segmented } from "@/shared/ui/segmented";
-import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
 import { cn } from "@/shared/utils/cn";
 
 import { CreateCategoryDialog } from "./CreateCategoryDialog";
@@ -53,26 +44,22 @@ function SortableCategoryItem({
   category,
   editingCategory,
   editingName,
-  editingColor,
   onStartEdit,
   onCancelEdit,
   onSaveEdit,
   onStartDelete,
   updateMutation,
   setEditingName,
-  setEditingColor,
 }: {
   category: Category;
   editingCategory: Category | null;
   editingName: string;
-  editingColor: string;
   onStartEdit: (category: Category) => void;
   onCancelEdit: () => void;
   onSaveEdit: () => void;
   onStartDelete: (category: Category) => void;
   updateMutation: any;
   setEditingName: (name: string) => void;
-  setEditingColor: (color: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: category.id,
@@ -91,16 +78,6 @@ function SortableCategoryItem({
         {editingCategory?.id === category.id ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <ColorPicker value={editingColor} onChange={setEditingColor}>
-                <ColorPickerTrigger className="h-6 w-6 rounded border shrink-0" />
-                <ColorPickerContent>
-                  <ColorPickerArea />
-                  <div className="flex items-center gap-2 mt-2">
-                    <ColorPickerFormatSelect />
-                    <ColorPickerInput />
-                  </div>
-                </ColorPickerContent>
-              </ColorPicker>
               <Input
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
@@ -140,7 +117,6 @@ function SortableCategoryItem({
             >
               <GripVertical className="h-4 w-4" />
             </div>
-            <div className="h-6 w-6 rounded border shrink-0" style={{ backgroundColor: category.color || undefined }} />
             <span className="flex-1 text-sm font-medium">{category.name}</span>
             <div className="flex gap-1 shrink-0">
               <Button size="sm" variant="ghost" onClick={() => onStartEdit(category)} className="h-7 w-7 p-0">
@@ -170,7 +146,6 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     type: CategoryType;
   }>();
   const [editingName, setEditingName] = useState("");
-  const [editingColor, setEditingColor] = useState("");
   const [selectedType, setSelectedType] = useState<CategoryType>(CategoryType.EXPENSE);
   const [incomeItems, setIncomeItems] = useState<Category[]>([]);
   const [expenseItems, setExpenseItems] = useState<Category[]>([]);
@@ -226,7 +201,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       });
       const hasChanges = updatedItems.some((item, index) => {
         const current = incomeItemsRef.current[index];
-        return !current || item.name !== current.name || item.color !== current.color;
+        return !current || item.name !== current.name;
       });
       if (hasChanges) {
         setIncomeItems(updatedItems);
@@ -260,7 +235,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       });
       const hasChanges = updatedItems.some((item, index) => {
         const current = expenseItemsRef.current[index];
-        return !current || item.name !== current.name || item.color !== current.color;
+        return !current || item.name !== current.name;
       });
       if (hasChanges) {
         setExpenseItems(updatedItems);
@@ -271,7 +246,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   }, [expenseCategories, expenseItems.length]);
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { name?: string; color?: string } }) => updateCategory(id, data),
+    mutationFn: ({ id, data }: { id: string; data: { name?: string } }) => updateCategory(id, data),
     onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
@@ -279,7 +254,6 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
         await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
         setEditingCategory(null);
         setEditingName("");
-        setEditingColor("");
       }
     },
   });
@@ -341,13 +315,11 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   const handleStartEdit = (category: Category) => {
     setEditingCategory(category);
     setEditingName(category.name);
-    setEditingColor(category.color || CATEGORY_COLORS[0]);
   };
 
   const handleCancelEdit = () => {
     setEditingCategory(null);
     setEditingName("");
-    setEditingColor("");
   };
 
   const handleSaveEdit = () => {
@@ -356,7 +328,6 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       id: editingCategory.id,
       data: {
         name: editingName,
-        color: editingColor,
       },
     });
   };
@@ -399,14 +370,12 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
               category={category}
               editingCategory={editingCategory}
               editingName={editingName}
-              editingColor={editingColor}
               onStartEdit={handleStartEdit}
               onCancelEdit={handleCancelEdit}
               onSaveEdit={handleSaveEdit}
               onStartDelete={handleStartDelete}
               updateMutation={updateMutation}
               setEditingName={setEditingName}
-              setEditingColor={setEditingColor}
             />
           ))}
         </div>

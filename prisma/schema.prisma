@@ -96,7 +96,6 @@ model Category {
   workspaceId String   @db.ObjectId
   name        String
   type        String
-  color       String?
   icon        String?
   order       Int      @default(0)
   createdAt   DateTime @default(now())

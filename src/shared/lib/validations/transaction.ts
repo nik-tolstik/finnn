@@ -22,7 +22,6 @@ export const createTransactionSchema = z.object({
   newCategory: z
     .object({
       name: z.string().min(1, "Название категории обязательно"),
-      color: z.string(),
       type: z.nativeEnum(CategoryType),
     })
     .optional(),

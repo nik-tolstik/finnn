@@ -15,7 +15,6 @@ interface TransactionDescriptionLineProps {
   segments: DescriptionSegment[];
   icon?: ReactNode;
   accountChips?: AccountChipsMap;
-  categoryColor?: string | null;
   description?: string;
   onClick?: () => void;
   className?: string;
@@ -34,7 +33,6 @@ export function TransactionDescriptionLine({
   segments,
   icon,
   accountChips,
-  categoryColor,
   description,
   onClick,
   className,
@@ -49,25 +47,8 @@ export function TransactionDescriptionLine({
       {restSegments.map((seg, i) => {
         const chip = seg.segmentType && seg.segmentType !== "category" && accountChips?.[seg.segmentType];
         if (seg.segmentType === "category") {
-          const color = categoryColor ?? undefined;
-          const bgColor = color ? hexToRgba(color, 0.1) : undefined;
-
           return (
-            <span
-              key={i}
-              className={cn(
-                "inline-flex rounded-md border px-1.5 py-0.5 text-xs font-medium",
-                !color && "border-border bg-muted/50"
-              )}
-              style={
-                color
-                  ? {
-                      borderColor: color ? hexToRgba(color, 0.5) : undefined,
-                      ...(bgColor && { backgroundColor: bgColor }),
-                    }
-                  : undefined
-              }
-            >
+            <span key={i} className="inline-flex font-semibold">
               {seg.text}
             </span>
           );
