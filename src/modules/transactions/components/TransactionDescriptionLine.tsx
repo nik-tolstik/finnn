@@ -58,7 +58,7 @@ export function TransactionDescriptionLine({
             <span
               key={i}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg border border-border px-2 py-1 text-xs font-medium text-foreground",
+                "inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-foreground",
                 !chip.color && "bg-muted"
               )}
               style={{
