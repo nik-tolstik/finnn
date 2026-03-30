@@ -6,26 +6,8 @@ services:
     ports:
       - "27017:27017"
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mongosh 'mongodb://localhost:27017/?directConnection=true' --quiet --eval \"const hello = db.adminCommand({ hello: 1 }); quit(hello.isWritablePrimary ? 0 : 1)\"",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 5s
     volumes:
       - mongodb_data:/data/db
-  mongodb-rs-init:
-    image: mongo:latest
-    depends_on:
-      - mongodb
-    restart: "no"
-    volumes:
-      - ./docker/mongodb/init-rs.sh:/init-rs.sh:ro
-    entrypoint: ["/bin/sh", "/init-rs.sh"]
 
 volumes:
   mongodb_data:

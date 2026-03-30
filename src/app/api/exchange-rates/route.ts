@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { serverLogger } from "@/shared/lib/logger";
 
 interface NBRBRate {
   Cur_ID: number;
@@ -11,17 +12,17 @@ interface NBRBRate {
 
 export async function GET() {
   const url = "https://www.nbrb.by/api/exrates/rates?periodicity=0";
-  console.warn("[NBRB API Route] Начало запроса курсов валют:", url);
+  serverLogger.warn("[NBRB API Route] Starting exchange rates request:", url);
 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      console.error("[NBRB API Route] Таймаут запроса (30 секунд)");
+      serverLogger.error("[NBRB API Route] Request timeout (30 seconds)");
       controller.abort();
     }, 30000);
 
     try {
-      console.warn("[NBRB API Route] Выполняю fetch запрос...");
+      serverLogger.warn("[NBRB API Route] Executing fetch request...");
       const response = await fetch(url, {
         next: { revalidate: 3600 },
         signal: controller.signal,
@@ -31,28 +32,28 @@ export async function GET() {
       });
 
       clearTimeout(timeoutId);
-      console.warn("[NBRB API Route] Получен ответ:", {
+      serverLogger.warn("[NBRB API Route] Response received:", {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok,
       });
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => "Не удалось прочитать ответ");
-        console.error("[NBRB API Route] Ошибка ответа:", {
+        const errorText = await response.text().catch(() => "Failed to read response body");
+        serverLogger.error("[NBRB API Route] Response error:", {
           status: response.status,
           statusText: response.statusText,
           body: errorText.substring(0, 200),
         });
         return NextResponse.json(
-          { error: `Не удалось получить курсы валют: ${response.status} ${response.statusText}` },
+          { error: `Failed to get exchange rates: ${response.status} ${response.statusText}` },
           { status: response.status }
         );
       }
 
-      console.warn("[NBRB API Route] Парсинг JSON...");
+      serverLogger.warn("[NBRB API Route] Parsing JSON...");
       const rates: NBRBRate[] = await response.json();
-      console.warn("[NBRB API Route] Получено курсов:", rates.length);
+      serverLogger.warn("[NBRB API Route] Rates received:", rates.length);
 
       const ratesMap: Record<string, number> = {};
       for (const rate of rates) {
@@ -62,11 +63,11 @@ export async function GET() {
 
       ratesMap.BYN = 1;
 
-      console.warn("[NBRB API Route] Успешно получены курсы:", Object.keys(ratesMap));
+      serverLogger.warn("[NBRB API Route] Successfully retrieved rates:", Object.keys(ratesMap));
       return NextResponse.json({ data: ratesMap });
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
-      console.error("[NBRB API Route] Ошибка fetch:", {
+      serverLogger.error("[NBRB API Route] Fetch error:", {
         name: fetchError.name,
         message: fetchError.message,
         stack: fetchError.stack,
@@ -78,19 +79,19 @@ export async function GET() {
       }
 
       if (fetchError.message?.includes("CORS") || fetchError.message?.includes("cors")) {
-        console.error("[NBRB API Route] Обнаружена CORS ошибка");
+        serverLogger.error("[NBRB API Route] CORS error detected");
         return NextResponse.json({ error: `CORS ошибка: ${fetchError.message}` }, { status: 502 });
       }
 
       throw fetchError;
     }
   } catch (error: any) {
-    console.error("[NBRB API Route] Критическая ошибка:", {
+    serverLogger.error("[NBRB API Route] Critical error:", {
       name: error.name,
       message: error.message,
       stack: error.stack,
       cause: error.cause,
     });
-    return NextResponse.json({ error: error.message || "Не удалось получить курсы валют" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to get exchange rates" }, { status: 500 });
   }
 }

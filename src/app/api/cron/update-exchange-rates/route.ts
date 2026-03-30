@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { saveDailyExchangeRates } from "@/modules/currency/exchange-rate.service";
+import { serverLogger } from "@/shared/lib/logger";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       rates,
     });
   } catch (error: any) {
-    console.error("[Cron] Ошибка обновления курсов:", error);
-    return NextResponse.json({ error: error.message || "Ошибка обновления курсов" }, { status: 500 });
+    serverLogger.error("[Cron] Failed to update exchange rates:", error);
+    return NextResponse.json({ error: error.message || "Failed to update exchange rates" }, { status: 500 });
   }
 }

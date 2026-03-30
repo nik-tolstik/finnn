@@ -19,7 +19,7 @@ openssl rand -base64 32
 3. Update the `.env` file with your MongoDB connection string and NextAuth secret:
 
 ```env
-MONGODB_URI="mongodb://localhost:27017/finhub"
+DATABASE_URL="mongodb://localhost:27017/finnn"
 NEXTAUTH_URL="http://localhost:9999"
 NEXTAUTH_SECRET="paste-generated-secret-here"
 ```
