@@ -2,7 +2,8 @@ import { CategoryType } from "@/modules/categories/category.constants";
 import {
   DASHBOARD_TRANSACTION_TYPE_LABELS,
   type DashboardTransactionType,
-  TransactionType,
+  PaymentTransactionType,
+  TRANSFER_TRANSACTION_FILTER_VALUE,
 } from "@/modules/transactions/transaction.constants";
 import type { SelectOption } from "@/shared/ui/select/types";
 
@@ -10,9 +11,18 @@ import type { FilterAccount, FilterCategory, FilterMember } from "../types";
 
 export function buildTransactionTypeOptions(): SelectOption<DashboardTransactionType>[] {
   return [
-    { value: TransactionType.INCOME, label: DASHBOARD_TRANSACTION_TYPE_LABELS[TransactionType.INCOME] },
-    { value: TransactionType.EXPENSE, label: DASHBOARD_TRANSACTION_TYPE_LABELS[TransactionType.EXPENSE] },
-    { value: TransactionType.TRANSFER, label: DASHBOARD_TRANSACTION_TYPE_LABELS[TransactionType.TRANSFER] },
+    {
+      value: PaymentTransactionType.INCOME,
+      label: DASHBOARD_TRANSACTION_TYPE_LABELS[PaymentTransactionType.INCOME],
+    },
+    {
+      value: PaymentTransactionType.EXPENSE,
+      label: DASHBOARD_TRANSACTION_TYPE_LABELS[PaymentTransactionType.EXPENSE],
+    },
+    {
+      value: TRANSFER_TRANSACTION_FILTER_VALUE,
+      label: DASHBOARD_TRANSACTION_TYPE_LABELS[TRANSFER_TRANSACTION_FILTER_VALUE],
+    },
     { value: "debt", label: DASHBOARD_TRANSACTION_TYPE_LABELS.debt },
   ];
 }

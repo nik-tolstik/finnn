@@ -5,10 +5,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 
 import { getExchangeRate } from "@/modules/currency/exchange-rate.service";
-import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
+import type {
+  CreateTransferTransactionInput,
+  UpdateTransferTransactionInput,
+} from "@/shared/lib/validations/transaction";
 import { divideMoney, multiplyMoney } from "@/shared/utils/money";
 
-type TransferFormData = CreateTransferInput | UpdateTransferInput;
+type TransferFormData = CreateTransferTransactionInput | UpdateTransferTransactionInput;
 type EditedInput = "amount" | "toAmount" | "both" | null;
 
 interface UseTransferAmountSyncProps {

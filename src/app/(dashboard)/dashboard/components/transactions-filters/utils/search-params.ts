@@ -2,7 +2,8 @@ import { CategoryType } from "@/modules/categories/category.constants";
 import {
   type DashboardTransactionType,
   DEBT_TRANSACTION_FILTER_VALUE,
-  TransactionType,
+  PaymentTransactionType,
+  TRANSFER_TRANSACTION_FILTER_VALUE,
 } from "@/modules/transactions/transaction.constants";
 
 import type { DashboardTransactionFilters } from "../types";
@@ -69,9 +70,9 @@ function normalizeDateValue(value?: string | null) {
 function normalizeTransactionTypes(values: string[]) {
   const validValues = values.filter(
     (value): value is DashboardTransactionType =>
-      value === TransactionType.INCOME ||
-      value === TransactionType.EXPENSE ||
-      value === TransactionType.TRANSFER ||
+      value === PaymentTransactionType.INCOME ||
+      value === PaymentTransactionType.EXPENSE ||
+      value === TRANSFER_TRANSACTION_FILTER_VALUE ||
       value === DEBT_TRANSACTION_FILTER_VALUE
   );
 
@@ -189,11 +190,11 @@ export function getAllowedCategoryTypes(transactionTypes?: DashboardTransactionT
 
   const allowedCategoryTypes: CategoryType[] = [];
 
-  if (transactionTypes.includes(TransactionType.INCOME)) {
+  if (transactionTypes.includes(PaymentTransactionType.INCOME)) {
     allowedCategoryTypes.push(CategoryType.INCOME);
   }
 
-  if (transactionTypes.includes(TransactionType.EXPENSE)) {
+  if (transactionTypes.includes(PaymentTransactionType.EXPENSE)) {
     allowedCategoryTypes.push(CategoryType.EXPENSE);
   }
 

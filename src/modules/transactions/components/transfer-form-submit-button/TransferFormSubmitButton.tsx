@@ -2,10 +2,13 @@
 
 import type { UseFormReturn } from "react-hook-form";
 
-import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
+import type {
+  CreateTransferTransactionInput,
+  UpdateTransferTransactionInput,
+} from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 
-type TransferFormData = CreateTransferInput | UpdateTransferInput;
+type TransferFormData = CreateTransferTransactionInput | UpdateTransferTransactionInput;
 
 interface TransferFormSubmitButtonProps {
   form: UseFormReturn<TransferFormData>;

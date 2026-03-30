@@ -1,70 +1,36 @@
-import type { Transaction } from "@prisma/client";
+import type { PaymentTransaction, TransferTransaction } from "@prisma/client";
 
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 
-export type TransactionWithRelations = Transaction & {
-  account: {
+export type TransactionAccountWithOwner = {
+  id: string;
+  name: string;
+  currency: string;
+  color: string | null;
+  icon: string | null;
+  ownerId: string | null;
+  owner: {
     id: string;
-    name: string;
-    currency: string;
-    color: string | null;
-    icon: string | null;
-    ownerId: string | null;
-    owner: {
-      id: string;
-      name: string | null;
-      email: string;
-      image: string | null;
-    } | null;
-  };
+    name: string | null;
+    email: string;
+    image: string | null;
+  } | null;
+};
+
+export type PaymentTransactionWithRelations = PaymentTransaction & {
+  account: TransactionAccountWithOwner;
   category: {
     id: string;
     name: string;
   } | null;
-  transferFrom?: {
-    toAmount: string;
-    toTransaction: {
-      id: string;
-      description?: string | null;
-      account: {
-        id: string;
-        name: string;
-        currency: string;
-        color: string | null;
-        icon: string | null;
-        ownerId: string | null;
-        owner: {
-          id: string;
-          name: string | null;
-          email: string;
-          image: string | null;
-        } | null;
-      };
-    };
-  } | null;
-  transferTo?: {
-    amount: string;
-    fromTransaction: {
-      id: string;
-      description?: string | null;
-      account: {
-        id: string;
-        name: string;
-        currency: string;
-        color: string | null;
-        icon: string | null;
-        ownerId: string | null;
-        owner: {
-          id: string;
-          name: string | null;
-          email: string;
-          image: string | null;
-        } | null;
-      };
-    };
-  } | null;
+};
+
+export type TransferTransactionWithRelations = TransferTransaction & {
+  fromAccount: TransactionAccountWithOwner;
+  toAccount: TransactionAccountWithOwner;
 };
 
 export type CombinedTransaction =
-  | { kind: "transaction"; data: TransactionWithRelations }
+  | { kind: "paymentTransaction"; data: PaymentTransactionWithRelations }
+  | { kind: "transferTransaction"; data: TransferTransactionWithRelations }
   | { kind: "debtTransaction"; data: DebtTransactionWithRelations };

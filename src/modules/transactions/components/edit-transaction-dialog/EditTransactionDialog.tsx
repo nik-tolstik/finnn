@@ -10,12 +10,15 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { getCategories } from "@/modules/categories/category.service";
-import { TransactionType } from "@/modules/transactions/transaction.constants";
+import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
-import { type UpdateTransactionInput, updateTransactionSchema } from "@/shared/lib/validations/transaction";
+import {
+  type UpdatePaymentTransactionInput,
+  updatePaymentTransactionSchema,
+} from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
@@ -33,11 +36,11 @@ import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
 import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
-import { updateTransaction } from "../../transaction.service";
-import type { TransactionWithRelations } from "../../transaction.types";
+import { updatePaymentTransaction } from "../../transaction.service";
+import type { PaymentTransactionWithRelations } from "../../transaction.types";
 
 interface EditTransactionDialogProps {
-  transaction: TransactionWithRelations;
+  transaction: PaymentTransactionWithRelations;
   workspaceId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -60,8 +63,8 @@ export function EditTransactionDialog({
     setError,
     clearErrors,
     control,
-  } = useForm<UpdateTransactionInput>({
-    resolver: zodResolver(updateTransactionSchema),
+  } = useForm<UpdatePaymentTransactionInput>({
+    resolver: zodResolver(updatePaymentTransactionSchema),
     defaultValues: {
       accountId: transaction.account.id,
       amount: transaction.amount,
@@ -93,14 +96,10 @@ export function EditTransactionDialog({
     return categoriesData?.data || [];
   }, [categoriesData?.data]);
 
-  // Filter categories by transaction type
   const filteredCategories = useMemo(() => {
-    return allCategories.filter(
-      (cat) => cat.type === transaction.type || transaction.type === TransactionType.TRANSFER
-    );
+    return allCategories.filter((cat) => cat.type === transaction.type);
   }, [allCategories, transaction.type]);
 
-  // Options for the combobox
   const comboboxOptions = useMemo<ComboboxOption[]>(() => {
     return filteredCategories.map((cat) => ({
       value: cat.id,
@@ -122,7 +121,7 @@ export function EditTransactionDialog({
   }, [accounts, accountId]);
 
   const accountBalanceBeforeTransaction = useMemo(() => {
-    if (!selectedAccount || transaction.type !== TransactionType.EXPENSE) return null;
+    if (!selectedAccount || transaction.type !== PaymentTransactionType.EXPENSE) return null;
     return addMoney(selectedAccount.balance, transaction.amount);
   }, [selectedAccount, transaction]);
 
@@ -132,9 +131,9 @@ export function EditTransactionDialog({
     if (Number.isNaN(amountNum)) return selectedAccount;
 
     let newBalance = accountBalanceBeforeTransaction || selectedAccount.balance;
-    if (transaction.type === TransactionType.INCOME) {
+    if (transaction.type === PaymentTransactionType.INCOME) {
       newBalance = addMoney(accountBalanceBeforeTransaction || selectedAccount.balance, amount);
-    } else if (transaction.type === TransactionType.EXPENSE) {
+    } else if (transaction.type === PaymentTransactionType.EXPENSE) {
       if (accountBalanceBeforeTransaction) {
         newBalance = subtractMoney(accountBalanceBeforeTransaction, amount);
       } else {
@@ -148,9 +147,9 @@ export function EditTransactionDialog({
     };
   }, [selectedAccount, amount, transaction.type, accountBalanceBeforeTransaction]);
 
-  const onSubmit = async (data: UpdateTransactionInput) => {
+  const onSubmit = async (data: UpdatePaymentTransactionInput) => {
     onOpenChange(false);
-    const result = await updateTransaction(transaction.id, data);
+    const result = await updatePaymentTransaction(transaction.id, data);
     if (result.error) {
       toast.error(result.error);
     } else {
@@ -212,7 +211,7 @@ export function EditTransactionDialog({
                       }
                       if (
                         selectedAccount &&
-                        transaction.type === TransactionType.EXPENSE &&
+                        transaction.type === PaymentTransactionType.EXPENSE &&
                         value &&
                         accountBalanceBeforeTransaction
                       ) {
@@ -230,7 +229,7 @@ export function EditTransactionDialog({
                     validate: (value) => {
                       if (
                         !selectedAccount ||
-                        transaction.type !== TransactionType.EXPENSE ||
+                        transaction.type !== PaymentTransactionType.EXPENSE ||
                         !value ||
                         !accountBalanceBeforeTransaction
                       )
@@ -246,7 +245,7 @@ export function EditTransactionDialog({
                   aria-invalid={errors.amount ? "true" : "false"}
                 />
                 {selectedAccount &&
-                  transaction.type === TransactionType.EXPENSE &&
+                  transaction.type === PaymentTransactionType.EXPENSE &&
                   accountBalanceBeforeTransaction &&
                   parseFloat(accountBalanceBeforeTransaction) > 0 && (
                     <Button

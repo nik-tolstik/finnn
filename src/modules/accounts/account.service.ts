@@ -19,9 +19,15 @@ type AccountDependencyCounts = {
 };
 
 async function getAccountDependencyCounts(accountId: string): Promise<AccountDependencyCounts> {
-  const [transactions, debts, debtTransactions] = await Promise.all([
-    prisma.transaction.count({
+  const [paymentTransactions, outgoingTransfers, incomingTransfers, debts, debtTransactions] = await Promise.all([
+    prisma.paymentTransaction.count({
       where: { accountId },
+    }),
+    prisma.transferTransaction.count({
+      where: { fromAccountId: accountId },
+    }),
+    prisma.transferTransaction.count({
+      where: { toAccountId: accountId },
     }),
     prisma.debt.count({
       where: { accountId },
@@ -32,7 +38,7 @@ async function getAccountDependencyCounts(accountId: string): Promise<AccountDep
   ]);
 
   return {
-    transactions,
+    transactions: paymentTransactions + outgoingTransfers + incomingTransfers,
     debts,
     debtTransactions,
   };
@@ -260,7 +266,9 @@ export async function getArchivedAccounts(workspaceId: string) {
         },
         _count: {
           select: {
-            transactions: true,
+            paymentTransactions: true,
+            outgoingTransfers: true,
+            incomingTransfers: true,
             debts: true,
             debtTransactions: true,
           },
@@ -269,7 +277,17 @@ export async function getArchivedAccounts(workspaceId: string) {
       orderBy: { createdAt: "desc" },
     });
 
-    return { data: accounts };
+    return {
+      data: accounts.map((account) => ({
+        ...account,
+        _count: {
+          transactions:
+            account._count.paymentTransactions + account._count.outgoingTransfers + account._count.incomingTransfers,
+          debts: account._count.debts,
+          debtTransactions: account._count.debtTransactions,
+        },
+      })),
+    };
   } catch (error: any) {
     return { error: error.message || "Не удалось загрузить архивированные счета" };
   }

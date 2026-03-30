@@ -1,15 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { type CreateTransferInput, createTransferSchema } from "@/shared/lib/validations/transaction";
+import {
+  type CreateTransferTransactionInput,
+  createTransferTransactionSchema,
+} from "@/shared/lib/validations/transaction";
 
 interface UseTransferFormProps {
   defaultAccountId?: string;
 }
 
 export function useTransferForm({ defaultAccountId }: UseTransferFormProps) {
-  return useForm<CreateTransferInput>({
-    resolver: zodResolver(createTransferSchema),
+  return useForm<CreateTransferTransactionInput>({
+    resolver: zodResolver(createTransferTransactionSchema),
     defaultValues: {
       fromAccountId: defaultAccountId || "",
       toAccountId: "",

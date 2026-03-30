@@ -19,7 +19,10 @@ import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
-import { type CreateTransactionInput, createTransactionSchema } from "@/shared/lib/validations/transaction";
+import {
+  type CreatePaymentTransactionInput,
+  createPaymentTransactionSchema,
+} from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
@@ -30,8 +33,8 @@ import { Segmented } from "@/shared/ui/segmented";
 import { Textarea } from "@/shared/ui/textarea";
 import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
-import { TransactionType } from "../../transaction.constants";
-import { createTransaction } from "../../transaction.service";
+import { PaymentTransactionType } from "../../transaction.constants";
+import { createPaymentTransaction } from "../../transaction.service";
 
 interface CreateTransactionDialogProps {
   account?: Account | (Partial<Account> & { id: string });
@@ -39,7 +42,7 @@ interface CreateTransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
-  defaultType?: TransactionType.INCOME | TransactionType.EXPENSE;
+  defaultType?: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
   initialAmount?: string;
   initialDescription?: string;
   initialDate?: Date;
@@ -52,7 +55,7 @@ export function CreateTransactionDialog({
   open,
   onOpenChange,
   onCloseComplete,
-  defaultType = TransactionType.EXPENSE,
+  defaultType = PaymentTransactionType.EXPENSE,
   initialAmount,
   initialDescription,
   initialDate,
@@ -103,8 +106,8 @@ export function CreateTransactionDialog({
     setError,
     clearErrors,
     control,
-  } = useForm<CreateTransactionInput>({
-    resolver: zodResolver(createTransactionSchema),
+  } = useForm<CreatePaymentTransactionInput>({
+    resolver: zodResolver(createPaymentTransactionSchema),
     defaultValues: {
       accountId: accountProp?.id || account?.id || "",
       amount: initialAmount || "",
@@ -164,9 +167,9 @@ export function CreateTransactionDialog({
     if (Number.isNaN(amountNum)) return currentAccount;
 
     let newBalance = currentAccount.balance;
-    if (transactionType === TransactionType.INCOME) {
+    if (transactionType === PaymentTransactionType.INCOME) {
       newBalance = addMoney(currentAccount.balance, amount);
-    } else if (transactionType === TransactionType.EXPENSE) {
+    } else if (transactionType === PaymentTransactionType.EXPENSE) {
       newBalance = subtractMoney(currentAccount.balance, amount);
     }
 
@@ -187,9 +190,8 @@ export function CreateTransactionDialog({
     return categoriesData?.data || [];
   }, [categoriesData?.data]);
 
-  // Filter categories by transaction type
   const filteredCategories = useMemo(() => {
-    return allCategories.filter((cat) => cat.type === transactionType || transactionType === TransactionType.TRANSFER);
+    return allCategories.filter((cat) => cat.type === transactionType);
   }, [allCategories, transactionType]);
 
   const comboboxOptions = useMemo<ComboboxOption[]>(() => {
@@ -298,7 +300,7 @@ export function CreateTransactionDialog({
     onOpenChange(newOpen);
   };
 
-  const onSubmit = async (data: CreateTransactionInput) => {
+  const onSubmit = async (data: CreatePaymentTransactionInput) => {
     const currentAccount = selectedAccount || account;
     if (!currentAccount || !("createdAt" in currentAccount) || !currentAccount.createdAt) return;
 
@@ -316,7 +318,7 @@ export function CreateTransactionDialog({
       return;
     }
 
-    const result = await createTransaction(workspaceId, data);
+    const result = await createPaymentTransaction(workspaceId, data);
     if (result.error) {
       toast.error(result.error);
     } else {
@@ -370,13 +372,13 @@ export function CreateTransactionDialog({
                 <Segmented
                   options={[
                     {
-                      value: TransactionType.EXPENSE,
+                      value: PaymentTransactionType.EXPENSE,
                       label: "Расход",
                       icon: <ArrowDown className="h-4 w-4" />,
                       selectedClassName: "text-destructive",
                     },
                     {
-                      value: TransactionType.INCOME,
+                      value: PaymentTransactionType.INCOME,
                       label: "Доход",
                       icon: <ArrowUp className="h-4 w-4" />,
                       selectedClassName: "text-success",
@@ -458,7 +460,7 @@ export function CreateTransactionDialog({
                           currentAccount &&
                           "balance" in currentAccount &&
                           currentAccount.balance &&
-                          transactionType === TransactionType.EXPENSE &&
+                          transactionType === PaymentTransactionType.EXPENSE &&
                           value
                         ) {
                           const amount = parseFloat(value);
@@ -478,7 +480,7 @@ export function CreateTransactionDialog({
                           !currentAccount ||
                           !("balance" in currentAccount) ||
                           !currentAccount.balance ||
-                          transactionType !== TransactionType.EXPENSE
+                          transactionType !== PaymentTransactionType.EXPENSE
                         )
                           return true;
                         const amount = parseFloat(value);

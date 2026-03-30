@@ -19,7 +19,7 @@ import { toast } from "sonner";
 
 import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
 import { CreateTransferDialog } from "@/modules/transactions/components/create-transfer-dialog";
-import { TransactionType } from "@/modules/transactions/transaction.constants";
+import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
@@ -132,7 +132,7 @@ export function AccountsCards({
   const setShowAllAccounts = onShowAllAccountsChange ?? setShowAllAccountsLocal;
   const createTransactionDialog = useDialogState<{
     workspaceId: string;
-    defaultType?: TransactionType.INCOME | TransactionType.EXPENSE;
+    defaultType?: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
     account?: Account;
   }>();
   const transferDialog = useDialogState<{
@@ -386,7 +386,7 @@ export function AccountsCards({
           onCreateTransaction={() => {
             createTransactionDialog.openDialog({
               workspaceId,
-              defaultType: TransactionType.EXPENSE,
+              defaultType: PaymentTransactionType.EXPENSE,
               account: accountActionsDialog.data.account,
             });
             accountActionsDialog.closeDialog();

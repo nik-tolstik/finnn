@@ -2,53 +2,45 @@ import type { LucideIcon } from "lucide-react";
 
 import { getAccountIcon } from "@/shared/utils/account-icons";
 
-import type { TransactionWithRelations } from "../../../transaction.types";
+import type { TransferTransactionWithRelations } from "../../../transaction.types";
 import { getTransactionDescriptionSegments } from "../../../utils/transactionDescription";
 import { TransactionDescriptionLine } from "../../transaction-description-line/TransactionDescriptionLine";
-import type { TransferDisplayInfo } from "../types";
 import { TransactionActorAvatar } from "./TransactionActorAvatar";
 
 interface TransferTransactionItemProps {
-  transaction: TransactionWithRelations;
-  transferInfo: TransferDisplayInfo;
+  transaction: TransferTransactionWithRelations;
   workspaceName: string;
   WorkspaceIcon: LucideIcon;
-  onClick: (transaction: TransactionWithRelations) => void;
+  onClick: (transaction: TransferTransactionWithRelations) => void;
 }
 
 export function TransferTransactionItem({
   transaction,
-  transferInfo,
   workspaceName,
   WorkspaceIcon,
   onClick,
 }: TransferTransactionItemProps) {
   const { segments } = getTransactionDescriptionSegments(
     {
-      kind: "transaction",
+      kind: "transferTransaction",
       data: transaction,
     },
-    workspaceName,
-    {
-      toAccountName: transferInfo.account.name,
-      toAmount: transferInfo.amount,
-      toCurrency: transferInfo.account.currency,
-    }
+    workspaceName
   );
-  const FromAccountIcon = getAccountIcon(transaction.account.icon);
-  const ToAccountIcon = getAccountIcon(transferInfo.account.icon);
+  const FromAccountIcon = getAccountIcon(transaction.fromAccount.icon);
+  const ToAccountIcon = getAccountIcon(transaction.toAccount.icon);
 
   return (
     <TransactionDescriptionLine
       segments={segments}
-      icon={<TransactionActorAvatar account={transaction.account} WorkspaceIcon={WorkspaceIcon} />}
+      icon={<TransactionActorAvatar account={transaction.fromAccount} WorkspaceIcon={WorkspaceIcon} />}
       accountChips={{
         accountFrom: {
-          color: transaction.account.color,
+          color: transaction.fromAccount.color,
           icon: <FromAccountIcon className="size-3.5" />,
         },
         accountTo: {
-          color: transferInfo.account.color,
+          color: transaction.toAccount.color,
           icon: <ToAccountIcon className="size-3.5" />,
         },
       }}

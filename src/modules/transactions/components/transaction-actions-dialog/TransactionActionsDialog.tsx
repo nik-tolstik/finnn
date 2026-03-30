@@ -4,11 +4,8 @@ import { Pencil, RotateCw, Trash2 } from "lucide-react";
 
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog";
 
-import { TransactionType } from "../../transaction.constants";
-import type { TransactionWithRelations } from "../../transaction.types";
-
 interface TransactionActionsDialogProps {
-  transaction: TransactionWithRelations;
+  transactionKind: "paymentTransaction" | "transferTransaction";
   open: boolean;
   onCloseComplete: () => void;
   onOpenChange: (open: boolean) => void;
@@ -18,7 +15,7 @@ interface TransactionActionsDialogProps {
 }
 
 export function TransactionActionsDialog({
-  transaction,
+  transactionKind,
   open,
   onCloseComplete,
   onOpenChange,
@@ -26,9 +23,10 @@ export function TransactionActionsDialog({
   onDelete,
   onRepeat,
 }: TransactionActionsDialogProps) {
-  const transactionType = transaction.type === TransactionType.TRANSFER ? "перевода" : "транзакции";
-  const transactionLabel = transaction.type === TransactionType.TRANSFER ? "Перевод" : "Транзакция";
-  const canRepeat = transaction.type !== TransactionType.TRANSFER && onRepeat;
+  const isTransferTransaction = transactionKind === "transferTransaction";
+  const transactionType = isTransferTransaction ? "перевода" : "транзакции";
+  const transactionLabel = isTransferTransaction ? "Перевод" : "Транзакция";
+  const canRepeat = !isTransferTransaction && onRepeat;
 
   const actions: ActionItem[] = [
     {

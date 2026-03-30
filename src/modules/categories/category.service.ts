@@ -106,7 +106,7 @@ export async function getCategories(workspaceId: string, type?: string) {
       include: {
         _count: {
           select: {
-            transactions: true,
+            paymentTransactions: true,
           },
         },
       },
@@ -179,7 +179,7 @@ export async function getCategoryTransactionCount(categoryId: string) {
 
     await requireWorkspaceAccess(category.workspaceId);
 
-    const count = await prisma.transaction.count({
+    const count = await prisma.paymentTransaction.count({
       where: {
         categoryId,
       },

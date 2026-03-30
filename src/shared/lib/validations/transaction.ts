@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { CategoryType } from "@/modules/categories/category.constants";
-import { TransactionType } from "@/modules/transactions/transaction.constants";
+import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 
-export const createTransactionSchema = z.object({
+export const createPaymentTransactionSchema = z.object({
   accountId: z.string().min(1, "Счёт обязателен"),
   amount: z
     .string()
@@ -15,7 +15,7 @@ export const createTransactionSchema = z.object({
       },
       { message: "Сумма должна быть больше 0" }
     ),
-  type: z.nativeEnum(TransactionType),
+  type: z.nativeEnum(PaymentTransactionType),
   description: z.string().optional(),
   date: z.date(),
   categoryId: z.string().optional(),
@@ -27,7 +27,7 @@ export const createTransactionSchema = z.object({
     .optional(),
 });
 
-export const createTransferSchema = z.object({
+export const createTransferTransactionSchema = z.object({
   fromAccountId: z.string().min(1, "Счёт отправителя обязателен"),
   toAccountId: z.string().min(1, "Счёт получателя обязателен"),
   amount: z
@@ -54,7 +54,7 @@ export const createTransferSchema = z.object({
   date: z.date(),
 });
 
-export const updateTransactionSchema = z.object({
+export const updatePaymentTransactionSchema = z.object({
   accountId: z.string().optional(),
   amount: z
     .string()
@@ -72,7 +72,7 @@ export const updateTransactionSchema = z.object({
   categoryId: z.string().optional().nullable(),
 });
 
-export const updateTransferSchema = z.object({
+export const updateTransferTransactionSchema = z.object({
   fromAccountId: z.string().min(1, "Счёт отправителя обязателен"),
   toAccountId: z.string().min(1, "Счёт получателя обязателен"),
   amount: z
@@ -99,7 +99,7 @@ export const updateTransferSchema = z.object({
   date: z.date(),
 });
 
-export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
-export type CreateTransferInput = z.infer<typeof createTransferSchema>;
-export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
-export type UpdateTransferInput = z.infer<typeof updateTransferSchema>;
+export type CreatePaymentTransactionInput = z.infer<typeof createPaymentTransactionSchema>;
+export type CreateTransferTransactionInput = z.infer<typeof createTransferTransactionSchema>;
+export type UpdatePaymentTransactionInput = z.infer<typeof updatePaymentTransactionSchema>;
+export type UpdateTransferTransactionInput = z.infer<typeof updateTransferTransactionSchema>;

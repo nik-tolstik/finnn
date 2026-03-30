@@ -3,14 +3,25 @@ import type { LucideIcon } from "lucide-react";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { Button } from "@/shared/ui/button";
 
-import type { TransactionWithRelations } from "../../../transaction.types";
 import { TransactionsListSkeleton } from "../../transactions-list-skeleton/TransactionsListSkeleton";
-import type { PreparedCombinedTransaction, PreparedCombinedTransactionGroup } from "../types";
+import type {
+  ActionableCombinedTransaction,
+  PreparedCombinedTransaction,
+  PreparedCombinedTransactionGroup,
+} from "../types";
 import { formatDateHeader } from "../utils/formatDateHeader";
 import { CombinedTransactionItem } from "./CombinedTransactionItem";
 
 function getTransactionKey(item: PreparedCombinedTransaction) {
-  return item.kind === "debtTransaction" ? `debt-${item.data.id}` : item.data.id;
+  if (item.kind === "debtTransaction") {
+    return `debt-${item.data.id}`;
+  }
+
+  if (item.kind === "transferTransaction") {
+    return `transfer-${item.data.id}`;
+  }
+
+  return `payment-${item.data.id}`;
 }
 
 interface CombinedTransactionsViewProps {
@@ -20,7 +31,7 @@ interface CombinedTransactionsViewProps {
   showLoadMore?: boolean;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
-  onTransactionClick: (transaction: TransactionWithRelations) => void;
+  onTransactionClick: (transaction: ActionableCombinedTransaction) => void;
   onDebtTransactionClick: (debtTransaction: DebtTransactionWithRelations) => void;
 }
 

@@ -2,8 +2,12 @@ import { DebtTransactionType, DebtType } from "@/modules/debts/debt.constants";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { formatMoney } from "@/shared/utils/money";
 
-import { TransactionType } from "../transaction.constants";
-import type { CombinedTransaction, TransactionWithRelations } from "../transaction.types";
+import { PaymentTransactionType } from "../transaction.constants";
+import type {
+  CombinedTransaction,
+  PaymentTransactionWithRelations,
+  TransferTransactionWithRelations,
+} from "../transaction.types";
 
 export type AccountSegmentType = "account" | "accountFrom" | "accountTo";
 
@@ -15,28 +19,19 @@ export type DescriptionSegment = {
   segmentType?: SegmentType;
 };
 
-export type TransferContext = {
-  toAccountName: string;
-  toAmount: string;
-  toCurrency: string;
-};
-
 export function getTransactionDescriptionSegments(
   item: CombinedTransaction,
-  workspaceName: string,
-  transferContext?: TransferContext
+  workspaceName: string
 ): { segments: DescriptionSegment[] } {
   if (item.kind === "debtTransaction") {
     return getDebtDescriptionSegments(item.data, workspaceName);
   }
-  const transaction = item.data;
-  if (transaction.type === TransactionType.TRANSFER && transferContext) {
-    return getTransferDescriptionSegments(transaction, workspaceName, transferContext);
+
+  if (item.kind === "transferTransaction") {
+    return getTransferDescriptionSegments(item.data, workspaceName);
   }
-  if (transaction.type === TransactionType.TRANSFER) {
-    return { segments: [] };
-  }
-  return getIncomeExpenseDescriptionSegments(transaction, workspaceName);
+
+  return getIncomeExpenseDescriptionSegments(item.data, workspaceName);
 }
 
 function getActorName(
@@ -53,7 +48,7 @@ function getActorName(
 }
 
 function getIncomeExpenseDescriptionSegments(
-  transaction: TransactionWithRelations,
+  transaction: PaymentTransactionWithRelations,
   workspaceName: string
 ): { segments: DescriptionSegment[] } {
   const actor = getActorName(transaction.account, workspaceName);
@@ -61,7 +56,7 @@ function getIncomeExpenseDescriptionSegments(
   const category = transaction.category?.name ?? "Без категории";
   const accountName = transaction.account.name;
 
-  if (transaction.type === TransactionType.EXPENSE) {
+  if (transaction.type === PaymentTransactionType.EXPENSE) {
     return {
       segments: [
         { text: actor, highlight: true },
@@ -89,13 +84,11 @@ function getIncomeExpenseDescriptionSegments(
 }
 
 function getTransferDescriptionSegments(
-  transaction: TransactionWithRelations,
-  workspaceName: string,
-  ctx: TransferContext
+  transaction: TransferTransactionWithRelations,
+  workspaceName: string
 ): { segments: DescriptionSegment[] } {
-  const actor = getActorName(transaction.account, workspaceName);
-  const amountStr = formatMoney(transaction.amount, transaction.account.currency);
-  const fromAccountName = transaction.account.name;
+  const actor = getActorName(transaction.fromAccount, workspaceName);
+  const amountStr = formatMoney(transaction.amount, transaction.fromAccount.currency);
 
   return {
     segments: [
@@ -103,9 +96,9 @@ function getTransferDescriptionSegments(
       { text: " перевёл ", highlight: false },
       { text: amountStr, highlight: true },
       { text: " со счёта ", highlight: false },
-      { text: fromAccountName, highlight: true, segmentType: "accountFrom" },
+      { text: transaction.fromAccount.name, highlight: true, segmentType: "accountFrom" },
       { text: " на счёт ", highlight: false },
-      { text: ctx.toAccountName, highlight: true, segmentType: "accountTo" },
+      { text: transaction.toAccount.name, highlight: true, segmentType: "accountTo" },
     ],
   };
 }

@@ -9,11 +9,14 @@ import { toast } from "sonner";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { type CreateTransferInput, createTransferSchema } from "@/shared/lib/validations/transaction";
+import {
+  type CreateTransferTransactionInput,
+  createTransferTransactionSchema,
+} from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
-import { createTransfer } from "../../transaction.service";
+import { createTransferTransaction } from "../../transaction.service";
 import { TransferForm } from "../transfer-form/TransferForm";
 import { TransferFormSubmitButton } from "../transfer-form-submit-button/TransferFormSubmitButton";
 
@@ -31,8 +34,8 @@ export function CreateTransferDialog({
   defaultFromAccountId,
 }: CreateTransferDialogProps) {
   const queryClient = useQueryClient();
-  const form = useForm<CreateTransferInput>({
-    resolver: zodResolver(createTransferSchema),
+  const form = useForm<CreateTransferTransactionInput>({
+    resolver: zodResolver(createTransferTransactionSchema),
     defaultValues: {
       fromAccountId: "",
       toAccountId: "",
@@ -71,8 +74,8 @@ export function CreateTransferDialog({
     onOpenChange(newOpen);
   };
 
-  const onSubmit = async (data: CreateTransferInput) => {
-    const result = await createTransfer(workspaceId, data);
+  const onSubmit = async (data: CreateTransferTransactionInput) => {
+    const result = await createTransferTransaction(workspaceId, data);
     if (result.error) {
       toast.error(result.error);
     } else {

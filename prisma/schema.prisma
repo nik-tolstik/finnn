@@ -44,7 +44,8 @@ model Workspace {
   members          WorkspaceMember[]
   accounts         Account[]
   categories       Category[]
-  transactions     Transaction[]
+  paymentTransactions PaymentTransaction[]
+  transferTransactions TransferTransaction[]
   invites          WorkspaceInvite[]
   debts            Debt[]
   debtTransactions DebtTransaction[]
@@ -83,7 +84,9 @@ model Account {
 
   workspace        Workspace         @relation(fields: [workspaceId], references: [id])
   owner            User?             @relation(fields: [ownerId], references: [id])
-  transactions     Transaction[]
+  paymentTransactions PaymentTransaction[]
+  outgoingTransfers TransferTransaction[] @relation("TransferFromAccount")
+  incomingTransfers TransferTransaction[] @relation("TransferToAccount")
   debts            Debt[]
   debtTransactions DebtTransaction[]
 
@@ -101,13 +104,13 @@ model Category {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
-  transactions Transaction[]
+  workspace           Workspace            @relation(fields: [workspaceId], references: [id])
+  paymentTransactions PaymentTransaction[]
 
   @@map("categories")
 }
 
-model Transaction {
+model PaymentTransaction {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   workspaceId String   @db.ObjectId
   accountId   String   @db.ObjectId
@@ -123,25 +126,33 @@ model Transaction {
   account   Account   @relation(fields: [accountId], references: [id])
   category  Category? @relation(fields: [categoryId], references: [id])
 
-  transferFrom Transfer? @relation("TransferFrom")
-  transferTo   Transfer? @relation("TransferTo")
-
   @@index([workspaceId, date])
   @@index([workspaceId, accountId, date])
   @@index([accountId, date])
   @@map("transactions")
 }
 
-model Transfer {
-  id                String   @id @default(auto()) @map("_id") @db.ObjectId
-  fromTransactionId String   @unique @db.ObjectId
-  toTransactionId   String   @unique @db.ObjectId
+model TransferTransaction {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId   String   @db.ObjectId
+  fromAccountId String   @db.ObjectId
+  toAccountId   String   @db.ObjectId
   amount            String
   toAmount          String
+  description       String?
+  date              DateTime @default(now())
   createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  fromTransaction Transaction @relation("TransferFrom", fields: [fromTransactionId], references: [id])
-  toTransaction   Transaction @relation("TransferTo", fields: [toTransactionId], references: [id])
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  fromAccount  Account   @relation("TransferFromAccount", fields: [fromAccountId], references: [id])
+  toAccount    Account   @relation("TransferToAccount", fields: [toAccountId], references: [id])
+
+  @@index([workspaceId, date])
+  @@index([workspaceId, fromAccountId, date])
+  @@index([workspaceId, toAccountId, date])
+  @@index([fromAccountId, date])
+  @@index([toAccountId, date])
 
   @@map("transfers")
 }

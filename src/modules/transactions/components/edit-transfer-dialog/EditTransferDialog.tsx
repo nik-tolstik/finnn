@@ -9,7 +9,10 @@ import { toast } from "sonner";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { type UpdateTransferInput, updateTransferSchema } from "@/shared/lib/validations/transaction";
+import {
+  type UpdateTransferTransactionInput,
+  updateTransferTransactionSchema,
+} from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -21,13 +24,13 @@ import {
   DialogWindow,
 } from "@/shared/ui/dialog";
 
-import { updateTransfer } from "../../transaction.service";
-import type { TransactionWithRelations } from "../../transaction.types";
+import { updateTransferTransaction } from "../../transaction.service";
+import type { TransferTransactionWithRelations } from "../../transaction.types";
 import { TransferForm } from "../transfer-form/TransferForm";
 import { TransferFormSubmitButton } from "../transfer-form-submit-button/TransferFormSubmitButton";
 
 interface EditTransferDialogProps {
-  transaction: TransactionWithRelations;
+  transferTransaction: TransferTransactionWithRelations;
   workspaceId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -36,7 +39,7 @@ interface EditTransferDialogProps {
 }
 
 export function EditTransferDialog({
-  transaction,
+  transferTransaction,
   workspaceId,
   open,
   onOpenChange,
@@ -44,15 +47,15 @@ export function EditTransferDialog({
   onSuccess,
 }: EditTransferDialogProps) {
   const queryClient = useQueryClient();
-  const form = useForm<UpdateTransferInput>({
-    resolver: zodResolver(updateTransferSchema),
+  const form = useForm<UpdateTransferTransactionInput>({
+    resolver: zodResolver(updateTransferTransactionSchema),
     defaultValues: {
-      fromAccountId: transaction.account.id,
-      toAccountId: transaction.transferFrom?.toTransaction.account.id || "",
-      amount: transaction.amount,
-      toAmount: transaction.transferFrom?.toAmount || "",
-      description: transaction.description || "",
-      date: new Date(transaction.date),
+      fromAccountId: transferTransaction.fromAccount.id,
+      toAccountId: transferTransaction.toAccount.id,
+      amount: transferTransaction.amount,
+      toAmount: transferTransaction.toAmount,
+      description: transferTransaction.description || "",
+      date: new Date(transferTransaction.date),
     },
   });
 
@@ -68,20 +71,20 @@ export function EditTransferDialog({
   }, [accountsData?.data]);
 
   useEffect(() => {
-    if (open && transaction.transferFrom) {
+    if (open) {
       form.reset({
-        fromAccountId: transaction.account.id,
-        toAccountId: transaction.transferFrom.toTransaction.account.id,
-        amount: transaction.amount,
-        toAmount: transaction.transferFrom.toAmount,
-        description: transaction.description || "",
-        date: new Date(transaction.date),
+        fromAccountId: transferTransaction.fromAccount.id,
+        toAccountId: transferTransaction.toAccount.id,
+        amount: transferTransaction.amount,
+        toAmount: transferTransaction.toAmount,
+        description: transferTransaction.description || "",
+        date: new Date(transferTransaction.date),
       });
     }
-  }, [open, form, transaction]);
+  }, [open, form, transferTransaction]);
 
-  const onSubmit = async (data: UpdateTransferInput) => {
-    const result = await updateTransfer(transaction.id, data);
+  const onSubmit = async (data: UpdateTransferTransactionInput) => {
+    const result = await updateTransferTransaction(transferTransaction.id, data);
     if (result.error) {
       toast.error(result.error);
     } else {
@@ -104,7 +107,7 @@ export function EditTransferDialog({
             form={form}
             accounts={accounts}
             onSubmit={onSubmit}
-            originalAmount={transaction.amount}
+            originalAmount={transferTransaction.amount}
           />
         </DialogContent>
         <DialogFooter>

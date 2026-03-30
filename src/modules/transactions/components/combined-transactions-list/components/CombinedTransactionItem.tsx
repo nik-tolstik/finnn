@@ -2,8 +2,8 @@ import type { LucideIcon } from "lucide-react";
 
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 
-import type { TransactionWithRelations } from "../../../transaction.types";
-import type { PreparedCombinedTransaction } from "../types";
+import type { PaymentTransactionWithRelations, TransferTransactionWithRelations } from "../../../transaction.types";
+import type { ActionableCombinedTransaction, PreparedCombinedTransaction } from "../types";
 import { DebtTransactionItem } from "./DebtTransactionItem";
 import { RegularTransactionItem } from "./RegularTransactionItem";
 import { TransferTransactionItem } from "./TransferTransactionItem";
@@ -12,7 +12,7 @@ interface CombinedTransactionItemProps {
   item: PreparedCombinedTransaction;
   workspaceName: string;
   WorkspaceIcon: LucideIcon;
-  onTransactionClick: (transaction: TransactionWithRelations) => void;
+  onTransactionClick: (transaction: ActionableCombinedTransaction) => void;
   onDebtTransactionClick: (debtTransaction: DebtTransactionWithRelations) => void;
 }
 
@@ -29,14 +29,18 @@ export function CombinedTransactionItem({
     );
   }
 
-  if (item.kind === "transfer") {
+  if (item.kind === "transferTransaction") {
     return (
       <TransferTransactionItem
         transaction={item.data}
-        transferInfo={item.transferInfo}
         workspaceName={workspaceName}
         WorkspaceIcon={WorkspaceIcon}
-        onClick={onTransactionClick}
+        onClick={(transaction: TransferTransactionWithRelations) => {
+          onTransactionClick({
+            kind: "transferTransaction",
+            data: transaction,
+          });
+        }}
       />
     );
   }
@@ -46,7 +50,12 @@ export function CombinedTransactionItem({
       transaction={item.data}
       workspaceName={workspaceName}
       WorkspaceIcon={WorkspaceIcon}
-      onClick={onTransactionClick}
+      onClick={(transaction: PaymentTransactionWithRelations) => {
+        onTransactionClick({
+          kind: "paymentTransaction",
+          data: transaction,
+        });
+      }}
     />
   );
 }

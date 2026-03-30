@@ -2,9 +2,13 @@ import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import {
   type DashboardTransactionType,
   DEBT_TRANSACTION_FILTER_VALUE,
-  TransactionType,
+  TRANSFER_TRANSACTION_FILTER_VALUE,
 } from "@/modules/transactions/transaction.constants";
-import type { CombinedTransaction, TransactionWithRelations } from "@/modules/transactions/transaction.types";
+import type {
+  CombinedTransaction,
+  PaymentTransactionWithRelations,
+  TransferTransactionWithRelations,
+} from "@/modules/transactions/transaction.types";
 import type { TransactionListFilters } from "@/modules/transactions/transaction-filter.types";
 import { compareMoney } from "@/shared/utils/money";
 
@@ -69,7 +73,7 @@ function matchesMultiSelect(selectedValues: string[] | undefined, candidateValue
 function matchesTransactionTypes(
   transactionTypes: DashboardTransactionType[] | undefined,
   kind: CombinedTransaction["kind"],
-  transactionType?: string
+  paymentType?: string
 ) {
   if (!transactionTypes?.length) {
     return true;
@@ -79,68 +83,89 @@ function matchesTransactionTypes(
     return transactionTypes.includes(DEBT_TRANSACTION_FILTER_VALUE);
   }
 
-  return Boolean(transactionType) && transactionTypes.includes(transactionType as DashboardTransactionType);
+  if (kind === "transferTransaction") {
+    return transactionTypes.includes(TRANSFER_TRANSACTION_FILTER_VALUE);
+  }
+
+  return Boolean(paymentType) && transactionTypes.includes(paymentType as DashboardTransactionType);
 }
 
-function matchesTransactionDescription(transaction: TransactionWithRelations, searchTerm?: string) {
+function matchesPaymentTransactionDescription(transaction: PaymentTransactionWithRelations, searchTerm?: string) {
   if (!searchTerm) {
     return true;
   }
 
-  return [
-    transaction.description,
-    transaction.transferFrom?.toTransaction?.description,
-    transaction.transferTo?.fromTransaction?.description,
-  ].some((value) => includesCaseInsensitive(value, searchTerm));
+  return includesCaseInsensitive(transaction.description, searchTerm);
 }
 
-function matchesRegularTransactionFilters(transaction: TransactionWithRelations, filters?: TransactionListFilters) {
-  if (!matchesTransactionTypes(filters?.transactionTypes, "transaction", transaction.type)) {
+function matchesTransferTransactionDescription(transaction: TransferTransactionWithRelations, searchTerm?: string) {
+  if (!searchTerm) {
+    return true;
+  }
+
+  return includesCaseInsensitive(transaction.description, searchTerm);
+}
+
+function matchesPaymentTransactionFilters(
+  transaction: PaymentTransactionWithRelations,
+  filters?: TransactionListFilters
+) {
+  if (!matchesTransactionTypes(filters?.transactionTypes, "paymentTransaction", transaction.type)) {
     return false;
   }
 
-  // Transfers are displayed as one row, but they should match filters applied
-  // to either the source or the destination side of the transfer pair.
-  if (
-    !matchesMultiSelect(filters?.userIds, [
-      transaction.account.ownerId,
-      transaction.transferFrom?.toTransaction?.account.ownerId,
-      transaction.transferTo?.fromTransaction?.account.ownerId,
-    ])
-  ) {
+  if (!matchesMultiSelect(filters?.userIds, [transaction.account.ownerId])) {
     return false;
   }
 
-  if (
-    !matchesMultiSelect(filters?.accountIds, [
-      transaction.account.id,
-      transaction.transferFrom?.toTransaction?.account.id,
-      transaction.transferTo?.fromTransaction?.account.id,
-    ])
-  ) {
+  if (!matchesMultiSelect(filters?.accountIds, [transaction.account.id])) {
+    return false;
+  }
+
+  if (filters?.categoryIds?.length && !matchesMultiSelect(filters.categoryIds, [transaction.category?.id])) {
+    return false;
+  }
+
+  if (!matchesPaymentTransactionDescription(transaction, filters?.description)) {
+    return false;
+  }
+
+  if (!matchesAmountRange([transaction.amount], filters)) {
+    return false;
+  }
+
+  if (!matchesDateRange(transaction.date, filters)) {
+    return false;
+  }
+
+  return true;
+}
+
+function matchesTransferTransactionFilters(
+  transaction: TransferTransactionWithRelations,
+  filters?: TransactionListFilters
+) {
+  if (!matchesTransactionTypes(filters?.transactionTypes, "transferTransaction")) {
+    return false;
+  }
+
+  if (!matchesMultiSelect(filters?.userIds, [transaction.fromAccount.ownerId, transaction.toAccount.ownerId])) {
+    return false;
+  }
+
+  if (!matchesMultiSelect(filters?.accountIds, [transaction.fromAccount.id, transaction.toAccount.id])) {
     return false;
   }
 
   if (filters?.categoryIds?.length) {
-    if (transaction.type === TransactionType.TRANSFER) {
-      return false;
-    }
-
-    if (!matchesMultiSelect(filters.categoryIds, [transaction.category?.id])) {
-      return false;
-    }
-  }
-
-  if (!matchesTransactionDescription(transaction, filters?.description)) {
     return false;
   }
 
-  if (
-    !matchesAmountRange(
-      [transaction.amount, transaction.transferFrom?.toAmount, transaction.transferTo?.amount],
-      filters
-    )
-  ) {
+  if (!matchesTransferTransactionDescription(transaction, filters?.description)) {
+    return false;
+  }
+
+  if (!matchesAmountRange([transaction.amount, transaction.toAmount], filters)) {
     return false;
   }
 
@@ -188,6 +213,10 @@ export function filterCombinedTransactions(transactions: CombinedTransaction[], 
       return matchesDebtTransactionFilters(transaction.data, filters);
     }
 
-    return matchesRegularTransactionFilters(transaction.data, filters);
+    if (transaction.kind === "transferTransaction") {
+      return matchesTransferTransactionFilters(transaction.data, filters);
+    }
+
+    return matchesPaymentTransactionFilters(transaction.data, filters);
   });
 }

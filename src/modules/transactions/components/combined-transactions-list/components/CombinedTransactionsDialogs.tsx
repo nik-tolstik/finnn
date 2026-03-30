@@ -39,7 +39,7 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
     <>
       {actionsDialog.mounted ? (
         <TransactionActionsDialog
-          transaction={actionsDialog.data.transaction}
+          transactionKind={actionsDialog.data.transaction.kind}
           open={actionsDialog.open}
           onOpenChange={actionsDialog.closeDialog}
           onCloseComplete={actionsDialog.unmountDialog}
@@ -82,7 +82,7 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
 
       {editTransferDialog.mounted ? (
         <EditTransferDialog
-          transaction={editTransferDialog.data.transaction}
+          transferTransaction={editTransferDialog.data.transferTransaction}
           workspaceId={editTransferDialog.data.workspaceId}
           open={editTransferDialog.open}
           onOpenChange={editTransferDialog.closeDialog}

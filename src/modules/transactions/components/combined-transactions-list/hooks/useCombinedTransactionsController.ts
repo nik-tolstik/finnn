@@ -7,16 +7,17 @@ import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 
-import { TransactionType } from "../../../transaction.constants";
-import { deleteTransaction } from "../../../transaction.service";
-import type { TransactionWithRelations } from "../../../transaction.types";
+import type { PaymentTransactionType } from "../../../transaction.constants";
+import { deletePaymentTransaction, deleteTransferTransaction } from "../../../transaction.service";
 import type {
+  ActionableCombinedTransaction,
   CreateTransactionDialogData,
   DebtTransactionActionsDialogData,
   DeleteDebtDialogData,
   EditDebtDialogData,
   EditDebtTransactionDialogData,
   EditTransactionDialogData,
+  EditTransferDialogData,
   TransactionActionsDialogData,
 } from "../types";
 import { getDebtFromTransaction } from "../utils/getDebtFromTransaction";
@@ -31,7 +32,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
   const queryClient = useQueryClient();
 
   const editTransactionDialog = useDialogState<EditTransactionDialogData>();
-  const editTransferDialog = useDialogState<EditTransactionDialogData>();
+  const editTransferDialog = useDialogState<EditTransferDialogData>();
   const editDebtDialog = useDialogState<EditDebtDialogData>();
   const editDebtTransactionDialog = useDialogState<EditDebtTransactionDialogData>();
   const deleteDebtDialog = useDialogState<DeleteDebtDialogData>();
@@ -39,7 +40,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
   const debtActionsDialog = useDialogState<DebtTransactionActionsDialogData>();
   const createTransactionDialog = useDialogState<CreateTransactionDialogData>();
 
-  const openTransactionActions = (transaction: TransactionWithRelations) => {
+  const openTransactionActions = (transaction: ActionableCombinedTransaction) => {
     actionsDialog.openDialog({ transaction });
   };
 
@@ -47,26 +48,29 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
     debtActionsDialog.openDialog({ debtTransaction });
   };
 
-  const handleTransactionRepeat = (transaction: TransactionWithRelations) => {
-    if (transaction.type === TransactionType.TRANSFER) {
+  const handleTransactionRepeat = (transaction: ActionableCombinedTransaction) => {
+    if (transaction.kind !== "paymentTransaction") {
       return;
     }
 
     createTransactionDialog.openDialog({
       workspaceId,
-      account: transaction.account,
-      defaultType: transaction.type as TransactionType.INCOME | TransactionType.EXPENSE,
-      initialAmount: transaction.amount,
-      initialDescription: transaction.description || undefined,
+      account: transaction.data.account,
+      defaultType: transaction.data.type as PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE,
+      initialAmount: transaction.data.amount,
+      initialDescription: transaction.data.description || undefined,
       initialDate: new Date(),
-      initialCategoryId: transaction.category?.id || undefined,
+      initialCategoryId: transaction.data.category?.id || undefined,
     });
     actionsDialog.closeDialog();
   };
 
-  const handleTransactionDelete = async (transaction: TransactionWithRelations) => {
+  const handleTransactionDelete = async (transaction: ActionableCombinedTransaction) => {
     try {
-      const result = await deleteTransaction(transaction.id);
+      const result =
+        transaction.kind === "transferTransaction"
+          ? await deleteTransferTransaction(transaction.data.id)
+          : await deletePaymentTransaction(transaction.data.id);
 
       if (result.error) {
         toast.error(result.error);
@@ -80,10 +84,10 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
     }
   };
 
-  const handleTransactionEdit = (transaction: TransactionWithRelations) => {
-    if (transaction.type === TransactionType.TRANSFER) {
+  const handleTransactionEdit = (transaction: ActionableCombinedTransaction) => {
+    if (transaction.kind === "transferTransaction") {
       editTransferDialog.openDialog({
-        transaction,
+        transferTransaction: transaction.data,
         workspaceId,
       });
       actionsDialog.closeDialog();
@@ -91,7 +95,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
     }
 
     editTransactionDialog.openDialog({
-      transaction,
+      transaction: transaction.data,
       workspaceId,
     });
     actionsDialog.closeDialog();

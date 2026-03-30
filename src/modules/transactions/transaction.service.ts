@@ -6,43 +6,65 @@ import { prisma } from "@/shared/lib/prisma";
 import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
 import {
-  type CreateTransactionInput,
-  type CreateTransferInput,
-  createTransactionSchema,
-  createTransferSchema,
-  type UpdateTransactionInput,
-  type UpdateTransferInput,
-  updateTransactionSchema,
-  updateTransferSchema,
+  type CreatePaymentTransactionInput,
+  type CreateTransferTransactionInput,
+  createPaymentTransactionSchema,
+  createTransferTransactionSchema,
+  type UpdatePaymentTransactionInput,
+  type UpdateTransferTransactionInput,
+  updatePaymentTransactionSchema,
+  updateTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
 import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
 import type { DebtTransactionWithRelations } from "../debts/debt.types";
-import { TransactionType } from "./transaction.constants";
+import { PaymentTransactionType } from "./transaction.constants";
 import type { CombinedTransaction } from "./transaction.types";
 import type { TransactionListFilters } from "./transaction-filter.types";
 import { filterCombinedTransactions } from "./utils/combined-transaction-filtering";
 
 type PrismaTx = Prisma.TransactionClient;
 
-function applyTransactionBalance(balance: string, type: string, amount: string) {
-  if (type === TransactionType.INCOME) {
+const accountWithOwnerSelect = {
+  id: true,
+  name: true,
+  currency: true,
+  color: true,
+  icon: true,
+  ownerId: true,
+  owner: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+  },
+} satisfies Prisma.AccountSelect;
+
+const categorySelect = {
+  id: true,
+  name: true,
+} satisfies Prisma.CategorySelect;
+
+function applyPaymentTransactionBalance(balance: string, type: string, amount: string) {
+  if (type === PaymentTransactionType.INCOME) {
     return addMoney(balance, amount);
   }
 
-  if (type === TransactionType.EXPENSE) {
+  if (type === PaymentTransactionType.EXPENSE) {
     return subtractMoney(balance, amount);
   }
 
   return balance;
 }
 
-function revertTransactionBalance(balance: string, type: string, amount: string) {
-  if (type === TransactionType.INCOME) {
+function revertPaymentTransactionBalance(balance: string, type: string, amount: string) {
+  if (type === PaymentTransactionType.INCOME) {
     return subtractMoney(balance, amount);
   }
 
-  if (type === TransactionType.EXPENSE) {
+  if (type === PaymentTransactionType.EXPENSE) {
     return addMoney(balance, amount);
   }
 
@@ -69,11 +91,11 @@ async function getWorkspaceAccountOrThrow(
   return account;
 }
 
-export async function createTransaction(workspaceId: string, input: CreateTransactionInput) {
+export async function createPaymentTransaction(workspaceId: string, input: CreatePaymentTransactionInput) {
   try {
     await requireWorkspaceAccess(workspaceId);
 
-    const validated = createTransactionSchema.parse(input);
+    const validated = createPaymentTransactionSchema.parse(input);
 
     const transaction = await prisma.$transaction(async (tx) => {
       const account = await getWorkspaceAccountOrThrow(tx, workspaceId, validated.accountId);
@@ -89,7 +111,7 @@ export async function createTransaction(workspaceId: string, input: CreateTransa
         );
       }
 
-      if (validated.type === TransactionType.EXPENSE && compareMoney(validated.amount, account.balance) > 0) {
+      if (validated.type === PaymentTransactionType.EXPENSE && compareMoney(validated.amount, account.balance) > 0) {
         throw new Error(`Сумма не может превышать баланс счёта (${account.balance})`);
       }
 
@@ -108,7 +130,7 @@ export async function createTransaction(workspaceId: string, input: CreateTransa
         }
       }
 
-      const createdTransaction = await tx.transaction.create({
+      const createdTransaction = await tx.paymentTransaction.create({
         data: {
           workspaceId,
           accountId: validated.accountId,
@@ -122,7 +144,7 @@ export async function createTransaction(workspaceId: string, input: CreateTransa
 
       await tx.account.update({
         where: { id: validated.accountId },
-        data: { balance: applyTransactionBalance(account.balance, validated.type, validated.amount) },
+        data: { balance: applyPaymentTransactionBalance(account.balance, validated.type, validated.amount) },
       });
 
       return createdTransaction;
@@ -135,13 +157,13 @@ export async function createTransaction(workspaceId: string, input: CreateTransa
   }
 }
 
-export async function createTransfer(workspaceId: string, input: CreateTransferInput) {
+export async function createTransferTransaction(workspaceId: string, input: CreateTransferTransactionInput) {
   try {
     await requireWorkspaceAccess(workspaceId);
 
-    const validated = createTransferSchema.parse(input);
+    const validated = createTransferTransactionSchema.parse(input);
 
-    const transferData = await prisma.$transaction(async (tx) => {
+    const transfer = await prisma.$transaction(async (tx) => {
       const fromAccount = await getWorkspaceAccountOrThrow(tx, workspaceId, validated.fromAccountId);
       const toAccount = await getWorkspaceAccountOrThrow(tx, workspaceId, validated.toAccountId);
 
@@ -153,34 +175,15 @@ export async function createTransfer(workspaceId: string, input: CreateTransferI
         throw new Error(`Сумма отправления не может превышать баланс счёта (${fromAccount.balance})`);
       }
 
-      const fromTransaction = await tx.transaction.create({
+      const createdTransfer = await tx.transferTransaction.create({
         data: {
           workspaceId,
-          accountId: validated.fromAccountId,
-          amount: validated.amount,
-          type: TransactionType.TRANSFER,
-          description: validated.description || `Перевод на ${toAccount.name}`,
-          date: validated.date,
-        },
-      });
-
-      const toTransaction = await tx.transaction.create({
-        data: {
-          workspaceId,
-          accountId: validated.toAccountId,
-          amount: validated.toAmount,
-          type: TransactionType.TRANSFER,
-          description: validated.description || `Перевод с ${fromAccount.name}`,
-          date: validated.date,
-        },
-      });
-
-      await tx.transfer.create({
-        data: {
-          fromTransactionId: fromTransaction.id,
-          toTransactionId: toTransaction.id,
+          fromAccountId: validated.fromAccountId,
+          toAccountId: validated.toAccountId,
           amount: validated.amount,
           toAmount: validated.toAmount,
+          description: validated.description,
+          date: validated.date,
         },
       });
 
@@ -194,24 +197,24 @@ export async function createTransfer(workspaceId: string, input: CreateTransferI
         data: { balance: addMoney(toAccount.balance, validated.toAmount) },
       });
 
-      return { fromTransaction, toTransaction };
+      return createdTransfer;
     });
 
     revalidateAccountingRoutes();
-    return { data: transferData };
+    return { data: transfer };
   } catch (error: any) {
     return { error: error.message || "Не удалось создать перевод" };
   }
 }
 
-export async function updateTransaction(id: string, input: UpdateTransactionInput) {
+export async function updatePaymentTransaction(id: string, input: UpdatePaymentTransactionInput) {
   try {
     const userId = await requireUserId();
 
-    const validated = updateTransactionSchema.parse(input);
+    const validated = updatePaymentTransactionSchema.parse(input);
 
     const updated = await prisma.$transaction(async (tx) => {
-      const transaction = await tx.transaction.findFirst({
+      const transaction = await tx.paymentTransaction.findFirst({
         where: {
           id,
           workspace: {
@@ -246,7 +249,11 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
           throw new Error("Старый счёт не найден");
         }
 
-        const revertedOldBalance = revertTransactionBalance(oldAccount.balance.toString(), transaction.type, oldAmount);
+        const revertedOldBalance = revertPaymentTransactionBalance(
+          oldAccount.balance.toString(),
+          transaction.type,
+          oldAmount
+        );
 
         if (accountChanged) {
           const newAccount = await getWorkspaceAccountOrThrow(
@@ -256,7 +263,7 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
             "Новый счёт не найден"
           );
 
-          if (transaction.type === TransactionType.EXPENSE && compareMoney(newAmount, newAccount.balance) > 0) {
+          if (transaction.type === PaymentTransactionType.EXPENSE && compareMoney(newAmount, newAccount.balance) > 0) {
             throw new Error(`Сумма не может превышать баланс счёта (${newAccount.balance})`);
           }
 
@@ -267,21 +274,23 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
 
           await tx.account.update({
             where: { id: newAccountId },
-            data: { balance: applyTransactionBalance(newAccount.balance.toString(), transaction.type, newAmount) },
+            data: {
+              balance: applyPaymentTransactionBalance(newAccount.balance.toString(), transaction.type, newAmount),
+            },
           });
         } else {
-          if (transaction.type === TransactionType.EXPENSE && compareMoney(newAmount, revertedOldBalance) > 0) {
+          if (transaction.type === PaymentTransactionType.EXPENSE && compareMoney(newAmount, revertedOldBalance) > 0) {
             throw new Error(`Сумма не может превышать баланс счёта (${revertedOldBalance})`);
           }
 
           await tx.account.update({
             where: { id: oldAccountId },
-            data: { balance: applyTransactionBalance(revertedOldBalance, transaction.type, newAmount) },
+            data: { balance: applyPaymentTransactionBalance(revertedOldBalance, transaction.type, newAmount) },
           });
         }
       }
 
-      return tx.transaction.update({
+      return tx.paymentTransaction.update({
         where: { id },
         data: validated,
       });
@@ -294,15 +303,15 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
   }
 }
 
-export async function updateTransfer(fromTransactionId: string, input: UpdateTransferInput) {
+export async function updateTransferTransaction(id: string, input: UpdateTransferTransactionInput) {
   try {
     const userId = await requireUserId();
 
-    const validated = updateTransferSchema.parse(input);
+    const validated = updateTransferTransactionSchema.parse(input);
     await prisma.$transaction(async (tx) => {
-      const fromTransaction = await tx.transaction.findFirst({
+      const transfer = await tx.transferTransaction.findFirst({
         where: {
-          id: fromTransactionId,
+          id,
           workspace: {
             members: {
               some: {
@@ -312,42 +321,33 @@ export async function updateTransfer(fromTransactionId: string, input: UpdateTra
           },
         },
         include: {
-          account: true,
-          transferFrom: {
-            include: {
-              toTransaction: {
-                include: {
-                  account: true,
-                },
-              },
-            },
-          },
+          fromAccount: true,
+          toAccount: true,
         },
       });
 
-      if (!fromTransaction?.transferFrom) {
+      if (!transfer) {
         throw new Error("Перевод не найден или доступ запрещён");
       }
 
-      const toTransaction = fromTransaction.transferFrom.toTransaction;
-      const oldFromAccount = fromTransaction.account;
-      const oldToAccount = toTransaction.account;
-      const oldAmount = fromTransaction.amount;
-      const oldToAmount = toTransaction.amount;
+      const oldFromAccount = transfer.fromAccount;
+      const oldToAccount = transfer.toAccount;
+      const oldAmount = transfer.amount;
+      const oldToAmount = transfer.toAmount;
 
-      const newFromAccountId = validated.fromAccountId || fromTransaction.accountId;
-      const newToAccountId = validated.toAccountId || toTransaction.accountId;
-      const newAmount = validated.amount || fromTransaction.amount;
-      const newToAmount = validated.toAmount || toTransaction.amount;
-      const newDescription = validated.description ?? fromTransaction.description;
-      const newDate = validated.date || fromTransaction.date;
+      const newFromAccountId = validated.fromAccountId || transfer.fromAccountId;
+      const newToAccountId = validated.toAccountId || transfer.toAccountId;
+      const newAmount = validated.amount || transfer.amount;
+      const newToAmount = validated.toAmount || transfer.toAmount;
+      const newDescription = validated.description ?? transfer.description;
+      const newDate = validated.date || transfer.date;
 
       if (newFromAccountId === newToAccountId) {
         throw new Error("Нельзя перевести на тот же счёт");
       }
 
-      await getWorkspaceAccountOrThrow(tx, fromTransaction.workspaceId, newFromAccountId, "Счёт отправителя не найден");
-      await getWorkspaceAccountOrThrow(tx, fromTransaction.workspaceId, newToAccountId, "Счёт не найден");
+      await getWorkspaceAccountOrThrow(tx, transfer.workspaceId, newFromAccountId, "Счёт отправителя не найден");
+      await getWorkspaceAccountOrThrow(tx, transfer.workspaceId, newToAccountId, "Счёт не найден");
 
       const oldFromAccountCurrent = await tx.account.findUnique({
         where: { id: oldFromAccount.id },
@@ -389,31 +389,15 @@ export async function updateTransfer(fromTransactionId: string, input: UpdateTra
         throw new Error(`Сумма отправления не может превышать баланс счёта (${newFromAccountCurrent.balance})`);
       }
 
-      await tx.transaction.update({
-        where: { id: fromTransactionId },
+      await tx.transferTransaction.update({
+        where: { id },
         data: {
-          accountId: newFromAccountId,
-          amount: newAmount,
-          description: newDescription,
-          date: newDate,
-        },
-      });
-
-      await tx.transaction.update({
-        where: { id: toTransaction.id },
-        data: {
-          accountId: newToAccountId,
-          amount: newToAmount,
-          description: newDescription,
-          date: newDate,
-        },
-      });
-
-      await tx.transfer.update({
-        where: { fromTransactionId },
-        data: {
+          fromAccountId: newFromAccountId,
+          toAccountId: newToAccountId,
           amount: newAmount,
           toAmount: newToAmount,
+          description: newDescription,
+          date: newDate,
         },
       });
 
@@ -435,104 +419,12 @@ export async function updateTransfer(fromTransactionId: string, input: UpdateTra
   }
 }
 
-async function deleteTransferInTransaction(tx: PrismaTx, userId: string, transactionId: string) {
-  const transaction = await tx.transaction.findFirst({
-    where: {
-      id: transactionId,
-      workspace: {
-        members: {
-          some: {
-            userId,
-          },
-        },
-      },
-    },
-    include: {
-      account: true,
-      transferFrom: {
-        include: {
-          toTransaction: {
-            include: {
-              account: true,
-            },
-          },
-        },
-      },
-      transferTo: {
-        include: {
-          fromTransaction: {
-            include: {
-              account: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!transaction) {
-    throw new Error("Транзакция не найдена или доступ запрещён");
-  }
-
-  let fromTransaction: typeof transaction & { account: typeof transaction.account };
-  let toTransaction: typeof transaction & { account: typeof transaction.account };
-
-  if (transaction.transferFrom) {
-    fromTransaction = transaction;
-    toTransaction = transaction.transferFrom.toTransaction as typeof transaction & {
-      account: typeof transaction.account;
-    };
-  } else if (transaction.transferTo) {
-    fromTransaction = transaction.transferTo.fromTransaction as typeof transaction & {
-      account: typeof transaction.account;
-    };
-    toTransaction = transaction;
-  } else {
-    throw new Error("Перевод не найден");
-  }
-
-  await tx.account.update({
-    where: { id: fromTransaction.account.id },
-    data: { balance: addMoney(fromTransaction.account.balance, fromTransaction.amount) },
-  });
-
-  await tx.account.update({
-    where: { id: toTransaction.account.id },
-    data: { balance: subtractMoney(toTransaction.account.balance, toTransaction.amount) },
-  });
-
-  await tx.transfer.delete({
-    where: { fromTransactionId: fromTransaction.id },
-  });
-
-  await tx.transaction.delete({
-    where: { id: fromTransaction.id },
-  });
-
-  await tx.transaction.delete({
-    where: { id: toTransaction.id },
-  });
-}
-
-export async function deleteTransfer(transactionId: string) {
-  try {
-    const userId = await requireUserId();
-
-    await prisma.$transaction((tx) => deleteTransferInTransaction(tx, userId, transactionId));
-
-    revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось удалить перевод" };
-  }
-}
-
-export async function deleteTransaction(id: string) {
+export async function deleteTransferTransaction(id: string) {
   try {
     const userId = await requireUserId();
 
     await prisma.$transaction(async (tx) => {
-      const transaction = await tx.transaction.findFirst({
+      const transfer = await tx.transferTransaction.findFirst({
         where: {
           id,
           workspace: {
@@ -543,24 +435,69 @@ export async function deleteTransaction(id: string) {
             },
           },
         },
-        include: { account: true, transferFrom: true, transferTo: true },
+        include: {
+          fromAccount: true,
+          toAccount: true,
+        },
+      });
+
+      if (!transfer) {
+        throw new Error("Перевод не найден или доступ запрещён");
+      }
+
+      await tx.account.update({
+        where: { id: transfer.fromAccount.id },
+        data: { balance: addMoney(transfer.fromAccount.balance, transfer.amount) },
+      });
+
+      await tx.account.update({
+        where: { id: transfer.toAccount.id },
+        data: { balance: subtractMoney(transfer.toAccount.balance, transfer.toAmount) },
+      });
+
+      await tx.transferTransaction.delete({
+        where: { id },
+      });
+    });
+
+    revalidateAccountingRoutes();
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Не удалось удалить перевод" };
+  }
+}
+
+export async function deletePaymentTransaction(id: string) {
+  try {
+    const userId = await requireUserId();
+
+    await prisma.$transaction(async (tx) => {
+      const transaction = await tx.paymentTransaction.findFirst({
+        where: {
+          id,
+          workspace: {
+            members: {
+              some: {
+                userId,
+              },
+            },
+          },
+        },
+        include: { account: true },
       });
 
       if (!transaction) {
         throw new Error("Транзакция не найдена или доступ запрещён");
       }
 
-      if (transaction.transferFrom || transaction.transferTo) {
-        await deleteTransferInTransaction(tx, userId, id);
-        return;
-      }
-
       await tx.account.update({
         where: { id: transaction.account.id },
-        data: { balance: revertTransactionBalance(transaction.account.balance, transaction.type, transaction.amount) },
+        data: {
+          balance: revertPaymentTransactionBalance(transaction.account.balance, transaction.type, transaction.amount),
+        },
       });
 
-      await tx.transaction.delete({
+      await tx.paymentTransaction.delete({
         where: { id },
       });
     });
@@ -581,8 +518,9 @@ export async function getCombinedTransactions(
   try {
     await requireWorkspaceAccess(workspaceId);
 
-    const transactionWhere: any = { workspaceId };
-    const debtTransactionWhere: any = {
+    const paymentTransactionWhere: Prisma.PaymentTransactionWhereInput = { workspaceId };
+    const transferTransactionWhere: Prisma.TransferTransactionWhereInput = { workspaceId };
+    const debtTransactionWhere: Prisma.DebtTransactionWhereInput = {
       workspaceId,
       debt: {
         is: {
@@ -591,140 +529,64 @@ export async function getCombinedTransactions(
       },
     };
 
-    const transactions = await prisma.transaction.findMany({
-      where: transactionWhere,
-      include: {
-        account: {
-          select: {
-            id: true,
-            name: true,
-            currency: true,
-            color: true,
-            icon: true,
-            ownerId: true,
-            owner: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-              },
-            },
-          },
-        },
-        category: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        transferFrom: {
-          include: {
-            toTransaction: {
-              select: {
-                id: true,
-                description: true,
-                account: {
-                  select: {
-                    id: true,
-                    name: true,
-                    currency: true,
-                    color: true,
-                    icon: true,
-                    ownerId: true,
-                    owner: {
-                      select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        image: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        transferTo: {
-          include: {
-            fromTransaction: {
-              select: {
-                id: true,
-                description: true,
-                account: {
-                  select: {
-                    id: true,
-                    name: true,
-                    currency: true,
-                    color: true,
-                    icon: true,
-                    ownerId: true,
-                    owner: {
-                      select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        image: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      orderBy: { date: "desc" },
-    });
-
-    let debtTransactions: DebtTransactionWithRelations[] = [];
-    if (filters?.includeDebtTransactions !== false) {
-      debtTransactions = await prisma.debtTransaction.findMany({
-        where: debtTransactionWhere,
+    const [paymentTransactions, transferTransactions, debtTransactions] = await Promise.all([
+      prisma.paymentTransaction.findMany({
+        where: paymentTransactionWhere,
         include: {
-          debt: {
-            select: {
-              id: true,
-              workspaceId: true,
-              type: true,
-              personName: true,
-              amount: true,
-              remainingAmount: true,
-              currency: true,
-              accountId: true,
-              date: true,
-              status: true,
-              createdAt: true,
-              updatedAt: true,
-            },
-          },
           account: {
-            select: {
-              id: true,
-              name: true,
-              currency: true,
-              color: true,
-              icon: true,
-              ownerId: true,
-              owner: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  image: true,
-                },
-              },
-            },
+            select: accountWithOwnerSelect,
+          },
+          category: {
+            select: categorySelect,
           },
         },
         orderBy: { date: "desc" },
-      });
-    }
+      }),
+      prisma.transferTransaction.findMany({
+        where: transferTransactionWhere,
+        include: {
+          fromAccount: {
+            select: accountWithOwnerSelect,
+          },
+          toAccount: {
+            select: accountWithOwnerSelect,
+          },
+        },
+        orderBy: { date: "desc" },
+      }),
+      filters?.includeDebtTransactions === false
+        ? Promise.resolve([] as DebtTransactionWithRelations[])
+        : prisma.debtTransaction.findMany({
+            where: debtTransactionWhere,
+            include: {
+              debt: {
+                select: {
+                  id: true,
+                  workspaceId: true,
+                  type: true,
+                  personName: true,
+                  amount: true,
+                  remainingAmount: true,
+                  currency: true,
+                  accountId: true,
+                  date: true,
+                  status: true,
+                  createdAt: true,
+                  updatedAt: true,
+                },
+              },
+              account: {
+                select: accountWithOwnerSelect,
+              },
+            },
+            orderBy: { date: "desc" },
+          }),
+    ]);
 
     const combined: CombinedTransaction[] = [
-      ...transactions.map((t) => ({ kind: "transaction" as const, data: t })),
-      ...debtTransactions.map((dt) => ({ kind: "debtTransaction" as const, data: dt })),
+      ...paymentTransactions.map((transaction) => ({ kind: "paymentTransaction" as const, data: transaction })),
+      ...transferTransactions.map((transaction) => ({ kind: "transferTransaction" as const, data: transaction })),
+      ...debtTransactions.map((transaction) => ({ kind: "debtTransaction" as const, data: transaction })),
     ];
 
     const filteredCombined = filterCombinedTransactions(combined, filters);

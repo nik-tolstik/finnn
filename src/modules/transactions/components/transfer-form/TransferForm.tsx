@@ -7,7 +7,10 @@ import { Controller, type UseFormReturn, useWatch } from "react-hook-form";
 
 import { useTransferAmountSync } from "@/modules/transactions/hooks/useTransferAmountSync";
 import { AccountSelector } from "@/shared/components/AccountSelector";
-import type { CreateTransferInput, UpdateTransferInput } from "@/shared/lib/validations/transaction";
+import type {
+  CreateTransferTransactionInput,
+  UpdateTransferTransactionInput,
+} from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Label } from "@/shared/ui/label";
@@ -16,7 +19,7 @@ import { Textarea } from "@/shared/ui/textarea";
 import { cn } from "@/shared/utils/cn";
 import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
-type TransferFormData = CreateTransferInput | UpdateTransferInput;
+type TransferFormData = CreateTransferTransactionInput | UpdateTransferTransactionInput;
 
 interface TransferFormProps {
   workspaceId: string;

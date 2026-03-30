@@ -1,3 +1,4 @@
+import "../src/shared/lib/load-env";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import Big from "big.js";
@@ -144,24 +145,19 @@ async function main() {
     },
   });
 
-  const existingTransactions = await prisma.transaction.findMany({
+  const existingTransactions = await prisma.paymentTransaction.findMany({
     where: { workspaceId: workspace.id },
     select: { id: true },
   });
   const existingTransactionIds = existingTransactions.map((item) => item.id);
 
   if (existingTransactionIds.length > 0) {
-    await prisma.transfer.deleteMany({
-      where: {
-        OR: [
-          { fromTransactionId: { in: existingTransactionIds } },
-          { toTransactionId: { in: existingTransactionIds } },
-        ],
-      },
+    await prisma.transferTransaction.deleteMany({
+      where: { workspaceId: workspace.id },
     });
   }
 
-  await prisma.transaction.deleteMany({
+  await prisma.paymentTransaction.deleteMany({
     where: { workspaceId: workspace.id },
   });
 
@@ -256,7 +252,7 @@ async function main() {
     const date = shiftDays(baseDate, i + 1);
     date.setHours(8 + (i % 10), (i * 13) % 60, 0, 0);
 
-    await prisma.transaction.create({
+    await prisma.paymentTransaction.create({
       data: {
         workspaceId: workspace.id,
         accountId: account.id,
@@ -286,7 +282,7 @@ async function main() {
       const topUpDate = shiftDays(baseDate, createdTransactions + 1);
       topUpDate.setHours(9 + (createdTransactions % 8), (createdTransactions * 7) % 60, 0, 0);
 
-      await prisma.transaction.create({
+      await prisma.paymentTransaction.create({
         data: {
           workspaceId: workspace.id,
           accountId: account.id,
@@ -322,7 +318,7 @@ async function main() {
     const date = shiftDays(baseDate, createdTransactions + 1);
     date.setHours(10 + (createdTransactions % 10), (createdTransactions * 11) % 60, 0, 0);
 
-    await prisma.transaction.create({
+    await prisma.paymentTransaction.create({
       data: {
         workspaceId: workspace.id,
         accountId: account.id,

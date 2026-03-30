@@ -2,10 +2,10 @@ import type { LucideIcon } from "lucide-react";
 
 import { UserDisplay } from "@/shared/components/UserDisplay";
 
-import type { TransactionWithRelations } from "../../../transaction.types";
+import type { TransactionAccountWithOwner } from "../../../transaction.types";
 
 interface TransactionActorAvatarProps {
-  account: TransactionWithRelations["account"];
+  account: TransactionAccountWithOwner;
   WorkspaceIcon: LucideIcon;
 }
 

@@ -1,7 +1,12 @@
 import type { DebtTransactionWithRelations, DebtWithRelations } from "@/modules/debts/debt.types";
 
-import type { TransactionType } from "../../transaction.constants";
-import type { CombinedTransaction, TransactionWithRelations } from "../../transaction.types";
+import type { PaymentTransactionType } from "../../transaction.constants";
+import type {
+  CombinedTransaction,
+  PaymentTransactionWithRelations,
+  TransactionAccountWithOwner,
+  TransferTransactionWithRelations,
+} from "../../transaction.types";
 
 export interface CombinedTransactionsListProps {
   transactions: CombinedTransaction[];
@@ -11,15 +16,12 @@ export interface CombinedTransactionsListProps {
   isLoadingMore?: boolean;
 }
 
-export type TransferDisplayInfo = {
-  account: TransactionWithRelations["account"];
-  amount: string;
-};
+export type ActionableCombinedTransaction = Extract<
+  CombinedTransaction,
+  { kind: "paymentTransaction" } | { kind: "transferTransaction" }
+>;
 
-export type PreparedCombinedTransaction =
-  | { kind: "debtTransaction"; data: DebtTransactionWithRelations }
-  | { kind: "transaction"; data: TransactionWithRelations }
-  | { kind: "transfer"; data: TransactionWithRelations; transferInfo: TransferDisplayInfo };
+export type PreparedCombinedTransaction = CombinedTransaction;
 
 export interface PreparedCombinedTransactionGroup {
   date: Date;
@@ -27,7 +29,12 @@ export interface PreparedCombinedTransactionGroup {
 }
 
 export interface EditTransactionDialogData {
-  transaction: TransactionWithRelations;
+  transaction: PaymentTransactionWithRelations;
+  workspaceId: string;
+}
+
+export interface EditTransferDialogData {
+  transferTransaction: TransferTransactionWithRelations;
   workspaceId: string;
 }
 
@@ -46,7 +53,7 @@ export interface DeleteDebtDialogData {
 }
 
 export interface TransactionActionsDialogData {
-  transaction: TransactionWithRelations;
+  transaction: ActionableCombinedTransaction;
 }
 
 export interface DebtTransactionActionsDialogData {
@@ -55,8 +62,8 @@ export interface DebtTransactionActionsDialogData {
 
 export interface CreateTransactionDialogData {
   workspaceId: string;
-  account: TransactionWithRelations["account"];
-  defaultType: TransactionType.INCOME | TransactionType.EXPENSE;
+  account: TransactionAccountWithOwner;
+  defaultType: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
   initialAmount: string;
   initialDescription: string | undefined;
   initialDate: Date;
