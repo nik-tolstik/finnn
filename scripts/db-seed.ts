@@ -3,6 +3,8 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import Big from "big.js";
 
+import { ensureDatabaseUrl } from "../src/shared/lib/database-url";
+
 const ADMIN_EMAIL = "admin@finnn.com";
 const ADMIN_PASSWORD = "123456";
 const WORKSPACE_SLUG = "first-workspace";
@@ -14,30 +16,7 @@ const TRANSACTION_TYPE = {
   EXPENSE: "expense",
 } as const;
 
-function getDatabaseUrl(): string {
-  const explicitUrl = process.env.DATABASE_URL?.trim();
-  if (explicitUrl) return explicitUrl;
-
-  const mongoUri = process.env.MONGODB_URI?.trim() || "";
-  if (!mongoUri) return "";
-
-  try {
-    const parsed = new URL(mongoUri);
-    if (parsed.pathname && parsed.pathname !== "/") {
-      return mongoUri;
-    }
-
-    parsed.pathname = "/finnn";
-    return parsed.toString();
-  } catch {
-    return mongoUri;
-  }
-}
-
-const databaseUrl = getDatabaseUrl();
-if (databaseUrl && !process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = databaseUrl;
-}
+const databaseUrl = ensureDatabaseUrl();
 
 const prisma = new PrismaClient(
   databaseUrl

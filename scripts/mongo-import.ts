@@ -5,12 +5,14 @@ import path from "node:path";
 import readline from "node:readline";
 import {
   BSON,
-  MongoClient,
   type Collection,
   type CreateIndexesOptions,
   type Document,
   type IndexDescriptionInfo,
+  MongoClient,
 } from "mongodb";
+
+import { getDatabaseUrl } from "../src/shared/lib/database-url";
 
 const { EJSON } = BSON;
 const BATCH_SIZE = 1000;
@@ -28,28 +30,11 @@ type BackupManifest = {
   collections: ExportedCollection[];
 };
 
-function getDatabaseUrl(): string {
-  const explicitUrl = process.env.DATABASE_URL?.trim();
-  if (explicitUrl) return explicitUrl;
-
-  const mongoUri = process.env.MONGODB_URI?.trim() || "";
-  if (!mongoUri) return "";
-
-  try {
-    const parsed = new URL(mongoUri);
-    if (parsed.pathname && parsed.pathname !== "/") {
-      return mongoUri;
-    }
-
-    parsed.pathname = "/finnn";
-    return parsed.toString();
-  } catch {
-    return mongoUri;
-  }
-}
-
 function getBackupDir(): string {
-  const cliArg = process.argv.slice(2).find((arg) => !arg.startsWith("--"))?.trim();
+  const cliArg = process.argv
+    .slice(2)
+    .find((arg) => !arg.startsWith("--"))
+    ?.trim();
 
   if (!cliArg) {
     throw new Error("Backup directory path is required.");
@@ -170,11 +155,7 @@ function toRestorableIndex(index: IndexDescriptionInfo): RestorableIndex | null 
   };
 }
 
-async function insertBatch(
-  collection: Collection<Document>,
-  batch: Document[],
-  sourcePath: string
-): Promise<number> {
+async function insertBatch(collection: Collection<Document>, batch: Document[], sourcePath: string): Promise<number> {
   if (batch.length === 0) return 0;
 
   try {
@@ -186,10 +167,7 @@ async function insertBatch(
   }
 }
 
-async function importDocuments(
-  collection: Collection<Document>,
-  documentsPath: string
-): Promise<number> {
+async function importDocuments(collection: Collection<Document>, documentsPath: string): Promise<number> {
   const stream = createReadStream(documentsPath, { encoding: "utf8" });
   const reader = readline.createInterface({ input: stream, crlfDelay: Infinity });
 
@@ -212,10 +190,7 @@ async function importDocuments(
   return importedCount;
 }
 
-async function recreateIndexes(
-  collection: Collection<Document>,
-  indexesPath: string
-): Promise<void> {
+async function recreateIndexes(collection: Collection<Document>, indexesPath: string): Promise<void> {
   const raw = await readFile(indexesPath, "utf8");
   const parsedIndexes = EJSON.parse(raw, { relaxed: false }) as IndexDescriptionInfo[];
 
@@ -242,7 +217,7 @@ async function main() {
 
   const databaseUrl = getDatabaseUrl();
   if (!databaseUrl) {
-    throw new Error("DATABASE_URL or MONGODB_URI must be provided.");
+    throw new Error("DATABASE_URL must be provided.");
   }
 
   const dropCollections = shouldDropCollections();
@@ -261,9 +236,7 @@ async function main() {
         .filter((name): name is string => Boolean(name))
     );
 
-    process.stdout.write(
-      `Restoring backup from ${manifest.database} into ${targetDatabaseName}\n`
-    );
+    process.stdout.write(`Restoring backup from ${manifest.database} into ${targetDatabaseName}\n`);
 
     for (const exportedCollection of manifest.collections) {
       if (dropCollections && existingCollections.has(exportedCollection.name)) {
@@ -283,9 +256,7 @@ async function main() {
       const importedCount = await importDocuments(collection, documentsPath);
       await recreateIndexes(collection, indexesPath);
 
-      process.stdout.write(
-        `Imported ${exportedCollection.name}: ${importedCount} documents\n`
-      );
+      process.stdout.write(`Imported ${exportedCollection.name}: ${importedCount} documents\n`);
     }
 
     process.stdout.write("Restore finished\n");

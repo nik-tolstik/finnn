@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/shared/lib/auth";
 import { sendVerificationEmail } from "@/shared/lib/email";
 import { prisma } from "@/shared/lib/prisma";
+import { serverLogger } from "@/shared/lib/logger";
 import { revalidateWorkspaceRoutes } from "@/shared/lib/revalidate-app-routes";
 
 import { type RegisterInput, registerSchema, type UpdateUserInput, updateUserSchema } from "./auth.validations";
@@ -61,7 +62,7 @@ export async function registerAction(input: RegisterInput) {
     );
 
     if (emailResult.error) {
-      console.error("Ошибка отправки email при регистрации:", emailResult.error);
+      serverLogger.error("Error sending email during registration:", emailResult.error);
       await prisma.pendingRegistration.delete({
         where: { id: pendingRegistration.id },
       });

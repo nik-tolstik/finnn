@@ -4,6 +4,7 @@ import { Currency } from "@prisma/client";
 
 import { getNBRBExchangeRates, getNBRBExchangeRatesByDate } from "@/modules/currency/currency.service";
 import { prisma } from "@/shared/lib/prisma";
+import { serverLogger } from "@/shared/lib/logger";
 
 const SUPPORTED_CURRENCIES: Currency[] = [Currency.USD, Currency.EUR, Currency.BYN];
 
@@ -53,7 +54,7 @@ export async function saveDailyExchangeRates() {
 
     const rate = baseRates[currency];
     if (!rate) {
-      console.warn(`Курс для ${currency} не найден`);
+      serverLogger.warn(`Rate for ${currency} not found`);
       continue;
     }
 
@@ -126,13 +127,15 @@ export async function getExchangeRate(
 
       if (fromRate && toRate) {
         const crossRate = fromRate.rate / toRate.rate;
-        console.warn(`[ExchangeRate] Курс ${fromCurrency}/${toCurrency} вычислен из базовых курсов: ${crossRate}`);
+        serverLogger.warn(
+          `[ExchangeRate] Rate ${fromCurrency}/${toCurrency} calculated from base rates: ${crossRate}`
+        );
         return { data: crossRate };
       }
     }
 
-    console.warn(
-      `[ExchangeRate] Курс ${fromCurrency}/${toCurrency} на ${targetDate.toISOString()} не найден в БД, запрашиваем из API`
+    serverLogger.warn(
+      `[ExchangeRate] Rate ${fromCurrency}/${toCurrency} on ${targetDate.toISOString()} not found in DB, requesting from API`
     );
 
     const ratesResult = await getNBRBExchangeRatesByDate(targetDate);
@@ -175,8 +178,8 @@ export async function getExchangeRate(
         },
       });
 
-      console.warn(
-        `[ExchangeRate] Курс ${currency}/${baseCurrency} на ${targetDate.toISOString()} сохранен в БД: ${baseRates[currency]}`
+      serverLogger.warn(
+        `[ExchangeRate] Rate ${currency}/${baseCurrency} on ${targetDate.toISOString()} saved to DB: ${baseRates[currency]}`
       );
     }
 
@@ -210,7 +213,7 @@ export async function getTodayExchangeRates(): Promise<{ data: Record<string, nu
 
     const result = await getExchangeRate(today, currency, baseCurrency);
     if ("error" in result) {
-      console.warn(`[ExchangeRate] Ошибка получения курса ${currency}:`, result.error);
+      serverLogger.warn(`[ExchangeRate] Failed to get exchange rate for ${currency}:`, result.error);
       continue;
     }
     rates[currency] = result.data;
@@ -238,7 +241,10 @@ export async function getYesterdayExchangeRates(): Promise<{ data: Record<string
 
     const result = await getExchangeRate(yesterday, currency, baseCurrency);
     if ("error" in result) {
-      console.warn(`[ExchangeRate] Ошибка получения вчерашнего курса ${currency}:`, result.error);
+      serverLogger.warn(
+        `[ExchangeRate] Failed to get yesterday exchange rate for ${currency}:`,
+        result.error
+      );
       continue;
     }
     rates[currency] = result.data;

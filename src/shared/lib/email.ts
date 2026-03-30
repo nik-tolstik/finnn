@@ -1,6 +1,7 @@
 "use server";
 
 import nodemailer from "nodemailer";
+import { serverLogger } from "@/shared/lib/logger";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -28,7 +29,7 @@ function getBaseUrl(): string {
 export async function sendInviteEmail(email: string, token: string, workspaceName: string) {
   try {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-      console.error("SMTP настройки не установлены. Проверьте SMTP_USER и SMTP_PASSWORD в .env");
+      serverLogger.error("SMTP settings are not configured. Please check SMTP_USER and SMTP_PASSWORD in .env");
       return { error: "Email сервис не настроен. Обратитесь к администратору." };
     }
 
@@ -56,10 +57,10 @@ export async function sendInviteEmail(email: string, token: string, workspaceNam
       `,
     });
 
-    console.warn("Email успешно отправлен на:", email);
+    serverLogger.info("Email sent successfully to:", email);
     return { success: true };
   } catch (error: any) {
-    console.error("Ошибка отправки email:", error);
+    serverLogger.error("Failed to send email:", error);
     return { error: error.message || "Не удалось отправить email" };
   }
 }
@@ -67,7 +68,7 @@ export async function sendInviteEmail(email: string, token: string, workspaceNam
 export async function sendVerificationEmail(email: string, token: string, name?: string | null) {
   try {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-      console.error("SMTP настройки не установлены. Проверьте SMTP_USER и SMTP_PASSWORD в .env");
+      serverLogger.error("SMTP settings are not configured. Please check SMTP_USER and SMTP_PASSWORD in .env");
       return { error: "Email сервис не настроен. Обратитесь к администратору." };
     }
 
@@ -99,10 +100,10 @@ export async function sendVerificationEmail(email: string, token: string, name?:
       `,
     });
 
-    console.warn("Email успешно отправлен на:", email);
+    serverLogger.info("Email sent successfully to:", email);
     return { success: true };
   } catch (error: any) {
-    console.error("Ошибка отправки email:", error);
+    serverLogger.error("Failed to send email:", error);
     return { error: error.message || "Не удалось отправить email" };
   }
 }

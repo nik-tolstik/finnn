@@ -3,7 +3,9 @@ import { once } from "node:events";
 import { createWriteStream } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { BSON, MongoClient, type Document } from "mongodb";
+import { BSON, type Document, MongoClient } from "mongodb";
+
+import { getDatabaseUrl } from "../src/shared/lib/database-url";
 
 const { EJSON } = BSON;
 
@@ -20,26 +22,6 @@ type BackupManifest = {
   collections: ExportedCollection[];
 };
 
-function getDatabaseUrl(): string {
-  const explicitUrl = process.env.DATABASE_URL?.trim();
-  if (explicitUrl) return explicitUrl;
-
-  const mongoUri = process.env.MONGODB_URI?.trim() || "";
-  if (!mongoUri) return "";
-
-  try {
-    const parsed = new URL(mongoUri);
-    if (parsed.pathname && parsed.pathname !== "/") {
-      return mongoUri;
-    }
-
-    parsed.pathname = "/finnn";
-    return parsed.toString();
-  } catch {
-    return mongoUri;
-  }
-}
-
 function getOutputDir(): string {
   const cliArg = process.argv[2]?.trim();
   if (cliArg) return path.resolve(cliArg);
@@ -48,10 +30,7 @@ function getOutputDir(): string {
   return path.resolve(process.cwd(), "backups", `mongo-${stamp}`);
 }
 
-async function writeJsonLine(
-  stream: ReturnType<typeof createWriteStream>,
-  document: Document
-): Promise<void> {
+async function writeJsonLine(stream: ReturnType<typeof createWriteStream>, document: Document): Promise<void> {
   const payload = `${EJSON.stringify(document, { relaxed: false })}\n`;
 
   if (!stream.write(payload)) {
@@ -89,11 +68,7 @@ async function exportCollection(
   }
 
   const indexes = await collection.listIndexes().toArray();
-  await writeFile(
-    indexesPath,
-    EJSON.stringify(indexes, { relaxed: false }, 2),
-    "utf8"
-  );
+  await writeFile(indexesPath, EJSON.stringify(indexes, { relaxed: false }, 2), "utf8");
 
   return {
     name: collectionName,
@@ -106,7 +81,7 @@ async function exportCollection(
 async function main() {
   const databaseUrl = getDatabaseUrl();
   if (!databaseUrl) {
-    throw new Error("DATABASE_URL or MONGODB_URI must be provided.");
+    throw new Error("DATABASE_URL must be provided.");
   }
 
   const outputDir = getOutputDir();
@@ -135,23 +110,12 @@ async function main() {
     };
 
     for (const collectionName of collectionNames) {
-      const exported = await exportCollection(
-        client,
-        databaseName,
-        outputDir,
-        collectionName
-      );
+      const exported = await exportCollection(client, databaseName, outputDir, collectionName);
       manifest.collections.push(exported);
-      process.stdout.write(
-        `Exported ${collectionName}: ${exported.count} documents\n`
-      );
+      process.stdout.write(`Exported ${collectionName}: ${exported.count} documents\n`);
     }
 
-    await writeFile(
-      path.join(outputDir, "manifest.json"),
-      JSON.stringify(manifest, null, 2),
-      "utf8"
-    );
+    await writeFile(path.join(outputDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
 
     process.stdout.write(`Backup saved to ${outputDir}\n`);
   } finally {
