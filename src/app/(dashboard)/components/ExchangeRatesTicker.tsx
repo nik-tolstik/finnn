@@ -91,9 +91,7 @@ export function ExchangeRatesTicker() {
 
   return (
     <div className="h-8 bg-muted/50 border-b">
-      <div className="flex items-center h-full px-4 sm:px-8 gap-6 text-xs">
-        {content}
-      </div>
+      <div className="flex items-center h-full px-4 sm:px-8 gap-6 text-xs">{content}</div>
     </div>
   );
 }

@@ -43,17 +43,19 @@ export async function requireWorkspaceAccess(
   const effectiveRole: WorkspaceRole | null =
     workspace.ownerId === userId
       ? WORKSPACE_ROLES.OWNER
-      : ((await prisma.workspaceMember.findUnique({
-          where: {
-            workspaceId_userId: {
-              workspaceId,
-              userId,
+      : (((
+          await prisma.workspaceMember.findUnique({
+            where: {
+              workspaceId_userId: {
+                workspaceId,
+                userId,
+              },
             },
-          },
-          select: {
-            role: true,
-          },
-        }))?.role as WorkspaceRole | undefined) ?? null;
+            select: {
+              role: true,
+            },
+          })
+        )?.role as WorkspaceRole | undefined) ?? null);
 
   if (!effectiveRole) {
     throw new Error("Доступ запрещён");

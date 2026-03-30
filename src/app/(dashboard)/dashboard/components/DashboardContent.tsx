@@ -244,7 +244,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
           <div className="flex flex-col lg:flex-row lg:items-start gap-4">
             <div className="flex-1 min-w-0 order-2 lg:order-1">
               {isInitialLoading ? (
-                <TransactionsListSkeleton />
+                <TransactionsListSkeleton count={30} />
               ) : displayedTransactions && displayedTransactions.length > 0 ? (
                 <CombinedTransactionsList
                   transactions={displayedTransactions}

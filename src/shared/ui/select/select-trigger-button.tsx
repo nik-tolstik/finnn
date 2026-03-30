@@ -17,13 +17,7 @@ export const SelectTriggerButton = React.forwardRef<HTMLButtonElement, SelectTri
   ({ value, placeholder = "Выберите...", onClear, showClearButton = false, children, className, ...props }, ref) => {
     return (
       <div className="relative">
-        <Button
-          ref={ref}
-          type="button"
-          variant="outline"
-          className={cn("w-full justify-start", className)}
-          {...props}
-        >
+        <Button ref={ref} type="button" variant="outline" className={cn("w-full justify-start", className)} {...props}>
           {value ? (
             <span className="truncate flex items-center gap-2 flex-1 min-w-0 text-left">{children}</span>
           ) : (

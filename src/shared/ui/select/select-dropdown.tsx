@@ -11,7 +11,18 @@ import { cn } from "@/shared/utils/cn";
 import type { SelectDropdownProps } from "./types";
 
 export function SelectDropdown<TValue extends string | number = string>(props: SelectDropdownProps<TValue>) {
-  const { options, value, onChange, placeholder, multiple, allowClear, valueLabel, disabled, renderOption, popoverClassName } = props;
+  const {
+    options,
+    value,
+    onChange,
+    placeholder,
+    multiple,
+    allowClear,
+    valueLabel,
+    disabled,
+    renderOption,
+    popoverClassName,
+  } = props;
   const [open, setOpen] = useState(false);
 
   const selectedValues: TValue[] = React.useMemo(() => {
@@ -114,10 +125,21 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
           showClearButton={allowClear && hasSelection}
           className={cn("w-full justify-start", !hasSelection && "text-muted-foreground")}
         >
-          <span className={cn("truncate flex items-center gap-2 flex-1 min-w-0 text-left", renderOption && "flex-1 min-w-0")}>{displayLabel}</span>
+          <span
+            className={cn(
+              "truncate flex items-center gap-2 flex-1 min-w-0 text-left",
+              renderOption && "flex-1 min-w-0"
+            )}
+          >
+            {displayLabel}
+          </span>
         </SelectTriggerButton>
       </PopoverTrigger>
-      <PopoverContent className={cn("p-1", popoverClassName)} align="start" style={popoverClassName ? undefined : { width: "var(--radix-popover-trigger-width)" }}>
+      <PopoverContent
+        className={cn("p-1", popoverClassName)}
+        align="start"
+        style={popoverClassName ? undefined : { width: "var(--radix-popover-trigger-width)" }}
+      >
         <div className="max-h-96 overflow-y-auto flex flex-col gap-1">
           {options.map((option, index) => {
             const selected = multiple ? selectedValues.includes(option.value) : currentValue === option.value;

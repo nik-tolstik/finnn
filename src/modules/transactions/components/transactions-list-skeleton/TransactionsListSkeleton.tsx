@@ -1,5 +1,4 @@
-import { TransactionCardSkeleton } from "../transaction-card-skeleton/TransactionCardSkeleton";
-import { TransferCardSkeleton } from "../transfer-card-skeleton/TransferCardSkeleton";
+import { TransactionDescriptionLineSkeleton } from "../transaction-description-line-skeleton/TransactionDescriptionLineSkeleton";
 
 interface TransactionsListSkeletonProps {
   count?: number;
@@ -10,12 +9,12 @@ export function TransactionsListSkeleton({ count = 10 }: TransactionsListSkeleto
     <div className="space-y-3">
       {Array.from({ length: count }).map((_, index) => (
         <div key={index} className="space-y-3">
-          {index === 0 || index % 4 === 0 ? (
-            <div className="sticky top-16 z-10 bg-background py-2">
-              <div className="h-3 w-28 rounded-full bg-muted/70 animate-pulse" />
+          {index === 0 || index % 5 === 0 ? (
+            <div className="py-2">
+              <div className="h-5 w-20 rounded-full bg-secondary animate-pulse" />
             </div>
           ) : null}
-          {index % 3 === 0 ? <TransferCardSkeleton /> : <TransactionCardSkeleton />}
+          {index % 2 === 0 && <TransactionDescriptionLineSkeleton />}
         </div>
       ))}
     </div>

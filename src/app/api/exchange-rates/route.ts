@@ -26,7 +26,7 @@ export async function GET() {
         next: { revalidate: 3600 },
         signal: controller.signal,
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
         },
       });
 
@@ -91,9 +91,6 @@ export async function GET() {
       stack: error.stack,
       cause: error.cause,
     });
-    return NextResponse.json(
-      { error: error.message || "Не удалось получить курсы валют" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || "Не удалось получить курсы валют" }, { status: 500 });
   }
 }

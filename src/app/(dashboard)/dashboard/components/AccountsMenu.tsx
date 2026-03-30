@@ -47,7 +47,7 @@ export function AccountsMenu({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-54 p-1" align="end">
-      <div className="space-y-1">
+        <div className="space-y-1">
           <button
             type="button"
             onClick={() => {
