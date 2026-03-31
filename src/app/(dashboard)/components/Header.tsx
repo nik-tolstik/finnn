@@ -36,6 +36,11 @@ const UserMenu = dynamic(() => import("./UserMenu").then((mod) => mod.UserMenu),
   loading: () => <div aria-hidden="true" className="h-8 w-8 rounded-full bg-muted" />,
 });
 
+const AssistantSheet = dynamic(() => import("@/modules/assistant/components/AssistantSheet").then((mod) => mod.AssistantSheet), {
+  ssr: false,
+  loading: () => <div aria-hidden="true" className="h-8 w-28 rounded-md bg-muted" />,
+});
+
 export function Header() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -90,8 +95,11 @@ export function Header() {
 
           <WorkspaceDropdown currentWorkspaceId={workspaceId} className="md:hidden ml-auto" />
         </div>
-        <div className="items-center gap-4 hidden md:flex">
-          <UserMenu />
+        <div className="flex items-center gap-2 md:gap-4">
+          <AssistantSheet key={workspaceId ?? "no-workspace"} workspaceId={workspaceId} />
+          <div className="hidden md:flex items-center gap-4">
+            <UserMenu />
+          </div>
         </div>
       </div>
     </header>

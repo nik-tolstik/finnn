@@ -16,36 +16,43 @@ cp .env.example .env
 openssl rand -base64 32
 ```
 
-3. Update the `.env` file with your MongoDB connection string and NextAuth secret:
+3. Update the `.env` file with your MongoDB connection string, NextAuth secret, and Gemini API key:
 
 ```env
 DATABASE_URL="mongodb://localhost:27017/finnn"
-NEXTAUTH_URL="http://localhost:9999"
+NEXTAUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 NEXTAUTH_SECRET="paste-generated-secret-here"
+GOOGLE_GENERATIVE_AI_API_KEY="paste-google-api-key-here"
+AI_ASSISTANT_MODEL="gemini-2.5-flash-lite"
 ```
 
 4. Generate Prisma client and push the schema:
 
 ```bash
-npm run db:generate
-npm run db:push
+pnpm db:generate
+pnpm db:push
 ```
 
 Then, run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:9999](http://localhost:9999) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+## AI Assistant
+
+The dashboard includes a read-only AI assistant powered by Gemini.
+
+- Default model: `gemini-2.5-flash-lite`
+- Required environment variable: `GOOGLE_GENERATIVE_AI_API_KEY`
+- Optional override: `AI_ASSISTANT_MODEL`
+
+The assistant works only with the currently selected workspace and uses read-only server-side tools for accounts, transactions, and debts.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
