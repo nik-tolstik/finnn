@@ -38,6 +38,7 @@ export async function buildWorkspaceOverview(workspaceId: string) {
   }
 
   const resolveRate = createExchangeRateResolver();
+  const currentDate = new Date();
 
   const [accounts, openDebts] = await Promise.all([
     prisma.account.findMany({
@@ -81,6 +82,19 @@ export async function buildWorkspaceOverview(workspaceId: string) {
     }),
   ]);
 
+  await resolveRate.preload([
+    ...accounts.map((account) => ({
+      date: currentDate,
+      fromCurrency: account.currency,
+      toCurrency: workspace.baseCurrency,
+    })),
+    ...openDebts.map((debt) => ({
+      date: debt.date,
+      fromCurrency: debt.currency,
+      toCurrency: workspace.baseCurrency,
+    })),
+  ]);
+
   let totalBalanceInBaseCurrency = "0";
 
   for (const account of accounts) {
@@ -88,7 +102,7 @@ export async function buildWorkspaceOverview(workspaceId: string) {
       account.balance,
       account.currency,
       workspace.baseCurrency,
-      new Date(),
+      currentDate,
       resolveRate
     );
 

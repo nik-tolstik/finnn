@@ -2,7 +2,11 @@ import type { Currency } from "@prisma/client";
 import Big from "big.js";
 import { endOfDay, format, startOfDay, subDays } from "date-fns";
 
-import { getExchangeRate } from "@/modules/currency/exchange-rate.service";
+import {
+  type ExchangeRateRequest,
+  getExchangeRate,
+  preloadExchangeRates,
+} from "@/modules/currency/exchange-rate.service";
 import { multiplyMoney } from "@/shared/utils/money";
 
 import type { DateRangeInput } from "./assistant-tool.schemas";
@@ -77,15 +81,31 @@ export function percentageChange(currentValue: string, previousValue: string) {
   return Number(current.minus(previous).div(previous).times(100).toFixed(2));
 }
 
-export function createExchangeRateResolver() {
-  const cache = new Map<string, number>();
+function getExchangeRateResolverKey(date: Date, fromCurrency: string, toCurrency: string) {
+  const normalizedDate = new Date(date);
+  normalizedDate.setUTCHours(0, 0, 0, 0);
 
-  return async (date: Date, fromCurrency: string, toCurrency: string) => {
+  return `${normalizedDate.toISOString().split("T")[0]}:${fromCurrency}:${toCurrency}`;
+}
+
+type ExchangeRateResolverPreloadRequest = {
+  date: Date;
+  fromCurrency: string;
+  toCurrency: string;
+};
+
+export type ExchangeRateResolver = ((date: Date, fromCurrency: string, toCurrency: string) => Promise<number>) & {
+  preload: (requests: ExchangeRateResolverPreloadRequest[]) => Promise<void>;
+};
+
+export function createExchangeRateResolver(): ExchangeRateResolver {
+  const cache = new Map<string, number>();
+  const resolve = (async (date: Date, fromCurrency: string, toCurrency: string) => {
     if (fromCurrency === toCurrency) {
       return 1;
     }
 
-    const key = `${format(date, "yyyy-MM-dd")}:${fromCurrency}:${toCurrency}`;
+    const key = getExchangeRateResolverKey(date, fromCurrency, toCurrency);
     const cachedValue = cache.get(key);
 
     if (cachedValue !== undefined) {
@@ -100,10 +120,37 @@ export function createExchangeRateResolver() {
 
     cache.set(key, result.data);
     return result.data;
-  };
-}
+  }) as ExchangeRateResolver;
 
-export type ExchangeRateResolver = ReturnType<typeof createExchangeRateResolver>;
+  resolve.preload = async (requests: ExchangeRateResolverPreloadRequest[]) => {
+    const filteredRequests = requests.filter((request) => request.fromCurrency !== request.toCurrency);
+
+    if (filteredRequests.length === 0) {
+      return;
+    }
+
+    const preloadedRates = await preloadExchangeRates(
+      filteredRequests.map(
+        (request): ExchangeRateRequest => ({
+          date: request.date,
+          fromCurrency: request.fromCurrency as Currency,
+          toCurrency: request.toCurrency as Currency,
+        })
+      )
+    );
+
+    for (const request of filteredRequests) {
+      const key = getExchangeRateResolverKey(request.date, request.fromCurrency, request.toCurrency);
+      const rate = preloadedRates.get(key);
+
+      if (rate !== undefined) {
+        cache.set(key, rate);
+      }
+    }
+  };
+
+  return resolve;
+}
 
 export async function convertToBaseCurrency(
   amount: string,

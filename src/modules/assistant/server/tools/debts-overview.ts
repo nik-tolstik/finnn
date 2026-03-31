@@ -28,6 +28,14 @@ export async function buildDebtsOverview(workspaceId: string, baseCurrency: stri
     take: 100,
   });
 
+  await resolveRate.preload(
+    debts.map((debt) => ({
+      date: debt.date,
+      fromCurrency: debt.currency,
+      toCurrency: baseCurrency,
+    }))
+  );
+
   let totalRemainingInBaseCurrency = "0";
   let lentRemainingInBaseCurrency = "0";
   let borrowedRemainingInBaseCurrency = "0";

@@ -134,6 +134,14 @@ export async function buildCashFlowAnalysis(
     }),
   ]);
 
+  await resolveRate.preload(
+    [...transactions, ...previousTransactions].map((transaction) => ({
+      date: transaction.date,
+      fromCurrency: transaction.account.currency,
+      toCurrency: baseCurrency,
+    }))
+  );
+
   let totalConverted = "0";
   let previousTotalConverted = "0";
   let largestConverted = "0";
