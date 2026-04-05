@@ -2,12 +2,11 @@
 
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/shared/lib/auth";
+import { getCachedServerSession } from "@/shared/lib/auth-session";
 import { sendVerificationEmail } from "@/shared/lib/email";
-import { prisma } from "@/shared/lib/prisma";
 import { serverLogger } from "@/shared/lib/logger";
+import { prisma } from "@/shared/lib/prisma";
 import { revalidateWorkspaceRoutes } from "@/shared/lib/revalidate-app-routes";
 
 import { type RegisterInput, registerSchema, type UpdateUserInput, updateUserSchema } from "./auth.validations";
@@ -128,7 +127,7 @@ export async function verifyEmail(token: string) {
 
 export async function updateUser(input: UpdateUserInput) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getCachedServerSession();
     if (!session?.user?.id) {
       return { error: "Не авторизован" };
     }

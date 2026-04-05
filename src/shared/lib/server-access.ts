@@ -1,8 +1,6 @@
-import { getServerSession } from "next-auth";
-
 import { WORKSPACE_ROLES, type WorkspaceRole } from "@/modules/workspace/workspace.constants";
 
-import { authOptions } from "./auth";
+import { getCachedServerSession } from "./auth-session";
 import { prisma } from "./prisma";
 
 interface WorkspaceAccessOptions {
@@ -16,7 +14,7 @@ const WORKSPACE_ROLE_RANK: Record<WorkspaceRole, number> = {
 };
 
 export async function requireUserId(): Promise<string> {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedServerSession();
 
   if (!session?.user?.id) {
     throw new Error("Не авторизован");

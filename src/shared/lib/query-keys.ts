@@ -1,4 +1,4 @@
-import type { TransactionListFilters } from "@/modules/transactions/transaction-filter.types";
+import type { TransactionFilters, TransactionListFilters } from "@/modules/transactions/transaction-filter.types";
 
 export interface DebtListFilters {
   status?: string;
@@ -30,6 +30,12 @@ export const categoryKeys = {
 export const transactionKeys = {
   all: (workspaceId: string) => ["transactions", workspaceId] as const,
   list: (workspaceId: string, filters: TransactionListFilters) => ["transactions", workspaceId, filters] as const,
+};
+
+export const analyticsKeys = {
+  all: (workspaceId: string) => ["analytics", workspaceId] as const,
+  overview: (workspaceId: string, filters: TransactionFilters) =>
+    ["analytics", workspaceId, "overview", filters] as const,
 };
 
 export const debtKeys = {

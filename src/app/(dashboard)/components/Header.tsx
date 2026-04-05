@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ChevronDown, Grip, HandCoins, Wallet } from "lucide-react";
+import { BarChart3, Building2, ChevronDown, Grip, HandCoins, Wallet } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,11 +36,6 @@ const UserMenu = dynamic(() => import("./UserMenu").then((mod) => mod.UserMenu),
   loading: () => <div aria-hidden="true" className="h-8 w-8 rounded-full bg-muted" />,
 });
 
-const AssistantSheet = dynamic(() => import("@/modules/assistant/components/AssistantSheet").then((mod) => mod.AssistantSheet), {
-  ssr: false,
-  loading: () => <div aria-hidden="true" className="h-8 w-28 rounded-md bg-muted" />,
-});
-
 export function Header() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -49,9 +44,11 @@ export function Header() {
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
 
   const accountsPath = "/dashboard";
+  const analyticsPath = "/analytics";
   const debtsPath = "/debts";
 
   const isAccountsActive = pathname === accountsPath;
+  const isAnalyticsActive = pathname === analyticsPath;
   const isDebtsActive = pathname === debtsPath;
 
   return (
@@ -78,6 +75,18 @@ export function Header() {
               <span>Счета</span>
             </Link>
             <Link
+              href={`${analyticsPath}${basePath}`}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                isAnalyticsActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span>Аналитика</span>
+            </Link>
+            <Link
               href={`${debtsPath}${basePath}`}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
@@ -95,8 +104,7 @@ export function Header() {
 
           <WorkspaceDropdown currentWorkspaceId={workspaceId} className="md:hidden ml-auto" />
         </div>
-        <div className="flex items-center gap-2 md:gap-4">
-          <AssistantSheet key={workspaceId ?? "no-workspace"} workspaceId={workspaceId} />
+        <div className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-4">
             <UserMenu />
           </div>

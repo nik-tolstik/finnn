@@ -24,8 +24,6 @@
     "db:import": "node --import tsx scripts/mongo-import.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.54",
-    "@ai-sdk/react": "^3.0.144",
     "@auth/prisma-adapter": "^2.11.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -45,7 +43,6 @@
     "@tanstack/react-query": "^5.90.12",
     "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^7.0.4",
-    "ai": "^6.0.142",
     "bcryptjs": "^3.0.3",
     "big.js": "^7.0.1",
     "class-variance-authority": "^0.7.1",
@@ -64,6 +61,7 @@
     "react-day-picker": "^9.13.0",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.69.0",
+    "recharts": "^3.8.1",
     "resend": "^6.6.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",

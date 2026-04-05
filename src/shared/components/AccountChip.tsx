@@ -29,14 +29,11 @@ export function AccountChip({ account, className }: AccountChipProps) {
   return (
     <div
       className={cn(
-        "inline-flex min-w-0 max-w-[190px] items-center gap-1.5 rounded-md border px-2 py-1",
+        "inline-flex min-w-0 max-w-[190px] items-center gap-1.5 rounded-md px-2 py-1",
         !account.color && "bg-muted/50",
         className
       )}
-      style={{
-        borderColor: account.color ? hexToRgba(account.color, 0.45) : undefined,
-        backgroundColor: account.color ? hexToRgba(account.color, 0.1) : undefined,
-      }}
+      style={{ backgroundColor: account.color ? hexToRgba(account.color, 0.1) : undefined }}
     >
       <AccountIcon className="size-3.5 shrink-0" style={{ color: account.color ?? undefined }} />
       <span className="truncate text-xs font-medium">{account.name}</span>

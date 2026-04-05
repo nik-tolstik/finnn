@@ -5,7 +5,7 @@ import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -20,7 +20,8 @@ import { type LoginInput, loginSchema } from "../../auth.validations";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -32,9 +33,10 @@ export function LoginForm() {
   });
 
   const inviteToken = searchParams.get("inviteToken");
+  const isLoading = isSubmitting || isPending;
 
   const onSubmit = async (data: LoginInput) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       const result = await signIn("credentials", {
         email: data.email,
@@ -48,6 +50,7 @@ export function LoginForm() {
         } else {
           toast.error("Неверный email или пароль");
         }
+        setIsSubmitting(false);
         return;
       }
 
@@ -60,12 +63,12 @@ export function LoginForm() {
         }
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      startTransition(() => {
+        router.replace("/dashboard");
+      });
     } catch {
       toast.error("Что-то пошло не так");
-    } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 

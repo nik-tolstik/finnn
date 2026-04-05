@@ -1,15 +1,14 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { Suspense } from "react";
 
-import { authOptions } from "@/shared/lib/auth";
+import { getCachedServerSession } from "@/shared/lib/auth-session";
 
 import { ExchangeRatesTicker } from "./components/ExchangeRatesTicker";
 import { FloatingActionButton } from "./components/FloatingActionButton";
 import { Header } from "./components/Header";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedServerSession();
 
   if (!session) {
     redirect("/login");
