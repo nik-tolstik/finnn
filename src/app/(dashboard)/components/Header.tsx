@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ChevronDown, Grip, HandCoins, Wallet } from "lucide-react";
+import { BarChart3, Building2, ChevronDown, Grip, HandCoins, Wallet } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
@@ -44,9 +44,11 @@ export function Header() {
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
 
   const accountsPath = "/dashboard";
+  const analyticsPath = "/analytics";
   const debtsPath = "/debts";
 
   const isAccountsActive = pathname === accountsPath;
+  const isAnalyticsActive = pathname === analyticsPath;
   const isDebtsActive = pathname === debtsPath;
 
   return (
@@ -71,6 +73,18 @@ export function Header() {
             >
               <Wallet className="h-4 w-4" />
               <span>Счета</span>
+            </Link>
+            <Link
+              href={`${analyticsPath}${basePath}`}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                isAnalyticsActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span>Аналитика</span>
             </Link>
             <Link
               href={`${debtsPath}${basePath}`}

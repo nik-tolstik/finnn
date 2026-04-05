@@ -1,6 +1,6 @@
 "use client";
 
-import { Grip, HandCoins, LogOut, Settings, Wallet } from "lucide-react";
+import { BarChart3, Grip, HandCoins, LogOut, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -24,9 +24,11 @@ export function BurgerMenu() {
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
 
   const accountsPath = "/dashboard";
+  const analyticsPath = "/analytics";
   const debtsPath = "/debts";
 
   const isAccountsActive = pathname === accountsPath;
+  const isAnalyticsActive = pathname === analyticsPath;
   const isDebtsActive = pathname === debtsPath;
 
   const handleLogout = async () => {
@@ -75,6 +77,17 @@ export function BurgerMenu() {
               >
                 <Wallet className="h-5 w-5" />
                 <span>Счета</span>
+              </Link>
+              <Link
+                href={`${analyticsPath}${basePath}`}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                  isAnalyticsActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
+                )}
+              >
+                <BarChart3 className="h-5 w-5" />
+                <span>Аналитика</span>
               </Link>
               <Link
                 href={`${debtsPath}${basePath}`}

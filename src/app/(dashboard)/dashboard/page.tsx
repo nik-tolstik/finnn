@@ -3,17 +3,17 @@ import { redirect } from "next/navigation";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
+import {
+  buildWorkspaceRedirectQueryString,
+  getFirstSearchParamValue,
+  type WorkspacePageSearchParams,
+} from "@/modules/workspace/workspace-search-params";
 import { getCachedServerSession } from "@/shared/lib/auth-session";
 
 import { DashboardContent } from "./components/DashboardContent";
-import {
-  buildWorkspaceRedirectQueryString,
-  type DashboardPageSearchParams,
-  getFirstSearchParamValue,
-} from "./utils/workspace-search-params";
 
 interface DashboardPageProps {
-  searchParams: Promise<DashboardPageSearchParams>;
+  searchParams: Promise<WorkspacePageSearchParams>;
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {

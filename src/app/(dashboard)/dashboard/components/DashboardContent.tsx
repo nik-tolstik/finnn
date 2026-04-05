@@ -12,6 +12,11 @@ import { AccountsCards } from "@/modules/accounts/components/accounts-cards";
 import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog";
 import { getCategories } from "@/modules/categories/category.service";
 import { CombinedTransactionsList } from "@/modules/transactions/components/combined-transactions-list";
+import {
+  TransactionsFilterButton,
+  TransactionsFilterDrawer,
+  useTransactionFilters,
+} from "@/modules/transactions/components/transactions-filters";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/transactions-list-skeleton";
 import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
@@ -23,11 +28,6 @@ import { Button } from "@/shared/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 
 import { AccountsMenu } from "./AccountsMenu";
-import {
-  TransactionsFilterButton,
-  TransactionsFilterDrawer,
-  useDashboardTransactionFilters,
-} from "./transactions-filters";
 
 type AccountWithOwner = Account & {
   owner: {
@@ -68,7 +68,7 @@ export function DashboardContent({ accounts, allAccounts, initialCurrentUserId, 
     isNavigationPending: isFiltersNavigationPending,
     applyFilters,
     resetFilters,
-  } = useDashboardTransactionFilters();
+  } = useTransactionFilters();
 
   const {
     data: accountsData,
