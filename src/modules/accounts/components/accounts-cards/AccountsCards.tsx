@@ -29,6 +29,7 @@ import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/utils/cn";
 
 import { updateAccountsOrder } from "../../account.service";
+import { getVisibleAccounts, resolveViewerUserId } from "../../account-visibility";
 import { AccountActionsDialog } from "../account-actions-dialog/AccountActionsDialog";
 import { AccountsCardsSkeleton } from "../accounts-cards-skeleton/AccountsCardsSkeleton";
 import { ArchiveAccountDialog } from "../archive-account-dialog/ArchiveAccountDialog";
@@ -45,6 +46,7 @@ type AccountWithOwner = Account & {
 
 interface AccountsCardsProps {
   accounts: AccountWithOwner[];
+  initialCurrentUserId?: string;
   workspaceId: string;
   isLoading?: boolean;
   onReorderModeChange?: (isReorderMode: boolean) => void;
@@ -112,6 +114,7 @@ function SortableAccountCard({
 
 export function AccountsCards({
   accounts,
+  initialCurrentUserId,
   workspaceId,
   isLoading,
   onReorderModeChange,
@@ -149,17 +152,11 @@ export function AccountsCards({
     })
   );
 
-  const currentUserId = session?.user?.id;
+  const viewerUserId = resolveViewerUserId(session?.user?.id, initialCurrentUserId);
 
   const filteredAccounts = useMemo(() => {
-    if (showAllAccounts) {
-      return accounts;
-    }
-    if (!currentUserId) {
-      return accounts;
-    }
-    return accounts.filter((account) => account.ownerId === currentUserId);
-  }, [accounts, showAllAccounts, currentUserId]);
+    return getVisibleAccounts(accounts, viewerUserId, showAllAccounts);
+  }, [accounts, showAllAccounts, viewerUserId]);
 
   useEffect(() => {
     setItems(filteredAccounts);
@@ -296,15 +293,15 @@ export function AccountsCards({
   );
 
   const sortedOwners = Object.values(accountsByOwner).sort((a, b) => {
-    if (!currentUserId) {
+    if (!viewerUserId) {
       if (!a.owner && b.owner) return 1;
       if (a.owner && !b.owner) return -1;
       if (!a.owner && !b.owner) return 0;
       return (a.owner?.name || a.owner?.email || "").localeCompare(b.owner?.name || b.owner?.email || "");
     }
 
-    const aIsCurrentUser = a.owner?.id === currentUserId;
-    const bIsCurrentUser = b.owner?.id === currentUserId;
+    const aIsCurrentUser = a.owner?.id === viewerUserId;
+    const bIsCurrentUser = b.owner?.id === viewerUserId;
     const aIsShared = !a.owner;
     const bIsShared = !b.owner;
 

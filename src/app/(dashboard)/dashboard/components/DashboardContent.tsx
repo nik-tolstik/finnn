@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
+import { getVisibleAccounts, resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountsCards } from "@/modules/accounts/components/accounts-cards";
 import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog";
 import { getCategories } from "@/modules/categories/category.service";
@@ -40,6 +41,7 @@ type AccountWithOwner = Account & {
 interface DashboardContentProps {
   accounts: AccountWithOwner[];
   allAccounts?: AccountWithOwner[];
+  initialCurrentUserId?: string;
   workspaceId: string;
 }
 
@@ -49,7 +51,7 @@ function isSuccessResponse(data: any): data is { data: CombinedTransaction[]; to
   return data && "data" in data && !("error" in data);
 }
 
-export function DashboardContent({ accounts, allAccounts, workspaceId }: DashboardContentProps) {
+export function DashboardContent({ accounts, allAccounts, initialCurrentUserId, workspaceId }: DashboardContentProps) {
   const { data: session } = useSession();
   const [displayedCount, setDisplayedCount] = useState(TRANSACTIONS_PER_PAGE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -91,19 +93,15 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
     staleTime: 5000,
   });
 
-  const currentUserId = session?.user?.id;
+  const viewerUserId = resolveViewerUserId(session?.user?.id, initialCurrentUserId);
   const availableAccounts = useMemo(
     () => accountsData?.data || allAccounts || accounts,
     [accountsData?.data, allAccounts, accounts]
   );
 
   const displayAccounts = useMemo(() => {
-    if (showAllAccounts || !currentUserId) {
-      return availableAccounts;
-    }
-
-    return availableAccounts.filter((account) => account.ownerId === currentUserId);
-  }, [availableAccounts, currentUserId, showAllAccounts]);
+    return getVisibleAccounts(availableAccounts, viewerUserId, showAllAccounts);
+  }, [availableAccounts, showAllAccounts, viewerUserId]);
 
   const isAccountsLoading = isLoadingAccounts || (isFetchingAccounts && accounts.length === 0);
   const transactionFilters = useMemo(
@@ -208,6 +206,7 @@ export function DashboardContent({ accounts, allAccounts, workspaceId }: Dashboa
           </div>
           <AccountsCards
             accounts={displayAccounts}
+            initialCurrentUserId={initialCurrentUserId}
             workspaceId={workspaceId}
             isLoading={isAccountsLoading}
             reorderMode={isReorderMode}

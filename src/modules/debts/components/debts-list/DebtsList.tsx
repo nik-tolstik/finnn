@@ -46,7 +46,7 @@ function DebtAccountChip({ debt }: { debt: DebtWithRelations }) {
 
 function DebtsTableSkeleton() {
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+    <div className="overflow-hidden rounded-xl bg-card shadow-sm">
       <Table className="min-w-[880px]">
         <TableHeader className="bg-muted/30">
           <TableRow className="hover:bg-transparent">
@@ -110,7 +110,7 @@ function DebtsTable({
   onDebtClick: (debt: DebtWithRelations) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+    <div className="overflow-hidden rounded-xl bg-card shadow-sm">
       <Table className="min-w-[880px]">
         <TableHeader className="bg-muted/30">
           <TableRow className="border-b border-border hover:bg-transparent">
