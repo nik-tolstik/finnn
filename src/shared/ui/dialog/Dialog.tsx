@@ -4,9 +4,8 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
 import type * as React from "react";
 
+import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { cn } from "@/shared/utils/cn";
-
-import { useBreakpoints } from "../hooks/useBreakpoints";
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;

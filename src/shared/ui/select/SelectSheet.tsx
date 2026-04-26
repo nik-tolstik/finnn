@@ -6,10 +6,10 @@ import { useState } from "react";
 
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { SelectTriggerButton } from "@/shared/ui/select/select-trigger-button";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";
 
+import { SelectTriggerButton } from "./SelectTriggerButton";
 import type { SelectOption, SelectProps } from "./types";
 
 export function SelectSheet<TValue extends string | number = string>(props: SelectProps<TValue>) {

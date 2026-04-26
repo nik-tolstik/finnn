@@ -1,7 +1,7 @@
 "use client";
 
-import { format } from "date-fns";
 import type { Locale } from "date-fns";
+import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import * as React from "react";
 

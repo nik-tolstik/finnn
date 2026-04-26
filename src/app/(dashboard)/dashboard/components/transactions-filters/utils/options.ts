@@ -5,7 +5,7 @@ import {
   PaymentTransactionType,
   TRANSFER_TRANSACTION_FILTER_VALUE,
 } from "@/modules/transactions/transaction.constants";
-import type { SelectOption } from "@/shared/ui/select/types";
+import type { SelectOption } from "@/shared/ui/select";
 
 import type { FilterAccount, FilterCategory, FilterMember } from "../types";
 

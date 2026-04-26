@@ -5,9 +5,9 @@ import * as React from "react";
 import { useState } from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { SelectTriggerButton } from "@/shared/ui/select/select-trigger-button";
 import { cn } from "@/shared/utils/cn";
 
+import { SelectTriggerButton } from "./SelectTriggerButton";
 import type { SelectDropdownProps } from "./types";
 
 export function SelectDropdown<TValue extends string | number = string>(props: SelectDropdownProps<TValue>) {

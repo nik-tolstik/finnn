@@ -8,10 +8,10 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { Select } from "@/shared/ui/select/select";
-import type { SelectOption } from "@/shared/ui/select/types";
+import type { SelectOption } from "@/shared/ui/select";
+import { Select } from "@/shared/ui/select";
 import { cn } from "@/shared/utils/cn";
-import { hexToRgb, rgbToHex, rgbToHsl, hslToRgb, rgbToCmyk, cmykToRgb } from "@/shared/utils/color-utils";
+import { cmykToRgb, hexToRgb, hslToRgb, rgbToCmyk, rgbToHex, rgbToHsl } from "@/shared/utils/color-utils";
 
 type ColorFormat = "hex" | "rgb" | "hsl" | "cmyk";
 
@@ -385,11 +385,11 @@ ColorPickerInput.displayName = "ColorPickerInput";
 
 export {
   ColorPicker,
-  ColorPickerTrigger,
-  ColorPickerSwatch,
-  ColorPickerContent,
   ColorPickerArea,
+  ColorPickerContent,
   ColorPickerEyeDropper,
   ColorPickerFormatSelect,
   ColorPickerInput,
+  ColorPickerSwatch,
+  ColorPickerTrigger,
 };

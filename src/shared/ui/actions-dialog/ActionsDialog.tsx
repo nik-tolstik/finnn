@@ -1,8 +1,7 @@
 "use client";
 
-import { Dialog, DialogWindow, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/shared/ui/dialog";
-
-import { cn } from "../utils/cn";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { cn } from "@/shared/utils/cn";
 
 export interface ActionItem {
   icon: React.ReactNode;

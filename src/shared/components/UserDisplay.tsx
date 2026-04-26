@@ -1,8 +1,7 @@
 "use client";
 
 import { UserAvatar } from "@/shared/components/UserAvatar";
-
-import { cn } from "../utils/cn";
+import { cn } from "@/shared/utils/cn";
 
 interface UserDisplayProps {
   name?: string | null;

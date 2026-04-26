@@ -38,7 +38,7 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { Select } from "@/shared/ui/select/select";
+import { Select } from "@/shared/ui/select";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 

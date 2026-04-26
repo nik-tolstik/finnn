@@ -53,7 +53,7 @@ export function CategorySelectModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:max-w-[500px]">
+      <DialogWindow className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>Выберите категорию</DialogTitle>
           <DialogDescription>Выберите существующую категорию</DialogDescription>
