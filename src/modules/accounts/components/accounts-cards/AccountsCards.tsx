@@ -342,7 +342,7 @@ export function AccountsCards({
                     </div>
                   )}
                   <SortableContext items={ownerAccounts.map((account: AccountWithOwner) => account.id)}>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {ownerAccounts.map((account: AccountWithOwner) => (
                         <SortableAccountCard
                           key={account.id}
