@@ -126,8 +126,8 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="addAmount">
-                Дополнительная сумма <span className="text-destructive">*</span>
+              <Label htmlFor="addAmount" required>
+                Дополнительная сумма
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">

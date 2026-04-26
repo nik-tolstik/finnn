@@ -36,8 +36,8 @@ export function EditDebtTransactionAmountFields({
     <>
       {showToAmountField ? (
         <div className="space-y-2">
-          <Label htmlFor="toAmount">
-            Сумма отправления ({selectedAccount?.currency}) <span className="text-destructive">*</span>
+          <Label htmlFor="toAmount" required>
+            Сумма отправления ({selectedAccount?.currency})
           </Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-sm font-medium text-muted-foreground">
@@ -50,8 +50,8 @@ export function EditDebtTransactionAmountFields({
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="amount">
-          {debtAmountLabel} <span className="text-destructive">*</span>
+        <Label htmlFor="amount" required>
+          {debtAmountLabel}
         </Label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-sm font-medium text-muted-foreground">

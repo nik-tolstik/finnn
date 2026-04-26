@@ -366,8 +366,8 @@ export function CreateTransactionDialog({
                 {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type">
-                  Тип транзакции <span className="text-destructive">*</span>
+                <Label htmlFor="type" required>
+                  Тип транзакции
                 </Label>
                 <Segmented
                   options={[
@@ -438,8 +438,8 @@ export function CreateTransactionDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="amount">
-                  Сумма <span className="text-destructive">*</span>
+                <Label htmlFor="amount" required>
+                  Сумма
                 </Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">

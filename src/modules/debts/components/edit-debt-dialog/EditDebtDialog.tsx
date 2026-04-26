@@ -139,8 +139,8 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="personName">
-                {debt.type === DebtType.LENT ? "Кто должен" : "Кому должен"} <span className="text-destructive">*</span>
+              <Label htmlFor="personName" required>
+                {debt.type === DebtType.LENT ? "Кто должен" : "Кому должен"}
               </Label>
               <Input
                 id="personName"
@@ -151,9 +151,8 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">
-                Изначальная сумма <span className="text-destructive">*</span>
-                {isLoadingAmount && <span className="text-muted-foreground text-sm font-normal ml-1">(загрузка…)</span>}
+              <Label htmlFor="amount" required>
+                Изначальная сумма
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">

@@ -178,8 +178,8 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="personName">
-                {debtType === DebtType.LENT ? "Кто должен" : "Кому должен"} <span className="text-destructive">*</span>
+              <Label htmlFor="personName" required>
+                {debtType === DebtType.LENT ? "Кто должен" : "Кому должен"}
               </Label>
               <Input
                 id="personName"
@@ -204,10 +204,7 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
 
             {useAccount ? (
               <div className="space-y-2">
-                <Label>
-                  {debtType === DebtType.LENT ? "С какого счёта" : "На какой счёт"}{" "}
-                  <span className="text-destructive">*</span>
-                </Label>
+                <Label required>{debtType === DebtType.LENT ? "С какого счёта" : "На какой счёт"} </Label>
                 {previewAccount && accountId ? (
                   <AccountCard
                     account={previewAccount}
@@ -228,9 +225,7 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
               </div>
             ) : (
               <div className="space-y-2">
-                <Label>
-                  Валюта <span className="text-destructive">*</span>
-                </Label>
+                <Label required>Валюта</Label>
                 <Controller
                   control={control}
                   name="currency"
@@ -247,8 +242,8 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="amount">
-                Сумма <span className="text-destructive">*</span>
+              <Label htmlFor="amount" required>
+                Сумма
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">

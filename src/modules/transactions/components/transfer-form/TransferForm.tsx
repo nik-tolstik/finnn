@@ -89,8 +89,8 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 min-w-0 overflow-x-hidden">
       <div className="space-y-2 min-w-0">
-        <Label htmlFor="fromAccountId" className="wrap-break-word">
-          Счёт отправителя <span className="text-destructive">*</span>
+        <Label htmlFor="fromAccountId" className="wrap-break-word" required>
+          Счёт отправителя
         </Label>
         <Controller
           control={form.control}
@@ -116,8 +116,8 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
       </div>
 
       <div className="space-y-2 min-w-0">
-        <Label htmlFor="amount" className="wrap-break-word">
-          Сумма отправления <span className="text-destructive">*</span>
+        <Label htmlFor="amount" className="wrap-break-word" required>
+          Сумма отправления
         </Label>
         <div className="relative min-w-0">
           {fromAccount && (
@@ -187,8 +187,8 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
       </div>
 
       <div className="space-y-2 min-w-0">
-        <Label htmlFor="toAccountId" className="wrap-break-word">
-          Счёт получателя <span className="text-destructive">*</span>
+        <Label htmlFor="toAccountId" className="wrap-break-word" required>
+          Счёт получателя
         </Label>
         <Controller
           control={form.control}
@@ -214,8 +214,8 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
       </div>
 
       <div className="space-y-2 min-w-0">
-        <Label htmlFor="toAmount" className="wrap-break-word">
-          Сумма получения {toAccount && `(${toAccount.currency})`} <span className="text-destructive">*</span>
+        <Label htmlFor="toAmount" className="wrap-break-word" required>
+          Сумма получения {toAccount && `(${toAccount.currency})`}
         </Label>
         <div className="relative min-w-0">
           {toAccount && (

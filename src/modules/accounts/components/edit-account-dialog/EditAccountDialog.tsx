@@ -162,8 +162,8 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
               }}
             />
             <div className="space-y-2">
-              <Label htmlFor="name">
-                Название <span className="text-destructive">*</span>
+              <Label htmlFor="name" required>
+                Название
               </Label>
               <Input
                 id="name"
@@ -245,8 +245,8 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="createdAt">
-                Дата открытия счета <span className="text-destructive">*</span>
+              <Label htmlFor="createdAt" required>
+                Дата открытия счета
               </Label>
               <Controller
                 control={control}

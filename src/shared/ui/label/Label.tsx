@@ -1,20 +1,27 @@
 "use client";
 
-import * as LabelPrimitive from "@radix-ui/react-label";
 import type * as React from "react";
 
 import { cn } from "@/shared/utils/cn";
 
-function Label({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+export type LabelProps = {
+  required?: boolean;
+} & React.LabelHTMLAttributes<HTMLLabelElement>;
+
+function Label({ className, required, children, ...props }: LabelProps) {
   return (
-    <LabelPrimitive.Root
+    // biome-ignore lint/a11y/noLabelWithoutControl: common component
+    <label
       data-slot="label"
       className={cn(
-        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        "flex items-center text-sm leading-none select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
         className
       )}
       {...props}
-    />
+    >
+      {children}
+      {required && <span className="text-destructive text-xl leading-none ml-1">*</span>}
+    </label>
   );
 }
 

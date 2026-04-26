@@ -57,6 +57,19 @@ export const closeDebtSchema = z
         },
         { message: "Сумма должна быть больше 0" }
       ),
+    paymentAmount: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val) return true;
+          const num = parseFloat(val);
+          return !Number.isNaN(num) && num > 0;
+        },
+        { message: "Сумма должна быть больше 0" }
+      ),
+    categoryId: z.string().optional(),
+    closeEarly: z.boolean().optional(),
     accountId: z.string().optional(),
     useAccount: z.boolean(),
   })

@@ -19,6 +19,8 @@ import {
 } from "@/shared/lib/validations/debt";
 import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
+import { CategoryType } from "../categories/category.constants";
+import { PaymentTransactionType } from "../transactions/transaction.constants";
 import { DebtStatus, DebtTransactionType, DebtType } from "./debt.constants";
 import type { DebtWithRelations } from "./debt.types";
 
@@ -194,6 +196,42 @@ function getDebtTransactionTotalsDelta(transactionType: string, amount: string):
   };
 }
 
+function minMoney(a: string, b: string) {
+  return compareMoney(a, b) <= 0 ? a : b;
+}
+
+async function getWorkspaceCategoryOrThrow(tx: PrismaTx, workspaceId: string, categoryId: string, type: CategoryType) {
+  const category = await tx.category.findFirst({
+    where: {
+      id: categoryId,
+      workspaceId,
+      type,
+    },
+  });
+
+  if (!category) {
+    throw new Error("Категория не найдена или не подходит для этой операции");
+  }
+
+  return category;
+}
+
+function getCategoryTransactionType(debtType: string, isEarlyClose: boolean) {
+  if (debtType === DebtType.LENT) {
+    return isEarlyClose ? PaymentTransactionType.EXPENSE : PaymentTransactionType.INCOME;
+  }
+
+  return isEarlyClose ? PaymentTransactionType.INCOME : PaymentTransactionType.EXPENSE;
+}
+
+function getCategoryTypeFromPaymentType(paymentType: PaymentTransactionType) {
+  return paymentType === PaymentTransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
+}
+
+function getPaymentTransactionBalanceDelta(type: PaymentTransactionType, amount: string) {
+  return type === PaymentTransactionType.INCOME ? amount : subtractMoney("0", amount);
+}
+
 function addBalanceDelta(
   balanceDeltasByAccount: Map<string, string>,
   accountId: string | null | undefined,
@@ -359,12 +397,10 @@ export async function closeDebt(id: string, input: CloseDebtInput) {
         throw new Error("Долг уже закрыт");
       }
 
-      if (compareMoney(validated.amount, debt.remainingAmount) > 0) {
-        throw new Error(`Сумма не может превышать остаток долга (${debt.remainingAmount})`);
-      }
-
-      const newRemainingAmount = subtractMoney(debt.remainingAmount, validated.amount);
-      const isClosed = compareMoney(newRemainingAmount, "0") <= 0;
+      let closeAmount = validated.amount;
+      let categoryAmount = "0";
+      let categoryTransactionType: PaymentTransactionType | null = null;
+      const closeDate = new Date();
       let currenciesMatch = true;
 
       if (validated.useAccount && validated.accountId) {
@@ -375,24 +411,88 @@ export async function closeDebt(id: string, input: CloseDebtInput) {
           throw new Error("Укажите сумму отправления");
         }
 
-        const amountToUse = currenciesMatch ? validated.amount : validated.toAmount || validated.amount;
+        if (
+          !currenciesMatch &&
+          (validated.closeEarly ||
+            (validated.paymentAmount && compareMoney(validated.paymentAmount, validated.amount) > 0))
+        ) {
+          throw new Error("Подарок при закрытии долга доступен только в валюте долга");
+        }
 
-        if (debt.type === DebtType.LENT) {
-          await tx.account.update({
-            where: { id: validated.accountId },
-            data: { balance: addMoney(account.balance, amountToUse) },
-          });
-        } else {
-          if (compareMoney(amountToUse, account.balance) > 0) {
-            throw new Error(`Сумма не может превышать баланс счёта (${account.balance})`);
+        if (currenciesMatch && validated.paymentAmount) {
+          closeAmount = validated.closeEarly
+            ? debt.remainingAmount
+            : minMoney(validated.paymentAmount, debt.remainingAmount);
+
+          if (validated.closeEarly && compareMoney(validated.paymentAmount, debt.remainingAmount) < 0) {
+            categoryAmount = subtractMoney(debt.remainingAmount, validated.paymentAmount);
+            categoryTransactionType = getCategoryTransactionType(debt.type, true);
+          } else if (compareMoney(validated.paymentAmount, debt.remainingAmount) > 0) {
+            categoryAmount = subtractMoney(validated.paymentAmount, debt.remainingAmount);
+            categoryTransactionType = getCategoryTransactionType(debt.type, false);
+          }
+        }
+
+        if (compareMoney(closeAmount, debt.remainingAmount) > 0) {
+          throw new Error(`Сумма не может превышать остаток долга (${debt.remainingAmount})`);
+        }
+
+        let categoryId: string | null = null;
+
+        if (compareMoney(categoryAmount, "0") > 0 && categoryTransactionType) {
+          if (!validated.categoryId) {
+            throw new Error("Выберите категорию");
           }
 
-          await tx.account.update({
-            where: { id: validated.accountId },
-            data: { balance: subtractMoney(account.balance, amountToUse) },
+          const categoryType = getCategoryTypeFromPaymentType(categoryTransactionType);
+          const category = await getWorkspaceCategoryOrThrow(tx, debt.workspaceId, validated.categoryId, categoryType);
+          categoryId = category.id;
+        }
+
+        let balanceDelta = getDebtTransactionBalanceDelta(debt.type, {
+          accountId: validated.accountId,
+          type: DebtTransactionType.CLOSED,
+          amount: closeAmount,
+          toAmount: !currenciesMatch ? validated.toAmount || closeAmount : null,
+        });
+
+        if (compareMoney(categoryAmount, "0") > 0 && categoryTransactionType) {
+          balanceDelta = addMoney(
+            balanceDelta,
+            getPaymentTransactionBalanceDelta(categoryTransactionType, categoryAmount)
+          );
+        }
+
+        const nextBalance = addMoney(account.balance, balanceDelta);
+
+        if (compareMoney(nextBalance, "0") < 0) {
+          throw new Error(`Сумма не может превышать баланс счёта (${account.balance})`);
+        }
+
+        await tx.account.update({
+          where: { id: validated.accountId },
+          data: { balance: nextBalance },
+        });
+
+        if (compareMoney(categoryAmount, "0") > 0 && categoryTransactionType && categoryId) {
+          await tx.paymentTransaction.create({
+            data: {
+              workspaceId: debt.workspaceId,
+              accountId: validated.accountId,
+              amount: categoryAmount,
+              type: categoryTransactionType,
+              description: `Закрытие долга: ${debt.personName}`,
+              date: closeDate,
+              categoryId,
+            },
           });
         }
+      } else if (compareMoney(closeAmount, debt.remainingAmount) > 0) {
+        throw new Error(`Сумма не может превышать остаток долга (${debt.remainingAmount})`);
       }
+
+      const newRemainingAmount = subtractMoney(debt.remainingAmount, closeAmount);
+      const isClosed = compareMoney(newRemainingAmount, "0") <= 0;
 
       const nextDebt = await tx.debt.update({
         where: { id },
@@ -408,9 +508,9 @@ export async function closeDebt(id: string, input: CloseDebtInput) {
           debtId: debt.id,
           accountId: validated.useAccount ? validated.accountId || null : null,
           type: DebtTransactionType.CLOSED,
-          amount: validated.amount,
+          amount: closeAmount,
           toAmount: !currenciesMatch ? validated.toAmount : null,
-          date: new Date(),
+          date: closeDate,
         },
       });
 

@@ -219,8 +219,8 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
               }}
             />
             <div className="space-y-2">
-              <Label htmlFor="name">
-                Название <span className="text-destructive">*</span>
+              <Label htmlFor="name" required>
+                Название
               </Label>
               <div className="relative">
                 <Wallet className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -236,8 +236,8 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="currency">
-                Валюта <span className="text-destructive">*</span>
+              <Label htmlFor="currency" required>
+                Валюта
               </Label>
               <Select
                 options={CURRENCY_OPTIONS}
@@ -250,8 +250,8 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="balance">
-                Начальный баланс <span className="text-destructive">*</span>
+              <Label htmlFor="balance" required>
+                Начальный баланс
               </Label>
               <NumberInput
                 id="balance"
@@ -338,8 +338,8 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="createdAt">
-                Дата открытия счета <span className="text-destructive">*</span>
+              <Label htmlFor="createdAt" required>
+                Дата открытия счета
               </Label>
               <Controller
                 control={control}

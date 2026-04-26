@@ -85,7 +85,7 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]">
+      <DialogWindow className="sm:w-125">
         <DialogHeader>
           <DialogTitle>Пригласить участника</DialogTitle>
           <DialogDescription>
@@ -95,8 +95,8 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">
-                Email <span className="text-destructive">*</span>
+              <Label htmlFor="email" required>
+                Email
               </Label>
               <Input
                 id="email"

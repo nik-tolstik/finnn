@@ -190,8 +190,8 @@ export function EditTransactionDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">
-                Сумма <span className="text-destructive">*</span>
+              <Label htmlFor="amount" required>
+                Сумма
               </Label>
               <div className="relative">
                 {selectedAccount && (
