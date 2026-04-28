@@ -155,7 +155,7 @@ function DialogWindow({
             className={cn(
               "flex flex-col gap-6",
               "bg-background fixed z-50 rounded-lg border p-6 shadow-lg outline-none",
-              "sm:w-[500px] max-h-dvh max-w-dvw m-0 py-6 px-0",
+              "sm:w-125 max-h-dvh max-w-dvw m-0 py-6 px-0",
               isMobile ? "w-dvw" : "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-fit",
               isMobile &&
                 mobilePosition === "center" &&
