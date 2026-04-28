@@ -155,11 +155,10 @@ function SheetContent({ className, children, side = "right", style, ...props }: 
             <button
               type="button"
               data-slot="sheet-close"
-              className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+              className="absolute top-4 right-4 text-[20px] active:bg-accent hover:bg-accent p-1 rounded-full transition-all focus:ring focus:ring-accent"
               onClick={() => onOpenChange(false)}
             >
-              <XIcon className="size-4" />
-              <span className="sr-only">Close</span>
+              <XIcon size="1em" />
             </button>
           </div>
         </FloatingFocusManager>
