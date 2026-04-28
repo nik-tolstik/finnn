@@ -7,7 +7,7 @@ import { useState } from "react";
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Popover } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
 interface UserMenuProps {
@@ -37,15 +37,20 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
   const displayName = resolvedName || resolvedEmail || "User";
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button type="button" className="flex items-center py-1.5 px-2">
-          <UserAvatar name={resolvedName} email={resolvedEmail} image={resolvedImage} size="sm" />
-          <span className="hidden md:block max-w-[150px] truncate text-sm ml-2">{displayName}</span>
-          <ChevronDown className="size-4 text-foreground ml-1" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+    <>
+      <Popover
+        open={open}
+        onOpenChange={setOpen}
+        placement="bottom-end"
+        className="w-80 p-0"
+        trigger={({ ref, ...triggerProps }) => (
+          <button ref={ref} type="button" className="flex items-center py-1.5 px-2" {...triggerProps}>
+            <UserAvatar name={resolvedName} email={resolvedEmail} image={resolvedImage} size="sm" />
+            <span className="hidden md:block max-w-[150px] truncate text-sm ml-2">{displayName}</span>
+            <ChevronDown className="size-4 text-foreground ml-1" />
+          </button>
+        )}
+      >
         <div className="p-2">
           <div className="px-2 py-1.5">
             <div className="text-sm font-medium">{displayName}</div>
@@ -80,8 +85,8 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
             </button>
           </div>
         </div>
-      </PopoverContent>
+      </Popover>
       <UserSettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
-    </Popover>
+    </>
   );
 }

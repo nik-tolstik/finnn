@@ -4,7 +4,7 @@ import { CheckIcon } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Popover } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
 import { SelectTriggerButton } from "./SelectTriggerButton";
@@ -116,14 +116,22 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
   const hasSelection = multiple ? selectedValues.length > 0 : currentValue !== undefined;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      placement="bottom-start"
+      className={cn("p-1", popoverClassName)}
+      style={popoverClassName ? undefined : { width: "var(--popover-trigger-width)" }}
+      trigger={({ ref, ...triggerProps }) => (
         <SelectTriggerButton
+          ref={ref}
+          type="button"
           value={hasSelection ? "selected" : undefined}
           disabled={disabled}
           onClear={allowClear && hasSelection ? handleClear : undefined}
           showClearButton={allowClear && hasSelection}
           className={cn("w-full justify-start", !hasSelection && "text-muted-foreground")}
+          {...triggerProps}
         >
           <span
             className={cn(
@@ -134,68 +142,47 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
             {displayLabel}
           </span>
         </SelectTriggerButton>
-      </PopoverTrigger>
-      <PopoverContent
-        className={cn("p-1", popoverClassName)}
-        align="start"
-        style={popoverClassName ? undefined : { width: "var(--radix-popover-trigger-width)" }}
-      >
-        <div className="max-h-96 overflow-y-auto flex flex-col gap-1">
-          {options.map((option, index) => {
-            const selected = multiple ? selectedValues.includes(option.value) : currentValue === option.value;
-            const isGroupHeader = String(option.value).startsWith("__group_");
+      )}
+    >
+      <div className="max-h-96 overflow-y-auto flex flex-col gap-1">
+        {options.map((option, index) => {
+          const selected = multiple ? selectedValues.includes(option.value) : currentValue === option.value;
+          const isGroupHeader = String(option.value).startsWith("__group_");
 
-            let isInGroup = false;
-            let hasPreviousGroup = false;
+          let isInGroup = false;
+          let hasPreviousGroup = false;
 
-            if (!isGroupHeader) {
-              for (let i = index - 1; i >= 0; i--) {
-                const prevOption = options[i];
-                if (String(prevOption.value).startsWith("__group_")) {
-                  isInGroup = true;
-                  break;
-                }
-              }
-            } else {
-              for (let i = index - 1; i >= 0; i--) {
-                const prevOption = options[i];
-                if (String(prevOption.value).startsWith("__group_")) {
-                  hasPreviousGroup = true;
-                  break;
-                }
+          if (!isGroupHeader) {
+            for (let i = index - 1; i >= 0; i--) {
+              const prevOption = options[i];
+              if (String(prevOption.value).startsWith("__group_")) {
+                isInGroup = true;
+                break;
               }
             }
+          } else {
+            for (let i = index - 1; i >= 0; i--) {
+              const prevOption = options[i];
+              if (String(prevOption.value).startsWith("__group_")) {
+                hasPreviousGroup = true;
+                break;
+              }
+            }
+          }
 
-            if (renderOption) {
-              if (isGroupHeader) {
-                if (!multiple) {
-                  return (
-                    <div
-                      key={option.value.toString()}
-                      className={cn(
-                        "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
-                        hasPreviousGroup && "mt-2"
-                      )}
-                    >
-                      {renderOption({ option, props, selected })}
-                    </div>
-                  );
-                }
-
+          if (renderOption) {
+            if (isGroupHeader) {
+              if (!multiple) {
                 return (
-                  <button
-                    type="button"
+                  <div
                     key={option.value.toString()}
-                    onClick={() => {
-                      handleSelect(option.value);
-                    }}
                     className={cn(
-                      "w-full rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-accent/50",
+                      "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
                       hasPreviousGroup && "mt-2"
                     )}
                   >
                     {renderOption({ option, props, selected })}
-                  </button>
+                  </div>
                 );
               }
 
@@ -207,27 +194,12 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                     handleSelect(option.value);
                   }}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-sm py-1.5 px-2 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
-                    isInGroup && "pl-[18px] pr-2",
-                    selected && "bg-accent"
+                    "w-full rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-accent/50",
+                    hasPreviousGroup && "mt-2"
                   )}
                 >
                   {renderOption({ option, props, selected })}
                 </button>
-              );
-            }
-
-            if (isGroupHeader) {
-              return (
-                <div
-                  key={option.value.toString()}
-                  className={cn(
-                    "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
-                    hasPreviousGroup && "mt-2"
-                  )}
-                >
-                  {option.label}
-                </div>
               );
             }
 
@@ -239,35 +211,66 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                   handleSelect(option.value);
                 }}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-sm py-1.5 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
-                  !isInGroup && "px-2",
+                  "flex w-full items-center gap-2 rounded-sm py-1.5 px-2 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
                   isInGroup && "pl-[18px] pr-2",
                   selected && "bg-accent"
                 )}
               >
-                {multiple ? (
-                  <>
-                    <span
-                      className={cn(
-                        "h-4 w-4 shrink-0 rounded-sm border border-primary shadow text-primary-foreground",
-                        selected ? "bg-primary text-primary-foreground" : "text-transparent"
-                      )}
-                    >
-                      {selected && <CheckIcon className="h-4 w-4" />}
-                    </span>
-                    <span className="flex-1">{option.label}</span>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="flex-1">{option.label}</span>
-                    {selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
-                  </div>
-                )}
+                {renderOption({ option, props, selected })}
               </button>
             );
-          })}
-        </div>
-      </PopoverContent>
+          }
+
+          if (isGroupHeader) {
+            return (
+              <div
+                key={option.value.toString()}
+                className={cn(
+                  "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                  hasPreviousGroup && "mt-2"
+                )}
+              >
+                {option.label}
+              </div>
+            );
+          }
+
+          return (
+            <button
+              type="button"
+              key={option.value.toString()}
+              onClick={() => {
+                handleSelect(option.value);
+              }}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-sm py-1.5 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
+                !isInGroup && "px-2",
+                isInGroup && "pl-[18px] pr-2",
+                selected && "bg-accent"
+              )}
+            >
+              {multiple ? (
+                <>
+                  <span
+                    className={cn(
+                      "h-4 w-4 shrink-0 rounded-sm border border-primary shadow text-primary-foreground",
+                      selected ? "bg-primary text-primary-foreground" : "text-transparent"
+                    )}
+                  >
+                    {selected && <CheckIcon className="h-4 w-4" />}
+                  </span>
+                  <span className="flex-1">{option.label}</span>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="flex-1">{option.label}</span>
+                  {selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </Popover>
   );
 }

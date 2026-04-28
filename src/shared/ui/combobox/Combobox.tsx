@@ -5,7 +5,7 @@ import * as React from "react";
 
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Popover } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
 export interface ComboboxOption {
@@ -65,14 +65,20 @@ export function Combobox({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      placement="bottom-start"
+      className="w-(--popover-trigger-width) p-0"
+      trigger={({ ref, ...triggerProps }) => (
         <Button
+          ref={ref}
+          type="button"
           variant="outline"
           role="combobox"
-          aria-expanded={open}
           className={cn("w-full justify-between", className)}
           disabled={disabled}
+          {...triggerProps}
         >
           {selectedOption ? (
             <div className="flex items-center gap-2">
@@ -86,42 +92,41 @@ export function Combobox({
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
-        <div className="flex flex-col">
-          <div className="border-b p-2">
-            <Input
-              placeholder={searchPlaceholder}
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="h-8"
-            />
-          </div>
-          <div className="max-h-[300px] overflow-y-auto p-1">
-            {filteredOptions.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">{emptyText}</div>
-            ) : (
-              filteredOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={cn(
-                    "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                    value === option.value && "bg-accent text-accent-foreground"
-                  )}
-                  onClick={() => handleSelect(option)}
-                >
-                  {option.color && (
-                    <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: option.color }} />
-                  )}
-                  <span className="flex-1 truncate text-left">{option.label}</span>
-                  {value === option.value && <Check className="h-4 w-4 shrink-0" />}
-                </button>
-              ))
-            )}
-          </div>
+      )}
+    >
+      <div className="flex flex-col">
+        <div className="border-b p-2">
+          <Input
+            placeholder={searchPlaceholder}
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="h-8"
+          />
         </div>
-      </PopoverContent>
+        <div className="max-h-[300px] overflow-y-auto p-1">
+          {filteredOptions.length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">{emptyText}</div>
+          ) : (
+            filteredOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={cn(
+                  "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                  value === option.value && "bg-accent text-accent-foreground"
+                )}
+                onClick={() => handleSelect(option)}
+              >
+                {option.color && (
+                  <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: option.color }} />
+                )}
+                <span className="flex-1 truncate text-left">{option.label}</span>
+                {value === option.value && <Check className="h-4 w-4 shrink-0" />}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
     </Popover>
   );
 }

@@ -10,7 +10,7 @@ import { AppearanceSettings } from "@/modules/auth/components/appearance-setting
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { Button } from "@/shared/ui/button";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";
 
 export function BurgerMenu() {
@@ -42,11 +42,9 @@ export function BurgerMenu() {
   return (
     <>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden p-0 size-6">
-            <Grip className="size-5" />
-          </Button>
-        </SheetTrigger>
+        <Button variant="ghost" size="icon" className="md:hidden p-0 size-6" onClick={() => setOpen(true)}>
+          <Grip className="size-5" />
+        </Button>
         <SheetContent side="left" className="w-full max-w-full p-0">
           <SheetTitle className="sr-only">Меню навигации</SheetTitle>
           <div className="flex h-full flex-col">

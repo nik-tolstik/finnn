@@ -8,7 +8,7 @@ import * as React from "react";
 
 import { Button } from "@/shared/ui/button";
 import { Calendar } from "@/shared/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Popover } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
 interface DatePickerProps {
@@ -46,27 +46,33 @@ export function DatePicker({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      placement={align === "center" ? "bottom" : `bottom-${align}`}
+      className="w-auto overflow-hidden p-0"
+      trigger={({ ref, ...triggerProps }) => (
         <Button
+          ref={ref}
+          type="button"
           variant="outline"
           className={cn("w-full justify-between text-left font-normal", !date && "text-muted-foreground", className)}
+          {...triggerProps}
         >
           {date ? format(date, "dd.MM.yyyy", { locale }) : <span>{placeholder}</span>}
           <ChevronDownIcon className="h-4 w-4 opacity-50" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto overflow-hidden p-0" align={align}>
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={handleSelect}
-          disabled={disabled}
-          locale={locale}
-          initialFocus
-          captionLayout={captionLayout || "dropdown"}
-        />
-      </PopoverContent>
+      )}
+    >
+      <Calendar
+        mode="single"
+        selected={date}
+        onSelect={handleSelect}
+        disabled={disabled}
+        locale={locale}
+        initialFocus
+        captionLayout={captionLayout || "dropdown"}
+      />
     </Popover>
   );
 }

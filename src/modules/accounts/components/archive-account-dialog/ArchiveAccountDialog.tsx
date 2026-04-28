@@ -7,15 +7,7 @@ import { toast } from "sonner";
 
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { Button } from "@/shared/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
 import { archiveAccount } from "../../account.service";
 
@@ -85,11 +77,9 @@ export function ArchiveAccountDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" disabled={isArchiving}>
-              Отмена
-            </Button>
-          </DialogClose>
+          <Button variant="outline" disabled={isArchiving} onClick={() => onOpenChange(false)}>
+            Отмена
+          </Button>
           <Button onClick={handleArchive} disabled={isArchiving} type="button">
             {isArchiving ? "Архивирование..." : "Архивировать"}
           </Button>

@@ -7,15 +7,7 @@ import { toast } from "sonner";
 import { leaveWorkspace } from "@/modules/workspace/workspace.service";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { Button } from "@/shared/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
 interface LeaveWorkspaceDialogProps {
   workspaceId: string;
@@ -65,11 +57,9 @@ export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenC
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" disabled={leaveMutation.isPending}>
-              Отмена
-            </Button>
-          </DialogClose>
+          <Button variant="outline" disabled={leaveMutation.isPending} onClick={() => onOpenChange(false)}>
+            Отмена
+          </Button>
           <Button
             onClick={handleLeave}
             disabled={leaveMutation.isPending}

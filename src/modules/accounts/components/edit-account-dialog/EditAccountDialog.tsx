@@ -14,14 +14,7 @@ import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { type UpdateAccountInput, updateAccountSchema } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
-import {
-  ColorPicker,
-  ColorPickerArea,
-  ColorPickerContent,
-  ColorPickerFormatSelect,
-  ColorPickerInput,
-  ColorPickerTrigger,
-} from "@/shared/ui/color-picker";
+import { ColorPicker } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
@@ -210,16 +203,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
 
             <div className="space-y-2">
               <Label>Цвет</Label>
-              <ColorPicker value={selectedColor || "#3b82f6"} onChange={(color) => setValue("color", color)}>
-                <ColorPickerTrigger />
-                <ColorPickerContent>
-                  <ColorPickerArea />
-                  <div className="flex items-center gap-2 mt-2">
-                    <ColorPickerFormatSelect />
-                    <ColorPickerInput />
-                  </div>
-                </ColorPickerContent>
-              </ColorPicker>
+              <ColorPicker value={selectedColor || "#3b82f6"} onChange={(color) => setValue("color", color)} />
               {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
             </div>
 

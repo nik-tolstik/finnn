@@ -8,7 +8,7 @@ import * as React from "react";
 import { Button } from "@/shared/ui/button";
 import { Calendar } from "@/shared/ui/calendar";
 import { Input } from "@/shared/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Popover } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
 interface DateTimePickerProps {
@@ -109,29 +109,35 @@ export function DateTimePicker({
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+      <Popover
+        open={open}
+        onOpenChange={setOpen}
+        placement={align === "center" ? "bottom" : `bottom-${align}`}
+        className="w-auto overflow-hidden p-0"
+        trigger={({ ref, ...triggerProps }) => (
           <Button
+            ref={ref}
+            type="button"
             variant="outline"
             className={cn(
               "justify-between text-left font-normal border-input w-fit px-2",
               !date && "text-muted-foreground"
             )}
+            {...triggerProps}
           >
             {date ? format(date, "dd.MM.yyyy", { locale }) : <span>{placeholder}</span>}
           </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto overflow-hidden p-0" align={align}>
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={handleDateSelect}
-            disabled={disabled}
-            locale={locale}
-            initialFocus
-            captionLayout={captionLayout || "dropdown"}
-          />
-        </PopoverContent>
+        )}
+      >
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={handleDateSelect}
+          disabled={disabled}
+          locale={locale}
+          initialFocus
+          captionLayout={captionLayout || "dropdown"}
+        />
       </Popover>
       {showTime && (
         <Input

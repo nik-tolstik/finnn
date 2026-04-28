@@ -7,7 +7,7 @@ import { HexColorPicker } from "react-colorful";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Popover } from "@/shared/ui/popover";
 import type { SelectOption } from "@/shared/ui/select";
 import { Select } from "@/shared/ui/select";
 import { cn } from "@/shared/utils/cn";
@@ -20,8 +20,6 @@ interface ColorPickerContextValue {
   format: ColorFormat;
   onColorChange: (color: string) => void;
   onFormatChange: (format: ColorFormat) => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
 }
 
 const ColorPickerContext = React.createContext<ColorPickerContextValue | null>(null);
@@ -35,13 +33,13 @@ function useColorPicker() {
 }
 
 interface ColorPickerProps {
-  value?: string;
-  onChange?: (color: string) => void;
+  className?: string;
   defaultFormat?: ColorFormat;
-  children: React.ReactNode;
+  onChange?: (color: string) => void;
+  value?: string;
 }
 
-function ColorPicker({ value = "#000000", onChange, defaultFormat = "hex", children }: ColorPickerProps) {
+function ColorPicker({ className, value = "#000000", onChange, defaultFormat = "hex" }: ColorPickerProps) {
   const [color, setColor] = React.useState(value);
   const [format, setFormat] = React.useState<ColorFormat>(defaultFormat);
   const [open, setOpen] = React.useState(false);
@@ -64,72 +62,39 @@ function ColorPicker({ value = "#000000", onChange, defaultFormat = "hex", child
       format,
       onColorChange: handleColorChange,
       onFormatChange: setFormat,
-      open,
-      onOpenChange: setOpen,
     }),
-    [color, format, handleColorChange, open]
+    [color, format, handleColorChange]
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <ColorPickerContext.Provider value={contextValue}>{children}</ColorPickerContext.Provider>
-    </Popover>
+    <ColorPickerContext.Provider value={contextValue}>
+      <Popover
+        open={open}
+        onOpenChange={setOpen}
+        placement="bottom-start"
+        className="w-auto p-4"
+        trigger={({ ref, ...triggerProps }) => (
+          <button
+            ref={ref}
+            type="button"
+            className={cn(
+              "h-9 w-9 rounded-md border-2 border-border transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+              className
+            )}
+            style={{ backgroundColor: color }}
+            {...triggerProps}
+          />
+        )}
+      >
+        <ColorPickerArea />
+        <div className="flex items-center gap-2 mt-2">
+          <ColorPickerFormatSelect />
+          <ColorPickerInput />
+        </div>
+      </Popover>
+    </ColorPickerContext.Provider>
   );
 }
-
-interface ColorPickerTriggerProps extends React.ComponentPropsWithoutRef<"button"> {
-  asChild?: boolean;
-}
-
-const ColorPickerTrigger = React.forwardRef<HTMLButtonElement, ColorPickerTriggerProps>(
-  ({ className, asChild, ...props }, ref) => {
-    const { color } = useColorPicker();
-
-    if (asChild) {
-      return <PopoverTrigger ref={ref} asChild {...props} />;
-    }
-
-    return (
-      <PopoverTrigger asChild>
-        <button
-          ref={ref}
-          type="button"
-          className={cn(
-            "h-9 w-9 rounded-md border-2 border-border transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-            className
-          )}
-          style={{ backgroundColor: color }}
-          {...props}
-        />
-      </PopoverTrigger>
-    );
-  }
-);
-ColorPickerTrigger.displayName = "ColorPickerTrigger";
-
-const ColorPickerSwatch = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => {
-    const { color } = useColorPicker();
-    return (
-      <div
-        ref={ref}
-        className={cn("h-9 w-9 rounded-md border-2 border-border", className)}
-        style={{ backgroundColor: color }}
-        {...props}
-      />
-    );
-  }
-);
-ColorPickerSwatch.displayName = "ColorPickerSwatch";
-
-type ColorPickerContentProps = React.ComponentPropsWithoutRef<typeof PopoverContent>;
-
-const ColorPickerContent = React.forwardRef<React.ElementRef<typeof PopoverContent>, ColorPickerContentProps>(
-  ({ className, ...props }, ref) => {
-    return <PopoverContent ref={ref} className={cn("w-auto p-4", className)} align="start" {...props} />;
-  }
-);
-ColorPickerContent.displayName = "ColorPickerContent";
 
 const ColorPickerArea = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => {
@@ -206,7 +171,7 @@ const ColorPickerEyeDropper = React.forwardRef<HTMLButtonElement, React.Componen
         const result = await eyeDropper.open();
         onColorChange(result.sRGBHex);
       } catch {
-        // User cancelled or browser doesn't support
+        // User cancelled or browser does not support EyeDropper.
       }
     }, [onColorChange]);
 
@@ -284,26 +249,26 @@ const ColorPickerInput = React.forwardRef<HTMLInputElement, React.ComponentProps
 
     const handleChange = React.useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setInputValue(value);
+        const nextValue = e.target.value;
+        setInputValue(nextValue);
 
         try {
           switch (format) {
             case "hex": {
-              const cleanValue = value.replace(/^#/, "");
+              const cleanValue = nextValue.replace(/^#/, "");
               if (/^[0-9A-Fa-f]{6}$/i.test(cleanValue)) {
                 const hexValue = `#${cleanValue}`;
                 setInputValue(hexValue);
                 onColorChange(hexValue);
-              } else if (/^#[0-9A-Fa-f]{6}$/i.test(value)) {
-                onColorChange(value);
+              } else if (/^#[0-9A-Fa-f]{6}$/i.test(nextValue)) {
+                onColorChange(nextValue);
               } else if (/^[0-9A-Fa-f]{0,6}$/i.test(cleanValue)) {
                 setInputValue(cleanValue);
               }
               break;
             }
             case "rgb": {
-              const match = value.match(/(\d+),\s*(\d+),\s*(\d+)/);
+              const match = nextValue.match(/(\d+),\s*(\d+),\s*(\d+)/);
               if (match) {
                 const r = parseInt(match[1], 10);
                 const g = parseInt(match[2], 10);
@@ -315,7 +280,7 @@ const ColorPickerInput = React.forwardRef<HTMLInputElement, React.ComponentProps
               break;
             }
             case "hsl": {
-              const match = value.match(/(\d+),\s*(\d+)%,\s*(\d+)%/);
+              const match = nextValue.match(/(\d+),\s*(\d+)%,\s*(\d+)%/);
               if (match) {
                 const h = parseInt(match[1], 10);
                 const s = parseInt(match[2], 10);
@@ -328,7 +293,7 @@ const ColorPickerInput = React.forwardRef<HTMLInputElement, React.ComponentProps
               break;
             }
             case "cmyk": {
-              const match = value.match(/(\d+)%,\s*(\d+)%,\s*(\d+)%,\s*(\d+)%/);
+              const match = nextValue.match(/(\d+)%,\s*(\d+)%,\s*(\d+)%,\s*(\d+)%/);
               if (match) {
                 const c = parseInt(match[1], 10);
                 const m = parseInt(match[2], 10);
@@ -343,7 +308,7 @@ const ColorPickerInput = React.forwardRef<HTMLInputElement, React.ComponentProps
             }
           }
         } catch {
-          // Invalid input, ignore
+          // Invalid input, ignore.
         }
       },
       [format, onColorChange]
@@ -383,13 +348,4 @@ const ColorPickerInput = React.forwardRef<HTMLInputElement, React.ComponentProps
 );
 ColorPickerInput.displayName = "ColorPickerInput";
 
-export {
-  ColorPicker,
-  ColorPickerArea,
-  ColorPickerContent,
-  ColorPickerEyeDropper,
-  ColorPickerFormatSelect,
-  ColorPickerInput,
-  ColorPickerSwatch,
-  ColorPickerTrigger,
-};
+export { ColorPicker, ColorPickerArea, ColorPickerEyeDropper, ColorPickerHueSlider };

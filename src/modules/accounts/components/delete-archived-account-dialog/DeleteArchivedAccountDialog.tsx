@@ -6,15 +6,7 @@ import { toast } from "sonner";
 
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { Button } from "@/shared/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
 import { deleteArchivedAccount } from "../../account.service";
 
@@ -69,11 +61,9 @@ export function DeleteArchivedAccountDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" disabled={isDeleting}>
-              Отмена
-            </Button>
-          </DialogClose>
+          <Button variant="outline" disabled={isDeleting} onClick={() => onOpenChange(false)}>
+            Отмена
+          </Button>
           <Button
             onClick={handleDelete}
             disabled={isDeleting}
