@@ -8,7 +8,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 
 import type { DashboardTransactionFilters, FilterAccount, FilterCategory, FilterMember } from "../types";
 import { toDateString, toDateValue } from "../utils/date";
@@ -110,7 +110,6 @@ export function TransactionsFilterDrawer({
       <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="border-b px-4 pb-4">
           <SheetTitle>Фильтр транзакций</SheetTitle>
-          <SheetDescription>Настройте фильтры и примените их к списку транзакций.</SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
