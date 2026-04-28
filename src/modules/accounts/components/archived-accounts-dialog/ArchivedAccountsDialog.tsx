@@ -12,7 +12,7 @@ import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
+import { Tooltip } from "@/shared/ui/tooltip";
 
 import { getArchivedAccounts, unarchiveAccount } from "../../account.service";
 import { DeleteArchivedAccountDialog } from "../delete-archived-account-dialog/DeleteArchivedAccountDialog";
@@ -120,60 +120,54 @@ export function ArchivedAccountsDialog({
               ) : archivedAccounts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">Нет архивированных счетов</div>
               ) : (
-                <TooltipProvider>
-                  <div className="space-y-3">
-                    {archivedAccounts.map((account) => {
-                      const deleteDisabledReason = getDeleteDisabledReason(account);
+                <div className="space-y-3">
+                  {archivedAccounts.map((account) => {
+                    const deleteDisabledReason = getDeleteDisabledReason(account);
 
-                      return (
-                        <div key={account.id} className="flex items-center gap-4">
-                          <div className="flex-1">
-                            <AccountCard account={account} />
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleUnarchive(account)}
-                              disabled={unarchivingIds.has(account.id)}
-                              className="gap-2"
-                            >
-                              <Redo2 className="h-4 w-4" />
-                            </Button>
-                            {deleteDisabledReason ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      disabled={true}
-                                      className="gap-2 text-destructive"
-                                      type="button"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>{deleteDisabledReason}</TooltipContent>
-                              </Tooltip>
-                            ) : (
+                    return (
+                      <div key={account.id} className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <AccountCard account={account} />
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleUnarchive(account)}
+                            disabled={unarchivingIds.has(account.id)}
+                            className="gap-2"
+                          >
+                            <Redo2 className="h-4 w-4" />
+                          </Button>
+                          {deleteDisabledReason ? (
+                            <Tooltip content={deleteDisabledReason}>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => deleteDialog.openDialog(account)}
-                                className="gap-2 text-destructive hover:text-destructive"
+                                aria-disabled="true"
+                                aria-label="Удаление недоступно"
+                                className="gap-2 text-destructive cursor-not-allowed opacity-50"
                                 type="button"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                            )}
-                          </div>
+                            </Tooltip>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteDialog.openDialog(account)}
+                              className="gap-2 text-destructive hover:text-destructive"
+                              type="button"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </TooltipProvider>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </DialogContent>

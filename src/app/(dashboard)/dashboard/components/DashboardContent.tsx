@@ -25,7 +25,7 @@ import { useDialogState } from "@/shared/hooks/useDialogState";
 import { accountKeys, categoryKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
+import { Tooltip } from "@/shared/ui/tooltip";
 
 import { AccountsMenu } from "./AccountsMenu";
 
@@ -170,23 +170,21 @@ export function DashboardContent({ accounts, allAccounts, initialCurrentUserId, 
               <Badge variant="secondary" className="text-xs">
                 {displayAccounts.length}
               </Badge>
-              <TooltipProvider delayDuration={200} disableHoverableContent>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setShowAllAccounts(!showAllAccounts)}
-                      className="h-8 w-8"
-                    >
-                      {showAllAccounts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="hidden md:block">
-                    <p>{showAllAccounts ? "Показать только ваши счета" : "Показать все счета"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip
+                content={<p>{showAllAccounts ? "Показать только ваши счета" : "Показать все счета"}</p>}
+                delayDuration={200}
+                disableHoverableContent
+                contentClassName="hidden md:block"
+              >
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setShowAllAccounts(!showAllAccounts)}
+                  className="h-8 w-8"
+                >
+                  {showAllAccounts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </Tooltip>
             </div>
             <AccountsMenu
               isReorderMode={isReorderMode}

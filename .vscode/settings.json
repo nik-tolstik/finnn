@@ -32,5 +32,6 @@
     "typescript": "javascript",
     "typescriptreact": "javascript"
   },
+  "tailwindCSS.lint.suggestCanonicalClasses": "ignore",
   "prisma.pinToPrisma6": true
 }
