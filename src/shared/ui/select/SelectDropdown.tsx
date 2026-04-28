@@ -177,7 +177,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                   <div
                     key={option.value.toString()}
                     className={cn(
-                      "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                      "px-2 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
                       hasPreviousGroup && "mt-2"
                     )}
                   >
@@ -194,7 +194,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                     handleSelect(option.value);
                   }}
                   className={cn(
-                    "w-full rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-accent/50",
+                    "w-full rounded-sm px-2 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-accent/50",
                     hasPreviousGroup && "mt-2"
                   )}
                 >
@@ -211,8 +211,8 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                   handleSelect(option.value);
                 }}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-sm py-1.5 px-2 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
-                  isInGroup && "pl-[18px] pr-2",
+                  "flex w-full items-center gap-2 rounded-sm py-2 px-2 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
+                  isInGroup && "pl-4.5 pr-2",
                   selected && "bg-accent"
                 )}
               >
@@ -225,10 +225,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
             return (
               <div
                 key={option.value.toString()}
-                className={cn(
-                  "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
-                  hasPreviousGroup && "mt-2"
-                )}
+                className={cn("px-2 pt-2 pb-3 text-sm font-bold text-accent-foreground", hasPreviousGroup && "mt-2")}
               >
                 {option.label}
               </div>
@@ -243,30 +240,15 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                 handleSelect(option.value);
               }}
               className={cn(
-                "flex w-full items-center gap-2 rounded-sm py-1.5 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
-                !isInGroup && "px-2",
-                isInGroup && "pl-[18px] pr-2",
+                "flex w-full items-center gap-2 rounded-sm py-2 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
+                isInGroup ? "px-4" : "px-2",
                 selected && "bg-accent"
               )}
             >
-              {multiple ? (
-                <>
-                  <span
-                    className={cn(
-                      "h-4 w-4 shrink-0 rounded-sm border border-primary shadow text-primary-foreground",
-                      selected ? "bg-primary text-primary-foreground" : "text-transparent"
-                    )}
-                  >
-                    {selected && <CheckIcon className="h-4 w-4" />}
-                  </span>
-                  <span className="flex-1">{option.label}</span>
-                </>
-              ) : (
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="flex-1">{option.label}</span>
-                  {selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
-                </div>
-              )}
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="flex-1">{option.label}</span>
+                {selected && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
+              </div>
             </button>
           );
         })}
