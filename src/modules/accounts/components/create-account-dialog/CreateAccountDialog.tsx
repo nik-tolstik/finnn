@@ -45,6 +45,8 @@ const WORKSPACE_ICONS: Record<string, LucideIcon> = {
   Landmark,
 } as const;
 
+const DEFAULT_ACCOUNT_COLOR = "#3b82f6";
+
 function getWorkspaceIcon(iconName?: string | null): LucideIcon {
   if (iconName && iconName in WORKSPACE_ICONS) {
     return WORKSPACE_ICONS[iconName];
@@ -76,7 +78,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
       balance: "0",
       currency: DEFAULT_CURRENCY,
       ownerId: undefined,
-      color: undefined,
+      color: DEFAULT_ACCOUNT_COLOR,
       icon: "Wallet",
       createdAt: (() => {
         const date = new Date();
@@ -156,7 +158,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
         balance: "0",
         currency: baseCurrency,
         ownerId: currentUserId || null,
-        color: undefined,
+        color: DEFAULT_ACCOUNT_COLOR,
         icon: "Wallet",
         createdAt: (() => {
           const date = new Date();
@@ -201,7 +203,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                 name: accountName || "",
                 balance: balance || "0",
                 currency: currency || Currency.USD,
-                color: selectedColor || null,
+                color: selectedColor || DEFAULT_ACCOUNT_COLOR,
                 icon: selectedIcon || "Wallet",
                 description: null,
                 ownerId: null,
@@ -296,7 +298,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
 
             <div className="space-y-2">
               <Label>Цвет</Label>
-              <ColorPicker value={selectedColor || "#3b82f6"} onChange={(color) => setValue("color", color)} />
+              <ColorPicker value={selectedColor || DEFAULT_ACCOUNT_COLOR} onChange={(color) => setValue("color", color)} />
               {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
             </div>
 

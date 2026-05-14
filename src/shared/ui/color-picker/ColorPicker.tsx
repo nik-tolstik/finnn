@@ -39,21 +39,25 @@ interface ColorPickerProps {
   value?: string;
 }
 
-function ColorPicker({ className, value = "#000000", onChange, defaultFormat = "hex" }: ColorPickerProps) {
-  const [color, setColor] = React.useState(value);
+const DEFAULT_COLOR = "#000000";
+
+function ColorPicker({ className, value, onChange, defaultFormat = "hex" }: ColorPickerProps) {
+  const [internalColor, setInternalColor] = React.useState(value ?? DEFAULT_COLOR);
   const [format, setFormat] = React.useState<ColorFormat>(defaultFormat);
   const [open, setOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    setColor(value);
-  }, [value]);
+  const color = value ?? internalColor;
 
   const handleColorChange = React.useCallback(
     (newColor: string) => {
-      setColor(newColor);
+      if (newColor === color) return;
+
+      if (value === undefined) {
+        setInternalColor(newColor);
+      }
+
       onChange?.(newColor);
     },
-    [onChange]
+    [color, onChange, value]
   );
 
   const contextValue = React.useMemo(

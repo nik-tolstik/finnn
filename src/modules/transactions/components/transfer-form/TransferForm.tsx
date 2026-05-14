@@ -47,7 +47,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
     return accounts.find((acc) => acc.id === toAccountId);
   }, [accounts, toAccountId]);
 
-  const { handleAmountChange, handleToAmountChange, resetSync } = useTransferAmountSync({
+  const { handleAmountChange, handleToAmountChange } = useTransferAmountSync({
     form,
     fromCurrency: fromAccount?.currency as Currency | undefined,
     toCurrency: toAccount?.currency as Currency | undefined,
@@ -104,7 +104,6 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                 if (account.id === toAccountId) {
                   form.setValue("toAccountId", "");
                 }
-                resetSync();
               }}
               excludeAccountIds={toAccountId ? [toAccountId] : []}
               label=""
@@ -171,6 +170,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
               onClick={() => {
                 const maxAmount = fromAccountBalanceBeforeTransfer || fromAccount.balance;
                 form.setValue("amount", maxAmount, { shouldValidate: true, shouldTouch: true });
+                handleAmountChange(maxAmount);
               }}
             >
               Max
@@ -202,7 +202,6 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
                 if (account.id === fromAccountId) {
                   form.setValue("fromAccountId", "");
                 }
-                resetSync();
               }}
               excludeAccountIds={fromAccountId ? [fromAccountId] : []}
               label=""

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Currency } from "@prisma/client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 
 import { getExchangeRate } from "@/modules/currency/exchange-rate.service";
@@ -24,7 +24,6 @@ interface UseTransferAmountSyncProps {
 interface UseTransferAmountSyncResult {
   handleAmountChange: (value: string) => void;
   handleToAmountChange: (value: string) => void;
-  resetSync: () => void;
   exchangeRate: number | null;
   isLoadingRate: boolean;
 }
@@ -38,26 +37,28 @@ export function useTransferAmountSync({
   const [lastEditedInput, setLastEditedInput] = useState<EditedInput>(null);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isLoadingRate, setIsLoadingRate] = useState(false);
-  const prevCurrenciesRef = useRef<{ from: Currency | undefined; to: Currency | undefined }>({
-    from: undefined,
-    to: undefined,
-  });
 
   useEffect(() => {
+    let isCurrent = true;
+
     const loadExchangeRate = async () => {
       if (!fromCurrency || !toCurrency) {
         setExchangeRate(null);
+        setIsLoadingRate(false);
         return;
       }
 
       if (fromCurrency === toCurrency) {
         setExchangeRate(1);
+        setIsLoadingRate(false);
         return;
       }
 
       setIsLoadingRate(true);
       try {
         const result = await getExchangeRate(date, fromCurrency, toCurrency);
+        if (!isCurrent) return;
+
         if ("data" in result) {
           setExchangeRate(result.data);
         } else {
@@ -65,44 +66,65 @@ export function useTransferAmountSync({
           setExchangeRate(null);
         }
       } catch (error) {
+        if (!isCurrent) return;
+
         console.error("Error fetching exchange rate:", error);
         setExchangeRate(null);
       } finally {
-        setIsLoadingRate(false);
+        if (isCurrent) {
+          setIsLoadingRate(false);
+        }
       }
     };
 
     loadExchangeRate();
+
+    return () => {
+      isCurrent = false;
+    };
   }, [fromCurrency, toCurrency, date]);
 
-  useEffect(() => {
-    const prevFrom = prevCurrenciesRef.current.from;
-    const prevTo = prevCurrenciesRef.current.to;
-
-    if (prevFrom !== fromCurrency || prevTo !== toCurrency) {
-      prevCurrenciesRef.current = { from: fromCurrency, to: toCurrency };
-
-      if (prevFrom !== undefined || prevTo !== undefined) {
-        setLastEditedInput(null);
-
-        if (lastEditedInput === "amount" && exchangeRate !== null) {
-          const amount = form.getValues("amount");
-          if (amount) {
-            const converted = multiplyMoney(amount, exchangeRate.toString());
-            const rounded = parseFloat(converted).toFixed(2);
-            form.setValue("toAmount", rounded, { shouldValidate: true });
-          }
-        } else if (lastEditedInput === "toAmount" && exchangeRate !== null) {
-          const toAmount = form.getValues("toAmount");
-          if (toAmount) {
-            const converted = divideMoney(toAmount, exchangeRate.toString());
-            const rounded = parseFloat(converted).toFixed(2);
-            form.setValue("amount", rounded, { shouldValidate: true });
-          }
-        }
+  const syncToAmount = useCallback(
+    (value: string) => {
+      if (!value || exchangeRate === null) {
+        return;
       }
+
+      const converted = multiplyMoney(value, exchangeRate.toString());
+      const rounded = parseFloat(converted).toFixed(2);
+      if (form.getValues("toAmount") === rounded) {
+        return;
+      }
+
+      form.setValue("toAmount", rounded, { shouldValidate: true });
+    },
+    [exchangeRate, form]
+  );
+
+  const syncAmount = useCallback(
+    (value: string) => {
+      if (!value || exchangeRate === null) {
+        return;
+      }
+
+      const converted = divideMoney(value, exchangeRate.toString());
+      const rounded = parseFloat(converted).toFixed(2);
+      if (form.getValues("amount") === rounded) {
+        return;
+      }
+
+      form.setValue("amount", rounded, { shouldValidate: true });
+    },
+    [exchangeRate, form]
+  );
+
+  useEffect(() => {
+    if (lastEditedInput === "amount") {
+      syncToAmount(form.getValues("amount"));
+    } else if (lastEditedInput === "toAmount") {
+      syncAmount(form.getValues("toAmount"));
     }
-  }, [fromCurrency, toCurrency, exchangeRate, form, lastEditedInput]);
+  }, [form, lastEditedInput, syncAmount, syncToAmount]);
 
   const handleAmountChange = useCallback(
     (value: string) => {
@@ -117,15 +139,9 @@ export function useTransferAmountSync({
 
       setLastEditedInput("amount");
 
-      if (!value || !exchangeRate) {
-        return;
-      }
-
-      const converted = multiplyMoney(value, exchangeRate.toString());
-      const rounded = parseFloat(converted).toFixed(2);
-      form.setValue("toAmount", rounded, { shouldValidate: true });
+      syncToAmount(value);
     },
-    [lastEditedInput, exchangeRate, form]
+    [lastEditedInput, syncToAmount]
   );
 
   const handleToAmountChange = useCallback(
@@ -141,25 +157,14 @@ export function useTransferAmountSync({
 
       setLastEditedInput("toAmount");
 
-      if (!value || !exchangeRate) {
-        return;
-      }
-
-      const converted = divideMoney(value, exchangeRate.toString());
-      const rounded = parseFloat(converted).toFixed(2);
-      form.setValue("amount", rounded, { shouldValidate: true });
+      syncAmount(value);
     },
-    [lastEditedInput, exchangeRate, form]
+    [lastEditedInput, syncAmount]
   );
-
-  const resetSync = useCallback(() => {
-    setLastEditedInput(null);
-  }, []);
 
   return {
     handleAmountChange,
     handleToAmountChange,
-    resetSync,
     exchangeRate,
     isLoadingRate,
   };
