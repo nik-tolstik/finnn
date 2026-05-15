@@ -55,7 +55,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
         onClick(transaction);
       }}
     >
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-semibold leading-relaxed">Перевод</span>
           <span className="text-right text-sm font-normal leading-relaxed tabular-nums text-amber-600 dark:text-amber-400">
@@ -81,7 +81,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
           </span>
         </div>
         {transaction.createdBy ? (
-          <div className="flex justify-end">
+          <div>
             <UserDisplay
               name={transaction.createdBy.name}
               email={transaction.createdBy.email}
@@ -92,7 +92,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
           </div>
         ) : null}
         {description ? (
-          <p className="-mx-3 border-t border-border px-3 pt-2 text-xs text-muted-foreground leading-snug wrap-break-word sm:-mx-4 sm:px-4">
+          <p className="border-t border-border mt-2 pt-2 text-xs text-muted-foreground leading-snug wrap-break-word">
             {description}
           </p>
         ) : null}

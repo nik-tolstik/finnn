@@ -52,7 +52,7 @@ export function TransactionDescriptionLine({
     <span
       key={key}
       className={cn(
-        "inline-flex max-w-44 items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-foreground",
+        "inline-flex max-w-44 items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] text-foreground",
         !chip.color && "bg-muted"
       )}
       style={{
@@ -133,7 +133,7 @@ export function TransactionDescriptionLine({
     ) : (
       (footerContent ??
       (description ? (
-        <p className="-mx-3 border-t border-border px-3 pt-2 text-xs text-muted-foreground leading-snug wrap-break-word sm:-mx-4 sm:px-4">
+        <p className="border-t border-border mt-2 pt-2 text-xs text-muted-foreground leading-snug wrap-break-word">
           {description}
         </p>
       ) : null))
@@ -143,7 +143,7 @@ export function TransactionDescriptionLine({
       <div className="space-y-1.5">
         {footerContent}
         {description ? (
-          <p className="-mx-3 border-t border-border px-3 pt-2 text-xs text-muted-foreground leading-snug wrap-break-word sm:-mx-4 sm:px-4">
+          <p className="border-t border-border mt-2 pt-2 text-xs text-muted-foreground leading-snug wrap-break-word">
             {description}
           </p>
         ) : null}
@@ -163,7 +163,7 @@ export function TransactionDescriptionLine({
             {amount ? (
               <span
                 className={cn(
-                  "shrink-0 max-w-[45%] text-right text-sm font-normal leading-relaxed tabular-nums break-words sm:max-w-none",
+                  "shrink-0 max-w-[45%] text-right text-sm font-semibold leading-relaxed tabular-nums break-words sm:max-w-none",
                   amount.className
                 )}
               >
@@ -185,7 +185,7 @@ export function TransactionDescriptionLine({
           {amount ? (
             <span
               className={cn(
-                "shrink-0 max-w-[45%] text-right text-sm font-normal leading-relaxed tabular-nums break-words sm:max-w-none",
+                "shrink-0 max-w-[45%] text-right text-sm font-semibold leading-relaxed tabular-nums break-words sm:max-w-none",
                 amount.className
               )}
             >
