@@ -76,7 +76,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
               label={transaction.toAccount.name}
             />
           </div>
-          <span className="text-right text-sm font-normal leading-relaxed tabular-nums text-foreground">
+          <span className="text-right text-sm font-semibold leading-relaxed tabular-nums text-foreground">
             {formatMoney(transaction.toAmount, transaction.toAccount.currency)}
           </span>
         </div>
