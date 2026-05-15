@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { Onest } from "next/font/google";
 
 import "./globals.css";
 
 import { Toaster } from "@/shared/ui/sonner";
 
 import { Providers } from "./providers";
+
+const onest = Onest({
+  subsets: ["cyrillic", "latin"],
+  variable: "--font-onest",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Finnn - Учёт финансов",
@@ -43,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang="ru" className={onest.variable} suppressHydrationWarning>
       <body className="font-sans antialiased">
         <Providers>
           {children}

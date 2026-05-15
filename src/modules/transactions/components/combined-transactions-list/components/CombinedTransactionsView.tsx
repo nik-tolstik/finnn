@@ -53,7 +53,7 @@ export function CombinedTransactionsView({
         groups.map((group) => (
           <div key={group.date.toISOString()} className="space-y-3">
             <div className="sticky top-16 z-10 bg-background py-2">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              <h3 className="text-sm font-medium text-muted-foreground">
                 {formatDateHeader(group.date)}
               </h3>
             </div>

@@ -60,6 +60,13 @@ const categorySelect = {
   name: true,
 } satisfies Prisma.CategorySelect;
 
+const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+  image: true,
+} satisfies Prisma.UserSelect;
+
 type ConvertedMovement = AnalyticsLargestMovement & {
   sortAmountInBaseCurrency: string;
 };
@@ -273,6 +280,9 @@ export async function getAnalyticsOverview(
           },
           toAccount: {
             select: accountWithOwnerSelect,
+          },
+          createdBy: {
+            select: userSelect,
           },
         },
         orderBy: { date: "desc" },

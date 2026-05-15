@@ -8,14 +8,29 @@ import { hexToRgba } from "@/shared/utils/color-utils";
 
 import type { AccountSegmentType, DescriptionSegment } from "../../utils/transactionDescription";
 
-export type AccountChipData = { color: string | null; icon: ReactNode };
+export type AccountChipData = { color: string | null; icon: ReactNode; label?: string };
 
 export type AccountChipsMap = Partial<Record<AccountSegmentType, AccountChipData>>;
+
+export interface TransactionLineAmount {
+  text: ReactNode;
+  className?: string;
+}
+
+interface TransactionLineFooter {
+  icon?: ReactNode;
+  chips?: AccountChipData[];
+  chipSeparator?: ReactNode;
+  layout?: "right" | "between" | "stackedRight";
+}
 
 interface TransactionDescriptionLineProps {
   segments: DescriptionSegment[];
   icon?: ReactNode;
   accountChips?: AccountChipsMap;
+  amount?: TransactionLineAmount;
+  footer?: TransactionLineFooter;
+  descriptionPlacement?: "inline" | "below";
   description?: string;
   onClick?: () => void;
   className?: string;
@@ -25,11 +40,32 @@ export function TransactionDescriptionLine({
   segments,
   icon,
   accountChips,
+  amount,
+  footer,
+  descriptionPlacement = "inline",
   description,
   onClick,
   className,
 }: TransactionDescriptionLineProps) {
   const [firstSegment, ...restSegments] = segments;
+  const renderAccountChip = (label: string, chip: AccountChipData, key?: string | number) => (
+    <span
+      key={key}
+      className={cn(
+        "inline-flex max-w-44 items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-foreground",
+        !chip.color && "bg-muted"
+      )}
+      style={{
+        borderColor: chip.color ? hexToRgba(chip.color, 0.5) : undefined,
+        backgroundColor: chip.color ? hexToRgba(chip.color, 0.08) : undefined,
+      }}
+    >
+      <span className="shrink-0" style={{ color: chip.color ?? undefined }}>
+        {chip.icon}
+      </span>
+      <span className="truncate">{label}</span>
+    </span>
+  );
   const content = (
     <span className="text-sm leading-relaxed inline-flex flex-wrap items-center gap-x-1 gap-y-1.5">
       <span className="inline-flex items-center gap-1">
@@ -46,22 +82,7 @@ export function TransactionDescriptionLine({
           );
         }
         if (chip) {
-          return (
-            <span
-              key={i}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-foreground",
-                !chip.color && "bg-muted"
-              )}
-              style={{
-                borderColor: chip.color ? hexToRgba(chip.color, 0.5) : undefined,
-                backgroundColor: chip.color ? hexToRgba(chip.color, 0.08) : undefined,
-              }}
-            >
-              <span style={{ color: chip.color ?? undefined }}>{chip.icon}</span>
-              <span className="truncate">{seg.text}</span>
-            </span>
-          );
+          return renderAccountChip(seg.text, chip, i);
         }
         return (
           <span key={i} className="inline-flex items-center gap-1">
@@ -71,30 +92,108 @@ export function TransactionDescriptionLine({
       })}
     </span>
   );
+  const footerChips = footer?.chips?.map((chip, index) => {
+    if (!chip.label) return null;
+
+    return (
+      <span key={index} className="inline-flex items-center gap-1.5">
+        {index > 0 && footer.chipSeparator ? (
+          <span className="text-muted-foreground [&>svg]:size-3.5">{footer.chipSeparator}</span>
+        ) : null}
+        {renderAccountChip(chip.label, chip)}
+      </span>
+    );
+  });
+  const footerIcon = footer?.icon ? <span className="[&>svg]:size-4">{footer.icon}</span> : null;
+  const footerContent =
+    footerIcon || footerChips?.length ? (
+      footer?.layout === "stackedRight" ? (
+        <div className="space-y-1.5 text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">{footerChips}</div>
+          {footerIcon ? <div className="flex justify-end">{footerIcon}</div> : null}
+        </div>
+      ) : footer?.layout === "between" ? (
+        <div className="flex min-w-0 items-center justify-between gap-3 text-muted-foreground">
+          <span className="flex min-w-0 flex-wrap items-center gap-1.5">{footerChips}</span>
+          <span className="ml-auto shrink-0">{footerIcon}</span>
+        </div>
+      ) : (
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-muted-foreground">
+          {footerIcon}
+          {footerChips}
+        </div>
+      )
+    ) : null;
+  const inlineDetails =
+    description && footerContent ? (
+      <div className="-mx-3 flex items-center justify-between gap-3 border-t border-border px-3 pt-2 sm:-mx-4 sm:px-4">
+        <p className="min-w-0 text-xs text-muted-foreground leading-snug wrap-break-word">{description}</p>
+        {footerContent}
+      </div>
+    ) : (
+      (footerContent ??
+      (description ? (
+        <p className="-mx-3 border-t border-border px-3 pt-2 text-xs text-muted-foreground leading-snug wrap-break-word sm:-mx-4 sm:px-4">
+          {description}
+        </p>
+      ) : null))
+    );
+  const belowDetails =
+    footerContent || description ? (
+      <div className="space-y-1.5">
+        {footerContent}
+        {description ? (
+          <p className="-mx-3 border-t border-border px-3 pt-2 text-xs text-muted-foreground leading-snug wrap-break-word sm:-mx-4 sm:px-4">
+            {description}
+          </p>
+        ) : null}
+      </div>
+    ) : null;
+  const details = descriptionPlacement === "below" ? belowDetails : inlineDetails;
 
   if (onClick) {
     return (
       <Card
-        className={cn("cursor-pointer px-4 py-4 transition-colors hover:bg-accent/70", className)}
+        className={cn("cursor-pointer p-3 transition-colors hover:bg-accent/70 sm:p-4", className)}
         onClick={onClick}
       >
         <div className="space-y-1.5">
-          {content}
-          {description ? (
-            <p className="text-sm text-muted-foreground leading-snug wrap-break-word">{description}</p>
-          ) : null}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">{content}</div>
+            {amount ? (
+              <span
+                className={cn(
+                  "shrink-0 max-w-[45%] text-right text-sm font-normal leading-relaxed tabular-nums break-words sm:max-w-none",
+                  amount.className
+                )}
+              >
+                {amount.text}
+              </span>
+            ) : null}
+          </div>
+          {details}
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className={cn("py-2 px-4", className)}>
-      <div className="py-2 space-y-1.5">
-        {content}
-        {description ? (
-          <p className="text-sm text-muted-foreground leading-snug wrap-break-word">{description}</p>
-        ) : null}
+    <Card className={cn("px-3 py-2 sm:px-4", className)}>
+      <div className="space-y-1.5 py-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">{content}</div>
+          {amount ? (
+            <span
+              className={cn(
+                "shrink-0 max-w-[45%] text-right text-sm font-normal leading-relaxed tabular-nums break-words sm:max-w-none",
+                amount.className
+              )}
+            >
+              {amount.text}
+            </span>
+          ) : null}
+        </div>
+        {details}
       </div>
     </Card>
   );

@@ -189,7 +189,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                       return (
                         <div
                           key={option.value}
-                          className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                          className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase "
                         >
                           {renderOption({ option, props, selected })}
                         </div>
@@ -214,7 +214,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                   return isGroupHeader ? (
                     <div
                       key={option.value}
-                      className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                      className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase "
                     >
                       {option.label}
                     </div>

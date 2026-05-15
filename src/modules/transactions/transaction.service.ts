@@ -47,6 +47,13 @@ const categorySelect = {
   name: true,
 } satisfies Prisma.CategorySelect;
 
+const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+  image: true,
+} satisfies Prisma.UserSelect;
+
 function applyPaymentTransactionBalance(balance: string, type: string, amount: string) {
   if (type === PaymentTransactionType.INCOME) {
     return addMoney(balance, amount);
@@ -159,6 +166,7 @@ export async function createPaymentTransaction(workspaceId: string, input: Creat
 
 export async function createTransferTransaction(workspaceId: string, input: CreateTransferTransactionInput) {
   try {
+    const userId = await requireUserId();
     await requireWorkspaceAccess(workspaceId);
 
     const validated = createTransferTransactionSchema.parse(input);
@@ -180,6 +188,7 @@ export async function createTransferTransaction(workspaceId: string, input: Crea
           workspaceId,
           fromAccountId: validated.fromAccountId,
           toAccountId: validated.toAccountId,
+          createdById: userId,
           amount: validated.amount,
           toAmount: validated.toAmount,
           description: validated.description,
@@ -550,6 +559,9 @@ export async function getCombinedTransactions(
           },
           toAccount: {
             select: accountWithOwnerSelect,
+          },
+          createdBy: {
+            select: userSelect,
           },
         },
         orderBy: { date: "desc" },

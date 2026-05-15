@@ -177,7 +177,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                   <div
                     key={option.value.toString()}
                     className={cn(
-                      "px-2 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                      "px-2 py-2 text-xs font-semibold text-muted-foreground uppercase ",
                       hasPreviousGroup && "mt-2"
                     )}
                   >
@@ -194,7 +194,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                     handleSelect(option.value);
                   }}
                   className={cn(
-                    "w-full rounded-sm px-2 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-accent/50",
+                    "w-full rounded-sm px-2 py-2 text-left text-xs font-semibold text-muted-foreground uppercase  cursor-pointer hover:bg-accent/50",
                     hasPreviousGroup && "mt-2"
                   )}
                 >

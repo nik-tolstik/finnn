@@ -8,7 +8,7 @@ interface TransactionDescriptionLineSkeletonProps {
 
 export function TransactionDescriptionLineSkeleton({ className }: TransactionDescriptionLineSkeletonProps) {
   return (
-    <Card className={cn("overflow-hidden p-4", className)}>
+    <Card className={cn("overflow-hidden p-3 sm:p-4", className)}>
       <Skeleton className="h-6 w-1/3 rounded-full bg-secondary" />
     </Card>
   );

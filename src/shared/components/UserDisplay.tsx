@@ -26,7 +26,7 @@ export function UserDisplay({ name, email, image, size = "sm", showName = true, 
   return (
     <div className={cn("flex items-center", gapSize, className)}>
       <UserAvatar name={name} email={email} image={image} size={size} fallbackClassName="font-normal" />
-      {showName && <h3 className={cn(textSize, "text-foreground/75 tracking-wider")}>{ownerName}</h3>}
+      {showName && <h3 className={cn(textSize, "font-normal text-foreground")}>{ownerName}</h3>}
     </div>
   );
 }

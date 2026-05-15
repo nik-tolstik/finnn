@@ -26,6 +26,7 @@ model User {
   workspaces      WorkspaceMember[]
   ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
   accounts        Account[]
+  createdTransfers TransferTransaction[] @relation("TransferCreatedBy")
 
   @@map("users")
 }
@@ -137,6 +138,7 @@ model TransferTransaction {
   workspaceId   String   @db.ObjectId
   fromAccountId String   @db.ObjectId
   toAccountId   String   @db.ObjectId
+  createdById    String?  @db.ObjectId
   amount            String
   toAmount          String
   description       String?
@@ -147,8 +149,10 @@ model TransferTransaction {
   workspace    Workspace @relation(fields: [workspaceId], references: [id])
   fromAccount  Account   @relation("TransferFromAccount", fields: [fromAccountId], references: [id])
   toAccount    Account   @relation("TransferToAccount", fields: [toAccountId], references: [id])
+  createdBy    User?     @relation("TransferCreatedBy", fields: [createdById], references: [id])
 
   @@index([workspaceId, date])
+  @@index([workspaceId, createdById, date])
   @@index([workspaceId, fromAccountId, date])
   @@index([workspaceId, toAccountId, date])
   @@index([fromAccountId, date])

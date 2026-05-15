@@ -5,6 +5,7 @@ import { getAccountIcon } from "@/shared/utils/account-icons";
 
 import { getTransactionDescriptionSegments } from "../../../utils/transactionDescription";
 import { TransactionDescriptionLine } from "../../transaction-description-line/TransactionDescriptionLine";
+import { getDebtTransactionAmountDisplay } from "../utils/transactionAmountDisplay";
 
 interface DebtTransactionItemProps {
   debtTransaction: DebtTransactionWithRelations;
@@ -23,6 +24,7 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
   const isAccountOwnerActor =
     (debtTransaction.debt.type === DebtType.LENT && debtTransaction.type !== DebtTransactionType.CLOSED) ||
     (debtTransaction.debt.type === DebtType.BORROWED && debtTransaction.type === DebtTransactionType.CLOSED);
+  const amount = getDebtTransactionAmountDisplay(debtTransaction);
   const DebtAccountIcon = debtTransaction.account ? getAccountIcon(debtTransaction.account.icon) : null;
   const actorAvatar =
     isAccountOwnerActor && debtTransaction.account?.owner ? (
@@ -30,27 +32,30 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
         name={debtTransaction.account.owner.name}
         email={debtTransaction.account.owner.email}
         image={debtTransaction.account.owner.image}
-        showName={false}
+        showName
         size="sm"
       />
     ) : (
-      <UserDisplay name={debtTransaction.debt.personName} showName={false} size="sm" />
+      <UserDisplay name={debtTransaction.debt.personName} showName size="sm" />
     );
 
   return (
     <TransactionDescriptionLine
       segments={segments}
-      icon={actorAvatar}
-      accountChips={
-        debtTransaction.account && DebtAccountIcon
-          ? {
-              account: {
-                color: debtTransaction.account.color,
-                icon: <DebtAccountIcon className="size-3.5" />,
-              },
-            }
-          : undefined
-      }
+      footer={{
+        icon: actorAvatar,
+        chips:
+          debtTransaction.account && DebtAccountIcon
+            ? [
+                {
+                  color: debtTransaction.account.color,
+                  icon: <DebtAccountIcon className="size-3.5" />,
+                  label: debtTransaction.account.name,
+                },
+              ]
+            : undefined,
+      }}
+      amount={amount}
       onClick={() => {
         onClick(debtTransaction);
       }}
