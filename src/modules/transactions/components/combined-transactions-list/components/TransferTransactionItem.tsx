@@ -27,7 +27,7 @@ function TransferAccountChip({ color, icon, label }: TransferAccountChipProps) {
   return (
     <span
       className={cn(
-        "inline-flex w-fit min-w-0 max-w-full justify-self-start items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-foreground",
+        "inline-flex w-fit min-w-0 max-w-full justify-self-start items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-foreground",
         !color && "bg-muted"
       )}
       style={{
@@ -58,7 +58,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-semibold leading-relaxed">Перевод</span>
-          <span className="text-right text-sm font-normal leading-relaxed tabular-nums text-amber-600 dark:text-amber-400">
+          <span className="text-right text-sm font-semibold leading-relaxed tabular-nums text-amber-600 dark:text-amber-400">
             {formatMoney(transaction.amount, transaction.fromAccount.currency)}
           </span>
         </div>

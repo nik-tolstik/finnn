@@ -15,6 +15,8 @@ export type AccountChipsMap = Partial<Record<AccountSegmentType, AccountChipData
 export interface TransactionLineAmount {
   text: ReactNode;
   className?: string;
+  secondaryText?: ReactNode;
+  secondaryClassName?: string;
 }
 
 interface TransactionLineFooter {
@@ -22,6 +24,7 @@ interface TransactionLineFooter {
   chips?: AccountChipData[];
   chipSeparator?: ReactNode;
   layout?: "right" | "between" | "stackedRight";
+  trailing?: TransactionLineAmount;
 }
 
 interface TransactionDescriptionLineProps {
@@ -105,17 +108,36 @@ export function TransactionDescriptionLine({
     );
   });
   const footerIcon = footer?.icon ? <span className="[&>svg]:size-4">{footer.icon}</span> : null;
+  const footerTrailing = footer?.trailing ? (
+    <span
+      className={cn(
+        "ml-auto shrink-0 text-right text-sm font-semibold leading-relaxed tabular-nums break-words",
+        footer.trailing.className
+      )}
+    >
+      {footer.trailing.text}
+    </span>
+  ) : null;
   const footerContent =
-    footerIcon || footerChips?.length ? (
+    footerIcon || footerChips?.length || footerTrailing ? (
       footer?.layout === "stackedRight" ? (
-        <div className="space-y-1.5 text-muted-foreground">
+        <div className="space-y-2 text-muted-foreground">
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">{footerChips}</div>
           {footerIcon ? <div className="flex justify-end">{footerIcon}</div> : null}
+          {footerTrailing ? <div className="flex justify-end">{footerTrailing}</div> : null}
         </div>
       ) : footer?.layout === "between" ? (
         <div className="flex min-w-0 items-center justify-between gap-3 text-muted-foreground">
           <span className="flex min-w-0 flex-wrap items-center gap-1.5">{footerChips}</span>
-          <span className="ml-auto shrink-0">{footerIcon}</span>
+          <span className="ml-auto shrink-0">{footerTrailing ?? footerIcon}</span>
+        </div>
+      ) : footerTrailing ? (
+        <div className="flex min-w-0 items-center justify-between gap-3 text-muted-foreground">
+          <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {footerIcon}
+            {footerChips}
+          </span>
+          {footerTrailing}
         </div>
       ) : (
         <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-muted-foreground">
@@ -140,7 +162,7 @@ export function TransactionDescriptionLine({
     );
   const belowDetails =
     footerContent || description ? (
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {footerContent}
         {description ? (
           <p className="border-t border-border mt-2 pt-2 text-xs text-muted-foreground leading-snug wrap-break-word">
@@ -150,6 +172,9 @@ export function TransactionDescriptionLine({
       </div>
     ) : null;
   const details = descriptionPlacement === "below" ? belowDetails : inlineDetails;
+  const amountClassName =
+    "shrink-0 max-w-[45%] text-right text-sm font-semibold leading-relaxed tabular-nums break-words sm:max-w-none";
+  const amountContent = amount ? <span className={cn(amountClassName, amount.className)}>{amount.text}</span> : null;
 
   if (onClick) {
     return (
@@ -157,19 +182,10 @@ export function TransactionDescriptionLine({
         className={cn("cursor-pointer p-3 transition-colors hover:bg-accent/70 sm:p-4", className)}
         onClick={onClick}
       >
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">{content}</div>
-            {amount ? (
-              <span
-                className={cn(
-                  "shrink-0 max-w-[45%] text-right text-sm font-semibold leading-relaxed tabular-nums break-words sm:max-w-none",
-                  amount.className
-                )}
-              >
-                {amount.text}
-              </span>
-            ) : null}
+            {amountContent}
           </div>
           {details}
         </div>
@@ -179,19 +195,10 @@ export function TransactionDescriptionLine({
 
   return (
     <Card className={cn("px-3 py-2 sm:px-4", className)}>
-      <div className="space-y-1.5 py-2">
+      <div className="space-y-2 py-2">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">{content}</div>
-          {amount ? (
-            <span
-              className={cn(
-                "shrink-0 max-w-[45%] text-right text-sm font-semibold leading-relaxed tabular-nums break-words sm:max-w-none",
-                amount.className
-              )}
-            >
-              {amount.text}
-            </span>
-          ) : null}
+          {amountContent}
         </div>
         {details}
       </div>

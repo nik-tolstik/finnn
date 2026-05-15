@@ -8,6 +8,8 @@ import type { PaymentTransactionWithRelations, TransferTransactionWithRelations 
 interface TransactionAmountDisplay {
   text: string;
   className: string;
+  secondaryText?: string;
+  secondaryClassName?: string;
 }
 
 const TRANSFER_AMOUNT_CLASS_NAME = "text-amber-600 dark:text-amber-400";
@@ -45,30 +47,30 @@ export function getTransferTransactionAmountDisplay(
   };
 }
 
-function getDebtAmountText(debtTransaction: DebtTransactionWithRelations): string {
-  const debtAmountText = formatMoney(debtTransaction.amount, debtTransaction.debt.currency);
-
-  if (
-    debtTransaction.type !== DebtTransactionType.CLOSED ||
-    !debtTransaction.account ||
-    !debtTransaction.toAmount ||
-    debtTransaction.account.currency === debtTransaction.debt.currency
-  ) {
-    return debtAmountText;
-  }
-
-  return `${debtAmountText} ⇄ ${formatMoney(debtTransaction.toAmount, debtTransaction.account.currency)}`;
-}
-
 export function getDebtTransactionAmountDisplay(
   debtTransaction: DebtTransactionWithRelations
 ): TransactionAmountDisplay {
   const isPositive =
     (debtTransaction.debt.type === DebtType.LENT && debtTransaction.type === DebtTransactionType.CLOSED) ||
     (debtTransaction.debt.type === DebtType.BORROWED && debtTransaction.type !== DebtTransactionType.CLOSED);
+  const className = isPositive ? "text-success" : "text-destructive";
+
+  if (
+    debtTransaction.type === DebtTransactionType.CLOSED &&
+    debtTransaction.account &&
+    debtTransaction.toAmount &&
+    debtTransaction.account.currency !== debtTransaction.debt.currency
+  ) {
+    return {
+      text: addSign(formatMoney(debtTransaction.toAmount, debtTransaction.account.currency), isPositive),
+      className,
+      secondaryText: formatMoney(debtTransaction.amount, debtTransaction.debt.currency),
+      secondaryClassName: "text-foreground",
+    };
+  }
 
   return {
-    text: addSign(getDebtAmountText(debtTransaction), isPositive),
-    className: isPositive ? "text-success" : "text-destructive",
+    text: addSign(formatMoney(debtTransaction.amount, debtTransaction.debt.currency), isPositive),
+    className,
   };
 }

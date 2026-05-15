@@ -54,6 +54,12 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
                 },
               ]
             : undefined,
+        trailing: amount.secondaryText
+          ? {
+              text: amount.secondaryText,
+              className: amount.secondaryClassName,
+            }
+          : undefined,
       }}
       amount={amount}
       onClick={() => {
