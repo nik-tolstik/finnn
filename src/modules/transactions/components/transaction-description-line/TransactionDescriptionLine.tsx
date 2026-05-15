@@ -111,7 +111,7 @@ export function TransactionDescriptionLine({
   const footerTrailing = footer?.trailing ? (
     <span
       className={cn(
-        "ml-auto shrink-0 text-right text-sm font-semibold leading-relaxed tabular-nums break-words",
+        "ml-auto shrink-0 text-right text-sm font-medium leading-relaxed break-words",
         footer.trailing.className
       )}
     >
@@ -173,7 +173,7 @@ export function TransactionDescriptionLine({
     ) : null;
   const details = descriptionPlacement === "below" ? belowDetails : inlineDetails;
   const amountClassName =
-    "shrink-0 max-w-[45%] text-right text-sm font-semibold leading-relaxed tabular-nums break-words sm:max-w-none";
+    "shrink-0 max-w-[45%] text-right text-sm font-medium leading-relaxed break-words sm:max-w-none";
   const amountContent = amount ? <span className={cn(amountClassName, amount.className)}>{amount.text}</span> : null;
 
   if (onClick) {

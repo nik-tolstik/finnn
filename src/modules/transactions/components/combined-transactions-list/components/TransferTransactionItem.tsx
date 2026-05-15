@@ -57,8 +57,8 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
     >
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm font-semibold leading-relaxed">Перевод</span>
-          <span className="text-right text-sm font-semibold leading-relaxed tabular-nums text-amber-600 dark:text-amber-400">
+          <span className="text-sm font-medium leading-relaxed">Перевод</span>
+          <span className="text-right text-sm font-medium leading-relaxed text-amber-600 dark:text-amber-400">
             {formatMoney(transaction.amount, transaction.fromAccount.currency)}
           </span>
         </div>
@@ -76,7 +76,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
               label={transaction.toAccount.name}
             />
           </div>
-          <span className="text-right text-sm font-semibold leading-relaxed tabular-nums text-foreground">
+          <span className="text-right text-sm font-medium leading-relaxed text-foreground">
             {formatMoney(transaction.toAmount, transaction.toAccount.currency)}
           </span>
         </div>
