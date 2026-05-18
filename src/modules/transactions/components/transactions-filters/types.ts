@@ -6,6 +6,7 @@ export interface TransactionFilterMember {
   id: string;
   name: string | null;
   email: string;
+  image: string | null;
 }
 
 export interface TransactionFilterCategory {
@@ -17,6 +18,8 @@ export interface TransactionFilterCategory {
 export interface TransactionFilterAccount {
   id: string;
   name: string;
+  color: string | null;
+  icon: string | null;
   ownerId: string | null;
   owner: {
     name: string | null;

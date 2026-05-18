@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Check } from "lucide-react";
 
+import { UserAvatar } from "@/shared/components/UserAvatar";
 import { Button } from "@/shared/ui/button";
 import { DatePicker } from "@/shared/ui/date-picker";
 import { Input } from "@/shared/ui/input";
@@ -9,6 +11,7 @@ import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
+import { getAccountIcon } from "@/shared/utils/account-icons";
 
 import type {
   TransactionFilterAccount,
@@ -71,6 +74,8 @@ export function TransactionsFilterDrawer({
   const transactionTypeOptions = useMemo(() => buildTransactionTypeOptions(), []);
   const memberOptions = useMemo(() => buildMemberOptions(members), [members]);
   const accountOptions = useMemo(() => buildAccountOptions(accounts), [accounts]);
+  const membersById = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
+  const accountsById = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
   const allowedCategoryTypes = useMemo(
     () => getAllowedCategoryTypes(draftFilters.transactionTypes),
     [draftFilters.transactionTypes]
@@ -145,6 +150,19 @@ export function TransactionsFilterDrawer({
               allowClear
               label="Пользователи"
               options={memberOptions}
+              renderOption={({ option, selected, isTrigger }) => {
+                const member = membersById.get(String(option.value));
+
+                return (
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    {member && (
+                      <UserAvatar name={member.name} email={member.email} image={member.image} size="sm" />
+                    )}
+                    <span className="min-w-0 flex-1 truncate font-normal">{option.label}</span>
+                    {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
+                  </span>
+                );
+              }}
               value={draftFilters.userIds || []}
               onChange={(userIds) => {
                 updateDraftFilter("userIds", userIds);
@@ -191,6 +209,20 @@ export function TransactionsFilterDrawer({
               allowClear
               label="Счета"
               options={accountOptions}
+              renderOption={({ option, selected, isTrigger }) => {
+                const account = accountsById.get(String(option.value));
+                const AccountIcon = account ? getAccountIcon(account.icon) : null;
+
+                return (
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    {AccountIcon && (
+                      <AccountIcon className="size-4 shrink-0" style={{ color: account?.color ?? undefined }} />
+                    )}
+                    <span className="min-w-0 flex-1 truncate font-normal">{option.label}</span>
+                    {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
+                  </span>
+                );
+              }}
               value={draftFilters.accountIds || []}
               onChange={(accountIds) => {
                 updateDraftFilter("accountIds", accountIds);
