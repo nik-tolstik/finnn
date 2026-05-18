@@ -1,6 +1,8 @@
 "use server";
 
 import nodemailer from "nodemailer";
+
+import { fail, success } from "@/shared/lib/action-result";
 import { serverLogger } from "@/shared/lib/logger";
 
 const transporter = nodemailer.createTransport({
@@ -58,10 +60,10 @@ export async function sendInviteEmail(email: string, token: string, workspaceNam
     });
 
     serverLogger.info("Email sent successfully to:", email);
-    return { success: true };
-  } catch (error: any) {
+    return success();
+  } catch (error: unknown) {
     serverLogger.error("Failed to send email:", error);
-    return { error: error.message || "Не удалось отправить email" };
+    return fail(error, "Не удалось отправить email");
   }
 }
 
@@ -101,9 +103,9 @@ export async function sendVerificationEmail(email: string, token: string, name?:
     });
 
     serverLogger.info("Email sent successfully to:", email);
-    return { success: true };
-  } catch (error: any) {
+    return success();
+  } catch (error: unknown) {
     serverLogger.error("Failed to send email:", error);
-    return { error: error.message || "Не удалось отправить email" };
+    return fail(error, "Не удалось отправить email");
   }
 }

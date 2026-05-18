@@ -3,6 +3,7 @@
 import { Currency } from "@prisma/client";
 
 import { getNBRBExchangeRates, getNBRBExchangeRatesByDate } from "@/modules/currency/currency.service";
+import { fail, ok } from "@/shared/lib/action-result";
 import { serverLogger } from "@/shared/lib/logger";
 import { prisma } from "@/shared/lib/prisma";
 
@@ -280,7 +281,7 @@ export async function getExchangeRate(
   toCurrency: Currency
 ): Promise<{ data: number } | { error: string }> {
   if (fromCurrency === toCurrency) {
-    return { data: 1 };
+    return ok(1);
   }
 
   try {
@@ -296,9 +297,9 @@ export async function getExchangeRate(
       return { error: `Курс для ${fromCurrency}/${toCurrency} на ${getDateKey(date)} не найден` };
     }
 
-    return { data: rate };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось получить курс" };
+    return ok(rate);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось получить курс");
   }
 }
 
@@ -324,9 +325,9 @@ export async function getTodayExchangeRates(): Promise<{ data: Record<string, nu
   const today = normalizeDate(new Date());
 
   try {
-    return { data: await getCurrencyRatesForDate(today) };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось получить курсы валют" };
+    return ok(await getCurrencyRatesForDate(today));
+  } catch (error: unknown) {
+    return fail(error, "Не удалось получить курсы валют");
   }
 }
 
@@ -334,8 +335,8 @@ export async function getYesterdayExchangeRates(): Promise<{ data: Record<string
   const yesterday = normalizeDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
 
   try {
-    return { data: await getCurrencyRatesForDate(yesterday) };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось получить вчерашние курсы валют" };
+    return ok(await getCurrencyRatesForDate(yesterday));
+  } catch (error: unknown) {
+    return fail(error, "Не удалось получить вчерашние курсы валют");
   }
 }

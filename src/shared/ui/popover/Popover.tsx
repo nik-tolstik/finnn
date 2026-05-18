@@ -2,12 +2,13 @@
 
 import {
   autoUpdate,
-  flip,
   FloatingFocusManager,
   FloatingNode,
   FloatingPortal,
   FloatingTree,
+  flip,
   offset as floatingOffset,
+  type Placement,
   shift,
   size,
   useClick,
@@ -18,7 +19,6 @@ import {
   useInteractions,
   useRole,
   useTransitionStyles,
-  type Placement,
 } from "@floating-ui/react";
 import * as React from "react";
 

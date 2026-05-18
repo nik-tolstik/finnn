@@ -1,5 +1,6 @@
 "use server";
 
+import { fail, ok, success } from "@/shared/lib/action-result";
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
@@ -87,9 +88,9 @@ export async function createAccount(workspaceId: string, input: CreateAccountInp
     });
 
     revalidateAccountingRoutes();
-    return { data: account };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось создать счёт" };
+    return ok(account);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось создать счёт");
   }
 }
 
@@ -125,9 +126,9 @@ export async function updateAccount(id: string, input: UpdateAccountInput) {
     });
 
     revalidateAccountingRoutes();
-    return { data: updated };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось обновить счёт" };
+    return ok(updated);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось обновить счёт");
   }
 }
 
@@ -147,7 +148,7 @@ export async function archiveAccount(id: string) {
 
     if (account.archived) {
       revalidateAccountingRoutes();
-      return { success: true };
+      return success();
     }
 
     await prisma.account.update({
@@ -156,9 +157,9 @@ export async function archiveAccount(id: string) {
     });
 
     revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось архивировать счёт" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось архивировать счёт");
   }
 }
 
@@ -184,9 +185,9 @@ export async function getAccounts(workspaceId: string) {
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
     });
 
-    return { data: accounts };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить счета" };
+    return ok(accounts);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить счета");
   }
 }
 
@@ -208,9 +209,9 @@ export async function getAccount(id: string) {
 
     await requireWorkspaceAccess(account.workspaceId);
 
-    return { data: account };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить счёт" };
+    return ok(account);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить счёт");
   }
 }
 
@@ -240,9 +241,9 @@ export async function updateAccountsOrder(workspaceId: string, input: UpdateAcco
     );
 
     revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось обновить порядок счетов" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось обновить порядок счетов");
   }
 }
 
@@ -277,8 +278,8 @@ export async function getArchivedAccounts(workspaceId: string) {
       orderBy: { createdAt: "desc" },
     });
 
-    return {
-      data: accounts.map((account) => ({
+    return ok(
+      accounts.map((account) => ({
         ...account,
         _count: {
           transactions:
@@ -286,10 +287,10 @@ export async function getArchivedAccounts(workspaceId: string) {
           debts: account._count.debts,
           debtTransactions: account._count.debtTransactions,
         },
-      })),
-    };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить архивированные счета" };
+      }))
+    );
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить архивированные счета");
   }
 }
 
@@ -309,7 +310,7 @@ export async function unarchiveAccount(id: string) {
 
     if (!account.archived) {
       revalidateAccountingRoutes();
-      return { success: true };
+      return success();
     }
 
     const accountsCount = await prisma.account.count({
@@ -322,9 +323,9 @@ export async function unarchiveAccount(id: string) {
     });
 
     revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось удалить счёт из архива" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось удалить счёт из архива");
   }
 }
 
@@ -360,8 +361,8 @@ export async function deleteArchivedAccount(id: string) {
     });
 
     revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось удалить архивный счёт" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось удалить архивный счёт");
   }
 }

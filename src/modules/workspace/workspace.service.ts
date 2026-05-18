@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { Currency } from "@prisma/client";
 
 import { CategoryType } from "@/modules/categories/category.constants";
+import { fail, ok, success } from "@/shared/lib/action-result";
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateWorkspaceRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
@@ -86,9 +87,9 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
     }
 
     revalidateWorkspaceRoutes();
-    return { data: workspace };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось создать рабочий стол" };
+    return ok(workspace);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось создать рабочий стол");
   }
 }
 
@@ -104,9 +105,9 @@ export async function updateWorkspace(id: string, input: UpdateWorkspaceInput) {
     });
 
     revalidateWorkspaceRoutes();
-    return { data: updated };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось обновить рабочий стол" };
+    return ok(updated);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось обновить рабочий стол");
   }
 }
 
@@ -119,9 +120,9 @@ export async function deleteWorkspace(id: string) {
     });
 
     revalidateWorkspaceRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось удалить рабочий стол" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось удалить рабочий стол");
   }
 }
 
@@ -164,9 +165,9 @@ export async function getWorkspaces() {
       },
     });
 
-    return { data: workspaces };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить рабочие столы" };
+    return ok(workspaces);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить рабочие столы");
   }
 }
 
@@ -189,9 +190,9 @@ export async function getWorkspaceSummary(id: string) {
       return { error: "Рабочий стол не найден" };
     }
 
-    return { data: workspace satisfies WorkspaceSummary };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить рабочий стол" };
+    return ok(workspace satisfies WorkspaceSummary);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить рабочий стол");
   }
 }
 
@@ -229,9 +230,9 @@ export async function getWorkspace(id: string) {
       return { error: "Рабочий стол не найден" };
     }
 
-    return { data: workspace };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить рабочий стол" };
+    return ok(workspace);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить рабочий стол");
   }
 }
 
@@ -288,11 +289,9 @@ export async function getWorkspaceMembers(workspaceId: string) {
       (member, index, self) => index === self.findIndex((m) => m.id === member.id)
     );
 
-    return { data: uniqueMembers };
-  } catch (error: any) {
-    return {
-      error: error.message || "Не удалось загрузить участников рабочего стола",
-    };
+    return ok(uniqueMembers);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить участников рабочего стола");
   }
 }
 
@@ -335,9 +334,9 @@ export async function createInvite(workspaceId: string, input: CreateInviteInput
     });
 
     revalidateWorkspaceRoutes();
-    return { data: invite };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось создать приглашение" };
+    return ok(invite);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось создать приглашение");
   }
 }
 
@@ -397,9 +396,9 @@ export async function acceptInvite(token: string) {
     });
 
     revalidateWorkspaceRoutes();
-    return { success: true, workspaceId: invite.workspaceId };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось принять приглашение" };
+    return success({ workspaceId: invite.workspaceId });
+  } catch (error: unknown) {
+    return fail(error, "Не удалось принять приглашение");
   }
 }
 
@@ -443,9 +442,9 @@ export async function leaveWorkspace(workspaceId: string) {
     });
 
     revalidateWorkspaceRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось покинуть рабочий стол" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось покинуть рабочий стол");
   }
 }
 
@@ -471,15 +470,13 @@ export async function getWorkspaceInvite(token: string) {
       return { error: "Приглашение истекло" };
     }
 
-    return {
-      data: {
-        email: invite.email,
-        workspaceName: invite.workspace.name,
-        workspaceId: invite.workspace.id,
-        expiresAt: invite.expiresAt,
-      },
-    };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить приглашение" };
+    return ok({
+      email: invite.email,
+      workspaceName: invite.workspace.name,
+      workspaceId: invite.workspace.id,
+      expiresAt: invite.expiresAt,
+    });
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить приглашение");
   }
 }

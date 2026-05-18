@@ -1,5 +1,6 @@
 "use server";
 
+import { fail, ok, success } from "@/shared/lib/action-result";
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
@@ -35,9 +36,9 @@ export async function createCategory(workspaceId: string, input: CreateCategoryI
     });
 
     revalidateAccountingRoutes();
-    return { data: category };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось создать категорию" };
+    return ok(category);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось создать категорию");
   }
 }
 
@@ -63,9 +64,9 @@ export async function updateCategory(id: string, input: UpdateCategoryInput) {
     });
 
     revalidateAccountingRoutes();
-    return { data: updated };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось обновить категорию" };
+    return ok(updated);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось обновить категорию");
   }
 }
 
@@ -88,9 +89,9 @@ export async function deleteCategory(id: string) {
     });
 
     revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось удалить категорию" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось удалить категорию");
   }
 }
 
@@ -113,9 +114,9 @@ export async function getCategories(workspaceId: string, type?: string) {
       orderBy: [{ order: "asc" }, { name: "asc" }],
     });
 
-    return { data: categories };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить категории" };
+    return ok(categories);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить категории");
   }
 }
 
@@ -124,7 +125,7 @@ export async function updateCategoriesOrder(workspaceId: string, categoryIds: st
     await requireWorkspaceAccess(workspaceId);
 
     if (categoryIds.length === 0) {
-      return { success: true };
+      return success();
     }
 
     const categories = await prisma.category.findMany({
@@ -159,9 +160,9 @@ export async function updateCategoriesOrder(workspaceId: string, categoryIds: st
     await Promise.all(updates);
 
     revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось обновить порядок категорий" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось обновить порядок категорий");
   }
 }
 
@@ -185,8 +186,8 @@ export async function getCategoryTransactionCount(categoryId: string) {
       },
     });
 
-    return { data: count };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось подсчитать транзакции" };
+    return ok(count);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось подсчитать транзакции");
   }
 }

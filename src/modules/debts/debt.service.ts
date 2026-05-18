@@ -2,6 +2,17 @@
 
 import type { DebtTransaction, Prisma } from "@prisma/client";
 
+import { fail, ok, success } from "@/shared/lib/action-result";
+import {
+  addAccountBalanceDelta as addBalanceDelta,
+  applyBalanceDelta,
+  assertNonNegativeBalance,
+  getDebtDeletionBalanceDelta,
+  getDebtInitialAccountBalanceDelta,
+  getDebtTransactionBalanceDelta,
+  getDebtTransactionTotalsDelta,
+  getPaymentTransactionBalanceDelta,
+} from "@/shared/lib/balance-domain";
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateDebtRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
@@ -42,11 +53,6 @@ type AccessibleDebtTransaction = Prisma.DebtTransactionGetPayload<{
 }>;
 
 type DebtTransactionBalanceEffect = Pick<DebtTransaction, "accountId" | "type" | "amount" | "toAmount">;
-
-type DebtTransactionTotalsDelta = {
-  amountDelta: string;
-  remainingDelta: string;
-};
 
 async function getWorkspaceAccountOrThrow(
   tx: PrismaTx,
@@ -140,60 +146,17 @@ async function applyInitialAmountDeltaToAccount(tx: PrismaTx, debt: AccessibleDe
     return;
   }
 
-  if (debt.type === DebtType.LENT) {
-    if (compareMoney(amountDelta, "0") > 0 && compareMoney(account.balance, amountDelta) < 0) {
-      throw new Error(`Сумма не может превышать баланс счёта (${account.balance})`);
-    }
+  const balanceDelta = getDebtInitialAccountBalanceDelta(debt.type, amountDelta);
+  const nextBalance = applyBalanceDelta(account.balance, balanceDelta);
 
-    await tx.account.update({
-      where: { id: debt.accountId },
-      data: { balance: subtractMoney(account.balance, amountDelta) },
-    });
-    return;
-  }
-
-  if (compareMoney(amountDelta, "0") < 0 && compareMoney(account.balance, subtractMoney("0", amountDelta)) < 0) {
+  if (compareMoney(nextBalance, "0") < 0) {
     throw new Error(`Недостаточно средств на счёте (${account.balance})`);
   }
 
   await tx.account.update({
     where: { id: debt.accountId },
-    data: { balance: addMoney(account.balance, amountDelta) },
+    data: { balance: nextBalance },
   });
-}
-
-function getDebtTransactionAccountAmount(transaction: DebtTransactionBalanceEffect) {
-  return transaction.type === DebtTransactionType.CLOSED
-    ? transaction.toAmount || transaction.amount
-    : transaction.amount;
-}
-
-function getDebtTransactionBalanceDelta(debtType: string, transaction: DebtTransactionBalanceEffect) {
-  const accountAmount = getDebtTransactionAccountAmount(transaction);
-
-  if (transaction.type === DebtTransactionType.CLOSED) {
-    return debtType === DebtType.LENT ? accountAmount : subtractMoney("0", accountAmount);
-  }
-
-  return debtType === DebtType.LENT ? subtractMoney("0", accountAmount) : accountAmount;
-}
-
-function getDebtDeletionBalanceDelta(debtType: string, transaction: DebtTransactionBalanceEffect) {
-  return subtractMoney("0", getDebtTransactionBalanceDelta(debtType, transaction));
-}
-
-function getDebtTransactionTotalsDelta(transactionType: string, amount: string): DebtTransactionTotalsDelta {
-  if (transactionType === DebtTransactionType.CLOSED) {
-    return {
-      amountDelta: "0",
-      remainingDelta: subtractMoney("0", amount),
-    };
-  }
-
-  return {
-    amountDelta: amount,
-    remainingDelta: amount,
-  };
 }
 
 function minMoney(a: string, b: string) {
@@ -228,23 +191,6 @@ function getCategoryTypeFromPaymentType(paymentType: PaymentTransactionType) {
   return paymentType === PaymentTransactionType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
 }
 
-function getPaymentTransactionBalanceDelta(type: PaymentTransactionType, amount: string) {
-  return type === PaymentTransactionType.INCOME ? amount : subtractMoney("0", amount);
-}
-
-function addBalanceDelta(
-  balanceDeltasByAccount: Map<string, string>,
-  accountId: string | null | undefined,
-  delta: string
-) {
-  if (!accountId || compareMoney(delta, "0") === 0) {
-    return;
-  }
-
-  const currentDelta = balanceDeltasByAccount.get(accountId) || "0";
-  balanceDeltasByAccount.set(accountId, addMoney(currentDelta, delta));
-}
-
 async function applyAccountBalanceDeltas(
   tx: PrismaTx,
   workspaceId: string,
@@ -276,11 +222,8 @@ async function applyAccountBalanceDeltas(
       throw new Error("Счёт не найден");
     }
 
-    const nextBalance = addMoney(account.balance, delta);
-
-    if (compareMoney(nextBalance, "0") < 0) {
-      throw new Error(`Недостаточно средств на счёте "${account.name}" (${account.balance})`);
-    }
+    const nextBalance = applyBalanceDelta(account.balance, delta);
+    assertNonNegativeBalance(nextBalance, `Недостаточно средств на счёте "${account.name}" (${account.balance})`);
 
     await tx.account.update({
       where: { id: accountId },
@@ -332,21 +275,16 @@ export async function createDebt(workspaceId: string, input: CreateDebtInput) {
         currency = account.currency;
         accountId = account.id;
 
-        if (validated.type === DebtType.LENT) {
-          if (compareMoney(validated.amount, account.balance) > 0) {
-            throw new Error(`Сумма не может превышать баланс счёта (${account.balance})`);
-          }
+        const nextBalance = applyBalanceDelta(
+          account.balance,
+          getDebtInitialAccountBalanceDelta(validated.type, validated.amount)
+        );
+        assertNonNegativeBalance(nextBalance, `Сумма не может превышать баланс счёта (${account.balance})`);
 
-          await tx.account.update({
-            where: { id: account.id },
-            data: { balance: subtractMoney(account.balance, validated.amount) },
-          });
-        } else {
-          await tx.account.update({
-            where: { id: account.id },
-            data: { balance: addMoney(account.balance, validated.amount) },
-          });
-        }
+        await tx.account.update({
+          where: { id: account.id },
+          data: { balance: nextBalance },
+        });
       }
 
       const createdDebt = await tx.debt.create({
@@ -378,10 +316,9 @@ export async function createDebt(workspaceId: string, input: CreateDebtInput) {
     });
 
     revalidateDebtRoutes();
-    return { data: debt };
+    return ok(debt);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Не удалось создать долг";
-    return { error: message };
+    return fail(error, "Не удалось создать долг");
   }
 }
 
@@ -463,11 +400,8 @@ export async function closeDebt(id: string, input: CloseDebtInput) {
           );
         }
 
-        const nextBalance = addMoney(account.balance, balanceDelta);
-
-        if (compareMoney(nextBalance, "0") < 0) {
-          throw new Error(`Сумма не может превышать баланс счёта (${account.balance})`);
-        }
+        const nextBalance = applyBalanceDelta(account.balance, balanceDelta);
+        assertNonNegativeBalance(nextBalance, `Сумма не может превышать баланс счёта (${account.balance})`);
 
         await tx.account.update({
           where: { id: validated.accountId },
@@ -518,10 +452,9 @@ export async function closeDebt(id: string, input: CloseDebtInput) {
     });
 
     revalidateDebtRoutes();
-    return { data: updatedDebt };
+    return ok(updatedDebt);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Не удалось закрыть долг";
-    return { error: message };
+    return fail(error, "Не удалось закрыть долг");
   }
 }
 
@@ -539,22 +472,16 @@ export async function addToDebt(id: string, input: AddToDebtInput) {
 
       if (validated.useAccount && debt.accountId && debt.account) {
         const account = await getWorkspaceAccountOrThrow(tx, debt.workspaceId, debt.accountId);
+        const nextBalance = applyBalanceDelta(
+          account.balance,
+          getDebtInitialAccountBalanceDelta(debt.type, validated.amount)
+        );
+        assertNonNegativeBalance(nextBalance, `Сумма не может превышать баланс счёта (${account.balance})`);
 
-        if (debt.type === DebtType.LENT) {
-          if (compareMoney(validated.amount, account.balance) > 0) {
-            throw new Error(`Сумма не может превышать баланс счёта (${account.balance})`);
-          }
-
-          await tx.account.update({
-            where: { id: debt.accountId },
-            data: { balance: subtractMoney(account.balance, validated.amount) },
-          });
-        } else {
-          await tx.account.update({
-            where: { id: debt.accountId },
-            data: { balance: addMoney(account.balance, validated.amount) },
-          });
-        }
+        await tx.account.update({
+          where: { id: debt.accountId },
+          data: { balance: nextBalance },
+        });
       }
 
       const nextDebt = await tx.debt.update({
@@ -580,10 +507,9 @@ export async function addToDebt(id: string, input: AddToDebtInput) {
     });
 
     revalidateDebtRoutes();
-    return { data: updatedDebt };
+    return ok(updatedDebt);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Не удалось добавить к долгу";
-    return { error: message };
+    return fail(error, "Не удалось добавить к долгу");
   }
 }
 
@@ -629,10 +555,9 @@ export async function deleteDebt(id: string) {
     });
 
     revalidateDebtRoutes();
-    return { success: true };
+    return success();
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Не удалось удалить долг";
-    return { error: message };
+    return fail(error, "Не удалось удалить долг");
   }
 }
 
@@ -665,27 +590,22 @@ export async function getDebtEditData(debtId: string) {
     });
 
     if (!createdTransaction) {
-      return {
-        data: {
-          personName: debt.personName,
-          initialAmount: debt.amount,
-          initialDate: debt.date.toISOString(),
-          currency: debt.currency,
-        },
-      };
+      return ok({
+        personName: debt.personName,
+        initialAmount: debt.amount,
+        initialDate: debt.date.toISOString(),
+        currency: debt.currency,
+      });
     }
 
-    return {
-      data: {
-        personName: debt.personName,
-        initialAmount: createdTransaction.amount,
-        initialDate: createdTransaction.date.toISOString(),
-        currency: debt.currency,
-      },
-    };
+    return ok({
+      personName: debt.personName,
+      initialAmount: createdTransaction.amount,
+      initialDate: createdTransaction.date.toISOString(),
+      currency: debt.currency,
+    });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Не удалось загрузить данные";
-    return { error: message };
+    return fail(error, "Не удалось загрузить данные");
   }
 }
 
@@ -759,10 +679,9 @@ export async function updateDebt(debtId: string, input: UpdateDebtInput) {
     });
 
     revalidateDebtRoutes();
-    return { data: updatedDebt };
+    return ok(updatedDebt);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Не удалось обновить долг";
-    return { error: message };
+    return fail(error, "Не удалось обновить долг");
   }
 }
 
@@ -858,10 +777,9 @@ export async function updateDebtTransaction(id: string, input: UpdateDebtTransac
     });
 
     revalidateDebtRoutes();
-    return { data: updatedDebtTransaction };
+    return ok(updatedDebtTransaction);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Не удалось обновить транзакцию долга";
-    return { error: message };
+    return fail(error, "Не удалось обновить транзакцию долга");
   }
 }
 
@@ -900,14 +818,13 @@ export async function deleteDebtTransaction(id: string) {
         where: { id },
       });
 
-      return { success: true as const };
+      return success();
     });
 
     revalidateDebtRoutes();
     return deleted;
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Не удалось удалить транзакцию долга";
-    return { error: message };
+    return fail(error, "Не удалось удалить транзакцию долга");
   }
 }
 

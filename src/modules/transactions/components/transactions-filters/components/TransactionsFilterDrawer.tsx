@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { Check } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { Button } from "@/shared/ui/button";
@@ -155,9 +155,7 @@ export function TransactionsFilterDrawer({
 
                 return (
                   <span className="flex min-w-0 flex-1 items-center gap-2">
-                    {member && (
-                      <UserAvatar name={member.name} email={member.email} image={member.image} size="sm" />
-                    )}
+                    {member && <UserAvatar name={member.name} email={member.email} image={member.image} size="sm" />}
                     <span className="min-w-0 flex-1 truncate font-normal">{option.label}</span>
                     {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
                   </span>

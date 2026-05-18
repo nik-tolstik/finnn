@@ -3,13 +3,13 @@
 import type { Account } from "@prisma/client";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { getVisibleAccounts, resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountsCards } from "@/modules/accounts/components/accounts-cards";
-import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog";
 import { getCategories } from "@/modules/categories/category.service";
 import { CombinedTransactionsList } from "@/modules/transactions/components/combined-transactions-list";
 import {
@@ -39,19 +39,21 @@ type AccountWithOwner = Account & {
 };
 
 interface DashboardContentProps {
-  accounts: AccountWithOwner[];
-  allAccounts?: AccountWithOwner[];
   initialCurrentUserId?: string;
   workspaceId: string;
 }
 
 const TRANSACTIONS_PER_PAGE = 20;
 
+const CreateAccountDialog = dynamic(() =>
+  import("@/modules/accounts/components/create-account-dialog").then((mod) => mod.CreateAccountDialog)
+);
+
 function isSuccessResponse(data: any): data is { data: CombinedTransaction[]; total: number } {
   return data && "data" in data && !("error" in data);
 }
 
-export function DashboardContent({ accounts, allAccounts, initialCurrentUserId, workspaceId }: DashboardContentProps) {
+export function DashboardContent({ initialCurrentUserId, workspaceId }: DashboardContentProps) {
   const { data: session } = useSession();
   const [displayedCount, setDisplayedCount] = useState(TRANSACTIONS_PER_PAGE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -77,33 +79,26 @@ export function DashboardContent({ accounts, allAccounts, initialCurrentUserId, 
   } = useQuery({
     queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
-    initialData: { data: allAccounts || accounts },
-    staleTime: 5000,
   });
 
   const { data: membersData } = useQuery({
     queryKey: workspaceKeys.members(workspaceId),
     queryFn: () => getWorkspaceMembers(workspaceId),
-    staleTime: 5000,
   });
 
   const { data: categoriesData } = useQuery({
     queryKey: categoryKeys.list(workspaceId),
     queryFn: () => getCategories(workspaceId),
-    staleTime: 5000,
   });
 
   const viewerUserId = resolveViewerUserId(session?.user?.id, initialCurrentUserId);
-  const availableAccounts = useMemo(
-    () => accountsData?.data || allAccounts || accounts,
-    [accountsData?.data, allAccounts, accounts]
-  );
+  const availableAccounts = useMemo<AccountWithOwner[]>(() => accountsData?.data || [], [accountsData?.data]);
 
   const displayAccounts = useMemo(() => {
     return getVisibleAccounts(availableAccounts, viewerUserId, showAllAccounts);
   }, [availableAccounts, showAllAccounts, viewerUserId]);
 
-  const isAccountsLoading = isLoadingAccounts || (isFetchingAccounts && accounts.length === 0);
+  const isAccountsLoading = isLoadingAccounts || (isFetchingAccounts && availableAccounts.length === 0);
   const transactionFilters = useMemo(
     () => ({
       ...appliedFilters,
@@ -122,7 +117,6 @@ export function DashboardContent({ accounts, allAccounts, initialCurrentUserId, 
     queryKey: transactionKeys.list(workspaceId, transactionFilters),
     queryFn: () => getCombinedTransactions(workspaceId, transactionFilters),
     placeholderData: keepPreviousData,
-    staleTime: 5000,
   });
 
   useEffect(() => {

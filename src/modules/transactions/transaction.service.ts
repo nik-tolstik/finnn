@@ -2,6 +2,12 @@
 
 import type { Prisma } from "@prisma/client";
 
+import { fail, ok, success } from "@/shared/lib/action-result";
+import {
+  applyPaymentTransactionBalance,
+  getTransferTransactionBalanceDeltas,
+  revertPaymentTransactionBalance,
+} from "@/shared/lib/balance-domain";
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
@@ -18,7 +24,11 @@ import {
 import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
 import type { DebtTransactionWithRelations } from "../debts/debt.types";
-import { PaymentTransactionType } from "./transaction.constants";
+import {
+  DEBT_TRANSACTION_FILTER_VALUE,
+  PaymentTransactionType,
+  TRANSFER_TRANSACTION_FILTER_VALUE,
+} from "./transaction.constants";
 import type { CombinedTransaction } from "./transaction.types";
 import type { TransactionListFilters } from "./transaction-filter.types";
 import { filterCombinedTransactions } from "./utils/combined-transaction-filtering";
@@ -54,28 +64,220 @@ const userSelect = {
   image: true,
 } satisfies Prisma.UserSelect;
 
-function applyPaymentTransactionBalance(balance: string, type: string, amount: string) {
-  if (type === PaymentTransactionType.INCOME) {
-    return addMoney(balance, amount);
-  }
+const paymentTransactionInclude = {
+  account: {
+    select: accountWithOwnerSelect,
+  },
+  category: {
+    select: categorySelect,
+  },
+} satisfies Prisma.PaymentTransactionInclude;
 
-  if (type === PaymentTransactionType.EXPENSE) {
-    return subtractMoney(balance, amount);
-  }
+const transferTransactionInclude = {
+  fromAccount: {
+    select: accountWithOwnerSelect,
+  },
+  toAccount: {
+    select: accountWithOwnerSelect,
+  },
+  createdBy: {
+    select: userSelect,
+  },
+} satisfies Prisma.TransferTransactionInclude;
 
-  return balance;
+const debtTransactionInclude = {
+  debt: {
+    select: {
+      id: true,
+      workspaceId: true,
+      type: true,
+      personName: true,
+      amount: true,
+      remainingAmount: true,
+      currency: true,
+      accountId: true,
+      date: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  },
+  account: {
+    select: accountWithOwnerSelect,
+  },
+} satisfies Prisma.DebtTransactionInclude;
+
+function hasAmountRangeFilter(filters?: CombinedTransactionFilters) {
+  return Boolean(filters?.amountFrom || filters?.amountTo);
 }
 
-function revertPaymentTransactionBalance(balance: string, type: string, amount: string) {
-  if (type === PaymentTransactionType.INCOME) {
-    return subtractMoney(balance, amount);
+function buildDateWhere(filters?: CombinedTransactionFilters) {
+  const date: Prisma.DateTimeFilter = {};
+
+  if (filters?.dateFrom) {
+    date.gte = new Date(`${filters.dateFrom}T00:00:00`);
   }
 
-  if (type === PaymentTransactionType.EXPENSE) {
-    return addMoney(balance, amount);
+  if (filters?.dateTo) {
+    date.lte = new Date(`${filters.dateTo}T23:59:59.999`);
   }
 
-  return balance;
+  return Object.keys(date).length > 0 ? date : undefined;
+}
+
+function getSelectedPaymentTypes(filters?: CombinedTransactionFilters) {
+  return (
+    filters?.transactionTypes?.filter(
+      (type): type is PaymentTransactionType =>
+        type === PaymentTransactionType.INCOME || type === PaymentTransactionType.EXPENSE
+    ) || []
+  );
+}
+
+function shouldQueryPaymentTransactions(filters?: CombinedTransactionFilters) {
+  if (!filters?.transactionTypes?.length) {
+    return true;
+  }
+
+  return getSelectedPaymentTypes(filters).length > 0;
+}
+
+function shouldQueryTransferTransactions(filters?: CombinedTransactionFilters) {
+  if (filters?.categoryIds?.length) {
+    return false;
+  }
+
+  if (!filters?.transactionTypes?.length) {
+    return true;
+  }
+
+  return filters.transactionTypes.includes(TRANSFER_TRANSACTION_FILTER_VALUE);
+}
+
+function shouldQueryDebtTransactions(filters?: CombinedTransactionFilters) {
+  if (filters?.categoryIds?.length || filters?.description || filters?.includeDebtTransactions === false) {
+    return false;
+  }
+
+  if (!filters?.transactionTypes?.length) {
+    return true;
+  }
+
+  return filters.transactionTypes.includes(DEBT_TRANSACTION_FILTER_VALUE);
+}
+
+function buildPaymentTransactionWhere(workspaceId: string, filters?: CombinedTransactionFilters) {
+  const where: Prisma.PaymentTransactionWhereInput = { workspaceId };
+  const date = buildDateWhere(filters);
+  const selectedPaymentTypes = getSelectedPaymentTypes(filters);
+
+  if (date) {
+    where.date = date;
+  }
+
+  if (selectedPaymentTypes.length > 0) {
+    where.type = { in: selectedPaymentTypes };
+  }
+
+  if (filters?.accountIds?.length) {
+    where.accountId = { in: filters.accountIds };
+  }
+
+  if (filters?.categoryIds?.length) {
+    where.categoryId = { in: filters.categoryIds };
+  }
+
+  if (filters?.description) {
+    where.description = { contains: filters.description, mode: "insensitive" };
+  }
+
+  if (filters?.userIds?.length) {
+    where.account = {
+      is: {
+        ownerId: { in: filters.userIds },
+      },
+    };
+  }
+
+  return where;
+}
+
+function buildTransferTransactionWhere(workspaceId: string, filters?: CombinedTransactionFilters) {
+  const where: Prisma.TransferTransactionWhereInput = { workspaceId };
+  const date = buildDateWhere(filters);
+
+  if (date) {
+    where.date = date;
+  }
+
+  if (filters?.description) {
+    where.description = { contains: filters.description, mode: "insensitive" };
+  }
+
+  if (filters?.accountIds?.length) {
+    where.OR = [{ fromAccountId: { in: filters.accountIds } }, { toAccountId: { in: filters.accountIds } }];
+  }
+
+  if (filters?.userIds?.length) {
+    const userFilter: Prisma.TransferTransactionWhereInput[] = [
+      {
+        fromAccount: {
+          is: {
+            ownerId: { in: filters.userIds },
+          },
+        },
+      },
+      {
+        toAccount: {
+          is: {
+            ownerId: { in: filters.userIds },
+          },
+        },
+      },
+    ];
+
+    where.AND = [...(Array.isArray(where.AND) ? where.AND : []), { OR: userFilter }];
+  }
+
+  return where;
+}
+
+function buildDebtTransactionWhere(workspaceId: string, filters?: CombinedTransactionFilters) {
+  const where: Prisma.DebtTransactionWhereInput = {
+    workspaceId,
+    debt: {
+      is: {
+        workspaceId,
+      },
+    },
+  };
+  const date = buildDateWhere(filters);
+
+  if (date) {
+    where.date = date;
+  }
+
+  if (filters?.accountIds?.length) {
+    where.accountId = { in: filters.accountIds };
+  }
+
+  if (filters?.userIds?.length) {
+    where.account = {
+      is: {
+        ownerId: { in: filters.userIds },
+      },
+    };
+  }
+
+  return where;
+}
+
+function sortCombinedTransactionsByDate(transactions: CombinedTransaction[]) {
+  return transactions.sort((a, b) => {
+    const dateA = new Date(a.data.date).getTime();
+    const dateB = new Date(b.data.date).getTime();
+    return dateB - dateA;
+  });
 }
 
 async function getWorkspaceAccountOrThrow(
@@ -158,9 +360,9 @@ export async function createPaymentTransaction(workspaceId: string, input: Creat
     });
 
     revalidateAccountingRoutes();
-    return { data: transaction };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось создать транзакцию" };
+    return ok(transaction);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось создать транзакцию");
   }
 }
 
@@ -196,23 +398,25 @@ export async function createTransferTransaction(workspaceId: string, input: Crea
         },
       });
 
+      const transferDeltas = getTransferTransactionBalanceDeltas(validated.amount, validated.toAmount);
+
       await tx.account.update({
         where: { id: validated.fromAccountId },
-        data: { balance: subtractMoney(fromAccount.balance, validated.amount) },
+        data: { balance: addMoney(fromAccount.balance, transferDeltas.fromDelta) },
       });
 
       await tx.account.update({
         where: { id: validated.toAccountId },
-        data: { balance: addMoney(toAccount.balance, validated.toAmount) },
+        data: { balance: addMoney(toAccount.balance, transferDeltas.toDelta) },
       });
 
       return createdTransfer;
     });
 
     revalidateAccountingRoutes();
-    return { data: transfer };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось создать перевод" };
+    return ok(transfer);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось создать перевод");
   }
 }
 
@@ -306,9 +510,9 @@ export async function updatePaymentTransaction(id: string, input: UpdatePaymentT
     });
 
     revalidateAccountingRoutes();
-    return { data: updated };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось обновить транзакцию" };
+    return ok(updated);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось обновить транзакцию");
   }
 }
 
@@ -371,14 +575,16 @@ export async function updateTransferTransaction(id: string, input: UpdateTransfe
         throw new Error("Счёт не найден");
       }
 
+      const revertedDeltas = getTransferTransactionBalanceDeltas(oldAmount, oldToAmount);
+
       await tx.account.update({
         where: { id: oldFromAccount.id },
-        data: { balance: addMoney(oldFromAccountCurrent.balance, oldAmount) },
+        data: { balance: subtractMoney(oldFromAccountCurrent.balance, revertedDeltas.fromDelta) },
       });
 
       await tx.account.update({
         where: { id: oldToAccount.id },
-        data: { balance: subtractMoney(oldToAccountCurrent.balance, oldToAmount) },
+        data: { balance: subtractMoney(oldToAccountCurrent.balance, revertedDeltas.toDelta) },
       });
 
       const newFromAccountCurrent = await tx.account.findUnique({
@@ -410,21 +616,23 @@ export async function updateTransferTransaction(id: string, input: UpdateTransfe
         },
       });
 
+      const nextDeltas = getTransferTransactionBalanceDeltas(newAmount, newToAmount);
+
       await tx.account.update({
         where: { id: newFromAccountId },
-        data: { balance: subtractMoney(newFromAccountCurrent.balance, newAmount) },
+        data: { balance: addMoney(newFromAccountCurrent.balance, nextDeltas.fromDelta) },
       });
 
       await tx.account.update({
         where: { id: newToAccountId },
-        data: { balance: addMoney(newToAccountCurrent.balance, newToAmount) },
+        data: { balance: addMoney(newToAccountCurrent.balance, nextDeltas.toDelta) },
       });
     });
 
     revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось обновить перевод" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось обновить перевод");
   }
 }
 
@@ -454,14 +662,16 @@ export async function deleteTransferTransaction(id: string) {
         throw new Error("Перевод не найден или доступ запрещён");
       }
 
+      const transferDeltas = getTransferTransactionBalanceDeltas(transfer.amount, transfer.toAmount);
+
       await tx.account.update({
         where: { id: transfer.fromAccount.id },
-        data: { balance: addMoney(transfer.fromAccount.balance, transfer.amount) },
+        data: { balance: subtractMoney(transfer.fromAccount.balance, transferDeltas.fromDelta) },
       });
 
       await tx.account.update({
         where: { id: transfer.toAccount.id },
-        data: { balance: subtractMoney(transfer.toAccount.balance, transfer.toAmount) },
+        data: { balance: subtractMoney(transfer.toAccount.balance, transferDeltas.toDelta) },
       });
 
       await tx.transferTransaction.delete({
@@ -470,9 +680,9 @@ export async function deleteTransferTransaction(id: string) {
     });
 
     revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось удалить перевод" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось удалить перевод");
   }
 }
 
@@ -512,9 +722,9 @@ export async function deletePaymentTransaction(id: string) {
     });
 
     revalidateAccountingRoutes();
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось удалить транзакцию" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось удалить транзакцию");
   }
 }
 
@@ -527,73 +737,55 @@ export async function getCombinedTransactions(
   try {
     await requireWorkspaceAccess(workspaceId);
 
-    const paymentTransactionWhere: Prisma.PaymentTransactionWhereInput = { workspaceId };
-    const transferTransactionWhere: Prisma.TransferTransactionWhereInput = { workspaceId };
-    const debtTransactionWhere: Prisma.DebtTransactionWhereInput = {
-      workspaceId,
-      debt: {
-        is: {
-          workspaceId,
-        },
-      },
-    };
+    const skip = filters?.skip ?? 0;
+    const take = filters?.take ?? 50;
+    const queryLimit = skip + take;
+    const needsAmountPostFilter = hasAmountRangeFilter(filters);
 
-    const [paymentTransactions, transferTransactions, debtTransactions] = await Promise.all([
-      prisma.paymentTransaction.findMany({
-        where: paymentTransactionWhere,
-        include: {
-          account: {
-            select: accountWithOwnerSelect,
-          },
-          category: {
-            select: categorySelect,
-          },
-        },
-        orderBy: { date: "desc" },
-      }),
-      prisma.transferTransaction.findMany({
-        where: transferTransactionWhere,
-        include: {
-          fromAccount: {
-            select: accountWithOwnerSelect,
-          },
-          toAccount: {
-            select: accountWithOwnerSelect,
-          },
-          createdBy: {
-            select: userSelect,
-          },
-        },
-        orderBy: { date: "desc" },
-      }),
-      filters?.includeDebtTransactions === false
-        ? Promise.resolve([] as DebtTransactionWithRelations[])
-        : prisma.debtTransaction.findMany({
-            where: debtTransactionWhere,
-            include: {
-              debt: {
-                select: {
-                  id: true,
-                  workspaceId: true,
-                  type: true,
-                  personName: true,
-                  amount: true,
-                  remainingAmount: true,
-                  currency: true,
-                  accountId: true,
-                  date: true,
-                  status: true,
-                  createdAt: true,
-                  updatedAt: true,
-                },
-              },
-              account: {
-                select: accountWithOwnerSelect,
-              },
-            },
-            orderBy: { date: "desc" },
-          }),
-    ]);
+    const queryPaymentTransactions = shouldQueryPaymentTransactions(filters);
+    const queryTransferTransactions = shouldQueryTransferTransactions(filters);
+    const queryDebtTransactions = shouldQueryDebtTransactions(filters);
+
+    const paymentTransactionWhere = buildPaymentTransactionWhere(workspaceId, filters);
+    const transferTransactionWhere = buildTransferTransactionWhere(workspaceId, filters);
+    const debtTransactionWhere = buildDebtTransactionWhere(workspaceId, filters);
+
+    const [paymentTransactions, transferTransactions, debtTransactions, paymentTotal, transferTotal, debtTotal] =
+      await Promise.all([
+        queryPaymentTransactions
+          ? prisma.paymentTransaction.findMany({
+              where: paymentTransactionWhere,
+              include: paymentTransactionInclude,
+              orderBy: { date: "desc" },
+              ...(needsAmountPostFilter ? {} : { take: queryLimit }),
+            })
+          : Promise.resolve([]),
+        queryTransferTransactions
+          ? prisma.transferTransaction.findMany({
+              where: transferTransactionWhere,
+              include: transferTransactionInclude,
+              orderBy: { date: "desc" },
+              ...(needsAmountPostFilter ? {} : { take: queryLimit }),
+            })
+          : Promise.resolve([]),
+        queryDebtTransactions
+          ? prisma.debtTransaction.findMany({
+              where: debtTransactionWhere,
+              include: debtTransactionInclude,
+              orderBy: { date: "desc" },
+              ...(needsAmountPostFilter ? {} : { take: queryLimit }),
+            })
+          : Promise.resolve([] as DebtTransactionWithRelations[]),
+        !needsAmountPostFilter && queryPaymentTransactions
+          ? prisma.paymentTransaction.count({ where: paymentTransactionWhere })
+          : Promise.resolve(0),
+        !needsAmountPostFilter && queryTransferTransactions
+          ? prisma.transferTransaction.count({ where: transferTransactionWhere })
+          : Promise.resolve(0),
+        !needsAmountPostFilter && queryDebtTransactions
+          ? prisma.debtTransaction.count({ where: debtTransactionWhere })
+          : Promise.resolve(0),
+      ]);
 
     const combined: CombinedTransaction[] = [
       ...paymentTransactions.map((transaction) => ({ kind: "paymentTransaction" as const, data: transaction })),
@@ -601,20 +793,13 @@ export async function getCombinedTransactions(
       ...debtTransactions.map((transaction) => ({ kind: "debtTransaction" as const, data: transaction })),
     ];
 
-    const filteredCombined = filterCombinedTransactions(combined, filters);
+    const filteredCombined = needsAmountPostFilter ? filterCombinedTransactions(combined, filters) : combined;
+    const sortedCombined = sortCombinedTransactionsByDate(filteredCombined);
+    const paginated = sortedCombined.slice(skip, skip + take);
+    const total = needsAmountPostFilter ? sortedCombined.length : paymentTotal + transferTotal + debtTotal;
 
-    filteredCombined.sort((a, b) => {
-      const dateA = new Date(a.data.date).getTime();
-      const dateB = new Date(b.data.date).getTime();
-      return dateB - dateA;
-    });
-
-    const skip = filters?.skip ?? 0;
-    const take = filters?.take ?? 50;
-    const paginated = filteredCombined.slice(skip, skip + take);
-
-    return { data: paginated, total: filteredCombined.length };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить транзакции" };
+    return { data: paginated, total };
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить транзакции");
   }
 }

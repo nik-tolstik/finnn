@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { serverLogger } from "@/shared/lib/logger";
 
 interface NBRBRate {

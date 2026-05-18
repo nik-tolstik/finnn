@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,7 +15,6 @@ import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { type UpdateAccountInput, updateAccountSchema } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
-import { ColorPicker } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
@@ -32,6 +32,8 @@ import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 
 import { updateAccount } from "../../account.service";
+
+const ColorPicker = dynamic(() => import("@/shared/ui/color-picker").then((mod) => mod.ColorPicker));
 
 interface EditAccountDialogProps {
   account: Account;

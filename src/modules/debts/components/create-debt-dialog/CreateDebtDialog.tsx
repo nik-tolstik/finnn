@@ -26,10 +26,15 @@ import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Segmented } from "@/shared/ui/segmented";
 import { Select } from "@/shared/ui/select";
-import { addMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { getCurrencySymbol } from "@/shared/utils/money";
 
 import { DebtType } from "../../debt.constants";
 import { createDebt } from "../../debt.service";
+import {
+  getCreateDebtDefaultValues,
+  getCreateDebtPreviewAccount,
+  getDefaultDebtAccount,
+} from "./create-debt-dialog.utils";
 
 interface CreateDebtDialogProps {
   workspaceId: string;
@@ -53,10 +58,8 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
   const accounts = useMemo(() => accountsData?.data || [], [accountsData?.data]);
 
   const defaultAccount = useMemo(() => {
-    if (!accounts || !session?.user?.id) return undefined;
-    const userAccounts = accounts.filter((acc) => acc.ownerId === session.user.id);
-    return userAccounts[0];
-  }, [accounts, session]);
+    return getDefaultDebtAccount(accounts, session?.user?.id);
+  }, [accounts, session?.user?.id]);
 
   const {
     register,
@@ -67,15 +70,7 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
     control,
   } = useForm<CreateDebtInput>({
     resolver: zodResolver(createDebtSchema),
-    defaultValues: {
-      type: DebtType.LENT,
-      personName: "",
-      amount: "",
-      date: new Date(),
-      useAccount: true,
-      accountId: "",
-      currency: DEFAULT_CURRENCY,
-    },
+    defaultValues: getCreateDebtDefaultValues(),
   });
 
   const debtType = useWatch({ control, name: "type" });
@@ -90,38 +85,14 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
   }, [accountId, accounts]);
 
   const previewAccount = useMemo(() => {
-    if (!selectedAccount || !useAccount || !amount) {
-      return selectedAccount;
-    }
-    const amountNum = parseFloat(amount);
-    if (Number.isNaN(amountNum)) return selectedAccount;
-
-    let newBalance = selectedAccount.balance;
-    if (debtType === DebtType.LENT) {
-      newBalance = subtractMoney(selectedAccount.balance, amount);
-    } else {
-      newBalance = addMoney(selectedAccount.balance, amount);
-    }
-
-    return {
-      ...selectedAccount,
-      balance: newBalance,
-    };
+    return getCreateDebtPreviewAccount({ selectedAccount, useAccount, amount, debtType });
   }, [selectedAccount, useAccount, amount, debtType]);
 
   const prevOpenRef = useRef(open);
 
   useEffect(() => {
     if (open && !prevOpenRef.current) {
-      reset({
-        type: DebtType.LENT,
-        personName: "",
-        amount: "",
-        date: new Date(),
-        useAccount: true,
-        accountId: "",
-        currency: DEFAULT_CURRENCY,
-      });
+      reset(getCreateDebtDefaultValues());
     }
     prevOpenRef.current = open;
   }, [open, reset]);

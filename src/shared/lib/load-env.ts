@@ -12,8 +12,7 @@ if (typeof processWithLoadEnvFile.loadEnvFile === "function") {
     try {
       processWithLoadEnvFile.loadEnvFile(envFilePath);
     } catch (error) {
-      const errorCode =
-        typeof error === "object" && error !== null && "code" in error ? String(error.code) : undefined;
+      const errorCode = typeof error === "object" && error !== null && "code" in error ? String(error.code) : undefined;
 
       if (errorCode !== "ENOENT") {
         throw error;

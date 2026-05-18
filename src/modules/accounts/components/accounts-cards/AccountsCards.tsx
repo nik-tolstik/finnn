@@ -1,38 +1,30 @@
 "use client";
 
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import type { Account } from "@prisma/client";
-import { useQueryClient } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
 
-import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
-import { accountKeys } from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";
-import { cn } from "@/shared/utils/cn";
 
-import { updateAccountsOrder } from "../../account.service";
 import { getVisibleAccounts, resolveViewerUserId } from "../../account-visibility";
 import { AccountActionsDialog } from "../account-actions-dialog/AccountActionsDialog";
 import { AccountsCardsSkeleton } from "../accounts-cards-skeleton/AccountsCardsSkeleton";
 import { ArchiveAccountDialog } from "../archive-account-dialog/ArchiveAccountDialog";
-import { EditAccountDialog } from "../edit-account-dialog/EditAccountDialog";
+
+const AccountsCardsReorderView = dynamic(() =>
+  import("./AccountsCardsReorderView").then((mod) => mod.AccountsCardsReorderView)
+);
+const CreateTransactionDialog = dynamic(() =>
+  import("@/modules/transactions/components/create-transaction-dialog").then((mod) => mod.CreateTransactionDialog)
+);
+const EditAccountDialog = dynamic(() =>
+  import("../edit-account-dialog/EditAccountDialog").then((mod) => mod.EditAccountDialog)
+);
 
 type AccountWithOwner = Account & {
   owner?: {
@@ -59,203 +51,7 @@ type ActionDialogData = {
   account: AccountWithOwner;
 };
 
-interface SortableAccountCardProps {
-  account: AccountWithOwner;
-  onClick: () => void;
-}
-
-function SortableAccountCard({
-  account,
-  onClick,
-  isReorderMode,
-}: SortableAccountCardProps & { isReorderMode: boolean }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: account.id,
-    disabled: !isReorderMode,
-  });
-
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const style = mounted
-    ? {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-      }
-    : {};
-
-  const handleClick = () => {
-    if (!isReorderMode) {
-      onClick();
-    }
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className="w-full min-w-0">
-      <div
-        {...(isReorderMode ? { ...attributes, ...listeners } : {})}
-        className={cn("w-full min-w-0 select-none", isReorderMode && "touch-none cursor-grab active:cursor-grabbing")}
-        style={{
-          WebkitUserSelect: "none",
-          WebkitTouchCallout: "none",
-          userSelect: "none",
-        }}
-      >
-        <AccountCard account={account} onClick={handleClick} showOwner={false} />
-      </div>
-    </div>
-  );
-}
-
-export function AccountsCards({
-  accounts,
-  initialCurrentUserId,
-  workspaceId,
-  isLoading,
-  onReorderModeChange,
-  reorderMode = false,
-  onCancelReorder,
-  showAllAccounts: showAllAccountsProp,
-  onShowAllAccountsChange,
-}: AccountsCardsProps) {
-  const queryClient = useQueryClient();
-  const { data: session } = useSession();
-  const [items, setItems] = useState(accounts);
-  const [originalItems, setOriginalItems] = useState(accounts);
-  const [showAllAccountsLocal, setShowAllAccountsLocal] = useState(false);
-  const isReorderMode = reorderMode;
-  const accountActionsDialog = useDialogState<{ account: Account }>();
-
-  const showAllAccounts = showAllAccountsProp ?? showAllAccountsLocal;
-  const setShowAllAccounts = onShowAllAccountsChange ?? setShowAllAccountsLocal;
-  const createTransactionDialog = useDialogState<{
-    workspaceId: string;
-    defaultType?: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
-    account?: Account;
-  }>();
-  const editDialog = useDialogState<ActionDialogData>();
-  const archiveDialog = useDialogState<ActionDialogData>();
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const viewerUserId = resolveViewerUserId(session?.user?.id, initialCurrentUserId);
-
-  const filteredAccounts = useMemo(() => {
-    return getVisibleAccounts(accounts, viewerUserId, showAllAccounts);
-  }, [accounts, showAllAccounts, viewerUserId]);
-
-  useEffect(() => {
-    setItems(filteredAccounts);
-    if (!isReorderMode) {
-      setOriginalItems(filteredAccounts);
-    }
-  }, [filteredAccounts, isReorderMode]);
-
-  useEffect(() => {
-    if (!isReorderMode) {
-      setShowAllAccounts(false);
-    }
-  }, [isReorderMode, setShowAllAccounts]);
-
-  useEffect(() => {
-    if (isReorderMode) {
-      setOriginalItems(items);
-    }
-  }, [isReorderMode, items]);
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const activeAccount = items.find((item) => item.id === active.id);
-      const overAccount = items.find((item) => item.id === over.id);
-
-      if (!activeAccount || !overAccount) return;
-
-      const activeOwnerId = activeAccount.ownerId || "__no_owner__";
-      const overOwnerId = overAccount.ownerId || "__no_owner__";
-
-      if (activeOwnerId !== overOwnerId) {
-        return;
-      }
-
-      const oldIndex = items.findIndex((item) => item.id === active.id);
-      const newIndex = items.findIndex((item) => item.id === over.id);
-
-      const newItems = arrayMove(items, oldIndex, newIndex);
-      setItems(newItems);
-    }
-  };
-
-  const handleSaveReorder = useCallback(async () => {
-    const accountOrders = items.map((account, index) => ({
-      id: account.id,
-      order: index,
-    }));
-
-    const orderedItems = items.map((account, index) => ({
-      ...account,
-      order: index,
-    }));
-
-    queryClient.setQueryData(accountKeys.list(workspaceId), { data: orderedItems });
-
-    const result = await updateAccountsOrder(workspaceId, {
-      accountOrders,
-    });
-
-    if (result.error) {
-      toast.error(result.error);
-      setItems(originalItems);
-      queryClient.setQueryData(accountKeys.list(workspaceId), {
-        data: originalItems,
-      });
-    } else {
-      setOriginalItems(items);
-      onReorderModeChange?.(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["accounts", "archivedAccounts", "transactions"]);
-    }
-  }, [items, originalItems, workspaceId, queryClient, onReorderModeChange]);
-
-  useEffect(() => {
-    const handleSave = async () => {
-      await handleSaveReorder();
-    };
-    window.addEventListener("saveReorder", handleSave);
-    return () => {
-      window.removeEventListener("saveReorder", handleSave);
-    };
-  }, [handleSaveReorder]);
-
-  const handleCancelReorder = useCallback(() => {
-    setItems(originalItems);
-    onReorderModeChange?.(false);
-    onCancelReorder?.();
-  }, [originalItems, onReorderModeChange, onCancelReorder]);
-
-  useEffect(() => {
-    const handleCancel = () => {
-      handleCancelReorder();
-    };
-    window.addEventListener("cancelReorder", handleCancel);
-    return () => {
-      window.removeEventListener("cancelReorder", handleCancel);
-    };
-  }, [handleCancelReorder]);
-
-  if (isLoading) {
-    return <AccountsCardsSkeleton />;
-  }
-
+function groupAccountsByOwner(items: AccountWithOwner[], viewerUserId?: string | null) {
   const accountsByOwner = items.reduce(
     (acc, account) => {
       const ownerId = account.ownerId || "__no_owner__";
@@ -282,12 +78,12 @@ export function AccountsCards({
       {
         owner: { id: string; name: string | null; email: string; image: string | null } | null;
         ownerName: string;
-        accounts: typeof items;
+        accounts: AccountWithOwner[];
       }
     >
   );
 
-  const sortedOwners = Object.values(accountsByOwner).sort((a, b) => {
+  return Object.values(accountsByOwner).sort((a, b) => {
     if (!viewerUserId) {
       if (!a.owner && b.owner) return 1;
       if (a.owner && !b.owner) return -1;
@@ -307,54 +103,100 @@ export function AccountsCards({
     if (aIsShared && bIsShared) return 0;
     return (a.owner?.name || a.owner?.email || "").localeCompare(b.owner?.name || b.owner?.email || "");
   });
+}
+
+export function AccountsCards({
+  accounts,
+  initialCurrentUserId,
+  workspaceId,
+  isLoading,
+  onReorderModeChange,
+  reorderMode = false,
+  onCancelReorder,
+  showAllAccounts: showAllAccountsProp,
+  onShowAllAccountsChange,
+}: AccountsCardsProps) {
+  const { data: session } = useSession();
+  const [showAllAccountsLocal, setShowAllAccountsLocal] = useState(false);
+  const accountActionsDialog = useDialogState<{ account: Account }>();
+
+  const showAllAccounts = showAllAccountsProp ?? showAllAccountsLocal;
+  const setShowAllAccounts = onShowAllAccountsChange ?? setShowAllAccountsLocal;
+  const createTransactionDialog = useDialogState<{
+    workspaceId: string;
+    defaultType?: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
+    account?: Account;
+  }>();
+  const editDialog = useDialogState<ActionDialogData>();
+  const archiveDialog = useDialogState<ActionDialogData>();
+  const viewerUserId = resolveViewerUserId(session?.user?.id, initialCurrentUserId);
+
+  const filteredAccounts = useMemo(() => {
+    return getVisibleAccounts(accounts, viewerUserId, showAllAccounts);
+  }, [accounts, showAllAccounts, viewerUserId]);
+
+  const sortedOwners = useMemo(
+    () => groupAccountsByOwner(filteredAccounts, viewerUserId),
+    [filteredAccounts, viewerUserId]
+  );
+
+  useEffect(() => {
+    if (!reorderMode) {
+      setShowAllAccounts(false);
+    }
+  }, [reorderMode, setShowAllAccounts]);
+
+  if (isLoading) {
+    return <AccountsCardsSkeleton />;
+  }
+
+  if (reorderMode) {
+    return (
+      <AccountsCardsReorderView
+        accounts={filteredAccounts}
+        initialCurrentUserId={initialCurrentUserId}
+        workspaceId={workspaceId}
+        onCancelReorder={onCancelReorder}
+        onReorderModeChange={onReorderModeChange}
+      />
+    );
+  }
 
   return (
     <>
-      <div className="relative">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <div className="space-y-6">
-            {sortedOwners.map(({ owner, accounts: ownerAccounts }) => {
-              const ownerId = owner?.id || "__no_owner__";
+      <div className="space-y-6">
+        {sortedOwners.map(({ owner, accounts: ownerAccounts }) => {
+          const ownerId = owner?.id || "__no_owner__";
 
-              return (
-                <div key={ownerId} className="space-y-3">
-                  {sortedOwners.length > 1 && (
-                    <div className="flex items-center gap-2">
-                      {owner ? (
-                        <UserDisplay
-                          name={owner.name}
-                          email={owner.email}
-                          image={owner.image}
-                          size="sm"
-                          showName={true}
-                        />
-                      ) : (
-                        <span className="text-sm font-medium">Общие</span>
-                      )}
-                      <Badge variant="secondary" className="text-xs">
-                        {ownerAccounts.length}
-                      </Badge>
-                    </div>
+          return (
+            <div key={ownerId} className="space-y-3">
+              {sortedOwners.length > 1 && (
+                <div className="flex items-center gap-2">
+                  {owner ? (
+                    <UserDisplay name={owner.name} email={owner.email} image={owner.image} size="sm" showName />
+                  ) : (
+                    <span className="text-sm font-medium">Общие</span>
                   )}
-                  <SortableContext items={ownerAccounts.map((account: AccountWithOwner) => account.id)}>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {ownerAccounts.map((account: AccountWithOwner) => (
-                        <SortableAccountCard
-                          key={account.id}
-                          account={account}
-                          isReorderMode={isReorderMode}
-                          onClick={() => {
-                            accountActionsDialog.openDialog({ account });
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
+                  <Badge variant="secondary" className="text-xs">
+                    {ownerAccounts.length}
+                  </Badge>
                 </div>
-              );
-            })}
-          </div>
-        </DndContext>
+              )}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {ownerAccounts.map((account) => (
+                  <AccountCard
+                    key={account.id}
+                    account={account}
+                    showOwner={false}
+                    onClick={() => {
+                      accountActionsDialog.openDialog({ account });
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {accountActionsDialog.mounted && (
@@ -414,7 +256,6 @@ export function AccountsCards({
           account={createTransactionDialog.data.account}
         />
       )}
-
     </>
   );
 }

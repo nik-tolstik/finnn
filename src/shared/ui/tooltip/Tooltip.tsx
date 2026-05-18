@@ -2,9 +2,10 @@
 
 import {
   autoUpdate,
-  flip,
   FloatingPortal,
+  flip,
   offset as floatingOffset,
+  type Placement,
   safePolygon,
   shift,
   size,
@@ -16,7 +17,6 @@ import {
   useMergeRefs,
   useRole,
   useTransitionStyles,
-  type Placement,
 } from "@floating-ui/react";
 import * as React from "react";
 

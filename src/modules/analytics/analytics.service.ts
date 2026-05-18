@@ -19,6 +19,7 @@ import type {
 } from "@/modules/transactions/transaction.types";
 import { filterCombinedTransactions } from "@/modules/transactions/utils/combined-transaction-filtering";
 import { getWorkspaceSummary } from "@/modules/workspace/workspace.service";
+import { fail } from "@/shared/lib/action-result";
 import { prisma } from "@/shared/lib/prisma";
 import { requireWorkspaceAccess } from "@/shared/lib/server-access";
 import { formatMoney } from "@/shared/utils/money";
@@ -647,7 +648,7 @@ export async function getAnalyticsOverview(
       debtsByPerson: debtRows,
       largestMovements,
     };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось загрузить аналитику" };
+  } catch (error: unknown) {
+    return fail(error, "Не удалось загрузить аналитику");
   }
 }

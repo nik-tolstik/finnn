@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Currency } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -17,7 +18,6 @@ import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { type CreateAccountInput, createAccountSchema } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
-import { ColorPicker } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
@@ -46,6 +46,7 @@ const WORKSPACE_ICONS: Record<string, LucideIcon> = {
 } as const;
 
 const DEFAULT_ACCOUNT_COLOR = "#3b82f6";
+const ColorPicker = dynamic(() => import("@/shared/ui/color-picker").then((mod) => mod.ColorPicker));
 
 function getWorkspaceIcon(iconName?: string | null): LucideIcon {
   if (iconName && iconName in WORKSPACE_ICONS) {
@@ -298,7 +299,10 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
 
             <div className="space-y-2">
               <Label>Цвет</Label>
-              <ColorPicker value={selectedColor || DEFAULT_ACCOUNT_COLOR} onChange={(color) => setValue("color", color)} />
+              <ColorPicker
+                value={selectedColor || DEFAULT_ACCOUNT_COLOR}
+                onChange={(color) => setValue("color", color)}
+              />
               {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
             </div>
 

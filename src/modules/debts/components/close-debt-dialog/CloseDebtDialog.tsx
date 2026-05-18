@@ -9,7 +9,6 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
-import { CategoryType } from "@/modules/categories/category.constants";
 import { getCategories } from "@/modules/categories/category.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
@@ -23,11 +22,18 @@ import type { ComboboxOption } from "@/shared/ui/combobox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { addMoney, compareMoney, formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { compareMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { DebtType } from "../../debt.constants";
 import { closeDebt } from "../../debt.service";
 import type { DebtWithRelations } from "../../debt.types";
+import {
+  getCloseDebtCategoryAmount,
+  getCloseDebtCategoryOptions,
+  getCloseDebtCategoryType,
+  getCloseDebtDefaultValues,
+  getCloseDebtPreviewAccount,
+} from "./close-debt-dialog.utils";
 
 interface CloseDebtDialogProps {
   debt: DebtWithRelations;
@@ -68,15 +74,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     control,
   } = useForm<CloseDebtInput>({
     resolver: zodResolver(closeDebtSchema),
-    defaultValues: {
-      amount: debt.remainingAmount,
-      paymentAmount: debt.remainingAmount,
-      toAmount: "",
-      categoryId: undefined,
-      closeEarly: false,
-      accountId: debt.accountId || "",
-      useAccount: true,
-    },
+    defaultValues: getCloseDebtDefaultValues(debt),
   });
 
   const amount = useWatch({ control, name: "amount" });
@@ -97,105 +95,55 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   }, [selectedAccount, debt.currency]);
 
   const previewAccount = useMemo(() => {
-    if (!selectedAccount) {
-      return selectedAccount;
-    }
-
-    if (!currenciesMatch) {
-      if (!toAmount) {
-        return selectedAccount;
-      }
-      const toAmountNum = parseFloat(toAmount);
-      if (Number.isNaN(toAmountNum)) return selectedAccount;
-
-      let newBalance = selectedAccount.balance;
-      if (debt.type === DebtType.LENT) {
-        newBalance = addMoney(selectedAccount.balance, toAmount);
-      } else {
-        if (compareMoney(toAmount, selectedAccount.balance) > 0) {
-          return selectedAccount;
-        }
-        newBalance = subtractMoney(selectedAccount.balance, toAmount);
-      }
-
-      return {
-        ...selectedAccount,
-        balance: newBalance,
-      };
-    }
-
-    const amountToUse = paymentAmount || amount;
-
-    if (!amountToUse) {
-      return selectedAccount;
-    }
-    const amountNum = parseFloat(amountToUse);
-    if (Number.isNaN(amountNum)) return selectedAccount;
-
-    let newBalance = selectedAccount.balance;
-    if (debt.type === DebtType.LENT) {
-      newBalance = addMoney(selectedAccount.balance, amountToUse);
-    } else {
-      if (compareMoney(amountToUse, selectedAccount.balance) > 0) {
-        return selectedAccount;
-      }
-      newBalance = subtractMoney(selectedAccount.balance, amountToUse);
-    }
-
-    return {
-      ...selectedAccount,
-      balance: newBalance,
-    };
-  }, [selectedAccount, amount, paymentAmount, toAmount, currenciesMatch, debt.type]);
+    return getCloseDebtPreviewAccount({
+      selectedAccount,
+      debtType: debt.type,
+      debtCurrency: debt.currency,
+      closeAmount: amount,
+      paymentAmount,
+      toAmount,
+      closeEarly: Boolean(closeEarly),
+      remainingAmount: debt.remainingAmount,
+      currenciesMatch,
+    });
+  }, [
+    selectedAccount,
+    amount,
+    paymentAmount,
+    toAmount,
+    closeEarly,
+    currenciesMatch,
+    debt.type,
+    debt.currency,
+    debt.remainingAmount,
+  ]);
 
   const canCloseEarly = useMemo(() => {
     return Boolean(currenciesMatch && paymentAmount && compareMoney(paymentAmount, debt.remainingAmount) < 0);
   }, [currenciesMatch, paymentAmount, debt.remainingAmount]);
 
   const categoryType = useMemo(() => {
-    if (!currenciesMatch || !paymentAmount) {
-      return null;
-    }
-
-    if (closeEarly && compareMoney(paymentAmount, debt.remainingAmount) < 0) {
-      return debt.type === DebtType.LENT ? CategoryType.EXPENSE : CategoryType.INCOME;
-    }
-
-    if (compareMoney(paymentAmount, debt.remainingAmount) > 0) {
-      return debt.type === DebtType.LENT ? CategoryType.INCOME : CategoryType.EXPENSE;
-    }
-
-    return null;
+    return getCloseDebtCategoryType({
+      debtType: debt.type,
+      remainingAmount: debt.remainingAmount,
+      paymentAmount,
+      closeEarly: Boolean(closeEarly),
+      currenciesMatch,
+    });
   }, [closeEarly, currenciesMatch, debt.remainingAmount, debt.type, paymentAmount]);
   const prevCategoryTypeRef = useRef(categoryType);
 
   const categoryAmount = useMemo(() => {
-    if (!categoryType || !paymentAmount) {
-      return "0";
-    }
-
-    if (closeEarly && compareMoney(paymentAmount, debt.remainingAmount) < 0) {
-      return subtractMoney(debt.remainingAmount, paymentAmount);
-    }
-
-    if (compareMoney(paymentAmount, debt.remainingAmount) > 0) {
-      return subtractMoney(paymentAmount, debt.remainingAmount);
-    }
-
-    return "0";
+    return getCloseDebtCategoryAmount({
+      remainingAmount: debt.remainingAmount,
+      paymentAmount,
+      closeEarly: Boolean(closeEarly),
+      categoryType,
+    });
   }, [categoryType, closeEarly, debt.remainingAmount, paymentAmount]);
 
   const categoryOptions = useMemo<ComboboxOption[]>(() => {
-    if (!categoryType) {
-      return [];
-    }
-
-    return categories
-      .filter((category) => category.type === categoryType)
-      .map((category) => ({
-        value: category.id,
-        label: category.name,
-      }));
+    return getCloseDebtCategoryOptions(categories, categoryType);
   }, [categories, categoryType]);
 
   const selectedCategory = useMemo(() => {
@@ -206,18 +154,10 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
 
   useEffect(() => {
     if (open && !prevOpenRef.current) {
-      reset({
-        amount: debt.remainingAmount,
-        paymentAmount: debt.remainingAmount,
-        toAmount: "",
-        categoryId: undefined,
-        closeEarly: false,
-        accountId: debt.accountId || "",
-        useAccount: true,
-      });
+      reset(getCloseDebtDefaultValues(debt));
     }
     prevOpenRef.current = open;
-  }, [open, reset, debt.remainingAmount, debt.accountId]);
+  }, [open, reset, debt.remainingAmount, debt.accountId, debt]);
 
   useEffect(() => {
     if (!currenciesMatch || !paymentAmount) {

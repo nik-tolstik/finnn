@@ -1,5 +1,7 @@
 "use server";
 
+import { fail, getErrorMessage, ok } from "@/shared/lib/action-result";
+
 interface NBRBRate {
   Cur_ID: number;
   Date: string;
@@ -54,6 +56,10 @@ function clearNBRBUnavailable() {
   nbrbUnavailableUntil = 0;
 }
 
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 async function fetchWithTimeout(url: string, timeoutMs: number, revalidate: number) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -89,9 +95,9 @@ async function requestNBRBRates(url: string, timeoutMs: number, successMessage: 
     clearNBRBUnavailable();
     console.warn(successMessage);
 
-    return { data: mapNBRBRates(rates) };
-  } catch (error: any) {
-    const message = error.name === "AbortError" ? "NBRB timeout" : error.message || "NBRB error";
+    return ok(mapNBRBRates(rates));
+  } catch (error: unknown) {
+    const message = isAbortError(error) ? "NBRB timeout" : getErrorMessage(error, "NBRB error");
     markNBRBUnavailable(message);
     return { error: message };
   }
@@ -99,7 +105,7 @@ async function requestNBRBRates(url: string, timeoutMs: number, successMessage: 
 
 async function getExchangeRateAPIRates(): Promise<CurrencyRatesResult> {
   if (fallbackRatesCache && fallbackRatesCache.expiresAt > Date.now()) {
-    return { data: fallbackRatesCache.value };
+    return ok(fallbackRatesCache.value);
   }
 
   if (fallbackRatesRequest) {
@@ -136,10 +142,10 @@ async function getExchangeRateAPIRates(): Promise<CurrencyRatesResult> {
       };
 
       console.warn("[ExchangeRate-API] Successfully fetched rates");
-      return { data: rates };
-    } catch (error: any) {
+      return ok(rates);
+    } catch (error: unknown) {
       return {
-        error: error.name === "AbortError" ? "ExchangeRate-API timeout" : error.message || "ExchangeRate-API error",
+        error: isAbortError(error) ? "ExchangeRate-API timeout" : getErrorMessage(error, "ExchangeRate-API error"),
       };
     } finally {
       fallbackRatesRequest = null;
@@ -189,7 +195,7 @@ export async function getNBRBExchangeRates(): Promise<CurrencyRatesResult> {
 export async function getNBRBExchangeRate(currencyCode: string): Promise<{ data: number } | { error: string }> {
   try {
     if (currencyCode === "BYN") {
-      return { data: 1 };
+      return ok(1);
     }
 
     const response = await fetch(`https://www.nbrb.by/api/exrates/rates/${currencyCode}?parammode=2`, {
@@ -201,9 +207,9 @@ export async function getNBRBExchangeRate(currencyCode: string): Promise<{ data:
     }
 
     const rate: NBRBRate = await response.json();
-    return { data: rate.Cur_OfficialRate / rate.Cur_Scale };
-  } catch (error: any) {
-    return { error: error.message || "Failed to fetch exchange rate" };
+    return ok(rate.Cur_OfficialRate / rate.Cur_Scale);
+  } catch (error: unknown) {
+    return fail(error, "Failed to fetch exchange rate");
   }
 }
 

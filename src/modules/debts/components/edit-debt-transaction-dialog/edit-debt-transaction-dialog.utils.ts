@@ -1,10 +1,9 @@
+import { getDebtTransactionBalanceDelta } from "@/shared/lib/balance-domain";
 import type { UpdateDebtTransactionInput } from "@/shared/lib/validations/debt";
 import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
 import { DebtTransactionType, DebtType } from "../../debt.constants";
 import type { DebtTransactionWithRelations } from "../../debt.types";
-
-type TransactionAmountSource = Pick<DebtTransactionWithRelations, "amount" | "toAmount" | "type">;
 
 interface GetPreviewDebtTransactionAccountParams<TAccount extends { id: string; balance: string; currency: string }> {
   debtTransaction: DebtTransactionWithRelations;
@@ -35,22 +34,6 @@ export function getEditDebtTransactionDescription(transactionType: string) {
   return transactionType === DebtTransactionType.CLOSED
     ? "Измените параметры погашения долга."
     : "Измените сумму и дату добавления к долгу.";
-}
-
-export function getDebtTransactionAccountAmount(transaction: TransactionAmountSource) {
-  return transaction.type === DebtTransactionType.CLOSED
-    ? transaction.toAmount || transaction.amount
-    : transaction.amount;
-}
-
-export function getDebtTransactionBalanceDelta(debtType: string, transaction: TransactionAmountSource) {
-  const accountAmount = getDebtTransactionAccountAmount(transaction);
-
-  if (transaction.type === DebtTransactionType.CLOSED) {
-    return debtType === DebtType.LENT ? accountAmount : subtractMoney("0", accountAmount);
-  }
-
-  return debtType === DebtType.LENT ? subtractMoney("0", accountAmount) : accountAmount;
 }
 
 export function getEditDebtAmountLabel({

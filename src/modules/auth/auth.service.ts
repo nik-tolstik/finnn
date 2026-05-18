@@ -3,6 +3,7 @@
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 
+import { fail, ok, success } from "@/shared/lib/action-result";
 import { getCachedServerSession } from "@/shared/lib/auth-session";
 import { sendVerificationEmail } from "@/shared/lib/email";
 import { serverLogger } from "@/shared/lib/logger";
@@ -70,9 +71,9 @@ export async function registerAction(input: RegisterInput) {
       };
     }
 
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось зарегистрироваться" };
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось зарегистрироваться");
   }
 }
 
@@ -119,9 +120,9 @@ export async function verifyEmail(token: string) {
       where: { id: pendingRegistration.id },
     });
 
-    return { success: true, userId: user.id };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось подтвердить email" };
+    return success({ userId: user.id });
+  } catch (error: unknown) {
+    return fail(error, "Не удалось подтвердить email");
   }
 }
 
@@ -149,8 +150,8 @@ export async function updateUser(input: UpdateUserInput) {
     });
 
     revalidateWorkspaceRoutes();
-    return { data: updated };
-  } catch (error: any) {
-    return { error: error.message || "Не удалось обновить пользователя" };
+    return ok(updated);
+  } catch (error: unknown) {
+    return fail(error, "Не удалось обновить пользователя");
   }
 }

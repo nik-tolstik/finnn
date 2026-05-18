@@ -33,18 +33,21 @@ import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Segmented } from "@/shared/ui/segmented";
 import { Textarea } from "@/shared/ui/textarea";
-import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { PaymentTransactionType } from "../../transaction.constants";
 import { createPaymentTransaction, createTransferTransaction } from "../../transaction.service";
 import { TransferForm } from "../transfer-form/TransferForm";
-
-const TRANSFER_TRANSACTION_MODE = "transfer" as const;
-
-type CreateTransactionMode =
-  | PaymentTransactionType.INCOME
-  | PaymentTransactionType.EXPENSE
-  | typeof TRANSFER_TRANSACTION_MODE;
+import {
+  type CreateTransactionMode,
+  getCategoryOptions,
+  getCreatePaymentDefaultValues,
+  getCreateTransferDefaultValues,
+  getPreviewPaymentAccount,
+  resolveDefaultAccount,
+  resolveSelectedAccount,
+  TRANSFER_TRANSACTION_MODE,
+} from "./create-transaction-dialog.utils";
 
 interface CreateTransactionDialogProps {
   account?: Account | (Partial<Account> & { id: string });
@@ -83,30 +86,10 @@ export function CreateTransactionDialog({
     staleTime: 5000,
   });
 
-  const account = useMemo(() => {
-    if (accountProp) {
-      const accounts = accountsData?.data;
-      if (accounts && accountProp.id) {
-        const hasAllFields =
-          "createdAt" in accountProp &&
-          accountProp.createdAt &&
-          "balance" in accountProp &&
-          accountProp.balance !== undefined;
-        if (!hasAllFields) {
-          const fullAccount = accounts.find((acc) => acc.id === accountProp.id);
-          if (fullAccount) return fullAccount;
-        }
-      }
-      if ("balance" in accountProp && accountProp.balance !== undefined && "createdAt" in accountProp) {
-        return accountProp as Account;
-      }
-      return undefined;
-    }
-    const accounts = accountsData?.data;
-    if (!accounts || !session?.user?.id) return undefined;
-    const userAccounts = accounts.filter((acc) => acc.ownerId === session.user.id);
-    return userAccounts[0];
-  }, [accountProp, accountsData?.data, session]);
+  const account = useMemo(
+    () => resolveDefaultAccount({ accountProp, accounts: accountsData?.data, userId: session?.user?.id }),
+    [accountProp, accountsData?.data, session?.user?.id]
+  );
 
   const {
     register,
@@ -119,47 +102,22 @@ export function CreateTransactionDialog({
     control,
   } = useForm<CreatePaymentTransactionInput>({
     resolver: zodResolver(createPaymentTransactionSchema),
-    defaultValues: {
+    defaultValues: getCreatePaymentDefaultValues({
       accountId: accountProp?.id || account?.id || "",
-      amount: initialAmount || "",
-      type: defaultType,
-      description: initialDescription || "",
-      date:
-        initialDate ||
-        (() => {
-          const now = new Date();
-          if (!account) return now;
-          const accountCreatedDate = new Date(account.createdAt);
-          accountCreatedDate.setHours(0, 0, 0, 0);
-          const nowDateOnly = new Date(now);
-          nowDateOnly.setHours(0, 0, 0, 0);
-          if (nowDateOnly < accountCreatedDate) {
-            const result = new Date(accountCreatedDate);
-            result.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-            return result;
-          }
-          return now;
-        })(),
-      categoryId: initialCategoryId || undefined,
-    },
+      defaultType,
+      initialAmount,
+      initialDescription,
+      initialDate,
+      initialCategoryId,
+      account,
+    }),
   });
 
   const transferForm = useForm<CreateTransferTransactionInput>({
     resolver: zodResolver(createTransferTransactionSchema),
-    defaultValues: {
-      fromAccountId: accountProp?.id || account?.id || "",
-      toAccountId: "",
-      amount: "",
-      toAmount: "",
-      description: "",
-      date: new Date(),
-    },
+    defaultValues: getCreateTransferDefaultValues(accountProp?.id || account?.id || ""),
   });
-  const {
-    reset: resetTransferForm,
-    getValues: getTransferFormValues,
-    setValue: setTransferFormValue,
-  } = transferForm;
+  const { reset: resetTransferForm, getValues: getTransferFormValues, setValue: setTransferFormValue } = transferForm;
 
   const transactionType = useWatch({ control, name: "type" });
   const categoryId = useWatch({ control, name: "categoryId" });
@@ -168,44 +126,14 @@ export function CreateTransactionDialog({
   const categoryModal = useDialogState();
   const isTransferMode = transactionMode === TRANSFER_TRANSACTION_MODE;
 
-  const selectedAccount = useMemo(() => {
-    if (accountProp) {
-      const accounts = accountsData?.data;
-      if (accounts && accountProp.id && (!("balance" in accountProp) || !accountProp.balance)) {
-        const fullAccount = accounts.find((acc) => acc.id === accountProp.id);
-        if (fullAccount) return fullAccount;
-      }
-      if ("balance" in accountProp && accountProp.balance) {
-        return accountProp as Account;
-      }
-      return undefined;
-    }
-    const accounts = accountsData?.data;
-    if (accountId && accounts) {
-      return accounts.find((acc) => acc.id === accountId);
-    }
-    return account;
-  }, [accountProp, accountId, accountsData?.data, account]);
+  const selectedAccount = useMemo(
+    () => resolveSelectedAccount({ accountProp, accounts: accountsData?.data, accountId, fallbackAccount: account }),
+    [accountProp, accountsData?.data, accountId, account]
+  );
 
   const previewAccount = useMemo(() => {
     const currentAccount = selectedAccount || account;
-    if (!currentAccount || !("balance" in currentAccount) || !currentAccount.balance || !amount) {
-      return currentAccount;
-    }
-    const amountNum = parseFloat(amount);
-    if (Number.isNaN(amountNum)) return currentAccount;
-
-    let newBalance = currentAccount.balance;
-    if (transactionType === PaymentTransactionType.INCOME) {
-      newBalance = addMoney(currentAccount.balance, amount);
-    } else if (transactionType === PaymentTransactionType.EXPENSE) {
-      newBalance = subtractMoney(currentAccount.balance, amount);
-    }
-
-    return {
-      ...currentAccount,
-      balance: newBalance,
-    };
+    return getPreviewPaymentAccount(currentAccount, transactionType, amount);
   }, [selectedAccount, account, amount, transactionType]);
 
   const { data: categoriesData } = useQuery({
@@ -219,16 +147,9 @@ export function CreateTransactionDialog({
     return categoriesData?.data || [];
   }, [categoriesData?.data]);
 
-  const filteredCategories = useMemo(() => {
-    return allCategories.filter((cat) => cat.type === transactionType);
-  }, [allCategories, transactionType]);
-
   const comboboxOptions = useMemo<ComboboxOption[]>(() => {
-    return filteredCategories.map((cat) => ({
-      value: cat.id,
-      label: cat.name,
-    }));
-  }, [filteredCategories]);
+    return getCategoryOptions(allCategories, transactionType);
+  }, [allCategories, transactionType]);
 
   const selectedCategory = useMemo(() => {
     return comboboxOptions.find((opt) => opt.value === categoryId);
@@ -239,44 +160,23 @@ export function CreateTransactionDialog({
 
   useEffect(() => {
     if (open && !prevOpenRef.current) {
-      const now = new Date();
-      let defaultDate: Date = initialDate || now;
       const currentAccount = account;
-
-      if (!initialDate && currentAccount && "createdAt" in currentAccount && currentAccount.createdAt) {
-        const accountCreatedDate = new Date(currentAccount.createdAt);
-        accountCreatedDate.setHours(0, 0, 0, 0);
-        const nowDateOnly = new Date(now);
-        nowDateOnly.setHours(0, 0, 0, 0);
-        if (nowDateOnly < accountCreatedDate) {
-          defaultDate = new Date(accountCreatedDate);
-          defaultDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-        }
-      }
-
       const initialAccountId = currentAccount?.id || accountProp?.id || "";
       accountIdRef.current = initialAccountId;
       setTransactionMode(defaultType);
 
-      const resetValues = {
+      const resetValues = getCreatePaymentDefaultValues({
         accountId: initialAccountId,
-        amount: initialAmount || "",
-        type: defaultType,
-        description: initialDescription || "",
-        date: defaultDate,
-        categoryId: initialCategoryId || undefined,
-        newCategory: undefined,
-      };
+        defaultType,
+        initialAmount,
+        initialDescription,
+        initialDate,
+        initialCategoryId,
+        account: currentAccount,
+      });
 
       reset(resetValues);
-      resetTransferForm({
-        fromAccountId: initialAccountId,
-        toAccountId: "",
-        amount: "",
-        toAmount: "",
-        description: "",
-        date: new Date(),
-      });
+      resetTransferForm(getCreateTransferDefaultValues(initialAccountId));
 
       if (initialAmount) {
         setValue("amount", initialAmount, { shouldValidate: false });
@@ -308,39 +208,20 @@ export function CreateTransactionDialog({
 
   useEffect(() => {
     if (open && account && account.id !== accountIdRef.current) {
-      const now = new Date();
-      let defaultDate: Date = initialDate || now;
-
-      if (!initialDate && "createdAt" in account && account.createdAt) {
-        const accountCreatedDate = new Date(account.createdAt);
-        accountCreatedDate.setHours(0, 0, 0, 0);
-        const nowDateOnly = new Date(now);
-        nowDateOnly.setHours(0, 0, 0, 0);
-        if (nowDateOnly < accountCreatedDate) {
-          defaultDate = new Date(accountCreatedDate);
-          defaultDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-        }
-      }
-
       accountIdRef.current = account.id;
       setTransactionMode(defaultType);
-      reset({
-        accountId: account.id,
-        amount: initialAmount || "",
-        type: defaultType,
-        description: initialDescription || "",
-        date: defaultDate,
-        categoryId: initialCategoryId || undefined,
-        newCategory: undefined,
-      });
-      resetTransferForm({
-        fromAccountId: account.id,
-        toAccountId: "",
-        amount: "",
-        toAmount: "",
-        description: "",
-        date: new Date(),
-      });
+      reset(
+        getCreatePaymentDefaultValues({
+          accountId: account.id,
+          defaultType,
+          initialAmount,
+          initialDescription,
+          initialDate,
+          initialCategoryId,
+          account,
+        })
+      );
+      resetTransferForm(getCreateTransferDefaultValues(account.id));
     }
   }, [
     open,

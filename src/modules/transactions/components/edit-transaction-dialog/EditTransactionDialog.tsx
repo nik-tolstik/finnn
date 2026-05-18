@@ -34,10 +34,16 @@ import {
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
-import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { updatePaymentTransaction } from "../../transaction.service";
 import type { PaymentTransactionWithRelations } from "../../transaction.types";
+import {
+  getEditPaymentDefaultValues,
+  getEditPaymentPreviewAccount,
+  getEditTransactionCategoryOptions,
+  getPaymentAccountBalanceBeforeEdit,
+} from "./edit-transaction-dialog.utils";
 
 interface EditTransactionDialogProps {
   transaction: PaymentTransactionWithRelations;
@@ -65,13 +71,7 @@ export function EditTransactionDialog({
     control,
   } = useForm<UpdatePaymentTransactionInput>({
     resolver: zodResolver(updatePaymentTransactionSchema),
-    defaultValues: {
-      accountId: transaction.account.id,
-      amount: transaction.amount,
-      description: transaction.description || "",
-      date: new Date(transaction.date),
-      categoryId: transaction.categoryId || null,
-    },
+    defaultValues: getEditPaymentDefaultValues(transaction),
   });
 
   const { data: categoriesData } = useQuery({
@@ -96,16 +96,9 @@ export function EditTransactionDialog({
     return categoriesData?.data || [];
   }, [categoriesData?.data]);
 
-  const filteredCategories = useMemo(() => {
-    return allCategories.filter((cat) => cat.type === transaction.type);
-  }, [allCategories, transaction.type]);
-
   const comboboxOptions = useMemo<ComboboxOption[]>(() => {
-    return filteredCategories.map((cat) => ({
-      value: cat.id,
-      label: cat.name,
-    }));
-  }, [filteredCategories]);
+    return getEditTransactionCategoryOptions(allCategories, transaction.type);
+  }, [allCategories, transaction.type]);
 
   const categoryId = useWatch({ control, name: "categoryId" });
   const accountId = useWatch({ control, name: "accountId" });
@@ -121,31 +114,12 @@ export function EditTransactionDialog({
   }, [accounts, accountId]);
 
   const accountBalanceBeforeTransaction = useMemo(() => {
-    if (!selectedAccount || transaction.type !== PaymentTransactionType.EXPENSE) return null;
-    return addMoney(selectedAccount.balance, transaction.amount);
+    return getPaymentAccountBalanceBeforeEdit(selectedAccount, transaction) || null;
   }, [selectedAccount, transaction]);
 
   const previewAccount = useMemo(() => {
-    if (!selectedAccount || !amount) return selectedAccount;
-    const amountNum = parseFloat(amount);
-    if (Number.isNaN(amountNum)) return selectedAccount;
-
-    let newBalance = accountBalanceBeforeTransaction || selectedAccount.balance;
-    if (transaction.type === PaymentTransactionType.INCOME) {
-      newBalance = addMoney(accountBalanceBeforeTransaction || selectedAccount.balance, amount);
-    } else if (transaction.type === PaymentTransactionType.EXPENSE) {
-      if (accountBalanceBeforeTransaction) {
-        newBalance = subtractMoney(accountBalanceBeforeTransaction, amount);
-      } else {
-        newBalance = subtractMoney(selectedAccount.balance, amount);
-      }
-    }
-
-    return {
-      ...selectedAccount,
-      balance: newBalance,
-    };
-  }, [selectedAccount, amount, transaction.type, accountBalanceBeforeTransaction]);
+    return getEditPaymentPreviewAccount(selectedAccount, transaction, amount);
+  }, [selectedAccount, amount, transaction]);
 
   const onSubmit = async (data: UpdatePaymentTransactionInput) => {
     onOpenChange(false);

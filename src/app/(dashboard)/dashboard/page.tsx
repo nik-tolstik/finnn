@@ -1,14 +1,23 @@
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import { redirect } from "next/navigation";
 
 import { getAccounts } from "@/modules/accounts/account.service";
+import { getCategories } from "@/modules/categories/category.service";
+import {
+  parseTransactionFilters,
+  shouldIncludeDebtTransactions,
+} from "@/modules/transactions/components/transactions-filters";
+import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
-import { getWorkspaces } from "@/modules/workspace/workspace.service";
+import { getWorkspaceMembers, getWorkspaces } from "@/modules/workspace/workspace.service";
 import {
   buildWorkspaceRedirectQueryString,
   getFirstSearchParamValue,
+  toURLSearchParams,
   type WorkspacePageSearchParams,
 } from "@/modules/workspace/workspace-search-params";
 import { getCachedServerSession } from "@/shared/lib/auth-session";
+import { accountKeys, categoryKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";
 
 import { DashboardContent } from "./components/DashboardContent";
 
@@ -34,20 +43,38 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect(`/dashboard?${buildWorkspaceRedirectQueryString(resolvedSearchParams, workspaceId)}`);
   }
 
-  const accountsResult = await getAccounts(workspaceId);
-  const allAccounts = accountsResult.data || [];
-
   const currentUserId = session?.user?.id;
-  const initialAccounts = currentUserId
-    ? allAccounts.filter((account) => account.ownerId === currentUserId)
-    : allAccounts;
+  const queryClient = new QueryClient();
+  const appliedFilters = parseTransactionFilters(toURLSearchParams(resolvedSearchParams));
+  const initialTransactionFilters = {
+    ...appliedFilters,
+    skip: 0,
+    take: 20,
+    includeDebtTransactions: shouldIncludeDebtTransactions(appliedFilters.transactionTypes),
+  };
+
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: accountKeys.list(workspaceId),
+      queryFn: () => getAccounts(workspaceId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: workspaceKeys.members(workspaceId),
+      queryFn: () => getWorkspaceMembers(workspaceId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: categoryKeys.list(workspaceId),
+      queryFn: () => getCategories(workspaceId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: transactionKeys.list(workspaceId, initialTransactionFilters),
+      queryFn: () => getCombinedTransactions(workspaceId, initialTransactionFilters),
+    }),
+  ]);
 
   return (
-    <DashboardContent
-      accounts={initialAccounts}
-      allAccounts={allAccounts}
-      initialCurrentUserId={currentUserId}
-      workspaceId={workspaceId}
-    />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <DashboardContent initialCurrentUserId={currentUserId} workspaceId={workspaceId} />
+    </HydrationBoundary>
   );
 }

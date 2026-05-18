@@ -3,8 +3,8 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ArrowRightLeft, HandCoins, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import dynamic from "next/dynamic";
+import { type ReactNode, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { getAnalyticsOverview } from "@/modules/analytics/analytics.service";
@@ -26,25 +26,15 @@ import { formatMoney } from "@/shared/utils/money";
 
 interface AnalyticsContentProps {
   workspaceId: string;
-  initialAccounts: Extract<Awaited<ReturnType<typeof getAccounts>>, { data: unknown }>["data"];
-  initialCategories: Extract<Awaited<ReturnType<typeof getCategories>>, { data: unknown }>["data"];
-  initialMembers: Extract<Awaited<ReturnType<typeof getWorkspaceMembers>>, { data: unknown }>["data"];
 }
 
-const CHART_COLORS = {
-  income: "#16a34a",
-  expense: "#ef4444",
-  debtLent: "#2563eb",
-  debtBorrowed: "#f59e0b",
-  categories: ["#ef4444", "#f97316", "#f59e0b", "#84cc16", "#06b6d4", "#8b5cf6"],
-};
+const AnalyticsCharts = dynamic(() => import("./AnalyticsCharts").then((mod) => mod.AnalyticsCharts), {
+  ssr: false,
+  loading: () => <AnalyticsChartsSkeleton />,
+});
 
 function isAnalyticsSuccessResponse(data: unknown): data is AnalyticsOverviewResult {
   return Boolean(data && typeof data === "object" && "summary" in data && !("error" in data));
-}
-
-function formatDateLabel(value: string) {
-  return format(new Date(`${value}T00:00:00`), "dd.MM");
 }
 
 function formatRangeLabel(startDate: string, endDate: string) {
@@ -71,12 +61,20 @@ function formatCompactMoney(value: string, currency: string) {
   return formatMoney(value, currency);
 }
 
-function formatChartValue(value: number, currency: string) {
-  return formatCompactMoney(String(value), currency);
-}
-
 function EmptyCardState({ message }: { message: string }) {
   return <div className="flex min-h-[240px] items-center justify-center text-sm text-muted-foreground">{message}</div>;
+}
+
+function AnalyticsChartsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-6">
+      <Skeleton className="h-[390px] w-full rounded-xl" />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <Skeleton className="h-[390px] w-full rounded-xl" />
+        <Skeleton className="h-[390px] w-full rounded-xl" />
+      </div>
+    </div>
+  );
 }
 
 function AnalyticsMetricCard({
@@ -122,12 +120,7 @@ function AnalyticsMetricCard({
   );
 }
 
-export function AnalyticsContent({
-  workspaceId,
-  initialAccounts,
-  initialCategories,
-  initialMembers,
-}: AnalyticsContentProps) {
+export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
   const {
     appliedFilters,
@@ -140,22 +133,16 @@ export function AnalyticsContent({
   const { data: accountsData } = useQuery({
     queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
-    initialData: { data: initialAccounts },
-    staleTime: 5000,
   });
 
   const { data: categoriesData } = useQuery({
     queryKey: categoryKeys.list(workspaceId),
     queryFn: () => getCategories(workspaceId),
-    initialData: { data: initialCategories },
-    staleTime: 5000,
   });
 
   const { data: membersData } = useQuery({
     queryKey: workspaceKeys.members(workspaceId),
     queryFn: () => getWorkspaceMembers(workspaceId),
-    initialData: { data: initialMembers },
-    staleTime: 5000,
   });
 
   const {
@@ -166,48 +153,12 @@ export function AnalyticsContent({
     queryKey: analyticsKeys.overview(workspaceId, appliedFilters),
     queryFn: () => getAnalyticsOverview(workspaceId, appliedFilters),
     placeholderData: keepPreviousData,
-    staleTime: 5000,
   });
 
   const analytics = isAnalyticsSuccessResponse(analyticsData) ? analyticsData : null;
-  const accounts = accountsData?.data || initialAccounts;
-  const categories = categoriesData?.data || initialCategories;
-  const members = membersData?.data || initialMembers;
-
-  const dailyChartData = useMemo(() => {
-    if (!analytics) {
-      return [];
-    }
-
-    return analytics.timeSeries.map((item) => ({
-      date: formatDateLabel(item.date),
-      income: Number(item.incomeTotalInBaseCurrency),
-      expense: Number(item.expenseTotalInBaseCurrency),
-    }));
-  }, [analytics]);
-
-  const categoryChartData = useMemo(() => {
-    if (!analytics) {
-      return [];
-    }
-
-    return analytics.expenseCategories.slice(0, 6).map((item) => ({
-      name: item.name,
-      total: Number(item.totalInBaseCurrency),
-    }));
-  }, [analytics]);
-
-  const debtChartData = useMemo(() => {
-    if (!analytics) {
-      return [];
-    }
-
-    return analytics.debtsByPerson.slice(0, 6).map((item) => ({
-      personName: item.personName,
-      lent: Number(item.lentTotalInBaseCurrency),
-      borrowed: Number(item.borrowedTotalInBaseCurrency),
-    }));
-  }, [analytics]);
+  const accounts = accountsData?.data || [];
+  const categories = categoriesData?.data || [];
+  const members = membersData?.data || [];
 
   const handleApplyFilters = (nextFilters: typeof appliedFilters) => {
     setIsFiltersDrawerOpen(false);
@@ -336,116 +287,7 @@ export function AnalyticsContent({
               />
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Доходы и расходы по дням</CardTitle>
-                <CardDescription>
-                  Только денежный поток. Переводы и долги здесь не смешиваются с расходами.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[320px]">
-                {dailyChartData.some((item) => item.income > 0 || item.expense > 0) ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dailyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="date" tickLine={false} axisLine={false} />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => formatChartValue(value, analytics.baseCurrency)}
-                      />
-                      <Tooltip
-                        formatter={(value: any, name: any) => [
-                          formatChartValue(Number(value ?? 0), analytics.baseCurrency),
-                          name === "income" ? "Доходы" : "Расходы",
-                        ]}
-                      />
-                      <Legend formatter={(value) => (value === "income" ? "Доходы" : "Расходы")} />
-                      <Bar dataKey="income" fill={CHART_COLORS.income} radius={[6, 6, 0, 0]} />
-                      <Bar dataKey="expense" fill={CHART_COLORS.expense} radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <EmptyCardState message="Нет данных для графика доходов и расходов." />
-                )}
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Категории расходов</CardTitle>
-                  <CardDescription>Показываем крупнейшие расходные категории в выбранном периоде.</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[320px]">
-                  {categoryChartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={categoryChartData} layout="vertical" margin={{ left: 12 }}>
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                        <XAxis
-                          type="number"
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(value) => formatChartValue(value, analytics.baseCurrency)}
-                        />
-                        <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={100} />
-                        <Tooltip
-                          formatter={(value: any) => formatChartValue(Number(value ?? 0), analytics.baseCurrency)}
-                        />
-                        <Bar dataKey="total" radius={[0, 6, 6, 0]}>
-                          {categoryChartData.map((entry, index) => (
-                            <Cell
-                              key={entry.name}
-                              fill={CHART_COLORS.categories[index % CHART_COLORS.categories.length]}
-                            />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <EmptyCardState message="Нет расходов для выбранных фильтров." />
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Открытые долги по людям</CardTitle>
-                  <CardDescription>Текущий срез: отдельно, сколько вы дали в долг и сколько должны вы.</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[320px]">
-                  {debtChartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={debtChartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="personName" tickLine={false} axisLine={false} />
-                        <YAxis
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(value) => formatChartValue(value, analytics.baseCurrency)}
-                        />
-                        <Tooltip
-                          formatter={(value: any, name: any) => [
-                            formatChartValue(Number(value ?? 0), analytics.baseCurrency),
-                            name === "lent" ? "Вы дали в долг" : "Вы должны",
-                          ]}
-                        />
-                        <Legend formatter={(value) => (value === "lent" ? "Вы дали в долг" : "Вы должны")} />
-                        <Bar dataKey="lent" stackId="debts" fill={CHART_COLORS.debtLent} radius={[6, 6, 0, 0]} />
-                        <Bar
-                          dataKey="borrowed"
-                          stackId="debts"
-                          fill={CHART_COLORS.debtBorrowed}
-                          radius={[6, 6, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <EmptyCardState message="Сейчас нет открытых долгов." />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            <AnalyticsCharts analytics={analytics} />
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <Card>
