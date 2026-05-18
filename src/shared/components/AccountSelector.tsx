@@ -17,6 +17,7 @@ interface AccountSelectorProps {
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  showOwner?: boolean;
 }
 
 export function AccountSelector({
@@ -28,6 +29,7 @@ export function AccountSelector({
   required = false,
   error,
   disabled = false,
+  showOwner = false,
 }: AccountSelectorProps) {
   const selectDialog = useDialogState<{ workspaceId: string }>();
 
@@ -49,6 +51,7 @@ export function AccountSelector({
               }
             }}
             className={disabled ? "opacity-50 cursor-not-allowed" : ""}
+            showOwner={showOwner}
           />
         ) : (
           <Button
