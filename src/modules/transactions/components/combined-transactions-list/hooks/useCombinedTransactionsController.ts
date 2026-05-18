@@ -5,7 +5,20 @@ import { DebtTransactionType } from "@/modules/debts/debt.constants";
 import { deleteDebtTransaction } from "@/modules/debts/debt.service";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import {
+  addAccountBalanceDelta,
+  getDebtDeletionBalanceDelta,
+  getDebtTransactionTotalsDelta,
+  getPaymentTransactionBalanceDelta,
+  getTransferTransactionBalanceDeltas,
+} from "@/shared/lib/balance-domain";
+import {
+  removeTransactionsFromCache,
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+  updateDebtsInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
+import { compareMoney, subtractMoney } from "@/shared/utils/money";
 
 import type { PaymentTransactionType } from "../../../transaction.constants";
 import { deletePaymentTransaction, deleteTransferTransaction } from "../../../transaction.service";
@@ -66,18 +79,43 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
   };
 
   const handleTransactionDelete = async (transaction: ActionableCombinedTransaction) => {
+    const balanceDeltas = new Map<string, string>();
+    if (transaction.kind === "transferTransaction") {
+      const transferDeltas = getTransferTransactionBalanceDeltas(transaction.data.amount, transaction.data.toAmount);
+      addAccountBalanceDelta(
+        balanceDeltas,
+        transaction.data.fromAccountId,
+        subtractMoney("0", transferDeltas.fromDelta)
+      );
+      addAccountBalanceDelta(balanceDeltas, transaction.data.toAccountId, subtractMoney("0", transferDeltas.toDelta));
+    } else {
+      addAccountBalanceDelta(
+        balanceDeltas,
+        transaction.data.accountId,
+        subtractMoney("0", getPaymentTransactionBalanceDelta(transaction.data.type, transaction.data.amount))
+      );
+    }
+
     try {
-      const result =
-        transaction.kind === "transferTransaction"
-          ? await deleteTransferTransaction(transaction.data.id)
-          : await deletePaymentTransaction(transaction.data.id);
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["transactions", "accounts"],
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          removeTransactionsFromCache(context, [transaction.data.id]);
+        },
+        mutation: () =>
+          transaction.kind === "transferTransaction"
+            ? deleteTransferTransaction(transaction.data.id)
+            : deletePaymentTransaction(transaction.data.id),
+      });
 
       if (result.error) {
         toast.error(result.error);
         return;
       }
 
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["transactions", "accounts"]);
       actionsDialog.closeDialog();
     } catch {
       toast.error("Не удалось удалить транзакцию");
@@ -113,7 +151,34 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
     }
 
     try {
-      const result = await deleteDebtTransaction(debtTransaction.id);
+      const balanceDeltas = new Map<string, string>();
+      addAccountBalanceDelta(
+        balanceDeltas,
+        debtTransaction.accountId,
+        getDebtDeletionBalanceDelta(debtTransaction.debt.type, debtTransaction)
+      );
+      const totalsDelta = getDebtTransactionTotalsDelta(debtTransaction.type, debtTransaction.amount);
+      const remainingAmount = subtractMoney(debtTransaction.debt.remainingAmount, totalsDelta.remainingDelta);
+      const amount = subtractMoney(debtTransaction.debt.amount, totalsDelta.amountDelta);
+
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["debts", "transactions", "accounts"],
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          updateDebtsInCache(context, [
+            {
+              id: debtTransaction.debt.id,
+              amount,
+              remainingAmount,
+              status: compareMoney(remainingAmount, "0") <= 0 ? "closed" : "open",
+            },
+          ]);
+          removeTransactionsFromCache(context, [debtTransaction.id]);
+        },
+        mutation: () => deleteDebtTransaction(debtTransaction.id),
+      });
 
       if ("error" in result) {
         toast.error(result.error);
@@ -121,7 +186,6 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
       }
 
       toast.success("Транзакция долга удалена");
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
       debtActionsDialog.closeDialog();
     } catch {
       toast.error("Не удалось удалить транзакцию долга");

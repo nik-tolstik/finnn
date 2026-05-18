@@ -8,7 +8,12 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
+import {
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+  updateDebtsInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { type UpdateDebtInput, updateDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
@@ -17,7 +22,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogW
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { addMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { DebtType } from "../../debt.constants";
 import { getDebtEditData, updateDebt } from "../../debt.service";
@@ -86,13 +91,41 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
   }, [open, debt?.id, debt.personName, debt.date, editData, reset]);
 
   const onSubmit = async (data: UpdateDebtInput) => {
-    const result = await updateDebt(debt.id, data);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
+    const amountDelta = subtractMoney(data.amount, editData?.initialAmount ?? debt.amount);
+    const nextRemainingAmount = addMoney(debt.remainingAmount, amountDelta);
+    const balanceDeltas = new Map<string, string>();
+    addAccountBalanceDelta(balanceDeltas, debt.accountId, getDebtInitialAccountBalanceDelta(debt.type, amountDelta));
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["debts", "transactions", "accounts"],
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          updateDebtsInCache(context, [
+            {
+              id: debt.id,
+              personName: data.personName,
+              amount: data.amount,
+              remainingAmount: nextRemainingAmount,
+              date: data.date,
+              status: compareMoney(nextRemainingAmount, "0") <= 0 ? "closed" : "open",
+            },
+          ]);
+        },
+        mutation: () => updateDebt(debt.id, data),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
       toast.success("Долг обновлён");
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
+    } catch {
+      toast.error("Не удалось обновить долг");
     }
   };
 

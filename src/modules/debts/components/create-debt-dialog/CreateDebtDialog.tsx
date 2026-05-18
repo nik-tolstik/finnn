@@ -14,7 +14,12 @@ import { SelectAccountDialog } from "@/modules/accounts/components/select-accoun
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CURRENCY_OPTIONS, type Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
+import {
+  insertDebtsInCache,
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { type CreateDebtInput, createDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
@@ -104,13 +109,57 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
   }, [open, defaultAccount, accountId, setValue]);
 
   const onSubmit = async (data: CreateDebtInput) => {
-    const result = await createDebt(workspaceId, data);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
+    const balanceDeltas = new Map<string, string>();
+    if (data.useAccount && data.accountId) {
+      addAccountBalanceDelta(balanceDeltas, data.accountId, getDebtInitialAccountBalanceDelta(data.type, data.amount));
+    }
+
+    const optimisticDebt = {
+      id: `optimistic-debt-${Date.now()}`,
+      workspaceId,
+      type: data.type,
+      personName: data.personName,
+      accountId: data.useAccount ? data.accountId || null : null,
+      amount: data.amount,
+      remainingAmount: data.amount,
+      currency: selectedAccount?.currency ?? data.currency ?? DEFAULT_CURRENCY,
+      status: "open",
+      date: data.date,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      account:
+        data.useAccount && selectedAccount
+          ? {
+              id: selectedAccount.id,
+              name: selectedAccount.name,
+              currency: selectedAccount.currency,
+              color: selectedAccount.color,
+              icon: selectedAccount.icon,
+            }
+          : null,
+    };
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["debts", "transactions", "accounts"],
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          insertDebtsInCache(context, [optimisticDebt]);
+        },
+        mutation: () => createDebt(workspaceId, data),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
       toast.success("Долг создан");
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
+    } catch {
+      toast.error("Не удалось создать долг");
     }
   };
 

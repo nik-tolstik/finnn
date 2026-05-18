@@ -13,6 +13,16 @@ import { getCategories } from "@/modules/categories/category.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import {
+  addAccountBalanceDelta,
+  getDebtTransactionBalanceDelta,
+  getPaymentTransactionBalanceDelta,
+} from "@/shared/lib/balance-domain";
+import {
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+  updateDebtsInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import { type CloseDebtInput, closeDebtSchema } from "@/shared/lib/validations/debt";
@@ -22,9 +32,9 @@ import type { ComboboxOption } from "@/shared/ui/combobox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { compareMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { compareMoney, formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
-import { DebtType } from "../../debt.constants";
+import { DebtTransactionType, DebtType } from "../../debt.constants";
 import { closeDebt } from "../../debt.service";
 import type { DebtWithRelations } from "../../debt.types";
 import {
@@ -199,13 +209,54 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       ...data,
       useAccount: true,
     };
-    const result = await closeDebt(debt.id, submitData);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
+    const balanceDeltas = new Map<string, string>();
+    addAccountBalanceDelta(
+      balanceDeltas,
+      submitData.accountId,
+      getDebtTransactionBalanceDelta(debt.type, {
+        type: DebtTransactionType.CLOSED,
+        amount: submitData.amount,
+        toAmount: currenciesMatch ? null : submitData.toAmount,
+      })
+    );
+    const categoryPaymentType = categoryType === "income" ? "income" : categoryType === "expense" ? "expense" : null;
+    if (categoryPaymentType && compareMoney(categoryAmount, "0") > 0) {
+      addAccountBalanceDelta(
+        balanceDeltas,
+        submitData.accountId,
+        getPaymentTransactionBalanceDelta(categoryPaymentType, categoryAmount)
+      );
+    }
+
+    try {
+      const remainingAmount = subtractMoney(debt.remainingAmount, submitData.amount);
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["debts", "transactions", "accounts"],
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          updateDebtsInCache(context, [
+            {
+              id: debt.id,
+              remainingAmount,
+              status: compareMoney(remainingAmount, "0") <= 0 ? "closed" : "open",
+            },
+          ]);
+        },
+        mutation: () => closeDebt(debt.id, submitData),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
       toast.success("Долг закрыт");
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts", "categories"]);
+      await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories"]);
+    } catch {
+      toast.error("Не удалось закрыть долг");
     }
   };
 

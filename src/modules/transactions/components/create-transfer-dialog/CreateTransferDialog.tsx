@@ -7,7 +7,11 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { addAccountBalanceDelta, getTransferTransactionBalanceDeltas } from "@/shared/lib/balance-domain";
+import {
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys } from "@/shared/lib/query-keys";
 import {
   type CreateTransferTransactionInput,
@@ -75,12 +79,28 @@ export function CreateTransferDialog({
   };
 
   const onSubmit = async (data: CreateTransferTransactionInput) => {
-    const result = await createTransferTransaction(workspaceId, data);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
+    const balanceDeltas = new Map<string, string>();
+    const transferDeltas = getTransferTransactionBalanceDeltas(data.amount, data.toAmount);
+    addAccountBalanceDelta(balanceDeltas, data.fromAccountId, transferDeltas.fromDelta);
+    addAccountBalanceDelta(balanceDeltas, data.toAccountId, transferDeltas.toDelta);
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["transactions", "accounts"],
+        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        mutation: () => createTransferTransaction(workspaceId, data),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["transactions", "accounts"]);
+    } catch {
+      toast.error("Не удалось создать перевод");
     }
   };
 

@@ -17,6 +17,15 @@ import { getCategories } from "@/modules/categories/category.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import {
+  addAccountBalanceDelta,
+  getPaymentTransactionBalanceDelta,
+  getTransferTransactionBalanceDeltas,
+} from "@/shared/lib/balance-domain";
+import {
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import {
@@ -257,27 +266,56 @@ export function CreateTransactionDialog({
       return;
     }
 
-    const result = await createPaymentTransaction(workspaceId, data);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
+    const balanceDeltas = new Map<string, string>();
+    addAccountBalanceDelta(balanceDeltas, data.accountId, getPaymentTransactionBalanceDelta(data.type, data.amount));
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["transactions", "accounts"],
+        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        mutation: () => createPaymentTransaction(workspaceId, data),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
       onOpenChange(false);
 
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "transactions",
-        "accounts",
-        ...(data.newCategory ? (["categories"] as const) : []),
-      ]);
+      if (data.newCategory) {
+        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories"]);
+      }
+    } catch {
+      toast.error("Не удалось создать транзакцию");
     }
   };
 
   const onTransferSubmit = async (data: CreateTransferTransactionInput) => {
-    const result = await createTransferTransaction(workspaceId, data);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
+    const balanceDeltas = new Map<string, string>();
+    const transferDeltas = getTransferTransactionBalanceDeltas(data.amount, data.toAmount);
+    addAccountBalanceDelta(balanceDeltas, data.fromAccountId, transferDeltas.fromDelta);
+    addAccountBalanceDelta(balanceDeltas, data.toAccountId, transferDeltas.toDelta);
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["transactions", "accounts"],
+        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        mutation: () => createTransferTransaction(workspaceId, data),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["transactions", "accounts"]);
+    } catch {
+      toast.error("Не удалось создать перевод");
     }
   };
 

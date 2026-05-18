@@ -13,7 +13,11 @@ import { getCategories } from "@/modules/categories/category.service";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { addAccountBalanceDelta, getPaymentTransactionBalanceDelta } from "@/shared/lib/balance-domain";
+import {
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import {
   type UpdatePaymentTransactionInput,
@@ -34,7 +38,7 @@ import {
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
-import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { updatePaymentTransaction } from "../../transaction.service";
 import type { PaymentTransactionWithRelations } from "../../transaction.types";
@@ -123,11 +127,32 @@ export function EditTransactionDialog({
 
   const onSubmit = async (data: UpdatePaymentTransactionInput) => {
     onOpenChange(false);
-    const result = await updatePaymentTransaction(transaction.id, data);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["transactions", "accounts"]);
+    const balanceDeltas = new Map<string, string>();
+    addAccountBalanceDelta(
+      balanceDeltas,
+      transaction.accountId,
+      subtractMoney("0", getPaymentTransactionBalanceDelta(transaction.type, transaction.amount))
+    );
+    addAccountBalanceDelta(
+      balanceDeltas,
+      data.accountId ?? transaction.accountId,
+      getPaymentTransactionBalanceDelta(transaction.type, data.amount ?? transaction.amount)
+    );
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["transactions", "accounts"],
+        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        mutation: () => updatePaymentTransaction(transaction.id, data),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      }
+    } catch {
+      toast.error("Не удалось обновить транзакцию");
     }
   };
 

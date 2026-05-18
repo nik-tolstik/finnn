@@ -3,11 +3,6 @@
 import type { Prisma } from "@prisma/client";
 
 import { fail, ok, success } from "@/shared/lib/action-result";
-import {
-  applyPaymentTransactionBalance,
-  getTransferTransactionBalanceDeltas,
-  revertPaymentTransactionBalance,
-} from "@/shared/lib/balance-domain";
 import { prisma } from "@/shared/lib/prisma";
 import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
@@ -21,9 +16,16 @@ import {
   updatePaymentTransactionSchema,
   updateTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
-import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
 import type { DebtTransactionWithRelations } from "../debts/debt.types";
+import {
+  createPaymentTransactionApplication,
+  createTransferTransactionApplication,
+  deletePaymentTransactionApplication,
+  deleteTransferTransactionApplication,
+  updatePaymentTransactionApplication,
+  updateTransferTransactionApplication,
+} from "./transaction.application";
 import {
   DEBT_TRANSACTION_FILTER_VALUE,
   PaymentTransactionType,
@@ -32,8 +34,6 @@ import {
 import type { CombinedTransaction } from "./transaction.types";
 import type { TransactionListFilters } from "./transaction-filter.types";
 import { filterCombinedTransactions } from "./utils/combined-transaction-filtering";
-
-type PrismaTx = Prisma.TransactionClient;
 
 const accountWithOwnerSelect = {
   id: true,
@@ -280,84 +280,12 @@ function sortCombinedTransactionsByDate(transactions: CombinedTransaction[]) {
   });
 }
 
-async function getWorkspaceAccountOrThrow(
-  tx: PrismaTx,
-  workspaceId: string,
-  accountId: string,
-  errorMessage = "Счёт не найден"
-) {
-  const account = await tx.account.findFirst({
-    where: {
-      id: accountId,
-      workspaceId,
-    },
-  });
-
-  if (!account) {
-    throw new Error(errorMessage);
-  }
-
-  return account;
-}
-
 export async function createPaymentTransaction(workspaceId: string, input: CreatePaymentTransactionInput) {
   try {
     await requireWorkspaceAccess(workspaceId);
 
     const validated = createPaymentTransactionSchema.parse(input);
-
-    const transaction = await prisma.$transaction(async (tx) => {
-      const account = await getWorkspaceAccountOrThrow(tx, workspaceId, validated.accountId);
-
-      const accountCreatedDate = new Date(account.createdAt);
-      accountCreatedDate.setHours(0, 0, 0, 0);
-      const transactionDate = new Date(validated.date);
-      transactionDate.setHours(0, 0, 0, 0);
-
-      if (transactionDate < accountCreatedDate) {
-        throw new Error(
-          `Дата транзакции не может быть раньше даты создания счета (${accountCreatedDate.toLocaleDateString("ru-RU")})`
-        );
-      }
-
-      if (validated.type === PaymentTransactionType.EXPENSE && compareMoney(validated.amount, account.balance) > 0) {
-        throw new Error(`Сумма не может превышать баланс счёта (${account.balance})`);
-      }
-
-      let finalCategoryId = validated.categoryId;
-      if (validated.newCategory) {
-        const category = await tx.category.create({
-          data: {
-            workspaceId,
-            name: validated.newCategory.name,
-            type: validated.newCategory.type,
-          },
-        });
-        finalCategoryId = category.id;
-        if (validated.categoryId?.startsWith("temp-")) {
-          finalCategoryId = category.id;
-        }
-      }
-
-      const createdTransaction = await tx.paymentTransaction.create({
-        data: {
-          workspaceId,
-          accountId: validated.accountId,
-          amount: validated.amount,
-          type: validated.type,
-          description: validated.description,
-          date: validated.date,
-          categoryId: finalCategoryId,
-        },
-      });
-
-      await tx.account.update({
-        where: { id: validated.accountId },
-        data: { balance: applyPaymentTransactionBalance(account.balance, validated.type, validated.amount) },
-      });
-
-      return createdTransaction;
-    });
+    const transaction = await createPaymentTransactionApplication(workspaceId, validated);
 
     revalidateAccountingRoutes();
     return ok(transaction);
@@ -372,46 +300,7 @@ export async function createTransferTransaction(workspaceId: string, input: Crea
     await requireWorkspaceAccess(workspaceId);
 
     const validated = createTransferTransactionSchema.parse(input);
-
-    const transfer = await prisma.$transaction(async (tx) => {
-      const fromAccount = await getWorkspaceAccountOrThrow(tx, workspaceId, validated.fromAccountId);
-      const toAccount = await getWorkspaceAccountOrThrow(tx, workspaceId, validated.toAccountId);
-
-      if (fromAccount.id === toAccount.id) {
-        throw new Error("Нельзя перевести на тот же счёт");
-      }
-
-      if (compareMoney(validated.amount, fromAccount.balance) > 0) {
-        throw new Error(`Сумма отправления не может превышать баланс счёта (${fromAccount.balance})`);
-      }
-
-      const createdTransfer = await tx.transferTransaction.create({
-        data: {
-          workspaceId,
-          fromAccountId: validated.fromAccountId,
-          toAccountId: validated.toAccountId,
-          createdById: userId,
-          amount: validated.amount,
-          toAmount: validated.toAmount,
-          description: validated.description,
-          date: validated.date,
-        },
-      });
-
-      const transferDeltas = getTransferTransactionBalanceDeltas(validated.amount, validated.toAmount);
-
-      await tx.account.update({
-        where: { id: validated.fromAccountId },
-        data: { balance: addMoney(fromAccount.balance, transferDeltas.fromDelta) },
-      });
-
-      await tx.account.update({
-        where: { id: validated.toAccountId },
-        data: { balance: addMoney(toAccount.balance, transferDeltas.toDelta) },
-      });
-
-      return createdTransfer;
-    });
+    const transfer = await createTransferTransactionApplication(workspaceId, userId, validated);
 
     revalidateAccountingRoutes();
     return ok(transfer);
@@ -425,89 +314,7 @@ export async function updatePaymentTransaction(id: string, input: UpdatePaymentT
     const userId = await requireUserId();
 
     const validated = updatePaymentTransactionSchema.parse(input);
-
-    const updated = await prisma.$transaction(async (tx) => {
-      const transaction = await tx.paymentTransaction.findFirst({
-        where: {
-          id,
-          workspace: {
-            members: {
-              some: {
-                userId,
-              },
-            },
-          },
-        },
-        include: { account: true },
-      });
-
-      if (!transaction) {
-        throw new Error("Транзакция не найдена или доступ запрещён");
-      }
-
-      const oldAccountId = transaction.accountId;
-      const newAccountId = validated.accountId || oldAccountId;
-      const accountChanged = oldAccountId !== newAccountId;
-
-      const oldAmount = transaction.amount.toString();
-      const newAmount = validated.amount || oldAmount;
-      const amountChanged = oldAmount !== newAmount;
-
-      if (accountChanged || amountChanged) {
-        const oldAccount = await tx.account.findUnique({
-          where: { id: oldAccountId },
-        });
-
-        if (!oldAccount) {
-          throw new Error("Старый счёт не найден");
-        }
-
-        const revertedOldBalance = revertPaymentTransactionBalance(
-          oldAccount.balance.toString(),
-          transaction.type,
-          oldAmount
-        );
-
-        if (accountChanged) {
-          const newAccount = await getWorkspaceAccountOrThrow(
-            tx,
-            transaction.workspaceId,
-            newAccountId,
-            "Новый счёт не найден"
-          );
-
-          if (transaction.type === PaymentTransactionType.EXPENSE && compareMoney(newAmount, newAccount.balance) > 0) {
-            throw new Error(`Сумма не может превышать баланс счёта (${newAccount.balance})`);
-          }
-
-          await tx.account.update({
-            where: { id: oldAccountId },
-            data: { balance: revertedOldBalance },
-          });
-
-          await tx.account.update({
-            where: { id: newAccountId },
-            data: {
-              balance: applyPaymentTransactionBalance(newAccount.balance.toString(), transaction.type, newAmount),
-            },
-          });
-        } else {
-          if (transaction.type === PaymentTransactionType.EXPENSE && compareMoney(newAmount, revertedOldBalance) > 0) {
-            throw new Error(`Сумма не может превышать баланс счёта (${revertedOldBalance})`);
-          }
-
-          await tx.account.update({
-            where: { id: oldAccountId },
-            data: { balance: applyPaymentTransactionBalance(revertedOldBalance, transaction.type, newAmount) },
-          });
-        }
-      }
-
-      return tx.paymentTransaction.update({
-        where: { id },
-        data: validated,
-      });
-    });
+    const updated = await updatePaymentTransactionApplication(id, userId, validated);
 
     revalidateAccountingRoutes();
     return ok(updated);
@@ -521,113 +328,7 @@ export async function updateTransferTransaction(id: string, input: UpdateTransfe
     const userId = await requireUserId();
 
     const validated = updateTransferTransactionSchema.parse(input);
-    await prisma.$transaction(async (tx) => {
-      const transfer = await tx.transferTransaction.findFirst({
-        where: {
-          id,
-          workspace: {
-            members: {
-              some: {
-                userId,
-              },
-            },
-          },
-        },
-        include: {
-          fromAccount: true,
-          toAccount: true,
-        },
-      });
-
-      if (!transfer) {
-        throw new Error("Перевод не найден или доступ запрещён");
-      }
-
-      const oldFromAccount = transfer.fromAccount;
-      const oldToAccount = transfer.toAccount;
-      const oldAmount = transfer.amount;
-      const oldToAmount = transfer.toAmount;
-
-      const newFromAccountId = validated.fromAccountId || transfer.fromAccountId;
-      const newToAccountId = validated.toAccountId || transfer.toAccountId;
-      const newAmount = validated.amount || transfer.amount;
-      const newToAmount = validated.toAmount || transfer.toAmount;
-      const newDescription = validated.description ?? transfer.description;
-      const newDate = validated.date || transfer.date;
-
-      if (newFromAccountId === newToAccountId) {
-        throw new Error("Нельзя перевести на тот же счёт");
-      }
-
-      await getWorkspaceAccountOrThrow(tx, transfer.workspaceId, newFromAccountId, "Счёт отправителя не найден");
-      await getWorkspaceAccountOrThrow(tx, transfer.workspaceId, newToAccountId, "Счёт не найден");
-
-      const oldFromAccountCurrent = await tx.account.findUnique({
-        where: { id: oldFromAccount.id },
-        select: { balance: true },
-      });
-      const oldToAccountCurrent = await tx.account.findUnique({
-        where: { id: oldToAccount.id },
-        select: { balance: true },
-      });
-
-      if (!oldFromAccountCurrent || !oldToAccountCurrent) {
-        throw new Error("Счёт не найден");
-      }
-
-      const revertedDeltas = getTransferTransactionBalanceDeltas(oldAmount, oldToAmount);
-
-      await tx.account.update({
-        where: { id: oldFromAccount.id },
-        data: { balance: subtractMoney(oldFromAccountCurrent.balance, revertedDeltas.fromDelta) },
-      });
-
-      await tx.account.update({
-        where: { id: oldToAccount.id },
-        data: { balance: subtractMoney(oldToAccountCurrent.balance, revertedDeltas.toDelta) },
-      });
-
-      const newFromAccountCurrent = await tx.account.findUnique({
-        where: { id: newFromAccountId },
-        select: { balance: true },
-      });
-      const newToAccountCurrent = await tx.account.findUnique({
-        where: { id: newToAccountId },
-        select: { balance: true },
-      });
-
-      if (!newFromAccountCurrent || !newToAccountCurrent) {
-        throw new Error("Счёт не найден");
-      }
-
-      if (compareMoney(newAmount, newFromAccountCurrent.balance) > 0) {
-        throw new Error(`Сумма отправления не может превышать баланс счёта (${newFromAccountCurrent.balance})`);
-      }
-
-      await tx.transferTransaction.update({
-        where: { id },
-        data: {
-          fromAccountId: newFromAccountId,
-          toAccountId: newToAccountId,
-          amount: newAmount,
-          toAmount: newToAmount,
-          description: newDescription,
-          date: newDate,
-        },
-      });
-
-      const nextDeltas = getTransferTransactionBalanceDeltas(newAmount, newToAmount);
-
-      await tx.account.update({
-        where: { id: newFromAccountId },
-        data: { balance: addMoney(newFromAccountCurrent.balance, nextDeltas.fromDelta) },
-      });
-
-      await tx.account.update({
-        where: { id: newToAccountId },
-        data: { balance: addMoney(newToAccountCurrent.balance, nextDeltas.toDelta) },
-      });
-    });
+    await updateTransferTransactionApplication(id, userId, validated);
 
     revalidateAccountingRoutes();
     return success();
@@ -640,44 +341,7 @@ export async function deleteTransferTransaction(id: string) {
   try {
     const userId = await requireUserId();
 
-    await prisma.$transaction(async (tx) => {
-      const transfer = await tx.transferTransaction.findFirst({
-        where: {
-          id,
-          workspace: {
-            members: {
-              some: {
-                userId,
-              },
-            },
-          },
-        },
-        include: {
-          fromAccount: true,
-          toAccount: true,
-        },
-      });
-
-      if (!transfer) {
-        throw new Error("Перевод не найден или доступ запрещён");
-      }
-
-      const transferDeltas = getTransferTransactionBalanceDeltas(transfer.amount, transfer.toAmount);
-
-      await tx.account.update({
-        where: { id: transfer.fromAccount.id },
-        data: { balance: subtractMoney(transfer.fromAccount.balance, transferDeltas.fromDelta) },
-      });
-
-      await tx.account.update({
-        where: { id: transfer.toAccount.id },
-        data: { balance: subtractMoney(transfer.toAccount.balance, transferDeltas.toDelta) },
-      });
-
-      await tx.transferTransaction.delete({
-        where: { id },
-      });
-    });
+    await deleteTransferTransactionApplication(id, userId);
 
     revalidateAccountingRoutes();
     return success();
@@ -690,36 +354,7 @@ export async function deletePaymentTransaction(id: string) {
   try {
     const userId = await requireUserId();
 
-    await prisma.$transaction(async (tx) => {
-      const transaction = await tx.paymentTransaction.findFirst({
-        where: {
-          id,
-          workspace: {
-            members: {
-              some: {
-                userId,
-              },
-            },
-          },
-        },
-        include: { account: true },
-      });
-
-      if (!transaction) {
-        throw new Error("Транзакция не найдена или доступ запрещён");
-      }
-
-      await tx.account.update({
-        where: { id: transaction.account.id },
-        data: {
-          balance: revertPaymentTransactionBalance(transaction.account.balance, transaction.type, transaction.amount),
-        },
-      });
-
-      await tx.paymentTransaction.delete({
-        where: { id },
-      });
-    });
+    await deletePaymentTransactionApplication(id, userId);
 
     revalidateAccountingRoutes();
     return success();

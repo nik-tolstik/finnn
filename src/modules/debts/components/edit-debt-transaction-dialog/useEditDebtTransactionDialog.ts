@@ -7,9 +7,19 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import {
+  addAccountBalanceDelta,
+  getDebtTransactionBalanceDelta,
+  getDebtTransactionTotalsDelta,
+} from "@/shared/lib/balance-domain";
+import {
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+  updateDebtsInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { type UpdateDebtTransactionInput, updateDebtTransactionSchema } from "@/shared/lib/validations/debt";
+import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
 import { DebtTransactionType } from "../../debt.constants";
 import { updateDebtTransaction } from "../../debt.service";
@@ -98,16 +108,58 @@ export function useEditDebtTransactionDialog({
       }
     }
 
-    const result = await updateDebtTransaction(debtTransaction.id, data);
+    const balanceDeltas = new Map<string, string>();
+    addAccountBalanceDelta(
+      balanceDeltas,
+      debtTransaction.accountId,
+      subtractMoney("0", getDebtTransactionBalanceDelta(debtTransaction.debt.type, debtTransaction))
+    );
+    addAccountBalanceDelta(
+      balanceDeltas,
+      data.accountId,
+      getDebtTransactionBalanceDelta(debtTransaction.debt.type, {
+        type: debtTransaction.type,
+        amount: data.amount,
+        toAmount: data.toAmount || null,
+      })
+    );
 
-    if (result.error) {
-      toast.error(result.error);
+    const oldTotalsDelta = getDebtTransactionTotalsDelta(debtTransaction.type, debtTransaction.amount);
+    const nextTotalsDelta = getDebtTransactionTotalsDelta(debtTransaction.type, data.amount);
+    const amountDelta = subtractMoney(nextTotalsDelta.amountDelta, oldTotalsDelta.amountDelta);
+    const remainingDelta = subtractMoney(nextTotalsDelta.remainingDelta, oldTotalsDelta.remainingDelta);
+    const nextRemainingAmount = addMoney(debtTransaction.debt.remainingAmount, remainingDelta);
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["debts", "transactions", "accounts"],
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          updateDebtsInCache(context, [
+            {
+              id: debtTransaction.debt.id,
+              amount: addMoney(debtTransaction.debt.amount, amountDelta),
+              remainingAmount: nextRemainingAmount,
+              status: compareMoney(nextRemainingAmount, "0") <= 0 ? "closed" : "open",
+            },
+          ]);
+        },
+        mutation: () => updateDebtTransaction(debtTransaction.id, data),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+    } catch {
+      toast.error("Не удалось обновить транзакцию долга");
       return;
     }
 
     toast.success("Транзакция долга обновлена");
     onOpenChange(false);
-    await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
     onSuccess?.();
   });
 

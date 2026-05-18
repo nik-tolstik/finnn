@@ -8,7 +8,12 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
+import {
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+  updateDebtsInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { type AddToDebtInput, addToDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
@@ -97,13 +102,39 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       ...data,
       useAccount: !!debt.accountId,
     };
-    const result = await addToDebt(debt.id, submitData);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
+    const balanceDeltas = new Map<string, string>();
+    if (submitData.useAccount) {
+      addAccountBalanceDelta(balanceDeltas, debt.accountId, getDebtInitialAccountBalanceDelta(debt.type, data.amount));
+    }
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["debts", "transactions", "accounts"],
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          updateDebtsInCache(context, [
+            {
+              id: debt.id,
+              amount: addMoney(debt.amount, data.amount),
+              remainingAmount: addMoney(debt.remainingAmount, data.amount),
+              status: "open",
+            },
+          ]);
+        },
+        mutation: () => addToDebt(debt.id, submitData),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
       toast.success("Сумма добавлена к долгу");
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
+    } catch {
+      toast.error("Не удалось добавить сумму к долгу");
     }
   };
 

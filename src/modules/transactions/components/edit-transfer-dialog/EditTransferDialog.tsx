@@ -7,7 +7,11 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { addAccountBalanceDelta, getTransferTransactionBalanceDeltas } from "@/shared/lib/balance-domain";
+import {
+  runOptimisticWorkspaceMutation,
+  updateAccountBalancesInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys } from "@/shared/lib/query-keys";
 import {
   type UpdateTransferTransactionInput,
@@ -23,6 +27,7 @@ import {
   DialogTitle,
   DialogWindow,
 } from "@/shared/ui/dialog";
+import { subtractMoney } from "@/shared/utils/money";
 
 import { updateTransferTransaction } from "../../transaction.service";
 import type { TransferTransactionWithRelations } from "../../transaction.types";
@@ -84,13 +89,32 @@ export function EditTransferDialog({
   }, [open, form, transferTransaction]);
 
   const onSubmit = async (data: UpdateTransferTransactionInput) => {
-    const result = await updateTransferTransaction(transferTransaction.id, data);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
+    const balanceDeltas = new Map<string, string>();
+    const oldDeltas = getTransferTransactionBalanceDeltas(transferTransaction.amount, transferTransaction.toAmount);
+    const nextDeltas = getTransferTransactionBalanceDeltas(data.amount, data.toAmount);
+    addAccountBalanceDelta(balanceDeltas, transferTransaction.fromAccountId, subtractMoney("0", oldDeltas.fromDelta));
+    addAccountBalanceDelta(balanceDeltas, transferTransaction.toAccountId, subtractMoney("0", oldDeltas.toDelta));
+    addAccountBalanceDelta(balanceDeltas, data.fromAccountId, nextDeltas.fromDelta);
+    addAccountBalanceDelta(balanceDeltas, data.toAccountId, nextDeltas.toDelta);
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["transactions", "accounts"],
+        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        mutation: () => updateTransferTransaction(transferTransaction.id, data),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
       onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["transactions", "accounts"]);
       onSuccess?.();
+    } catch {
+      toast.error("Не удалось обновить перевод");
     }
   };
 

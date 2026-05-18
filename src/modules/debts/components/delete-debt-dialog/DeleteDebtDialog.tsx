@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { removeDebtsFromCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { formatMoney } from "@/shared/utils/money";
@@ -26,13 +26,18 @@ export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: Dele
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const result = await deleteDebt(debt.id);
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["debts", "transactions", "accounts"],
+        apply: (context) => removeDebtsFromCache(context, [debt.id]),
+        mutation: () => deleteDebt(debt.id),
+      });
       if (result.error) {
         toast.error(result.error);
       } else {
         toast.success("Долг удалён");
         onOpenChange(false);
-        await invalidateWorkspaceDomains(queryClient, workspaceId, ["debts", "transactions", "accounts"]);
       }
     } catch {
       toast.error("Не удалось удалить долг");
