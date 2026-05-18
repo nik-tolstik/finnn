@@ -18,7 +18,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
-import { CreateTransferDialog } from "@/modules/transactions/components/create-transfer-dialog";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
@@ -137,10 +136,6 @@ export function AccountsCards({
     workspaceId: string;
     defaultType?: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
     account?: Account;
-  }>();
-  const transferDialog = useDialogState<{
-    workspaceId: string;
-    defaultFromAccountId?: string;
   }>();
   const editDialog = useDialogState<ActionDialogData>();
   const archiveDialog = useDialogState<ActionDialogData>();
@@ -388,13 +383,6 @@ export function AccountsCards({
             });
             accountActionsDialog.closeDialog();
           }}
-          onCreateTransfer={() => {
-            transferDialog.openDialog({
-              workspaceId,
-              defaultFromAccountId: accountActionsDialog.data.account.id,
-            });
-            accountActionsDialog.closeDialog();
-          }}
         />
       )}
 
@@ -427,14 +415,6 @@ export function AccountsCards({
         />
       )}
 
-      {transferDialog.mounted && (
-        <CreateTransferDialog
-          workspaceId={transferDialog.data.workspaceId}
-          open={transferDialog.open}
-          onOpenChange={transferDialog.closeDialog}
-          defaultFromAccountId={transferDialog.data.defaultFromAccountId}
-        />
-      )}
     </>
   );
 }

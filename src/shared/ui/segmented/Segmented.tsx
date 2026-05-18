@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type * as React from "react";
-import { cloneElement, useId, useRef } from "react";
+import { cloneElement, useCallback, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/shared/utils/cn";
 
@@ -33,11 +33,61 @@ export function Segmented<TValue extends string | number = string>({
   layout = "fit",
 }: SegmentedProps<TValue>) {
   const prefersReducedMotion = useReducedMotion();
-  const indicatorId = useId();
-  const groupName = `segmented-${indicatorId}`;
+  const groupId = useId();
+  const groupName = `segmented-${groupId}`;
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const optionRefs = useRef<Array<HTMLLabelElement | null>>([]);
+  const [indicatorMetrics, setIndicatorMetrics] = useState({
+    height: 0,
+    left: 0,
+    top: 0,
+    width: 0,
+  });
   const selectedIndex = options.findIndex((option) => option.value === value);
   const activeIndex = selectedIndex >= 0 ? selectedIndex : 0;
+
+  const updateIndicator = useCallback(() => {
+    const container = containerRef.current;
+    const selectedOption = optionRefs.current[activeIndex];
+
+    if (!container || !selectedOption) {
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const optionRect = selectedOption.getBoundingClientRect();
+
+    setIndicatorMetrics({
+      height: optionRect.height,
+      left: optionRect.left - containerRect.left,
+      top: optionRect.top - containerRect.top,
+      width: optionRect.width,
+    });
+  }, [activeIndex]);
+
+  useLayoutEffect(() => {
+    updateIndicator();
+  }, [updateIndicator]);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const selectedOption = optionRefs.current[activeIndex];
+
+    if (!container || !selectedOption) {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver(updateIndicator);
+    resizeObserver.observe(container);
+    resizeObserver.observe(selectedOption);
+    window.addEventListener("resize", updateIndicator);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [activeIndex, updateIndicator]);
 
   const selectOption = (index: number) => {
     const option = options[index];
@@ -66,6 +116,7 @@ export function Segmented<TValue extends string | number = string>({
 
   return (
     <div
+      ref={containerRef}
       className={cn(
         "relative isolate min-w-0 max-w-full items-stretch gap-1 rounded-xl border border-border/80 bg-muted/75 p-1 shadow-xs",
         layout === "fill" ? "flex w-full" : "inline-flex w-fit",
@@ -76,11 +127,25 @@ export function Segmented<TValue extends string | number = string>({
       aria-disabled={disabled}
       aria-orientation="horizontal"
     >
+      {indicatorMetrics.width > 0 ? (
+        <motion.span
+          aria-hidden="true"
+          initial={false}
+          animate={indicatorMetrics}
+          transition={
+            prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34, mass: 0.7 }
+          }
+          className="pointer-events-none absolute rounded-[10px] border border-border/80 bg-background shadow-sm"
+        />
+      ) : null}
       {options.map((option, index) => {
         const isSelected = option.value === value;
 
         return (
           <label
+            ref={(node) => {
+              optionRefs.current[index] = node;
+            }}
             key={String(option.value)}
             data-state={isSelected ? "active" : "inactive"}
             className={cn(
@@ -135,16 +200,8 @@ export function Segmented<TValue extends string | number = string>({
               tabIndex={disabled ? -1 : index === activeIndex ? 0 : -1}
               className="sr-only"
             />
-            {isSelected ? (
-              <motion.span
-                layoutId={`segmented-indicator-${indicatorId}`}
-                transition={
-                  prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34, mass: 0.7 }
-                }
-                className="absolute inset-0 rounded-[10px] border border-border/80 bg-background shadow-sm"
-              />
-            ) : null}
-            {option.icon && cloneElement(option.icon, { className: cn("z-10 size-3.5", option.icon.props.className) })}
+            {option.icon &&
+              cloneElement(option.icon, { className: cn("relative z-10 size-3.5", option.icon.props.className) })}
             <span className="relative z-10 min-w-0 truncate">{option.label}</span>
           </label>
         );
