@@ -262,7 +262,9 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
         <Controller
           control={form.control}
           name="date"
-          render={({ field }) => <DateTimePicker date={field.value} onSelect={field.onChange} />}
+          render={({ field }) => (
+            <DateTimePicker date={field.value} onSelect={field.onChange} showRelativeDatePresets />
+          )}
         />
         {form.formState.errors.date && <p className="text-sm text-destructive">{form.formState.errors.date.message}</p>}
       </div>

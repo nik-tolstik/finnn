@@ -13,6 +13,7 @@ export interface SegmentedOption<TValue extends string | number = string> {
   onClick?: () => void;
   className?: string;
   selectedClassName?: string;
+  disabled?: boolean;
 }
 
 interface SegmentedProps<TValue extends string | number = string> {
@@ -45,13 +46,20 @@ export function Segmented<TValue extends string | number = string>({
     width: 0,
   });
   const selectedIndex = options.findIndex((option) => option.value === value);
-  const activeIndex = selectedIndex >= 0 ? selectedIndex : 0;
+  const firstEnabledIndex = options.findIndex((option) => !option.disabled);
+  const activeIndex = selectedIndex >= 0 ? selectedIndex : Math.max(firstEnabledIndex, 0);
 
   const updateIndicator = useCallback(() => {
     const container = containerRef.current;
-    const selectedOption = optionRefs.current[activeIndex];
+    const selectedOption = selectedIndex >= 0 ? optionRefs.current[selectedIndex] : null;
 
     if (!container || !selectedOption) {
+      setIndicatorMetrics({
+        height: 0,
+        left: 0,
+        top: 0,
+        width: 0,
+      });
       return;
     }
 
@@ -64,7 +72,7 @@ export function Segmented<TValue extends string | number = string>({
       top: optionRect.top - containerRect.top,
       width: optionRect.width,
     });
-  }, [activeIndex]);
+  }, [selectedIndex]);
 
   useLayoutEffect(() => {
     updateIndicator();
@@ -72,7 +80,7 @@ export function Segmented<TValue extends string | number = string>({
 
   useLayoutEffect(() => {
     const container = containerRef.current;
-    const selectedOption = optionRefs.current[activeIndex];
+    const selectedOption = selectedIndex >= 0 ? optionRefs.current[selectedIndex] : null;
 
     if (!container || !selectedOption) {
       return;
@@ -87,12 +95,12 @@ export function Segmented<TValue extends string | number = string>({
       resizeObserver.disconnect();
       window.removeEventListener("resize", updateIndicator);
     };
-  }, [activeIndex, updateIndicator]);
+  }, [selectedIndex, updateIndicator]);
 
   const selectOption = (index: number) => {
     const option = options[index];
 
-    if (!option || disabled || option.value === value) {
+    if (!option || disabled || option.disabled || option.value === value) {
       return;
     }
 
@@ -109,7 +117,17 @@ export function Segmented<TValue extends string | number = string>({
       return;
     }
 
-    const nextIndex = (index + options.length) % options.length;
+    const normalizedIndex = (index + options.length) % options.length;
+    const nextOffset = options.findIndex((_, optionIndex) => {
+      const offsetIndex = (normalizedIndex + optionIndex) % options.length;
+      return !options[offsetIndex]?.disabled;
+    });
+    const nextIndex = nextOffset >= 0 ? (normalizedIndex + nextOffset) % options.length : -1;
+
+    if (nextIndex < 0) {
+      return;
+    }
+
     selectOption(nextIndex);
     focusOption(nextIndex);
   };
@@ -140,6 +158,7 @@ export function Segmented<TValue extends string | number = string>({
       ) : null}
       {options.map((option, index) => {
         const isSelected = option.value === value;
+        const isOptionDisabled = disabled || option.disabled;
 
         return (
           <label
@@ -151,7 +170,7 @@ export function Segmented<TValue extends string | number = string>({
             className={cn(
               "relative inline-flex min-w-0 items-center justify-center gap-2 rounded-lg px-2 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
               layout === "fill" ? "min-h-9 flex-1" : "min-h-9 flex-none",
-              disabled ? "cursor-default" : "cursor-pointer",
+              isOptionDisabled ? "cursor-default opacity-60" : "cursor-pointer",
               isSelected
                 ? cn("text-foreground", option.selectedClassName)
                 : cn(
@@ -169,7 +188,7 @@ export function Segmented<TValue extends string | number = string>({
               checked={isSelected}
               onChange={() => selectOption(index)}
               onKeyDown={(event) => {
-                if (disabled || !options.length) {
+                if (isOptionDisabled || !options.length) {
                   return;
                 }
 
@@ -196,8 +215,8 @@ export function Segmented<TValue extends string | number = string>({
                     break;
                 }
               }}
-              disabled={disabled}
-              tabIndex={disabled ? -1 : index === activeIndex ? 0 : -1}
+              disabled={isOptionDisabled}
+              tabIndex={isOptionDisabled ? -1 : index === activeIndex ? 0 : -1}
               className="sr-only"
             />
             {option.icon &&

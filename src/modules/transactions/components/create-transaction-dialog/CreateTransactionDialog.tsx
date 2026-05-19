@@ -645,6 +645,7 @@ export function CreateTransactionDialog({
                         <DateTimePicker
                           date={field.value}
                           onSelect={field.onChange}
+                          showRelativeDatePresets
                           disabled={(date) => {
                             const currentAccount = selectedAccount || account;
                             if (!currentAccount || !("createdAt" in currentAccount) || !currentAccount.createdAt)

@@ -9,6 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Calendar } from "@/shared/ui/calendar";
 import { Input } from "@/shared/ui/input";
 import { Popover } from "@/shared/ui/popover";
+import { Segmented } from "@/shared/ui/segmented";
 import { cn } from "@/shared/utils/cn";
 
 interface DateTimePickerProps {
@@ -21,6 +22,21 @@ interface DateTimePickerProps {
   locale?: Locale;
   captionLayout?: "dropdown" | "dropdown-months" | "dropdown-years";
   showTime?: boolean;
+  showRelativeDatePresets?: boolean;
+}
+
+const relativeDatePresets = [
+  { label: "Сегодня", daysAgo: 0 },
+  { label: "Вчера", daysAgo: 1 },
+  { label: "Позавчера", daysAgo: 2 },
+];
+
+function isSameCalendarDay(left: Date | undefined, right: Date) {
+  return (
+    left?.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
 }
 
 export function DateTimePicker({
@@ -33,6 +49,7 @@ export function DateTimePicker({
   locale = ru,
   captionLayout,
   showTime = true,
+  showRelativeDatePresets = false,
 }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [timeValue, setTimeValue] = React.useState(() => {
@@ -54,25 +71,48 @@ export function DateTimePicker({
     }
   }, [date, isTimeInputFocused]);
 
+  const applyCurrentTimeToDate = (targetDate: Date) => {
+    const newDate = new Date(targetDate);
+
+    if (timeValue.match(/^\d{2}:\d{2}$/)) {
+      const [hours, minutes] = timeValue.split(":").map(Number);
+      newDate.setHours(hours, minutes, 0, 0);
+      return newDate;
+    }
+
+    if (date) {
+      newDate.setHours(date.getHours(), date.getMinutes(), 0, 0);
+      return newDate;
+    }
+
+    newDate.setHours(0, 0, 0, 0);
+    return newDate;
+  };
+
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
-      const newDate = new Date(selectedDate);
-      // Use the input time when valid, otherwise use the current date time or 00:00
-      if (timeValue.match(/^\d{2}:\d{2}$/)) {
-        const [hours, minutes] = timeValue.split(":").map(Number);
-        newDate.setHours(hours, minutes, 0, 0);
-      } else if (date) {
-        // Use the time from the current date
-        newDate.setHours(date.getHours(), date.getMinutes(), 0, 0);
-      } else {
-        newDate.setHours(0, 0, 0, 0);
-      }
-      onSelect?.(newDate);
+      onSelect?.(applyCurrentTimeToDate(selectedDate));
       setOpen(false);
     } else {
       onSelect?.(undefined);
     }
   };
+
+  const handleRelativePresetSelect = (daysAgo: number) => {
+    const selectedDate = new Date();
+    selectedDate.setDate(selectedDate.getDate() - daysAgo);
+    onSelect?.(applyCurrentTimeToDate(selectedDate));
+    setOpen(false);
+  };
+
+  const getRelativePresetDate = (daysAgo: number) => {
+    const selectedDate = new Date();
+    selectedDate.setDate(selectedDate.getDate() - daysAgo);
+    return selectedDate;
+  };
+
+  const selectedRelativePreset =
+    relativeDatePresets.find((preset) => isSameCalendarDay(date, getRelativePresetDate(preset.daysAgo)))?.daysAgo ?? -1;
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -108,48 +148,62 @@ export function DateTimePicker({
   };
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <Popover
-        open={open}
-        onOpenChange={setOpen}
-        placement={align === "center" ? "bottom" : `bottom-${align}`}
-        className="w-auto overflow-hidden p-0"
-        trigger={({ ref, ...triggerProps }) => (
-          <Button
-            ref={ref}
-            type="button"
-            variant="outline"
-            className={cn(
-              "justify-between text-left font-normal border-input w-fit px-2",
-              !date && "text-muted-foreground"
-            )}
-            {...triggerProps}
-          >
-            {date ? format(date, "dd.MM.yyyy", { locale }) : <span>{placeholder}</span>}
-          </Button>
-        )}
-      >
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={handleDateSelect}
-          disabled={disabled}
-          locale={locale}
-          initialFocus
-          captionLayout={captionLayout || "dropdown"}
-        />
-      </Popover>
-      {showTime && (
-        <Input
-          id="time"
-          type="time"
-          value={timeValue}
-          onChange={handleTimeChange}
-          onFocus={handleTimeFocus}
-          onBlur={handleTimeBlur}
-          className="h-9 w-fit py-0 px-2 text-sm"
+    <div className={cn(showRelativeDatePresets ? "space-y-2" : "flex items-center gap-2", className)}>
+      {showRelativeDatePresets && (
+        <Segmented
+          options={relativeDatePresets.map((preset) => ({
+            value: preset.daysAgo,
+            label: preset.label,
+            disabled: disabled?.(getRelativePresetDate(preset.daysAgo)),
+          }))}
+          value={selectedRelativePreset}
+          onChange={handleRelativePresetSelect}
+          className="rounded-lg p-0.5 pb-1 [&_label]:min-h-7 [&_label]:rounded-md [&_label]:px-2"
         />
       )}
+      <div className="flex items-center gap-2">
+        <Popover
+          open={open}
+          onOpenChange={setOpen}
+          placement={align === "center" ? "bottom" : `bottom-${align}`}
+          className="w-auto overflow-hidden p-0"
+          trigger={({ ref, ...triggerProps }) => (
+            <Button
+              ref={ref}
+              type="button"
+              variant="outline"
+              className={cn(
+                "justify-between text-left font-normal border-input w-fit px-2",
+                !date && "text-muted-foreground"
+              )}
+              {...triggerProps}
+            >
+              {date ? format(date, "dd.MM.yyyy", { locale }) : <span>{placeholder}</span>}
+            </Button>
+          )}
+        >
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={handleDateSelect}
+            disabled={disabled}
+            locale={locale}
+            initialFocus
+            captionLayout={captionLayout || "dropdown"}
+          />
+        </Popover>
+        {showTime && (
+          <Input
+            id="time"
+            type="time"
+            value={timeValue}
+            onChange={handleTimeChange}
+            onFocus={handleTimeFocus}
+            onBlur={handleTimeBlur}
+            className="h-9 w-fit py-0 px-2 text-sm"
+          />
+        )}
+      </div>
     </div>
   );
 }
