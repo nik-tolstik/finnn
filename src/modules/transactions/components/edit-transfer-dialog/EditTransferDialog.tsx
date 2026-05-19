@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
@@ -11,6 +12,7 @@ import { addAccountBalanceDelta, getTransferTransactionBalanceDeltas } from "@/s
 import {
   runOptimisticWorkspaceMutation,
   updateAccountBalancesInCache,
+  updateTransactionsInCache,
 } from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys } from "@/shared/lib/query-keys";
 import {
@@ -30,7 +32,12 @@ import {
 import { subtractMoney } from "@/shared/utils/money";
 
 import { updateTransferTransaction } from "../../transaction.service";
-import type { TransferTransactionWithRelations } from "../../transaction.types";
+import type {
+  CombinedTransaction,
+  TransactionAccountWithOwner,
+  TransactionUser,
+  TransferTransactionWithRelations,
+} from "../../transaction.types";
 import { TransferForm } from "../transfer-form/TransferForm";
 import { TransferFormSubmitButton } from "../transfer-form-submit-button/TransferFormSubmitButton";
 
@@ -41,6 +48,24 @@ interface EditTransferDialogProps {
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
   onSuccess?: () => void;
+}
+
+function toTransactionAccount(
+  account: (Account & { owner?: TransactionUser | null }) | TransactionAccountWithOwner | undefined
+): TransactionAccountWithOwner | null {
+  if (!account) {
+    return null;
+  }
+
+  return {
+    id: account.id,
+    name: account.name,
+    currency: account.currency,
+    color: account.color,
+    icon: account.icon,
+    ownerId: account.ownerId,
+    owner: account.owner ?? null,
+  };
 }
 
 export function EditTransferDialog({
@@ -96,13 +121,44 @@ export function EditTransferDialog({
     addAccountBalanceDelta(balanceDeltas, transferTransaction.toAccountId, subtractMoney("0", oldDeltas.toDelta));
     addAccountBalanceDelta(balanceDeltas, data.fromAccountId, nextDeltas.fromDelta);
     addAccountBalanceDelta(balanceDeltas, data.toAccountId, nextDeltas.toDelta);
+    const nextFromAccount = toTransactionAccount(
+      accounts.find((account) => account.id === data.fromAccountId) ??
+        (transferTransaction.fromAccount.id === data.fromAccountId ? transferTransaction.fromAccount : undefined)
+    );
+    const nextToAccount = toTransactionAccount(
+      accounts.find((account) => account.id === data.toAccountId) ??
+        (transferTransaction.toAccount.id === data.toAccountId ? transferTransaction.toAccount : undefined)
+    );
+    if (!nextFromAccount || !nextToAccount) {
+      return;
+    }
+
+    const optimisticTransfer: CombinedTransaction = {
+      kind: "transferTransaction",
+      data: {
+        ...transferTransaction,
+        fromAccountId: data.fromAccountId,
+        toAccountId: data.toAccountId,
+        amount: data.amount,
+        toAmount: data.toAmount,
+        description: data.description || null,
+        date: data.date,
+        updatedAt: new Date(),
+        fromAccount: nextFromAccount,
+        toAccount: nextToAccount,
+      },
+    };
 
     try {
       const result = await runOptimisticWorkspaceMutation({
         queryClient,
         workspaceId,
         domains: ["transactions", "accounts"],
-        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          updateTransactionsInCache(context, [optimisticTransfer]);
+        },
+        onApplied: () => onOpenChange(false),
         mutation: () => updateTransferTransaction(transferTransaction.id, data),
       });
 
@@ -111,7 +167,6 @@ export function EditTransferDialog({
         return;
       }
 
-      onOpenChange(false);
       onSuccess?.();
     } catch {
       toast.error("Не удалось обновить перевод");

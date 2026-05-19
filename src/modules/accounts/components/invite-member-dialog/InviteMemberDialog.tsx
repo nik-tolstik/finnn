@@ -72,7 +72,6 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
     onSuccess: async () => {
       toast.success("Приглашение отправлено");
       await invalidateWorkspaceDomains(queryClient, workspaceId, ["workspaceMembers"]);
-      onOpenChange(false);
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -80,6 +79,7 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
   });
 
   const onSubmit = async (data: InviteInput) => {
+    onOpenChange(false);
     inviteMutation.mutate(data);
   };
 

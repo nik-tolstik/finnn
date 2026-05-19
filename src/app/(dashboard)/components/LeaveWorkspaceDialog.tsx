@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { leaveWorkspace } from "@/modules/workspace/workspace.service";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { removeWorkspacesFromCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
@@ -21,20 +21,21 @@ export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenC
   const queryClient = useQueryClient();
 
   const leaveMutation = useMutation({
-    mutationFn: () => leaveWorkspace(workspaceId),
+    mutationFn: () =>
+      runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["workspaces", "workspaceMembers", "workspaceSummary"],
+        apply: (context) => removeWorkspacesFromCache(context, [workspaceId]),
+        mutation: () => leaveWorkspace(workspaceId),
+      }),
     onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
         return;
       }
 
-      await invalidateWorkspaceDomains(queryClient, workspaceId, [
-        "workspaces",
-        "workspaceSummary",
-        "workspaceMembers",
-      ]);
       toast.success("Вы покинули рабочий стол");
-      onOpenChange(false);
       router.push("/dashboard");
     },
     onError: (error: Error) => {
@@ -43,6 +44,7 @@ export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenC
   });
 
   const handleLeave = () => {
+    onOpenChange(false);
     leaveMutation.mutate();
   };
 

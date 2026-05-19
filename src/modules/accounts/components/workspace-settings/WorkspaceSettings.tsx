@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { getWorkspaceSummary, updateWorkspace } from "@/modules/workspace/workspace.service";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { runOptimisticWorkspaceMutation, updateWorkspaceCaches } from "@/shared/lib/optimistic-workspace-updates";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -77,23 +77,35 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
   const selectedIcon = useWatch({ control, name: "icon" });
 
   const updateMutation = useMutation({
-    mutationFn: (data: WorkspaceSettingsInput) => updateWorkspace(workspaceId, data),
-    onSuccess: async (result) => {
+    mutationFn: async (data: WorkspaceSettingsInput) => {
+      return runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["workspaces", "workspaceSummary"],
+        apply: (context) =>
+          updateWorkspaceCaches(context, {
+            id: workspaceId,
+            ...data,
+            icon: data.icon || null,
+          }),
+        mutation: () => updateWorkspace(workspaceId, data),
+      });
+    },
+    onSuccess: (result) => {
       if (result.error) {
         toast.error(result.error);
-      } else {
-        await invalidateWorkspaceDomains(queryClient, workspaceId, [
-          "workspaces",
-          "workspaceSummary",
-          "workspaceMembers",
-        ]);
-        if (workspace) {
-          reset({
-            name: result.data?.name || workspace.name,
-            icon: result.data?.icon || workspace.icon || null,
-          });
-        }
+        return;
       }
+
+      if (result.data && workspace) {
+        reset({
+          name: result.data.name,
+          icon: result.data.icon || null,
+        });
+      }
+    },
+    onError: () => {
+      toast.error("Не удалось обновить настройки рабочего стола");
     },
   });
 

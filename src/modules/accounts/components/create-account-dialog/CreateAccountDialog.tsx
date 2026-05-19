@@ -14,8 +14,8 @@ import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/wo
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
-import { workspaceKeys } from "@/shared/lib/query-keys";
+import { insertAccountsInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
+import { accountKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { type CreateAccountInput, createAccountSchema } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
 import { DatePicker } from "@/shared/ui/date-picker";
@@ -175,16 +175,52 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
   };
 
   const onSubmit = async (data: CreateAccountInput) => {
-    const result = await createAccount(workspaceId, {
-      ...data,
+    const optimisticOwnerId = data.ownerId === sharedValue || data.ownerId === "" ? null : (data.ownerId ?? null);
+    const existingAccounts = queryClient.getQueryData<{ data: { id: string; ownerId: string | null }[] }>(
+      accountKeys.list(workspaceId)
+    )?.data;
+    const nextOrder = Array.isArray(existingAccounts) ? existingAccounts.length : 0;
+
+    const optimisticAccount = {
+      id: `optimistic-account-${Date.now()}`,
+      workspaceId,
+      name: data.name,
+      balance: data.balance,
       currency: data.currency,
-      ownerId: data.ownerId === sharedValue || data.ownerId === "" ? null : data.ownerId,
-    });
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      onOpenChange(false);
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["accounts", "archivedAccounts", "transactions"]);
+      ownerId: optimisticOwnerId,
+      color: data.color ?? null,
+      icon: data.icon ?? null,
+      description: null,
+      archived: false,
+      order: nextOrder,
+      createdAt: data.createdAt,
+      updatedAt: new Date(),
+    };
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["accounts", "archivedAccounts", "transactions"],
+        apply: (context) => {
+          insertAccountsInCache(context, [optimisticAccount]);
+        },
+        onApplied: () => {
+          onOpenChange(false);
+        },
+        mutation: () =>
+          createAccount(workspaceId, {
+            ...data,
+            currency: data.currency,
+            ownerId: optimisticOwnerId,
+          }),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      }
+    } catch {
+      toast.error("Не удалось создать счёт");
     }
   };
 

@@ -4,10 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, Hash } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { insertWorkspacesInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { type CreateWorkspaceInput, createWorkspaceSchema } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
@@ -16,6 +18,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
 import { createWorkspace } from "../../workspace.service";
+import type { WorkspaceWithOwner } from "../../workspace.types";
 import { generateSlug } from "../../workspace.utils";
 
 interface CreateWorkspaceDialogProps {
@@ -26,6 +29,7 @@ interface CreateWorkspaceDialogProps {
 export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
 
   const {
     register,
@@ -51,8 +55,42 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
     }
   }, [nameValue, setValue]);
 
+  const createOptimisticWorkspace = (data: CreateWorkspaceInput): WorkspaceWithOwner => {
+    const now = new Date();
+
+    return {
+      id: `tmp-${Math.random().toString(36).slice(2, 11)}`,
+      name: data.name,
+      slug: data.slug,
+      icon: null,
+      baseCurrency: "BYN",
+      ownerId: session?.user?.id || "",
+      createdAt: now,
+      updatedAt: now,
+      owner: {
+        id: session?.user?.id || "",
+        name: session?.user?.name || null,
+        email: session?.user?.email || "",
+        image: session?.user?.image || null,
+      },
+      _count: {
+        members: 1,
+      },
+    };
+  };
+
   const createMutation = useMutation({
-    mutationFn: (data: CreateWorkspaceInput) => createWorkspace(data),
+    mutationFn: (data: CreateWorkspaceInput) => {
+      const optimisticWorkspace = createOptimisticWorkspace(data);
+
+      return runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId: optimisticWorkspace.id,
+        domains: ["workspaces"],
+        apply: (context) => insertWorkspacesInCache(context, [optimisticWorkspace]),
+        mutation: () => createWorkspace(data),
+      });
+    },
     onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);

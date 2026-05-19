@@ -1,7 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Session } from "next-auth";
+import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -9,6 +12,7 @@ import { toast } from "sonner";
 import { getAccounts } from "@/modules/accounts/account.service";
 import { addAccountBalanceDelta, getTransferTransactionBalanceDeltas } from "@/shared/lib/balance-domain";
 import {
+  insertTransactionsInCache,
   runOptimisticWorkspaceMutation,
   updateAccountBalancesInCache,
 } from "@/shared/lib/optimistic-workspace-updates";
@@ -21,6 +25,7 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
 import { createTransferTransaction } from "../../transaction.service";
+import type { CombinedTransaction, TransactionAccountWithOwner, TransactionUser } from "../../transaction.types";
 import { TransferForm } from "../transfer-form/TransferForm";
 import { TransferFormSubmitButton } from "../transfer-form-submit-button/TransferFormSubmitButton";
 
@@ -31,6 +36,37 @@ interface CreateTransferDialogProps {
   defaultFromAccountId?: string;
 }
 
+function toTransactionUser(user: Session["user"] | undefined): TransactionUser | null {
+  if (!user?.id || !user.email) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    name: user.name ?? null,
+    email: user.email,
+    image: user.image ?? null,
+  };
+}
+
+function toTransactionAccount(
+  account: (Account & { owner?: TransactionUser | null }) | undefined
+): TransactionAccountWithOwner | null {
+  if (!account) {
+    return null;
+  }
+
+  return {
+    id: account.id,
+    name: account.name,
+    currency: account.currency,
+    color: account.color,
+    icon: account.icon,
+    ownerId: account.ownerId,
+    owner: account.owner ?? null,
+  };
+}
+
 export function CreateTransferDialog({
   workspaceId,
   open,
@@ -38,6 +74,7 @@ export function CreateTransferDialog({
   defaultFromAccountId,
 }: CreateTransferDialogProps) {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
   const form = useForm<CreateTransferTransactionInput>({
     resolver: zodResolver(createTransferTransactionSchema),
     defaultValues: {
@@ -83,13 +120,43 @@ export function CreateTransferDialog({
     const transferDeltas = getTransferTransactionBalanceDeltas(data.amount, data.toAmount);
     addAccountBalanceDelta(balanceDeltas, data.fromAccountId, transferDeltas.fromDelta);
     addAccountBalanceDelta(balanceDeltas, data.toAccountId, transferDeltas.toDelta);
+    const fromAccount = toTransactionAccount(accounts.find((item) => item.id === data.fromAccountId));
+    const toAccount = toTransactionAccount(accounts.find((item) => item.id === data.toAccountId));
+    if (!fromAccount || !toAccount) {
+      return;
+    }
+
+    const optimisticNow = new Date();
+    const optimisticTransfer: CombinedTransaction = {
+      kind: "transferTransaction",
+      data: {
+        id: `optimistic-transfer-${optimisticNow.getTime()}`,
+        workspaceId,
+        fromAccountId: data.fromAccountId,
+        toAccountId: data.toAccountId,
+        createdById: session?.user?.id ?? null,
+        amount: data.amount,
+        toAmount: data.toAmount,
+        description: data.description || null,
+        date: data.date,
+        createdAt: optimisticNow,
+        updatedAt: optimisticNow,
+        fromAccount,
+        toAccount,
+        createdBy: toTransactionUser(session?.user),
+      },
+    };
 
     try {
       const result = await runOptimisticWorkspaceMutation({
         queryClient,
         workspaceId,
         domains: ["transactions", "accounts"],
-        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          insertTransactionsInCache(context, [optimisticTransfer]);
+        },
+        onApplied: () => onOpenChange(false),
         mutation: () => createTransferTransaction(workspaceId, data),
       });
 
@@ -97,8 +164,6 @@ export function CreateTransferDialog({
         toast.error(result.error);
         return;
       }
-
-      onOpenChange(false);
     } catch {
       toast.error("Не удалось создать перевод");
     }

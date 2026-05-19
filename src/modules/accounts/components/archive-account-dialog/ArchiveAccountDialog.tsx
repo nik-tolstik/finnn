@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { moveAccountArchiveStateInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
@@ -43,19 +43,24 @@ export function ArchiveAccountDialog({
     hasArchivedRef.current = true;
     setIsArchiving(true);
     try {
-      const result = await archiveAccount(account.id);
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId: account.workspaceId,
+        domains: ["accounts", "archivedAccounts", "transactions"],
+        apply: (context) => {
+          moveAccountArchiveStateInCache(context, account, true);
+        },
+        onApplied: () => {
+          onOpenChange(false);
+        },
+        mutation: () => archiveAccount(account.id),
+      });
 
       if (result.error) {
         toast.error(result.error);
         hasArchivedRef.current = false;
       } else {
         toast.success("Счёт успешно архивирован");
-        onOpenChange(false);
-        await invalidateWorkspaceDomains(queryClient, account.workspaceId, [
-          "accounts",
-          "archivedAccounts",
-          "transactions",
-        ]);
         onSuccess?.();
       }
     } catch {

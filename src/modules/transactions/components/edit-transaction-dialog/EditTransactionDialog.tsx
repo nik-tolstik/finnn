@@ -17,6 +17,7 @@ import { addAccountBalanceDelta, getPaymentTransactionBalanceDelta } from "@/sha
 import {
   runOptimisticWorkspaceMutation,
   updateAccountBalancesInCache,
+  updateTransactionsInCache,
 } from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import {
@@ -41,7 +42,7 @@ import { Textarea } from "@/shared/ui/textarea";
 import { compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { updatePaymentTransaction } from "../../transaction.service";
-import type { PaymentTransactionWithRelations } from "../../transaction.types";
+import type { CombinedTransaction, PaymentTransactionWithRelations, TransactionUser } from "../../transaction.types";
 import {
   getEditPaymentDefaultValues,
   getEditPaymentPreviewAccount,
@@ -138,13 +139,47 @@ export function EditTransactionDialog({
       data.accountId ?? transaction.accountId,
       getPaymentTransactionBalanceDelta(transaction.type, data.amount ?? transaction.amount)
     );
+    const nextAccount = selectedAccount
+      ? {
+          id: selectedAccount.id,
+          name: selectedAccount.name,
+          currency: selectedAccount.currency,
+          color: selectedAccount.color,
+          icon: selectedAccount.icon,
+          ownerId: selectedAccount.ownerId,
+          owner: (selectedAccount as Account & { owner?: TransactionUser | null }).owner ?? null,
+        }
+      : transaction.account;
+    const nextCategory =
+      data.categoryId === null
+        ? null
+        : data.categoryId
+          ? (allCategories.find((category) => category.id === data.categoryId) ?? transaction.category)
+          : transaction.category;
+    const optimisticTransaction: CombinedTransaction = {
+      kind: "paymentTransaction",
+      data: {
+        ...transaction,
+        accountId: data.accountId ?? transaction.accountId,
+        amount: data.amount ?? transaction.amount,
+        description: data.description ?? transaction.description,
+        date: data.date ?? transaction.date,
+        categoryId: nextCategory?.id ?? null,
+        updatedAt: new Date(),
+        account: nextAccount,
+        category: nextCategory,
+      },
+    };
 
     try {
       const result = await runOptimisticWorkspaceMutation({
         queryClient,
         workspaceId,
         domains: ["transactions", "accounts"],
-        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          updateTransactionsInCache(context, [optimisticTransaction]);
+        },
         mutation: () => updatePaymentTransaction(transaction.id, data),
       });
 

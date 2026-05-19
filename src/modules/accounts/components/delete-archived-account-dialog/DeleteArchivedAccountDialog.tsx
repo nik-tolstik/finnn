@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { removeAccountsFromCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
@@ -34,14 +34,23 @@ export function DeleteArchivedAccountDialog({
     setIsDeleting(true);
 
     try {
-      const result = await deleteArchivedAccount(account.id);
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId: account.workspaceId,
+        domains: ["archivedAccounts"],
+        apply: (context) => {
+          removeAccountsFromCache(context, [account.id], ["archivedAccounts"]);
+        },
+        onApplied: () => {
+          onOpenChange(false);
+        },
+        mutation: () => deleteArchivedAccount(account.id),
+      });
 
       if (result.error) {
         toast.error(result.error);
       } else {
         toast.success("Счёт удалён");
-        onOpenChange(false);
-        await invalidateWorkspaceDomains(queryClient, account.workspaceId, ["accounts", "archivedAccounts"]);
       }
     } catch {
       toast.error("Не удалось удалить архивный счёт");

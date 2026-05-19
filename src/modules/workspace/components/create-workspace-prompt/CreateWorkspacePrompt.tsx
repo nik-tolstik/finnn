@@ -1,13 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, Hash } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { insertWorkspacesInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { type CreateWorkspaceInput, createWorkspaceSchema } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
@@ -16,12 +18,13 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
 import { createWorkspace } from "../../workspace.service";
+import type { WorkspaceWithOwner } from "../../workspace.types";
 import { generateSlug } from "../../workspace.utils";
 
 export function CreateWorkspacePrompt() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(false);
+  const { data: session } = useSession();
 
   const {
     register,
@@ -46,11 +49,43 @@ export function CreateWorkspacePrompt() {
     }
   }, [nameValue, setValue]);
 
-  const onSubmit = async (data: CreateWorkspaceInput) => {
-    setIsLoading(true);
-    try {
-      const result = await createWorkspace(data);
+  const createOptimisticWorkspace = (data: CreateWorkspaceInput): WorkspaceWithOwner => {
+    const now = new Date();
 
+    return {
+      id: `tmp-${Math.random().toString(36).slice(2, 11)}`,
+      name: data.name,
+      slug: data.slug,
+      icon: null,
+      baseCurrency: "BYN",
+      ownerId: session?.user?.id || "",
+      createdAt: now,
+      updatedAt: now,
+      owner: {
+        id: session?.user?.id || "",
+        name: session?.user?.name || null,
+        email: session?.user?.email || "",
+        image: session?.user?.image || null,
+      },
+      _count: {
+        members: 1,
+      },
+    };
+  };
+
+  const createMutation = useMutation({
+    mutationFn: (data: CreateWorkspaceInput) => {
+      const optimisticWorkspace = createOptimisticWorkspace(data);
+
+      return runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId: optimisticWorkspace.id,
+        domains: ["workspaces"],
+        apply: (context) => insertWorkspacesInCache(context, [optimisticWorkspace]),
+        mutation: () => createWorkspace(data),
+      });
+    },
+    onSuccess: async (result) => {
       if (result?.error) {
         toast.error(result.error);
         return;
@@ -65,11 +100,14 @@ export function CreateWorkspacePrompt() {
         ]);
         router.push(`/dashboard?workspaceId=${result.data.id}`);
       }
-    } catch {
+    },
+    onError: () => {
       toast.error("Что-то пошло не так");
-    } finally {
-      setIsLoading(false);
-    }
+    },
+  });
+
+  const onSubmit = async (data: CreateWorkspaceInput) => {
+    createMutation.mutate(data);
   };
 
   return (
@@ -116,8 +154,8 @@ export function CreateWorkspacePrompt() {
               </p>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Создание..." : "Создать рабочий стол"}
+            <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+              {createMutation.isPending ? "Создание..." : "Создать рабочий стол"}
             </Button>
           </form>
         </CardContent>

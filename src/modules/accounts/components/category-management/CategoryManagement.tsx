@@ -12,7 +12,7 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Category } from "@prisma/client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -26,8 +26,12 @@ import {
   updateCategory,
 } from "@/modules/categories/category.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { categoryKeys } from "@/shared/lib/query-keys";
+import {
+  removeCategoriesFromCache,
+  runOptimisticWorkspaceMutation,
+  updateCategoriesInCache,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Segmented } from "@/shared/ui/segmented";
@@ -48,7 +52,7 @@ function SortableCategoryItem({
   onCancelEdit,
   onSaveEdit,
   onStartDelete,
-  updateMutation,
+  isUpdating,
   setEditingName,
 }: {
   category: Category;
@@ -58,7 +62,7 @@ function SortableCategoryItem({
   onCancelEdit: () => void;
   onSaveEdit: () => void;
   onStartDelete: (category: Category) => void;
-  updateMutation: any;
+  isUpdating: boolean;
   setEditingName: (name: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -88,7 +92,7 @@ function SortableCategoryItem({
                 <Button
                   size="sm"
                   onClick={onSaveEdit}
-                  disabled={updateMutation.isPending || !editingName.trim()}
+                  disabled={isUpdating || !editingName.trim()}
                   className="h-8 text-xs px-2"
                 >
                   Сохранить
@@ -97,7 +101,7 @@ function SortableCategoryItem({
                   size="sm"
                   variant="outline"
                   onClick={onCancelEdit}
-                  disabled={updateMutation.isPending}
+                  disabled={isUpdating}
                   className="h-8 text-xs px-2"
                 >
                   Отмена
@@ -149,6 +153,8 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   const [selectedType, setSelectedType] = useState<CategoryType>(CategoryType.EXPENSE);
   const [incomeItems, setIncomeItems] = useState<Category[]>([]);
   const [expenseItems, setExpenseItems] = useState<Category[]>([]);
+  const [isUpdatingCategory, setIsUpdatingCategory] = useState(false);
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
   const incomeItemsRef = useRef<Category[]>([]);
   const expenseItemsRef = useRef<Category[]>([]);
 
@@ -245,41 +251,13 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     }
   }, [expenseCategories, expenseItems.length]);
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { name?: string } }) => updateCategory(id, data),
-    onSuccess: async (result) => {
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
-        setEditingCategory(null);
-        setEditingName("");
-      }
-    },
-  });
-
-  const updateOrderMutation = useMutation({
-    mutationFn: (categoryIds: string[]) => updateCategoriesOrder(workspaceId, categoryIds),
-    onSuccess: async (result) => {
-      if (result.error) {
-        toast.error(result.error);
-        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
-        return;
-      }
-
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
-    },
-    onError: async () => {
-      await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
-    },
-  });
-
-  const handleDragEnd = (event: DragEndEvent, type: CategoryType) => {
+  const handleDragEnd = async (event: DragEndEvent, type: CategoryType) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
       const items = type === CategoryType.INCOME ? incomeItems : expenseItems;
       const setItems = type === CategoryType.INCOME ? setIncomeItems : setExpenseItems;
+      const previousItems = [...items];
 
       const oldIndex = items.findIndex((item) => item.id === active.id);
       const newIndex = items.findIndex((item) => item.id === over.id);
@@ -287,30 +265,39 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       const newItems = arrayMove(items, oldIndex, newIndex);
       setItems(newItems);
 
-      const orderedItems = newItems.map((category, index) => ({
-        ...category,
+      const categoryOrderUpdates = newItems.map((category, index) => ({
+        id: category.id,
         order: index,
       }));
 
-      const updatedCategories = [...categories.filter((cat) => cat.type !== type), ...orderedItems];
+      try {
+        const result = await runOptimisticWorkspaceMutation({
+          queryClient,
+          workspaceId,
+          domains: ["categories", "transactions"],
+          apply: (context) => {
+            updateCategoriesInCache(
+              context,
+              categoryOrderUpdates.map((item) => ({
+                id: item.id,
+                order: item.order,
+              }))
+            );
+          },
+          mutation: () => updateCategoriesOrder(workspaceId, newItems.map((item) => item.id)),
+        });
 
-      queryClient.setQueryData(categoryKeys.list(workspaceId), { data: updatedCategories });
-
-      updateOrderMutation.mutate(newItems.map((item) => item.id));
+        if (result.error) {
+          toast.error(result.error);
+          setItems(previousItems);
+          return;
+        }
+      } catch {
+        toast.error("Не удалось обновить порядок категорий");
+        setItems(previousItems);
+      }
     }
   };
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: async (result) => {
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories", "transactions"]);
-      }
-      deleteDialog.closeDialog();
-    },
-  });
 
   const handleStartEdit = (category: Category) => {
     setEditingCategory(category);
@@ -324,12 +311,41 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
   const handleSaveEdit = () => {
     if (!editingCategory) return;
-    updateMutation.mutate({
-      id: editingCategory.id,
-      data: {
-        name: editingName,
-      },
-    });
+
+    void (async () => {
+      setIsUpdatingCategory(true);
+      try {
+        const result = await runOptimisticWorkspaceMutation({
+          queryClient,
+          workspaceId,
+          domains: ["categories", "transactions"],
+          apply: (context) => {
+            updateCategoriesInCache(context, [
+              {
+                id: editingCategory.id,
+                name: editingName,
+              },
+            ]);
+          },
+          mutation: () =>
+            updateCategory(editingCategory.id, {
+              name: editingName,
+            }),
+        });
+
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success("Категория обновлена");
+          setEditingCategory(null);
+          setEditingName("");
+        }
+      } catch {
+        toast.error("Не удалось обновить категорию");
+      } finally {
+        setIsUpdatingCategory(false);
+      }
+    })();
   };
 
   const handleStartDelete = async (category: Category) => {
@@ -347,7 +363,35 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
   const handleConfirmDelete = () => {
     if (deleteDialog.mounted) {
-      deleteMutation.mutate(deleteDialog.data.categoryId);
+      setIsDeletingCategory(true);
+      const categoryId = deleteDialog.data.categoryId;
+
+      void (async () => {
+        try {
+          const result = await runOptimisticWorkspaceMutation({
+            queryClient,
+            workspaceId,
+            domains: ["categories", "transactions"],
+            apply: (context) => {
+              removeCategoriesFromCache(context, [categoryId]);
+            },
+            onApplied: () => {
+              deleteDialog.closeDialog();
+            },
+            mutation: () => deleteCategory(categoryId),
+          });
+
+          if (result.error) {
+            toast.error(result.error);
+          } else {
+            toast.success("Категория удалена");
+          }
+        } catch {
+          toast.error("Не удалось удалить категорию");
+        } finally {
+          setIsDeletingCategory(false);
+        }
+      })();
     }
   };
 
@@ -374,7 +418,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
               onCancelEdit={handleCancelEdit}
               onSaveEdit={handleSaveEdit}
               onStartDelete={handleStartDelete}
-              updateMutation={updateMutation}
+              isUpdating={isUpdatingCategory}
               setEditingName={setEditingName}
             />
           ))}
@@ -431,7 +475,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
           categoryName={deleteDialog.data.categoryName}
           transactionCount={deleteDialog.data.transactionCount}
           onConfirm={handleConfirmDelete}
-          isDeleting={deleteMutation.isPending}
+          isDeleting={isDeletingCategory}
         />
       )}
     </div>

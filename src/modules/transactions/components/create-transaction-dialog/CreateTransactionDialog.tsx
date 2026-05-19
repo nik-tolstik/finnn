@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowDown, ArrowLeftRight, ArrowUp, X } from "lucide-react";
+import type { Session } from "next-auth";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -23,6 +24,7 @@ import {
   getTransferTransactionBalanceDeltas,
 } from "@/shared/lib/balance-domain";
 import {
+  insertTransactionsInCache,
   runOptimisticWorkspaceMutation,
   updateAccountBalancesInCache,
 } from "@/shared/lib/optimistic-workspace-updates";
@@ -46,6 +48,7 @@ import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { PaymentTransactionType } from "../../transaction.constants";
 import { createPaymentTransaction, createTransferTransaction } from "../../transaction.service";
+import type { CombinedTransaction, TransactionAccountWithOwner, TransactionUser } from "../../transaction.types";
 import { TransferForm } from "../transfer-form/TransferForm";
 import {
   type CreateTransactionMode,
@@ -69,6 +72,37 @@ interface CreateTransactionDialogProps {
   initialDescription?: string;
   initialDate?: Date;
   initialCategoryId?: string;
+}
+
+function toTransactionUser(user: Session["user"] | undefined): TransactionUser | null {
+  if (!user?.id || !user.email) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    name: user.name ?? null,
+    email: user.email,
+    image: user.image ?? null,
+  };
+}
+
+function toTransactionAccount(account: Account | undefined): TransactionAccountWithOwner | null {
+  if (!account) {
+    return null;
+  }
+
+  const accountWithOwner = account as Account & { owner?: TransactionUser | null };
+
+  return {
+    id: account.id,
+    name: account.name,
+    currency: account.currency,
+    color: account.color,
+    icon: account.icon,
+    ownerId: account.ownerId,
+    owner: accountWithOwner.owner ?? null,
+  };
 }
 
 export function CreateTransactionDialog({
@@ -268,13 +302,46 @@ export function CreateTransactionDialog({
 
     const balanceDeltas = new Map<string, string>();
     addAccountBalanceDelta(balanceDeltas, data.accountId, getPaymentTransactionBalanceDelta(data.type, data.amount));
+    const optimisticAccount = toTransactionAccount(currentAccount as Account);
+    if (!optimisticAccount) {
+      return;
+    }
+
+    const optimisticNow = new Date();
+    const optimisticCategory = data.newCategory
+      ? {
+          id: data.categoryId || `optimistic-category-${optimisticNow.getTime()}`,
+          name: data.newCategory.name,
+        }
+      : (allCategories.find((category) => category.id === data.categoryId) ?? null);
+    const optimisticTransaction: CombinedTransaction = {
+      kind: "paymentTransaction",
+      data: {
+        id: `optimistic-transaction-${optimisticNow.getTime()}`,
+        workspaceId,
+        accountId: data.accountId,
+        amount: data.amount,
+        type: data.type,
+        description: data.description || null,
+        date: data.date,
+        categoryId: optimisticCategory?.id ?? null,
+        createdAt: optimisticNow,
+        updatedAt: optimisticNow,
+        account: optimisticAccount,
+        category: optimisticCategory,
+      },
+    };
 
     try {
       const result = await runOptimisticWorkspaceMutation({
         queryClient,
         workspaceId,
         domains: ["transactions", "accounts"],
-        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          insertTransactionsInCache(context, [optimisticTransaction]);
+        },
+        onApplied: () => onOpenChange(false),
         mutation: () => createPaymentTransaction(workspaceId, data),
       });
 
@@ -282,8 +349,6 @@ export function CreateTransactionDialog({
         toast.error(result.error);
         return;
       }
-
-      onOpenChange(false);
 
       if (data.newCategory) {
         await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories"]);
@@ -298,13 +363,43 @@ export function CreateTransactionDialog({
     const transferDeltas = getTransferTransactionBalanceDeltas(data.amount, data.toAmount);
     addAccountBalanceDelta(balanceDeltas, data.fromAccountId, transferDeltas.fromDelta);
     addAccountBalanceDelta(balanceDeltas, data.toAccountId, transferDeltas.toDelta);
+    const fromAccount = toTransactionAccount(accountsData?.data?.find((item) => item.id === data.fromAccountId));
+    const toAccount = toTransactionAccount(accountsData?.data?.find((item) => item.id === data.toAccountId));
+    if (!fromAccount || !toAccount) {
+      return;
+    }
+
+    const optimisticNow = new Date();
+    const optimisticTransfer: CombinedTransaction = {
+      kind: "transferTransaction",
+      data: {
+        id: `optimistic-transfer-${optimisticNow.getTime()}`,
+        workspaceId,
+        fromAccountId: data.fromAccountId,
+        toAccountId: data.toAccountId,
+        createdById: session?.user?.id ?? null,
+        amount: data.amount,
+        toAmount: data.toAmount,
+        description: data.description || null,
+        date: data.date,
+        createdAt: optimisticNow,
+        updatedAt: optimisticNow,
+        fromAccount,
+        toAccount,
+        createdBy: toTransactionUser(session?.user),
+      },
+    };
 
     try {
       const result = await runOptimisticWorkspaceMutation({
         queryClient,
         workspaceId,
         domains: ["transactions", "accounts"],
-        apply: (context) => updateAccountBalancesInCache(context, balanceDeltas),
+        apply: (context) => {
+          updateAccountBalancesInCache(context, balanceDeltas);
+          insertTransactionsInCache(context, [optimisticTransfer]);
+        },
+        onApplied: () => onOpenChange(false),
         mutation: () => createTransferTransaction(workspaceId, data),
       });
 
@@ -312,8 +407,6 @@ export function CreateTransactionDialog({
         toast.error(result.error);
         return;
       }
-
-      onOpenChange(false);
     } catch {
       toast.error("Не удалось создать перевод");
     }

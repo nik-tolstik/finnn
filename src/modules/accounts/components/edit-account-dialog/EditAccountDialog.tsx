@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
+import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { type UpdateAccountInput, updateAccountSchema } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
@@ -121,20 +121,41 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
   };
 
   const onSubmit = async (data: UpdateAccountInput) => {
-    onOpenChange(false);
-    const result = await updateAccount(account.id, {
-      ...data,
-      ownerId: data.ownerId === sharedValue || data.ownerId === "" ? null : data.ownerId,
-    });
+    const optimisticOwnerId = data.ownerId === sharedValue || data.ownerId === "" ? null : data.ownerId;
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId: account.workspaceId,
+        domains: ["accounts", "archivedAccounts", "transactions"],
+        apply: (context) => {
+          updateAccountsInCache(context, [
+            {
+              id: account.id,
+              name: data.name,
+              color: data.color,
+              icon: data.icon,
+              ownerId: optimisticOwnerId,
+              createdAt: data.createdAt,
+            },
+          ]);
+        },
+        onApplied: () => {
+          onOpenChange(false);
+        },
+        mutation: () =>
+          updateAccount(account.id, {
+            ...data,
+            ownerId: optimisticOwnerId,
+          }),
+      });
 
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      await invalidateWorkspaceDomains(queryClient, account.workspaceId, [
-        "accounts",
-        "archivedAccounts",
-        "transactions",
-      ]);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Счёт обновлён");
+      }
+    } catch {
+      toast.error("Не удалось обновить счёт");
     }
   };
 

@@ -8,8 +8,8 @@ import { toast } from "sonner";
 
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys } from "@/shared/lib/query-keys";
+import { moveAccountArchiveStateInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Tooltip } from "@/shared/ui/tooltip";
@@ -85,12 +85,18 @@ export function ArchivedAccountsDialog({
     setUnarchivingIds((prev) => new Set(prev).add(account.id));
 
     try {
-      const result = await unarchiveAccount(account.id);
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["accounts", "archivedAccounts", "transactions"],
+        apply: (context) => {
+          moveAccountArchiveStateInCache(context, account, false);
+        },
+        mutation: () => unarchiveAccount(account.id),
+      });
 
       if (result.error) {
         toast.error(result.error);
-      } else {
-        await invalidateWorkspaceDomains(queryClient, workspaceId, ["accounts", "archivedAccounts", "transactions"]);
       }
     } catch {
       toast.error("Произошла ошибка при удалении из архива");

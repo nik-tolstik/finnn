@@ -2,12 +2,14 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { UserAvatar } from "@/shared/components/UserAvatar";
+import { runOptimisticWorkspaceMutation, updateUserReferencesInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -25,6 +27,8 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
   const { data: session, update: updateSession } = useSession();
   const queryClient = useQueryClient();
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const workspaceId = searchParams.get("workspaceId");
 
   const {
     register,
@@ -54,7 +58,27 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
   }, [session?.user, reset]);
 
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateUserInput) => updateUser(data),
+    mutationFn: async (data: UpdateUserInput) => {
+      if (!session?.user?.id) {
+        throw new Error("Не авторизован");
+      }
+
+      const userPatch = {
+        id: session.user.id,
+        name: data.name,
+        image: data.image,
+      };
+
+      return runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId: workspaceId || "user-settings-session",
+        domains: workspaceId
+          ? ["workspaces", "workspaceMembers", "accounts", "archivedAccounts", "transactions"]
+          : ["workspaces"],
+        apply: (context) => updateUserReferencesInCache(context, [userPatch]),
+        mutation: () => updateUser(data),
+      });
+    },
     onSuccess: async (result) => {
       if (result.error) {
         toast.error(result.error);
@@ -63,18 +87,12 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
 
       if (result.data) {
         await updateSession();
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["user"] }),
-          queryClient.invalidateQueries({ queryKey: ["accounts"] }),
-          queryClient.invalidateQueries({ queryKey: ["transactions"] }),
-          queryClient.invalidateQueries({ queryKey: ["workspace"] }),
-          queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
-        ]);
         reset({
           name: result.data.name || "",
           image: result.data.image || null,
         });
         onSaved?.();
+        toast.success("Настройки сохранены");
       }
     },
     onError: (error: Error) => {

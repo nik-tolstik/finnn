@@ -21,8 +21,7 @@ import { updateAccountsOrder } from "@/modules/accounts/account.service";
 import { resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
-import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
-import { accountKeys } from "@/shared/lib/query-keys";
+import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/utils/cn";
 
@@ -193,29 +192,39 @@ export function AccountsCardsReorderView({
       order: index,
     }));
 
-    const orderedItems = items.map((account, index) => ({
-      ...account,
-      order: index,
-    }));
-
-    queryClient.setQueryData(accountKeys.list(workspaceId), { data: orderedItems });
-
-    const result = await updateAccountsOrder(workspaceId, {
-      accountOrders,
-    });
-
-    if (result.error) {
-      toast.error(result.error);
-      setItems(originalItems);
-      queryClient.setQueryData(accountKeys.list(workspaceId), {
-        data: originalItems,
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["accounts", "transactions", "archivedAccounts"],
+        apply: (context) => {
+          updateAccountsInCache(
+            context,
+            accountOrders.map((accountOrder) => ({
+              id: accountOrder.id,
+              order: accountOrder.order,
+            }))
+          );
+        },
+        mutation: () =>
+          updateAccountsOrder(workspaceId, {
+            accountOrders,
+          }),
       });
-      return;
-    }
 
-    setOriginalItems(items);
-    onReorderModeChange?.(false);
-    await invalidateWorkspaceDomains(queryClient, workspaceId, ["accounts", "archivedAccounts", "transactions"]);
+      if (result.error) {
+        toast.error(result.error);
+        setItems(originalItems);
+        return;
+      }
+
+      setOriginalItems(items);
+      onReorderModeChange?.(false);
+      return;
+    } catch {
+      setItems(originalItems);
+      toast.error("Не удалось изменить порядок счетов");
+    }
   }, [items, originalItems, workspaceId, queryClient, onReorderModeChange]);
 
   useEffect(() => {
