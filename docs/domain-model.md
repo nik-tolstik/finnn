@@ -1,0 +1,138 @@
+# Domain Model
+
+## Core Entities
+
+The Prisma schema in `prisma/schema.prisma` is the source of truth.
+
+Main models:
+
+- `User` - authenticated user with optional password and verified email state.
+- `Workspace` - shared financial space with owner, members, accounts, categories, transactions, transfers, debts, and invites.
+- `WorkspaceMember` - user membership and role inside a workspace.
+- `Account` - balance container with currency, owner, archive state, display metadata, and order.
+- `Category` - income or expense classification.
+- `PaymentTransaction` - income or expense transaction for one account.
+- `TransferTransaction` - transfer between two accounts with source and destination amounts.
+- `Debt` - open or closed debt with person, type, amount, remaining amount, currency, and optional linked account.
+- `DebtTransaction` - operation applied to a debt, optionally linked to an account.
+- `WorkspaceInvite` - tokenized invite to a workspace.
+- `PendingRegistration` - pre-verification registration state.
+- `ExchangeRate` - persisted daily currency rate.
+
+## Workspace Boundary
+
+Most domain data belongs to a workspace. Server reads and mutations must enforce that the current user has access to that workspace.
+
+Use:
+
+- `requireUserId()` when only authentication is required.
+- `requireWorkspaceAccess(workspaceId)` for regular workspace access.
+- `requireWorkspaceAccess(workspaceId, { roles: [...] })` when a command requires admin or owner permissions.
+
+Workspace roles are defined in `src/modules/workspace/workspace.constants.ts`.
+
+## Money Rules
+
+Persisted financial amounts are strings. This avoids binary floating point issues and keeps formatting/conversion explicit.
+
+Use:
+
+- `src/shared/utils/money.ts` for low-level operations such as add, subtract, compare, multiply, divide, and formatting.
+- `src/shared/lib/balance-domain.ts` for business rules that map transactions, transfers, and debt operations to account balance deltas.
+- `src/shared/lib/domain-types.ts` for branded IDs and money/currency domain values.
+
+Do not use raw JavaScript arithmetic for persisted money behavior.
+
+## Accounts
+
+Accounts belong to a workspace and can optionally have an owner. Owner visibility rules live in `src/modules/accounts/account-visibility.ts`.
+
+Accounts are archived instead of deleted for normal user flows. Deletion must account for dependencies:
+
+- Payment transactions.
+- Transfer transactions.
+- Debts.
+- Debt transactions.
+
+Account order is stored as an integer and used by the dashboard account card views.
+
+## Categories
+
+Categories belong to a workspace and have a `type`:
+
+- `income`
+- `expense`
+
+New workspaces are seeded with standard expense categories and one income category in `createWorkspace`.
+
+Category changes revalidate accounting routes because transaction lists, filters, and analytics may depend on category metadata.
+
+## Payment Transactions
+
+A payment transaction changes one account:
+
+- Income increases account balance.
+- Expense decreases account balance.
+
+Creation and update rules include:
+
+- The account must belong to the workspace.
+- The transaction date cannot be before the account creation date.
+- Expense amount cannot exceed the account balance.
+- A newly typed category may be created during transaction creation.
+
+## Transfers
+
+A transfer changes two accounts:
+
+- Source account gets `-amount`.
+- Destination account gets `+toAmount`.
+
+Rules include:
+
+- Source and destination accounts must belong to the workspace.
+- Source and destination accounts must be different.
+- Source amount cannot exceed source account balance.
+- `createdById` stores the user that created the transfer.
+
+Transfers support cross-currency use cases by storing both source `amount` and destination `toAmount`.
+
+## Debts
+
+Debts track money lent or borrowed and can be open or closed.
+
+Debt types are defined in `src/modules/debts/debt.constants.ts`. Debt operations can affect:
+
+- The debt amount.
+- The remaining amount.
+- The linked account balance.
+- Related payment-category records when closing or settling.
+
+Debt application logic is intentionally centralized in `src/modules/debts/debt.application.ts` because several operations need coordinated account and debt updates.
+
+## Exchange Rates
+
+Currency support is centered around BYN, USD, and EUR.
+
+Important files:
+
+- `src/modules/currency/currency.service.ts` fetches rates from external providers.
+- `src/modules/currency/exchange-rate.service.ts` persists and reads daily exchange rates.
+- `src/app/api/cron/update-exchange-rates/route.ts` triggers daily persistence.
+- `src/app/api/exchange-rates/route.ts` exposes exchange-rate data for the app.
+
+The cron endpoint must be protected with `CRON_SECRET`.
+
+## PWA Cache Boundary
+
+The service worker in `public/sw.js` only caches static assets.
+
+It must not cache:
+
+- `/api/**`
+- App documents and dashboard routes.
+- `/_next/data/**`
+- Server action or data responses.
+- Non-GET requests.
+
+The test `src/shared/lib/service-worker-cache-policy.test.ts` protects this boundary.

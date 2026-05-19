@@ -8,8 +8,11 @@ import { toast } from "sonner";
 
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import {
+  moveAccountArchiveStateInCache,
+  runOptimisticWorkspaceMutation,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { moveAccountArchiveStateInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Tooltip } from "@/shared/ui/tooltip";

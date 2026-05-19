@@ -26,12 +26,12 @@ import {
   updateCategory,
 } from "@/modules/categories/category.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { categoryKeys } from "@/shared/lib/query-keys";
 import {
   removeCategoriesFromCache,
   runOptimisticWorkspaceMutation,
   updateCategoriesInCache,
 } from "@/shared/lib/optimistic-workspace-updates";
+import { categoryKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Segmented } from "@/shared/ui/segmented";
@@ -284,7 +284,11 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
               }))
             );
           },
-          mutation: () => updateCategoriesOrder(workspaceId, newItems.map((item) => item.id)),
+          mutation: () =>
+            updateCategoriesOrder(
+              workspaceId,
+              newItems.map((item) => item.id)
+            ),
         });
 
         if (result.error) {

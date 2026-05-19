@@ -5,7 +5,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { moveAccountArchiveStateInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
+import {
+  moveAccountArchiveStateInCache,
+  runOptimisticWorkspaceMutation,
+} from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
