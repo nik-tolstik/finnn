@@ -244,6 +244,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
             },
           ]);
         },
+        onApplied: () => onOpenChange(false),
         mutation: () => closeDebt(debt.id, submitData),
       });
 
@@ -252,8 +253,6 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
         return;
       }
 
-      toast.success("Долг закрыт");
-      onOpenChange(false);
       await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories"]);
     } catch {
       toast.error("Не удалось закрыть долг");

@@ -105,6 +105,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
           updateAccountBalancesInCache(context, balanceDeltas);
           removeTransactionsFromCache(context, [transaction.data.id]);
         },
+        onApplied: () => actionsDialog.closeDialog(),
         mutation: () =>
           transaction.kind === "transferTransaction"
             ? deleteTransferTransaction(transaction.data.id)
@@ -177,6 +178,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
           ]);
           removeTransactionsFromCache(context, [debtTransaction.id]);
         },
+        onApplied: () => debtActionsDialog.closeDialog(),
         mutation: () => deleteDebtTransaction(debtTransaction.id),
       });
 
@@ -186,7 +188,6 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
       }
 
       toast.success("Транзакция долга удалена");
-      debtActionsDialog.closeDialog();
     } catch {
       toast.error("Не удалось удалить транзакцию долга");
     }

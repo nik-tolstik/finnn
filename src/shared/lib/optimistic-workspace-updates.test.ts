@@ -709,6 +709,44 @@ describe("optimistic workspace updates", () => {
     expect(accounts.data[0]).toEqual(expect.objectContaining({ id: "acc-1", balance: "10" }));
   });
 
+  it("calls onApplied after optimistic changes and before the mutation resolves", async () => {
+    const queryClient = new QueryClient();
+    seedClient(queryClient);
+    vi.spyOn(queryClient, "invalidateQueries").mockResolvedValue();
+    const events: string[] = [];
+    let resolveMutation!: (value: { success: true }) => void;
+    const mutationPromise = new Promise<{ success: true }>((resolve) => {
+      resolveMutation = resolve;
+    });
+
+    const resultPromise = runOptimisticWorkspaceMutation({
+      queryClient,
+      workspaceId: WORKSPACE_ID,
+      domains: ["accounts"],
+      apply: (context) => {
+        updateAccountBalancesInCache(context, { "acc-1": "90" });
+        events.push("apply");
+      },
+      onApplied: () => {
+        const accounts = queryClient.getQueryData(accountKeys.list(WORKSPACE_ID)) as { data: AccountWithBalance[] };
+
+        events.push(`onApplied:${accounts.data[0].balance}`);
+      },
+      mutation: () => {
+        events.push("mutation-start");
+        return mutationPromise;
+      },
+    });
+
+    await vi.waitFor(() => {
+      expect(events).toEqual(["apply", "onApplied:100", "mutation-start"]);
+    });
+
+    resolveMutation({ success: true });
+
+    await expect(resultPromise).resolves.toEqual({ success: true });
+  });
+
   it("invalidates selected workspace domains on settle", async () => {
     const queryClient = new QueryClient();
     const context = createWorkspaceOptimisticContext(queryClient, WORKSPACE_ID, ["accounts", "debts"]);
