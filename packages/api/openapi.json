@@ -941,6 +941,931 @@
         "tags": ["Workspace Invites"]
       }
     },
+    "/workspaces/{workspaceId}/accounts": {
+      "post": {
+        "operationId": "createAccount",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create an account",
+        "tags": ["Accounts"]
+      },
+      "get": {
+        "operationId": "listAccounts",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List active accounts",
+        "tags": ["Accounts"]
+      }
+    },
+    "/workspaces/{workspaceId}/accounts/archived": {
+      "get": {
+        "operationId": "listArchivedAccounts",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchivedAccountListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List archived accounts",
+        "tags": ["Accounts"]
+      }
+    },
+    "/workspaces/{workspaceId}/accounts/order": {
+      "patch": {
+        "operationId": "updateAccountsOrder",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountsOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update account order",
+        "tags": ["Accounts"]
+      }
+    },
+    "/accounts/{accountId}": {
+      "get": {
+        "operationId": "getAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get an account",
+        "tags": ["Accounts"]
+      },
+      "patch": {
+        "operationId": "updateAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update an account",
+        "tags": ["Accounts"]
+      },
+      "delete": {
+        "operationId": "deleteArchivedAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete an archived account",
+        "tags": ["Accounts"]
+      }
+    },
+    "/accounts/{accountId}/archive": {
+      "post": {
+        "operationId": "archiveAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Archive an account",
+        "tags": ["Accounts"]
+      }
+    },
+    "/accounts/{accountId}/unarchive": {
+      "post": {
+        "operationId": "unarchiveAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Restore an archived account",
+        "tags": ["Accounts"]
+      }
+    },
+    "/workspaces/{workspaceId}/categories": {
+      "post": {
+        "operationId": "createCategory",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a category",
+        "tags": ["Categories"]
+      },
+      "get": {
+        "operationId": "listCategories",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["income", "expense"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List categories",
+        "tags": ["Categories"]
+      }
+    },
+    "/workspaces/{workspaceId}/categories/order": {
+      "patch": {
+        "operationId": "updateCategoriesOrder",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoriesOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategorySuccessResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update category order",
+        "tags": ["Categories"]
+      }
+    },
+    "/categories/{categoryId}": {
+      "patch": {
+        "operationId": "updateCategory",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a category",
+        "tags": ["Categories"]
+      },
+      "delete": {
+        "operationId": "deleteCategory",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a category",
+        "tags": ["Categories"]
+      }
+    },
+    "/categories/{categoryId}/transaction-count": {
+      "get": {
+        "operationId": "getCategoryTransactionCount",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryTransactionCountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get category transaction count",
+        "tags": ["Categories"]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "getHealth",
@@ -1471,6 +2396,502 @@
           }
         },
         "required": ["success", "workspaceId"]
+      },
+      "CreateAccountDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Main card",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "balance": {
+            "type": "string",
+            "example": "125.50"
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "BYN"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "example": "#0f766e"
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["name", "balance", "currency", "createdAt"]
+      },
+      "AccountOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "name": {
+            "type": "string",
+            "example": "Ada",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "example": "ada@example.com"
+          },
+          "image": {
+            "type": "string",
+            "example": "avatar-01",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name", "email"]
+      },
+      "AccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f3333"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "example": "Main card"
+          },
+          "balance": {
+            "type": "string",
+            "example": "125.50"
+          },
+          "currency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "description": {
+            "type": "string",
+            "example": "Everyday spending",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "example": "#0f766e",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean",
+            "example": false
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "owner": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountOwnerDto"
+              }
+            ]
+          }
+        },
+        "required": ["id", "workspaceId", "name", "balance", "currency", "archived", "order", "createdAt", "updatedAt"]
+      },
+      "AccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountDto"
+          }
+        },
+        "required": ["account"]
+      },
+      "AccountListResponseDto": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountDto"
+            }
+          }
+        },
+        "required": ["accounts"]
+      },
+      "AccountDependencyCountsDto": {
+        "type": "object",
+        "properties": {
+          "transactions": {
+            "type": "number",
+            "example": 3
+          },
+          "debts": {
+            "type": "number",
+            "example": 1
+          },
+          "debtTransactions": {
+            "type": "number",
+            "example": 2
+          }
+        },
+        "required": ["transactions", "debts", "debtTransactions"]
+      },
+      "ArchivedAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f3333"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "example": "Main card"
+          },
+          "balance": {
+            "type": "string",
+            "example": "125.50"
+          },
+          "currency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "description": {
+            "type": "string",
+            "example": "Everyday spending",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "example": "#0f766e",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean",
+            "example": false
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "owner": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountOwnerDto"
+              }
+            ]
+          },
+          "_count": {
+            "$ref": "#/components/schemas/AccountDependencyCountsDto"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "name",
+          "balance",
+          "currency",
+          "archived",
+          "order",
+          "createdAt",
+          "updatedAt",
+          "_count"
+        ]
+      },
+      "ArchivedAccountListResponseDto": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArchivedAccountDto"
+            }
+          }
+        },
+        "required": ["accounts"]
+      },
+      "AccountOrderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          }
+        },
+        "required": ["id", "order"]
+      },
+      "UpdateAccountsOrderDto": {
+        "type": "object",
+        "properties": {
+          "accountOrders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountOrderDto"
+            }
+          }
+        },
+        "required": ["accountOrders"]
+      },
+      "AccountSuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["success"]
+      },
+      "UpdateAccountDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Savings",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "balance": {
+            "type": "string",
+            "example": "200.00"
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "USD"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "example": "#2563eb"
+          },
+          "icon": {
+            "type": "string",
+            "example": "landmark"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "order": {
+            "type": "number",
+            "example": 2
+          }
+        }
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Groceries",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"],
+            "example": "expense"
+          },
+          "icon": {
+            "type": "string",
+            "example": "shopping-cart"
+          }
+        },
+        "required": ["name", "type"]
+      },
+      "CategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f3333"
+          },
+          "name": {
+            "type": "string",
+            "example": "Groceries"
+          },
+          "type": {
+            "type": "string",
+            "example": "expense"
+          },
+          "icon": {
+            "type": "string",
+            "example": "shopping-cart",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "transactionCount": {
+            "type": "number",
+            "example": 4
+          }
+        },
+        "required": ["id", "workspaceId", "name", "type", "order", "createdAt", "updatedAt", "transactionCount"]
+      },
+      "CategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CategoryDto"
+          }
+        },
+        "required": ["category"]
+      },
+      "CategoryListResponseDto": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryDto"
+            }
+          }
+        },
+        "required": ["categories"]
+      },
+      "UpdateCategoriesOrderDto": {
+        "type": "object",
+        "properties": {
+          "categoryIds": {
+            "example": ["665f5d865ef5a20c0d2f1111", "665f5d865ef5a20c0d2f2222"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["categoryIds"]
+      },
+      "CategorySuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["success"]
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Salary",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"],
+            "example": "income"
+          },
+          "icon": {
+            "type": "string",
+            "example": "briefcase"
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          }
+        }
+      },
+      "CategoryTransactionCountResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "example": 4
+          }
+        },
+        "required": ["count"]
       },
       "HealthResponseDto": {
         "type": "object",
