@@ -1866,6 +1866,606 @@
         "tags": ["Categories"]
       }
     },
+    "/workspaces/{workspaceId}/debts": {
+      "get": {
+        "operationId": "listDebts",
+        "parameters": [
+          {
+            "name": "personName",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List debts",
+        "tags": ["Debts"]
+      },
+      "post": {
+        "operationId": "createDebt",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDebtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a debt",
+        "tags": ["Debts"]
+      }
+    },
+    "/debts/{debtId}/edit-data": {
+      "get": {
+        "operationId": "getDebtEditData",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtEditDataResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get debt edit data",
+        "tags": ["Debts"]
+      }
+    },
+    "/debts/{debtId}": {
+      "patch": {
+        "operationId": "updateDebt",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDebtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a debt",
+        "tags": ["Debts"]
+      },
+      "delete": {
+        "operationId": "deleteDebt",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a debt",
+        "tags": ["Debts"]
+      }
+    },
+    "/debts/{debtId}/add": {
+      "post": {
+        "operationId": "addToDebt",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddToDebtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Add to a debt",
+        "tags": ["Debts"]
+      }
+    },
+    "/debts/{debtId}/close": {
+      "post": {
+        "operationId": "closeDebt",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseDebtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Close or pay down a debt",
+        "tags": ["Debts"]
+      }
+    },
+    "/debt-transactions/{debtTransactionId}": {
+      "patch": {
+        "operationId": "updateDebtTransaction",
+        "parameters": [
+          {
+            "name": "debtTransactionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDebtEntryTransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtTransactionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a debt transaction",
+        "tags": ["Debts"]
+      },
+      "delete": {
+        "operationId": "deleteDebtTransaction",
+        "parameters": [
+          {
+            "name": "debtTransactionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a debt transaction",
+        "tags": ["Debts"]
+      }
+    },
     "/workspaces/{workspaceId}/transactions": {
       "get": {
         "operationId": "getCombinedTransactions",
@@ -2466,6 +3066,10 @@
     },
     {
       "name": "Transactions",
+      "description": ""
+    },
+    {
+      "name": "Debts",
       "description": ""
     }
   ],
@@ -3454,6 +4058,438 @@
           }
         },
         "required": ["count"]
+      },
+      "DebtAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name", "currency"]
+      },
+      "DebtDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["lent", "borrowed"]
+          },
+          "personName": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "remainingAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "closed"]
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "account": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DebtAccountDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "type",
+          "personName",
+          "amount",
+          "remainingAmount",
+          "currency",
+          "date",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DebtListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DebtDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": ["data", "total"]
+      },
+      "CreateDebtDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["lent", "borrowed"],
+            "example": "lent"
+          },
+          "personName": {
+            "type": "string",
+            "example": "Grace",
+            "minLength": 1
+          },
+          "amount": {
+            "type": "string",
+            "example": "100"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "useAccount": {
+            "type": "boolean",
+            "example": true
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "currency": {
+            "type": "string",
+            "example": "BYN"
+          }
+        },
+        "required": ["type", "personName", "amount", "date", "useAccount"]
+      },
+      "DebtResponseDto": {
+        "type": "object",
+        "properties": {
+          "debt": {
+            "$ref": "#/components/schemas/DebtDto"
+          }
+        },
+        "required": ["debt"]
+      },
+      "DebtEditDataDto": {
+        "type": "object",
+        "properties": {
+          "personName": {
+            "type": "string"
+          },
+          "initialAmount": {
+            "type": "string"
+          },
+          "initialDate": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": ["personName", "initialAmount", "initialDate", "currency"]
+      },
+      "DebtEditDataResponseDto": {
+        "type": "object",
+        "properties": {
+          "debt": {
+            "$ref": "#/components/schemas/DebtEditDataDto"
+          }
+        },
+        "required": ["debt"]
+      },
+      "UpdateDebtDto": {
+        "type": "object",
+        "properties": {
+          "personName": {
+            "type": "string",
+            "example": "Grace",
+            "minLength": 1
+          },
+          "amount": {
+            "type": "string",
+            "example": "120"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["personName", "amount", "date"]
+      },
+      "AddToDebtDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "20"
+          },
+          "useAccount": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["amount", "useAccount"]
+      },
+      "CloseDebtDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "80"
+          },
+          "toAmount": {
+            "type": "string",
+            "example": "81.50"
+          },
+          "paymentAmount": {
+            "type": "string",
+            "example": "95"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "closeEarly": {
+            "type": "boolean",
+            "example": false
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "useAccount": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["amount", "useAccount"]
+      },
+      "UpdateDebtEntryTransactionDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "30"
+          },
+          "toAmount": {
+            "type": "string",
+            "example": "31.50"
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["amount", "date"]
+      },
+      "DebtEntryTransactionDebtDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["lent", "borrowed"]
+          },
+          "personName": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "remainingAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "closed"]
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "type",
+          "personName",
+          "amount",
+          "remainingAmount",
+          "currency",
+          "date",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DebtAccountWithOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "owner": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name", "currency"]
+      },
+      "DebtEntryTransactionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "debtId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": ["created", "closed", "added"]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "toAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "debt": {
+            "$ref": "#/components/schemas/DebtEntryTransactionDebtDto"
+          },
+          "account": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DebtAccountWithOwnerDto"
+              }
+            ]
+          }
+        },
+        "required": ["id", "workspaceId", "debtId", "type", "amount", "date", "createdAt", "debt"]
+      },
+      "DebtTransactionResponseDto": {
+        "type": "object",
+        "properties": {
+          "debtTransaction": {
+            "$ref": "#/components/schemas/DebtEntryTransactionDto"
+          }
+        },
+        "required": ["debtTransaction"]
       },
       "CombinedTransactionsQueryDto": {
         "type": "object",

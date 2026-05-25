@@ -16,6 +16,7 @@ export function createOpenApiDocument(app: INestApplication) {
     .addTag("Auth")
     .addTag("Workspace Invites")
     .addTag("Transactions")
+    .addTag("Debts")
     .build();
 
   return SwaggerModule.createDocument(app, config, {

@@ -5,6 +5,7 @@ import { AccountsModule } from "./accounts/accounts.module";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { CategoriesModule } from "./categories/categories.module";
+import { DebtsModule } from "./debts/debts.module";
 import { TransactionsModule } from "./transactions/transactions.module";
 import { WorkspaceModule } from "./workspace/workspace.module";
 
@@ -15,6 +16,7 @@ import { WorkspaceModule } from "./workspace/workspace.module";
     WorkspaceModule,
     AccountsModule,
     CategoriesModule,
+    DebtsModule,
     TransactionsModule,
   ],
   controllers: [AppController],
