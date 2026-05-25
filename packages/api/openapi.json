@@ -283,6 +283,457 @@
         "tags": ["Auth"]
       }
     },
+    "/workspaces": {
+      "post": {
+        "operationId": "createWorkspace",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkspaceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a workspace",
+        "tags": ["Workspaces"]
+      },
+      "get": {
+        "operationId": "listWorkspaces",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List accessible workspaces",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}": {
+      "get": {
+        "operationId": "getWorkspace",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get workspace details",
+        "tags": ["Workspaces"]
+      },
+      "patch": {
+        "operationId": "updateWorkspace",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkspaceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a workspace",
+        "tags": ["Workspaces"]
+      },
+      "delete": {
+        "operationId": "deleteWorkspace",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a workspace",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/summary": {
+      "get": {
+        "operationId": "getWorkspaceSummary",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSummaryResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get workspace summary",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/members": {
+      "get": {
+        "operationId": "getWorkspaceMembers",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceMembersResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get workspace members",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/leave": {
+      "post": {
+        "operationId": "leaveWorkspace",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaveWorkspaceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Leave a workspace",
+        "tags": ["Workspaces"]
+      }
+    },
     "/workspaces/{workspaceId}/invites": {
       "post": {
         "operationId": "createWorkspaceInvite",
@@ -695,6 +1146,233 @@
           }
         },
         "required": ["name"]
+      },
+      "CreateWorkspaceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Personal budget",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "slug": {
+            "type": "string",
+            "example": "personal-budget",
+            "maxLength": 50,
+            "minLength": 1
+          }
+        },
+        "required": ["name", "slug"]
+      },
+      "WorkspaceOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "name": {
+            "type": "string",
+            "example": "Finn User",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "image": {
+            "type": "string",
+            "example": "avatar-01",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name", "email"]
+      },
+      "WorkspaceMemberDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f3333"
+          },
+          "name": {
+            "type": "string",
+            "example": "Finn User",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "image": {
+            "type": "string",
+            "example": "avatar-01",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "example": "owner",
+            "enum": ["owner", "admin", "member"]
+          }
+        },
+        "required": ["id", "name", "email", "role"]
+      },
+      "WorkspaceDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "name": {
+            "type": "string",
+            "example": "Personal budget"
+          },
+          "slug": {
+            "type": "string",
+            "example": "personal-budget"
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          },
+          "baseCurrency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "membersCount": {
+            "type": "number",
+            "example": 3
+          },
+          "owner": {
+            "$ref": "#/components/schemas/WorkspaceOwnerDto"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceMemberDto"
+            }
+          }
+        },
+        "required": ["id", "name", "slug", "baseCurrency", "ownerId", "membersCount", "owner", "members"]
+      },
+      "WorkspaceResponseDto": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "$ref": "#/components/schemas/WorkspaceDetailDto"
+          }
+        },
+        "required": ["workspace"]
+      },
+      "WorkspaceSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "name": {
+            "type": "string",
+            "example": "Personal budget"
+          },
+          "slug": {
+            "type": "string",
+            "example": "personal-budget"
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          },
+          "baseCurrency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "membersCount": {
+            "type": "number",
+            "example": 3
+          },
+          "owner": {
+            "$ref": "#/components/schemas/WorkspaceOwnerDto"
+          }
+        },
+        "required": ["id", "name", "slug", "baseCurrency", "ownerId", "membersCount", "owner"]
+      },
+      "WorkspaceListResponseDto": {
+        "type": "object",
+        "properties": {
+          "workspaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSummaryDto"
+            }
+          }
+        },
+        "required": ["workspaces"]
+      },
+      "WorkspaceSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "$ref": "#/components/schemas/WorkspaceSummaryDto"
+          }
+        },
+        "required": ["workspace"]
+      },
+      "WorkspaceMembersResponseDto": {
+        "type": "object",
+        "properties": {
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceMemberDto"
+            }
+          }
+        },
+        "required": ["members"]
+      },
+      "UpdateWorkspaceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Family budget",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "slug": {
+            "type": "string",
+            "example": "family-budget",
+            "maxLength": 50,
+            "minLength": 1
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          }
+        }
+      },
+      "LeaveWorkspaceResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["success"]
       },
       "CreateInviteDto": {
         "type": "object",

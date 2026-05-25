@@ -10,6 +10,7 @@ import { PrismaService } from "../src/prisma/prisma.service";
 import { WorkspaceModule } from "../src/workspace/workspace.module";
 
 type MockPrisma = {
+  $transaction: ReturnType<typeof vi.fn>;
   user: {
     findUnique: ReturnType<typeof vi.fn>;
   };
@@ -18,11 +19,19 @@ type MockPrisma = {
   };
   workspace: {
     findUnique: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
   };
   workspaceMember: {
     findUnique: ReturnType<typeof vi.fn>;
     findFirst: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+  };
+  category: {
+    createMany: ReturnType<typeof vi.fn>;
   };
   workspaceInvite: {
     findUnique: ReturnType<typeof vi.fn>;
@@ -32,7 +41,8 @@ type MockPrisma = {
 };
 
 function createPrismaMock(): MockPrisma {
-  return {
+  const mock = {
+    $transaction: vi.fn(),
     user: {
       findUnique: vi.fn(),
     },
@@ -41,11 +51,19 @@ function createPrismaMock(): MockPrisma {
     },
     workspace: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
     workspaceMember: {
       findUnique: vi.fn(),
       findFirst: vi.fn(),
       create: vi.fn(),
+      delete: vi.fn(),
+    },
+    category: {
+      createMany: vi.fn(),
     },
     workspaceInvite: {
       findUnique: vi.fn(),
@@ -53,6 +71,8 @@ function createPrismaMock(): MockPrisma {
       delete: vi.fn(),
     },
   };
+  mock.$transaction.mockImplementation((callback) => callback(mock));
+  return mock;
 }
 
 const currentUser = {
@@ -61,6 +81,42 @@ const currentUser = {
   name: "Ada",
   image: null,
 };
+
+const workspaceOwner = {
+  id: "user-1",
+  email: "ada@example.com",
+  name: "Ada",
+  image: null,
+};
+
+const workspaceMember = {
+  role: "member",
+  user: {
+    id: "user-2",
+    email: "grace@example.com",
+    name: "Grace",
+    image: "avatar-02",
+  },
+};
+
+function createWorkspaceRecord(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "workspace-1",
+    name: "Shared budget",
+    slug: "shared-budget",
+    icon: "wallet",
+    baseCurrency: "BYN",
+    ownerId: currentUser.id,
+    createdAt: new Date("2026-05-25T00:00:00.000Z"),
+    updatedAt: new Date("2026-05-25T00:00:00.000Z"),
+    owner: workspaceOwner,
+    members: [{ role: "owner", user: workspaceOwner }, workspaceMember],
+    _count: {
+      members: 2,
+    },
+    ...overrides,
+  };
+}
 
 function mockAuthenticatedSession(prisma: MockPrisma) {
   prisma.authSession.findFirst.mockResolvedValue({ userId: currentUser.id });
@@ -114,11 +170,213 @@ describe("Workspace API", () => {
       ...data,
     }));
     prisma.workspaceInvite.delete.mockResolvedValue({});
+    prisma.workspace.findMany.mockResolvedValue([]);
+    prisma.workspace.create.mockResolvedValue(createWorkspaceRecord());
+    prisma.workspace.update.mockResolvedValue(createWorkspaceRecord({ name: "Updated budget" }));
+    prisma.workspace.delete.mockResolvedValue({});
+    prisma.workspaceMember.delete.mockResolvedValue({});
+    prisma.category.createMany.mockResolvedValue({ count: 14 });
     emailService.sendInviteEmail.mockResolvedValue({ success: true });
   });
 
   afterAll(async () => {
     await app.close();
+  });
+
+  it("creates a workspace with default categories for the authenticated user", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockImplementation(async ({ where, select }) => {
+      if (where.slug === "shared-budget") return null;
+      if (select?.ownerId) return { ownerId: currentUser.id };
+      return createWorkspaceRecord();
+    });
+    prisma.workspace.create.mockResolvedValue(createWorkspaceRecord());
+
+    const response = await request(app.getHttpServer())
+      .post("/workspaces")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ name: "Shared budget", slug: "shared-budget" })
+      .expect(201);
+
+    expect(response.body.workspace).toMatchObject({
+      id: "workspace-1",
+      name: "Shared budget",
+      slug: "shared-budget",
+      baseCurrency: "BYN",
+      ownerId: "user-1",
+      membersCount: 2,
+    });
+    expect(prisma.workspace.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "Shared budget",
+          slug: "shared-budget",
+          baseCurrency: "BYN",
+          ownerId: "user-1",
+        }),
+      })
+    );
+    expect(prisma.category.createMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({ name: "Продукты", type: "expense", workspaceId: "workspace-1" }),
+        expect.objectContaining({ name: "Зарплата", type: "income", workspaceId: "workspace-1" }),
+      ]),
+    });
+  });
+
+  it("lists workspaces accessible to the authenticated user", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findMany.mockResolvedValue([createWorkspaceRecord()]);
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body).toEqual({
+      workspaces: [
+        {
+          id: "workspace-1",
+          name: "Shared budget",
+          slug: "shared-budget",
+          icon: "wallet",
+          baseCurrency: "BYN",
+          ownerId: "user-1",
+          membersCount: 2,
+          owner: workspaceOwner,
+        },
+      ],
+    });
+    expect(prisma.workspace.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [{ ownerId: "user-1" }, { members: { some: { userId: "user-1" } } }],
+        },
+      })
+    );
+  });
+
+  it("returns workspace summary for authorized members", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockResolvedValue(createWorkspaceRecord({ ownerId: "owner-1" }));
+    prisma.workspaceMember.findUnique.mockResolvedValue({ role: "member" });
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/summary")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.workspace).toMatchObject({
+      id: "workspace-1",
+      name: "Shared budget",
+      membersCount: 2,
+    });
+  });
+
+  it("returns de-duplicated workspace members including the owner", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockResolvedValue(createWorkspaceRecord());
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/members")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.members).toEqual([
+      {
+        id: "user-1",
+        name: "Ada",
+        email: "ada@example.com",
+        image: null,
+        role: "owner",
+      },
+      {
+        id: "user-2",
+        name: "Grace",
+        email: "grace@example.com",
+        image: "avatar-02",
+        role: "member",
+      },
+    ]);
+  });
+
+  it("updates a workspace for admins", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockImplementation(async ({ where, select }) => {
+      if (select?.ownerId) return { ownerId: currentUser.id };
+      if (where.slug === "updated-budget") return null;
+      return createWorkspaceRecord();
+    });
+    prisma.workspace.update.mockResolvedValue(
+      createWorkspaceRecord({ icon: null, name: "Updated budget", slug: "updated-budget" })
+    );
+
+    const response = await request(app.getHttpServer())
+      .patch("/workspaces/workspace-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ name: "Updated budget", slug: "updated-budget", icon: null })
+      .expect(200);
+
+    expect(response.body.workspace).toMatchObject({
+      id: "workspace-1",
+      name: "Updated budget",
+      slug: "updated-budget",
+      icon: null,
+    });
+    expect(prisma.workspace.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "workspace-1" },
+        data: { name: "Updated budget", slug: "updated-budget", icon: null },
+      })
+    );
+  });
+
+  it("prevents owners from leaving their own workspace", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockResolvedValue(createWorkspaceRecord());
+
+    const response = await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/leave")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(400);
+
+    expect(response.body.message).toBe("Создатель рабочего стола не может покинуть его");
+    expect(prisma.workspaceMember.delete).not.toHaveBeenCalled();
+  });
+
+  it("lets members leave a workspace", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockResolvedValue(createWorkspaceRecord({ ownerId: "owner-1" }));
+    prisma.workspaceMember.findUnique.mockResolvedValue({ id: "member-1", role: "member" });
+
+    await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/leave")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200)
+      .expect({ success: true });
+
+    expect(prisma.workspaceMember.delete).toHaveBeenCalledWith({
+      where: {
+        workspaceId_userId: {
+          workspaceId: "workspace-1",
+          userId: "user-1",
+        },
+      },
+    });
+  });
+
+  it("lets owners delete a workspace", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockResolvedValue(createWorkspaceRecord());
+
+    await request(app.getHttpServer())
+      .delete("/workspaces/workspace-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(204);
+
+    expect(prisma.workspace.delete).toHaveBeenCalledWith({
+      where: { id: "workspace-1" },
+    });
   });
 
   it("lets workspace owners create invites and sends the invite email from the API", async () => {

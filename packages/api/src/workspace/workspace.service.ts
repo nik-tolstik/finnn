@@ -9,19 +9,126 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
+import type { Prisma, User, Workspace } from "@prisma/client";
 
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { EmailService } from "@/email/email.service";
 import { PrismaService } from "@/prisma/prisma.service";
 
-import type { CreateInviteDto } from "./workspace.dto";
+import { WORKSPACE_ROLES } from "./workspace.constants";
+import type { CreateInviteDto, CreateWorkspaceDto, UpdateWorkspaceDto, WorkspaceMemberDto } from "./workspace.dto";
 
 const INVITE_TOKEN_BYTES = 32;
+const STANDARD_EXPENSE_CATEGORIES = [
+  "Продукты",
+  "Питание",
+  "Подарки",
+  "Машина",
+  "Одежда",
+  "Общ. транспорт",
+  "Развлечения",
+  "Кредит",
+  "Дом",
+  "Спорт",
+  "Здоровье",
+  "Подписки",
+  "Перевод",
+];
+const STANDARD_INCOME_CATEGORIES = ["Зарплата"];
+
+const WORKSPACE_SUMMARY_INCLUDE = {
+  owner: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+  },
+  _count: {
+    select: {
+      members: true,
+    },
+  },
+} satisfies Prisma.WorkspaceInclude;
+
+const WORKSPACE_DETAIL_INCLUDE = {
+  ...WORKSPACE_SUMMARY_INCLUDE,
+  members: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+        },
+      },
+    },
+  },
+} satisfies Prisma.WorkspaceInclude;
+
+type WorkspaceWithSummary = Workspace & {
+  owner: Pick<User, "id" | "name" | "email" | "image">;
+  _count: {
+    members: number;
+  };
+};
+
+type WorkspaceWithDetail = WorkspaceWithSummary & {
+  members: Array<{
+    role: string;
+    user: Pick<User, "id" | "name" | "email" | "image">;
+  }>;
+};
 
 function getInviteExpiryDate(expiresInDays: number): Date {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + expiresInDays);
   return expiresAt;
+}
+
+function toWorkspaceSummary(workspace: WorkspaceWithSummary) {
+  return {
+    id: workspace.id,
+    name: workspace.name,
+    slug: workspace.slug,
+    icon: workspace.icon,
+    baseCurrency: workspace.baseCurrency,
+    ownerId: workspace.ownerId,
+    membersCount: workspace._count.members,
+    owner: workspace.owner,
+  };
+}
+
+function toWorkspaceMember(member: WorkspaceWithDetail["members"][number]): WorkspaceMemberDto {
+  return {
+    id: member.user.id,
+    name: member.user.name,
+    email: member.user.email,
+    image: member.user.image,
+    role: member.role,
+  };
+}
+
+function toWorkspaceDetail(workspace: WorkspaceWithDetail) {
+  const membersById = new Map<string, WorkspaceMemberDto>();
+  membersById.set(workspace.owner.id, {
+    id: workspace.owner.id,
+    name: workspace.owner.name,
+    email: workspace.owner.email,
+    image: workspace.owner.image,
+    role: WORKSPACE_ROLES.OWNER,
+  });
+
+  for (const member of workspace.members) {
+    membersById.set(member.user.id, toWorkspaceMember(member));
+  }
+
+  return {
+    ...toWorkspaceSummary(workspace),
+    members: Array.from(membersById.values()),
+  };
 }
 
 @Injectable()
@@ -30,6 +137,188 @@ export class WorkspaceService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(EmailService) private readonly emailService: EmailService
   ) {}
+
+  async createWorkspace(currentUser: AuthenticatedUser, input: CreateWorkspaceDto) {
+    const existing = await this.prisma.workspace.findUnique({
+      where: { slug: input.slug },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new ConflictException("Рабочий стол с таким идентификатором уже существует");
+    }
+
+    const workspace = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.workspace.create({
+        data: {
+          name: input.name,
+          slug: input.slug,
+          baseCurrency: "BYN",
+          ownerId: currentUser.id,
+          members: {
+            create: {
+              userId: currentUser.id,
+              role: WORKSPACE_ROLES.OWNER,
+            },
+          },
+        },
+        include: WORKSPACE_DETAIL_INCLUDE,
+      });
+
+      await tx.category.createMany({
+        data: [
+          ...STANDARD_EXPENSE_CATEGORIES.map((name) => ({
+            workspaceId: created.id,
+            name,
+            type: "expense",
+          })),
+          ...STANDARD_INCOME_CATEGORIES.map((name) => ({
+            workspaceId: created.id,
+            name,
+            type: "income",
+          })),
+        ],
+      });
+
+      return created;
+    });
+
+    return { workspace: toWorkspaceDetail(workspace) };
+  }
+
+  async listWorkspaces(currentUser: AuthenticatedUser) {
+    const workspaces = await this.prisma.workspace.findMany({
+      where: {
+        OR: [
+          {
+            ownerId: currentUser.id,
+          },
+          {
+            members: {
+              some: {
+                userId: currentUser.id,
+              },
+            },
+          },
+        ],
+      },
+      include: WORKSPACE_SUMMARY_INCLUDE,
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return { workspaces: workspaces.map(toWorkspaceSummary) };
+  }
+
+  async getWorkspace(workspaceId: string) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      include: WORKSPACE_DETAIL_INCLUDE,
+    });
+
+    if (!workspace) {
+      throw new NotFoundException("Рабочий стол не найден");
+    }
+
+    return { workspace: toWorkspaceDetail(workspace) };
+  }
+
+  async getWorkspaceSummary(workspaceId: string) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      include: WORKSPACE_SUMMARY_INCLUDE,
+    });
+
+    if (!workspace) {
+      throw new NotFoundException("Рабочий стол не найден");
+    }
+
+    return { workspace: toWorkspaceSummary(workspace) };
+  }
+
+  async getWorkspaceMembers(workspaceId: string) {
+    const { workspace } = await this.getWorkspace(workspaceId);
+    return { members: workspace.members };
+  }
+
+  async updateWorkspace(workspaceId: string, input: UpdateWorkspaceDto) {
+    const existing = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException("Рабочий стол не найден");
+    }
+
+    if (input.slug) {
+      const duplicate = await this.prisma.workspace.findUnique({
+        where: { slug: input.slug },
+        select: { id: true },
+      });
+
+      if (duplicate && duplicate.id !== workspaceId) {
+        throw new ConflictException("Рабочий стол с таким идентификатором уже существует");
+      }
+    }
+
+    const workspace = await this.prisma.workspace.update({
+      where: { id: workspaceId },
+      data: input,
+      include: WORKSPACE_DETAIL_INCLUDE,
+    });
+
+    return { workspace: toWorkspaceDetail(workspace) };
+  }
+
+  async deleteWorkspace(workspaceId: string) {
+    await this.prisma.workspace.delete({
+      where: { id: workspaceId },
+    });
+
+    return { success: true };
+  }
+
+  async leaveWorkspace(workspaceId: string, currentUser: AuthenticatedUser) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { ownerId: true },
+    });
+
+    if (!workspace) {
+      throw new NotFoundException("Рабочий стол не найден");
+    }
+
+    if (workspace.ownerId === currentUser.id) {
+      throw new BadRequestException("Создатель рабочего стола не может покинуть его");
+    }
+
+    const member = await this.prisma.workspaceMember.findUnique({
+      where: {
+        workspaceId_userId: {
+          workspaceId,
+          userId: currentUser.id,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!member) {
+      throw new ForbiddenException("Вы не являетесь участником этого рабочего стола");
+    }
+
+    await this.prisma.workspaceMember.delete({
+      where: {
+        workspaceId_userId: {
+          workspaceId,
+          userId: currentUser.id,
+        },
+      },
+    });
+
+    return { success: true };
+  }
 
   async createInvite(workspaceId: string, input: CreateInviteDto) {
     const workspace = await this.prisma.workspace.findUnique({
