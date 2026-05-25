@@ -1,9 +1,9 @@
-import "../src/shared/lib/load-env";
+import "../src/common/env/load-env";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import Big from "big.js";
 
-import { ensureDatabaseUrl } from "../src/shared/lib/database-url";
+import { ensureDatabaseUrl } from "../src/common/env/database-url";
 
 const ADMIN_EMAIL = "admin@finnn.com";
 const ADMIN_PASSWORD = "123456";

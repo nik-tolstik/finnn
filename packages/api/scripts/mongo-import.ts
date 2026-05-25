@@ -1,4 +1,4 @@
-import "../src/shared/lib/load-env";
+import "../src/common/env/load-env";
 import { createReadStream } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -12,7 +12,7 @@ import {
   MongoClient,
 } from "mongodb";
 
-import { getDatabaseUrl } from "../src/shared/lib/database-url";
+import { getDatabaseUrl } from "../src/common/env/database-url";
 
 const { EJSON } = BSON;
 const BATCH_SIZE = 1000;

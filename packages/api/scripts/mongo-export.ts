@@ -1,11 +1,11 @@
-import "../src/shared/lib/load-env";
+import "../src/common/env/load-env";
 import { once } from "node:events";
 import { createWriteStream } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { BSON, type Document, MongoClient } from "mongodb";
 
-import { getDatabaseUrl } from "../src/shared/lib/database-url";
+import { getDatabaseUrl } from "../src/common/env/database-url";
 
 const { EJSON } = BSON;
 

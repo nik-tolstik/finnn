@@ -27,8 +27,24 @@ model User {
   ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
   accounts        Account[]
   createdTransfers TransferTransaction[] @relation("TransferCreatedBy")
+  authSessions    AuthSession[]
 
   @@map("users")
+}
+
+model AuthSession {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
 }
 
 model Workspace {
