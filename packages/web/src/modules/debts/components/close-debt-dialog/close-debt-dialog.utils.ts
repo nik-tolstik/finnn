@@ -1,6 +1,6 @@
-import type { Account, Category } from "@prisma/client";
-
+import type { Account } from "@/modules/accounts/account.types";
 import { CategoryType } from "@/modules/categories/category.constants";
+import type { Category } from "@/modules/categories/category.types";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import {
   applyBalanceDelta,

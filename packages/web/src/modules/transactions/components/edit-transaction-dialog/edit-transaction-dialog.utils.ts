@@ -1,5 +1,5 @@
-import type { Account, Category } from "@prisma/client";
-
+import type { Account } from "@/modules/accounts/account.types";
+import type { Category } from "@/modules/categories/category.types";
 import { applyPaymentTransactionBalance, revertPaymentTransactionBalance } from "@/shared/lib/balance-domain";
 import type { UpdatePaymentTransactionInput } from "@/shared/lib/validations/transaction";
 import type { ComboboxOption } from "@/shared/ui/combobox";

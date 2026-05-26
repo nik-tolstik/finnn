@@ -11,12 +11,12 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Account } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { updateAccountsOrder } from "@/modules/accounts/account.service";
+import type { Account } from "@/modules/accounts/account.types";
 import { resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";

@@ -1,7 +1,7 @@
-import type { Account, Category } from "@prisma/client";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 
-import type { AccountWithBalance } from "@/modules/accounts/account.types";
+import type { Account, AccountWithBalance } from "@/modules/accounts/account.types";
+import type { Category } from "@/modules/categories/category.types";
 import type { DebtWithRelations } from "@/modules/debts/debt.types";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
 import type { TransactionListFilters } from "@/modules/transactions/transaction-filter.types";

@@ -1,13 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
+import type { Account } from "@/modules/accounts/account.types";
 import type { Session } from "@/shared/lib/api-session-client";
 import { useSession } from "@/shared/lib/api-session-client";
 import { addAccountBalanceDelta, getTransferTransactionBalanceDeltas } from "@/shared/lib/balance-domain";

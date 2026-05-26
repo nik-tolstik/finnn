@@ -1,12 +1,12 @@
 "use client";
 
-import type { Account } from "@prisma/client";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
+import type { Account } from "@/modules/accounts/account.types";
 import { getVisibleAccounts, resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountsCards } from "@/modules/accounts/components/accounts-cards";
 import { getCategories } from "@/modules/categories/category.service";

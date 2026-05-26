@@ -1,13 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
+import type { Account } from "@/modules/accounts/account.types";
 import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
 import { getCategories } from "@/modules/categories/category.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";

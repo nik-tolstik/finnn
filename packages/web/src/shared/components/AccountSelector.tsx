@@ -1,7 +1,6 @@
 "use client";
 
-import type { Account } from "@prisma/client";
-
+import type { Account } from "@/modules/accounts/account.types";
 import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";

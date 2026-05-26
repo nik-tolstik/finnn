@@ -1,10 +1,10 @@
 "use client";
 
-import type { Account } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import type { Account } from "@/modules/accounts/account.types";
 import {
   moveAccountArchiveStateInCache,
   runOptimisticWorkspaceMutation,

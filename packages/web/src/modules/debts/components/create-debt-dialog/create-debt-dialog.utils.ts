@@ -1,5 +1,4 @@
-import type { Account } from "@prisma/client";
-
+import type { Account } from "@/modules/accounts/account.types";
 import { DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { applyBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
 import type { CreateDebtInput } from "@/shared/lib/validations/debt";

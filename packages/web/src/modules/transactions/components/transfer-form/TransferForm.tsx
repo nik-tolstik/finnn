@@ -1,10 +1,10 @@
 "use client";
 
-import type { Account } from "@prisma/client";
 import { ArrowDown } from "lucide-react";
 import { useMemo } from "react";
 import { Controller, type UseFormReturn, useWatch } from "react-hook-form";
 
+import type { Account } from "@/modules/accounts/account.types";
 import { useTransferAmountSync } from "@/modules/transactions/hooks/useTransferAmountSync";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import type { Currency } from "@/shared/constants/currency";

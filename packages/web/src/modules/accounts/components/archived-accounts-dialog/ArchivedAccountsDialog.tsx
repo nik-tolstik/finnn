@@ -1,11 +1,11 @@
 "use client";
 
-import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Redo2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import type { Account } from "@/modules/accounts/account.types";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {

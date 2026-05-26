@@ -1,9 +1,9 @@
 "use client";
 
-import type { Account } from "@prisma/client";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 
+import type { Account } from "@/modules/accounts/account.types";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";

@@ -1,13 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import type { Account } from "@/modules/accounts/account.types";
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserAvatar } from "@/shared/components/UserAvatar";

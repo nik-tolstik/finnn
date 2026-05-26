@@ -1,8 +1,8 @@
 "use client";
 
-import type { Account } from "@prisma/client";
 import { Archive, Pencil, Plus } from "lucide-react";
 
+import type { Account } from "@/modules/accounts/account.types";
 import { ActionsDialog } from "@/shared/ui/actions-dialog";
 
 interface AccountActionsDialogProps {

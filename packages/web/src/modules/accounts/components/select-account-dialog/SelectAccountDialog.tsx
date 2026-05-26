@@ -1,10 +1,10 @@
 "use client";
 
-import type { Account } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
+import type { Account } from "@/modules/accounts/account.types";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useSession } from "@/shared/lib/api-session-client";

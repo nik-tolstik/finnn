@@ -1,8 +1,8 @@
 "use client";
 
-import type { Account } from "@prisma/client";
 import type { CSSProperties, HTMLAttributes } from "react";
 
+import type { Account } from "@/modules/accounts/account.types";
 import { getAccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { hexToRgba } from "@/shared/utils/color-utils";

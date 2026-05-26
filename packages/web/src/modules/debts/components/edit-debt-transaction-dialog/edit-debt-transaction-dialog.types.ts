@@ -1,4 +1,4 @@
-import type { Account, User } from "@prisma/client";
+import type { Account, UserReference } from "@/modules/accounts/account.types";
 
 import type { DebtTransactionWithRelations } from "../../debt.types";
 
@@ -12,5 +12,5 @@ export interface EditDebtTransactionDialogProps {
 }
 
 export type EditDebtTransactionDialogAccount = Account & {
-  owner: Pick<User, "id" | "name" | "email" | "image"> | null;
+  owner: UserReference | null;
 };

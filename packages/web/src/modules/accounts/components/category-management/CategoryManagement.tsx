@@ -11,7 +11,6 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Category } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -25,6 +24,7 @@ import {
   updateCategoriesOrder,
   updateCategory,
 } from "@/modules/categories/category.service";
+import type { Category } from "@/modules/categories/category.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {
   removeCategoriesFromCache,
