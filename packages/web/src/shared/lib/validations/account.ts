@@ -1,5 +1,6 @@
-import { Currency } from "@prisma/client";
 import { z } from "zod";
+
+import { Currency } from "@/shared/constants/currency";
 
 export const createAccountSchema = z.object({
   name: z.string().min(1, "Название обязательно").max(100),

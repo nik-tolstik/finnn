@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Currency } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -12,7 +11,7 @@ import { toast } from "sonner";
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
+import { CURRENCY_OPTIONS, Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useSession } from "@/shared/lib/api-session-client";
 import { insertAccountsInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys, workspaceKeys } from "@/shared/lib/query-keys";

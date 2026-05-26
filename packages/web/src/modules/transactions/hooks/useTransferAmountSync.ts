@@ -1,10 +1,10 @@
 "use client";
 
-import type { Currency } from "@prisma/client";
 import { useCallback, useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 
 import { getExchangeRate } from "@/shared/api/generated/currency/currency";
+import type { Currency } from "@/shared/constants/currency";
 import type {
   CreateTransferTransactionInput,
   UpdateTransferTransactionInput,

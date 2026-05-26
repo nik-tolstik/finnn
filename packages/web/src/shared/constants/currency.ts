@@ -1,6 +1,10 @@
-import { Currency } from "@prisma/client";
+export const Currency = {
+  BYN: "BYN",
+  USD: "USD",
+  EUR: "EUR",
+} as const;
 
-export { Currency };
+export type Currency = (typeof Currency)[keyof typeof Currency];
 
 export const CURRENCY_OPTIONS = [
   { value: Currency.BYN, label: "BYN (Br)" },
