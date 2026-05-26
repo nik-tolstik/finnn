@@ -1,5 +1,3 @@
-"use server";
-
 import {
   addToDebt as addToApiDebt,
   closeDebt as closeApiDebt,
@@ -24,8 +22,6 @@ import type {
   UpdateDebtEntryTransactionDto,
 } from "@/shared/api/generated/model";
 import { fail, ok, success } from "@/shared/lib/action-result";
-import { getServerApiRequestOptions } from "@/shared/lib/api-session";
-import { revalidateDebtRoutes } from "@/shared/lib/revalidate-app-routes";
 import type {
   AddToDebtInput,
   CloseDebtInput,
@@ -177,83 +173,72 @@ function toListDebtsParams(filters?: DebtFilters): ListDebtsParams | undefined {
   };
 }
 
-export async function createDebt(workspaceId: string, input: CreateDebtInput) {
+export async function createDebt(workspaceId: string, input: CreateDebtInput, options?: RequestInit) {
   try {
-    const response = await createApiDebt(workspaceId, toCreateDebtDto(input), await getServerApiRequestOptions());
-    revalidateDebtRoutes();
+    const response = await createApiDebt(workspaceId, toCreateDebtDto(input), options);
     return ok(toLegacyDebt(response.debt));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать долг");
   }
 }
 
-export async function closeDebt(id: string, input: CloseDebtInput) {
+export async function closeDebt(id: string, input: CloseDebtInput, options?: RequestInit) {
   try {
-    const response = await closeApiDebt(id, toCloseDebtDto(input), await getServerApiRequestOptions());
-    revalidateDebtRoutes();
+    const response = await closeApiDebt(id, toCloseDebtDto(input), options);
     return ok(toLegacyDebt(response.debt));
   } catch (error: unknown) {
     return fail(error, "Не удалось закрыть долг");
   }
 }
 
-export async function addToDebt(id: string, input: AddToDebtInput) {
+export async function addToDebt(id: string, input: AddToDebtInput, options?: RequestInit) {
   try {
-    const response = await addToApiDebt(id, toAddToDebtDto(input), await getServerApiRequestOptions());
-    revalidateDebtRoutes();
+    const response = await addToApiDebt(id, toAddToDebtDto(input), options);
     return ok(toLegacyDebt(response.debt));
   } catch (error: unknown) {
     return fail(error, "Не удалось добавить к долгу");
   }
 }
 
-export async function deleteDebt(id: string) {
+export async function deleteDebt(id: string, options?: RequestInit) {
   try {
-    await deleteApiDebt(id, await getServerApiRequestOptions());
-    revalidateDebtRoutes();
+    await deleteApiDebt(id, options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось удалить долг");
   }
 }
 
-export async function getDebtEditData(debtId: string) {
+export async function getDebtEditData(debtId: string, options?: RequestInit) {
   try {
-    const response = await getApiDebtEditData(debtId, await getServerApiRequestOptions());
+    const response = await getApiDebtEditData(debtId, options);
     return ok(response.debt);
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить данные");
   }
 }
 
-export async function updateDebt(debtId: string, input: UpdateDebtInput) {
+export async function updateDebt(debtId: string, input: UpdateDebtInput, options?: RequestInit) {
   try {
-    const response = await updateApiDebt(debtId, toUpdateDebtDto(input), await getServerApiRequestOptions());
-    revalidateDebtRoutes();
+    const response = await updateApiDebt(debtId, toUpdateDebtDto(input), options);
     return ok(toLegacyDebt(response.debt));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить долг");
   }
 }
 
-export async function updateDebtTransaction(id: string, input: UpdateDebtTransactionInput) {
+export async function updateDebtTransaction(id: string, input: UpdateDebtTransactionInput, options?: RequestInit) {
   try {
-    const response = await updateApiDebtTransaction(
-      id,
-      toUpdateDebtTransactionDto(input),
-      await getServerApiRequestOptions()
-    );
-    revalidateDebtRoutes();
+    const response = await updateApiDebtTransaction(id, toUpdateDebtTransactionDto(input), options);
     return ok(toLegacyDebtTransaction(response.debtTransaction));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить транзакцию долга");
   }
 }
 
-export async function deleteDebtTransaction(id: string) {
+export async function deleteDebtTransaction(id: string, options?: RequestInit) {
   try {
-    await deleteApiDebtTransaction(id, await getServerApiRequestOptions());
-    revalidateDebtRoutes();
+    await deleteApiDebtTransaction(id, options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось удалить транзакцию долга");
@@ -268,10 +253,11 @@ export interface DebtFilters {
 
 export async function getDebts(
   workspaceId: string,
-  filters?: DebtFilters
+  filters?: DebtFilters,
+  options?: RequestInit
 ): Promise<{ data: DebtWithRelations[]; total: number }> {
   try {
-    const response = await listApiDebts(workspaceId, toListDebtsParams(filters), await getServerApiRequestOptions());
+    const response = await listApiDebts(workspaceId, toListDebtsParams(filters), options);
     return { data: response.data.map(toLegacyDebt), total: response.total };
   } catch {
     throw new Error("Не удалось загрузить долги");

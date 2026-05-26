@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { formatMoney } from "@/shared/utils/money";
 
-import { deleteDebt } from "../../debt.service";
+import { deleteDebt } from "../../debt.api";
 import type { DebtWithRelations } from "../../debt.types";
 
 interface DeleteDebtDialogProps {

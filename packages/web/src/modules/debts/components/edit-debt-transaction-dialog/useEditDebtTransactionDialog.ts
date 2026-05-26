@@ -21,8 +21,8 @@ import { accountKeys } from "@/shared/lib/query-keys";
 import { type UpdateDebtTransactionInput, updateDebtTransactionSchema } from "@/shared/lib/validations/debt";
 import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
+import { updateDebtTransaction } from "../../debt.api";
 import { DebtTransactionType } from "../../debt.constants";
-import { updateDebtTransaction } from "../../debt.service";
 import type {
   EditDebtTransactionDialogAccount,
   EditDebtTransactionDialogProps,

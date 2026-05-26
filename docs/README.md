@@ -43,7 +43,7 @@ This documentation is written for two audiences:
 - Workspace access must be checked on every server-side read or mutation that depends on workspace data.
 - Balance-changing operations should be transactional.
 - Query keys must come from `src/shared/lib/query-keys.ts`.
-- Route revalidation should use `src/shared/lib/revalidate-app-routes.ts`.
+- Client cache invalidation should use centralized query keys and domain invalidation helpers.
 - The service worker must not cache financial app documents, API responses, server action responses, or dashboard data routes.
 
 ## Fast Verification

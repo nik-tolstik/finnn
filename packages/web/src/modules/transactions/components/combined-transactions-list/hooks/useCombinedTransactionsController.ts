@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { deleteDebtTransaction } from "@/modules/debts/debt.api";
 import { DebtTransactionType } from "@/modules/debts/debt.constants";
-import { deleteDebtTransaction } from "@/modules/debts/debt.service";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {

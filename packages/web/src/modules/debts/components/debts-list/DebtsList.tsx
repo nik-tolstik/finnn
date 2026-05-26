@@ -15,8 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
+import { getDebts } from "../../debt.api";
 import { DebtStatus, DebtType } from "../../debt.constants";
-import { getDebts } from "../../debt.service";
 import type { DebtWithRelations } from "../../debt.types";
 import { AddToDebtDialog } from "../add-to-debt-dialog/AddToDebtDialog";
 import { CloseDebtDialog } from "../close-debt-dialog/CloseDebtDialog";

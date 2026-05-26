@@ -72,8 +72,8 @@ During the backend migration, modules that have been wired to NestJS may keep te
 Shared helpers:
 
 - `src/shared/lib/action-result.ts`
-- `src/shared/lib/server-access.ts`
-- `src/shared/lib/revalidate-app-routes.ts`
+- `src/shared/lib/api-session.ts`
+- `src/shared/lib/query-invalidation.ts`
 - `src/shared/lib/validations`
 
 Server mutation flow:
@@ -137,10 +137,4 @@ Prefer existing primitives for dialogs, sheets, selects, popovers, buttons, card
 
 ## Invalidation
 
-Route revalidation helpers:
-
-- `revalidateAccountingRoutes()` revalidates dashboard accounting data.
-- `revalidateDebtRoutes()` revalidates dashboard and debts data.
-- `revalidateWorkspaceRoutes()` revalidates workspace-dependent routes.
-
-Use these helpers instead of scattering raw route names across services.
+Client mutations use TanStack Query invalidation and optimistic workspace cache helpers. Keep invalidation domain-based through `invalidateWorkspaceDomains()` and the centralized query keys instead of scattering raw query keys through components.

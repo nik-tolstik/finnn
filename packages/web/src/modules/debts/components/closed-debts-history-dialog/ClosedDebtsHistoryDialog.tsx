@@ -7,8 +7,8 @@ import { debtKeys } from "@/shared/lib/query-keys";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
+import { getDebts } from "../../debt.api";
 import { DebtStatus } from "../../debt.constants";
-import { getDebts } from "../../debt.service";
 import type { DebtWithRelations } from "../../debt.types";
 import { DebtActionsDialog } from "../debt-actions-dialog/DebtActionsDialog";
 import { DebtCard } from "../debt-card/DebtCard";

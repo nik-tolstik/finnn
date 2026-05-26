@@ -24,8 +24,8 @@ import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
+import { getDebtEditData, updateDebt } from "../../debt.api";
 import { DebtType } from "../../debt.constants";
-import { getDebtEditData, updateDebt } from "../../debt.service";
 import type { DebtWithRelations } from "../../debt.types";
 
 interface EditDebtDialogProps {

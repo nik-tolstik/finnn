@@ -33,8 +33,8 @@ import { Segmented } from "@/shared/ui/segmented";
 import { Select } from "@/shared/ui/select";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
+import { createDebt } from "../../debt.api";
 import { DebtType } from "../../debt.constants";
-import { createDebt } from "../../debt.service";
 import {
   getCreateDebtDefaultValues,
   getCreateDebtPreviewAccount,

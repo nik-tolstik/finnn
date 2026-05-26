@@ -38,7 +38,7 @@ For a new or changed server mutation:
 4. Keep balance-changing writes inside `prisma.$transaction`.
 5. Use money and balance helpers rather than raw arithmetic.
 6. Return `ok`, `success`, or `fail`.
-7. Revalidate affected routes through `revalidate-app-routes.ts`.
+7. Invalidate affected client query domains through centralized query helpers.
 8. Add or update focused tests for domain rules and failure cases.
 
 ## Client Data Checklist
@@ -61,7 +61,7 @@ When changing accounts, transactions, transfers, debts, or analytics:
 - Check insufficient-balance paths.
 - Check edit/delete reversal paths.
 - Check cross-account and cross-currency transfer behavior.
-- Run relevant tests around `balance-domain`, transaction service, debt service, and optimistic workspace updates.
+- Run relevant tests around `balance-domain`, transaction API adapters, debt API adapters, and optimistic workspace updates.
 
 ## Tests To Consider
 
@@ -70,7 +70,7 @@ Focused tests:
 ```bash
 pnpm test src/shared/lib/balance-domain.test.ts
 pnpm test src/modules/transactions/transaction.api.test.ts
-pnpm test src/modules/debts/debt.service.test.ts
+pnpm test src/modules/debts/debt.api.test.ts
 pnpm test src/shared/lib/optimistic-workspace-updates.test.ts
 pnpm test src/shared/lib/service-worker-cache-policy.test.ts
 ```

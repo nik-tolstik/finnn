@@ -34,8 +34,8 @@ import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { compareMoney, formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
+import { closeDebt } from "../../debt.api";
 import { DebtTransactionType, DebtType } from "../../debt.constants";
-import { closeDebt } from "../../debt.service";
 import type { DebtWithRelations } from "../../debt.types";
 import {
   getCloseDebtCategoryAmount,
