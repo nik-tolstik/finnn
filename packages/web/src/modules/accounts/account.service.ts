@@ -1,94 +1,85 @@
 "use server";
 
-import { fail, ok, success } from "@/shared/lib/action-result";
-import { prisma } from "@/shared/lib/prisma";
-import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
-import { requireUserId, requireWorkspaceAccess } from "@/shared/lib/server-access";
 import {
-  type CreateAccountInput,
-  createAccountSchema,
-  type UpdateAccountInput,
-  type UpdateAccountsOrderInput,
-  updateAccountSchema,
-  updateAccountsOrderSchema,
+  archiveAccount as archiveApiAccount,
+  createAccount as createApiAccount,
+  deleteArchivedAccount as deleteApiArchivedAccount,
+  getAccount as getApiAccount,
+  listAccounts as listApiAccounts,
+  listArchivedAccounts as listApiArchivedAccounts,
+  unarchiveAccount as unarchiveApiAccount,
+  updateAccount as updateApiAccount,
+  updateAccountsOrder as updateApiAccountsOrder,
+} from "@/shared/api/generated/accounts/accounts";
+import type { AccountDto, ArchivedAccountDto, CreateAccountDto, UpdateAccountDto } from "@/shared/api/generated/model";
+import { fail, ok, success } from "@/shared/lib/action-result";
+import { getServerApiRequestOptions } from "@/shared/lib/api-session";
+import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
+import type {
+  CreateAccountInput,
+  UpdateAccountInput,
+  UpdateAccountsOrderInput,
 } from "@/shared/lib/validations/account";
 
-type AccountDependencyCounts = {
-  transactions: number;
-  debts: number;
-  debtTransactions: number;
-};
-
-async function getAccountDependencyCounts(accountId: string): Promise<AccountDependencyCounts> {
-  const [paymentTransactions, outgoingTransfers, incomingTransfers, debts, debtTransactions] = await Promise.all([
-    prisma.paymentTransaction.count({
-      where: { accountId },
-    }),
-    prisma.transferTransaction.count({
-      where: { fromAccountId: accountId },
-    }),
-    prisma.transferTransaction.count({
-      where: { toAccountId: accountId },
-    }),
-    prisma.debt.count({
-      where: { accountId },
-    }),
-    prisma.debtTransaction.count({
-      where: { accountId },
-    }),
-  ]);
+function toLegacyAccount(account: AccountDto) {
+  const owner = account.owner
+    ? {
+        id: account.owner.id,
+        name: account.owner.name,
+        email: account.owner.email,
+        image: account.owner.image ?? null,
+      }
+    : null;
 
   return {
-    transactions: paymentTransactions + outgoingTransfers + incomingTransfers,
-    debts,
-    debtTransactions,
+    ...account,
+    ownerId: account.ownerId ?? null,
+    description: account.description ?? null,
+    color: account.color ?? null,
+    icon: account.icon ?? null,
+    owner,
+    createdAt: new Date(account.createdAt),
+    updatedAt: new Date(account.updatedAt),
   };
 }
 
-function formatAccountDependencyBreakdown(counts: AccountDependencyCounts) {
-  const parts = [];
+function toLegacyArchivedAccount(account: ArchivedAccountDto) {
+  return {
+    ...toLegacyAccount(account),
+    _count: account._count,
+  };
+}
 
-  if (counts.transactions > 0) {
-    parts.push(`транзакции (${counts.transactions})`);
-  }
+function toCreateAccountDto(input: CreateAccountInput): CreateAccountDto {
+  return {
+    name: input.name,
+    balance: input.balance,
+    currency: input.currency as CreateAccountDto["currency"],
+    ownerId: input.ownerId ?? null,
+    color: input.color,
+    icon: input.icon,
+    createdAt: input.createdAt.toISOString(),
+  };
+}
 
-  if (counts.debts > 0) {
-    parts.push(`долги (${counts.debts})`);
-  }
-
-  if (counts.debtTransactions > 0) {
-    parts.push(`долговые операции (${counts.debtTransactions})`);
-  }
-
-  return parts.join(", ");
+function toUpdateAccountDto(input: UpdateAccountInput): UpdateAccountDto {
+  return {
+    name: input.name,
+    balance: input.balance,
+    currency: input.currency as UpdateAccountDto["currency"],
+    ownerId: input.ownerId,
+    color: input.color,
+    icon: input.icon,
+    createdAt: input.createdAt?.toISOString(),
+    order: input.order,
+  };
 }
 
 export async function createAccount(workspaceId: string, input: CreateAccountInput) {
   try {
-    await requireWorkspaceAccess(workspaceId);
-
-    const validated = createAccountSchema.parse(input);
-
-    const accountsCount = await prisma.account.count({
-      where: { workspaceId, archived: false },
-    });
-
-    const account = await prisma.account.create({
-      data: {
-        name: validated.name,
-        balance: validated.balance,
-        currency: validated.currency,
-        color: validated.color,
-        icon: validated.icon,
-        ownerId: validated.ownerId ?? null,
-        workspaceId,
-        order: accountsCount,
-        createdAt: validated.createdAt || new Date(),
-      },
-    });
-
+    const response = await createApiAccount(workspaceId, toCreateAccountDto(input), await getServerApiRequestOptions());
     revalidateAccountingRoutes();
-    return ok(account);
+    return ok(toLegacyAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать счёт");
   }
@@ -96,37 +87,9 @@ export async function createAccount(workspaceId: string, input: CreateAccountInp
 
 export async function updateAccount(id: string, input: UpdateAccountInput) {
   try {
-    await requireUserId();
-
-    const account = await prisma.account.findUnique({
-      where: { id },
-    });
-
-    if (!account || account.archived) {
-      return { error: "Счёт не найден" };
-    }
-
-    await requireWorkspaceAccess(account.workspaceId);
-
-    const validated = updateAccountSchema.parse(input);
-
-    const updateData: any = {};
-    if (validated.name !== undefined) updateData.name = validated.name;
-    if (validated.balance !== undefined) updateData.balance = validated.balance;
-    if (validated.currency !== undefined) updateData.currency = validated.currency;
-    if (validated.ownerId !== undefined) updateData.ownerId = validated.ownerId ?? null;
-    if (validated.color !== undefined) updateData.color = validated.color;
-    if (validated.icon !== undefined) updateData.icon = validated.icon;
-    if (validated.createdAt !== undefined) updateData.createdAt = validated.createdAt;
-    if (validated.order !== undefined) updateData.order = validated.order;
-
-    const updated = await prisma.account.update({
-      where: { id },
-      data: updateData,
-    });
-
+    const response = await updateApiAccount(id, toUpdateAccountDto(input), await getServerApiRequestOptions());
     revalidateAccountingRoutes();
-    return ok(updated);
+    return ok(toLegacyAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить счёт");
   }
@@ -134,28 +97,7 @@ export async function updateAccount(id: string, input: UpdateAccountInput) {
 
 export async function archiveAccount(id: string) {
   try {
-    await requireUserId();
-
-    const account = await prisma.account.findUnique({
-      where: { id },
-    });
-
-    if (!account) {
-      return { error: "Счёт не найден" };
-    }
-
-    await requireWorkspaceAccess(account.workspaceId);
-
-    if (account.archived) {
-      revalidateAccountingRoutes();
-      return success();
-    }
-
-    await prisma.account.update({
-      where: { id },
-      data: { archived: true },
-    });
-
+    await archiveApiAccount(id, await getServerApiRequestOptions());
     revalidateAccountingRoutes();
     return success();
   } catch (error: unknown) {
@@ -165,27 +107,8 @@ export async function archiveAccount(id: string) {
 
 export async function getAccounts(workspaceId: string) {
   try {
-    await requireWorkspaceAccess(workspaceId);
-
-    const accounts = await prisma.account.findMany({
-      where: {
-        workspaceId,
-        archived: false,
-      },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-    });
-
-    return ok(accounts);
+    const response = await listApiAccounts(workspaceId, await getServerApiRequestOptions());
+    return ok(response.accounts.map(toLegacyAccount));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить счета");
   }
@@ -193,23 +116,8 @@ export async function getAccounts(workspaceId: string) {
 
 export async function getAccount(id: string) {
   try {
-    await requireUserId();
-
-    const account = await prisma.account.findUnique({
-      where: { id },
-    });
-
-    if (!account) {
-      return { error: "Счёт не найден" };
-    }
-
-    if (account.archived) {
-      return { error: "Счёт не найден" };
-    }
-
-    await requireWorkspaceAccess(account.workspaceId);
-
-    return ok(account);
+    const response = await getApiAccount(id, await getServerApiRequestOptions());
+    return ok(toLegacyAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить счёт");
   }
@@ -217,29 +125,7 @@ export async function getAccount(id: string) {
 
 export async function updateAccountsOrder(workspaceId: string, input: UpdateAccountsOrderInput) {
   try {
-    const { userId } = await requireWorkspaceAccess(workspaceId);
-
-    const validated = updateAccountsOrderSchema.parse(input);
-
-    await prisma.$transaction(
-      validated.accountOrders.map(({ id, order }) =>
-        prisma.account.updateMany({
-          where: {
-            id,
-            workspaceId,
-            workspace: {
-              members: {
-                some: {
-                  userId,
-                },
-              },
-            },
-          },
-          data: { order },
-        })
-      )
-    );
-
+    await updateApiAccountsOrder(workspaceId, input, await getServerApiRequestOptions());
     revalidateAccountingRoutes();
     return success();
   } catch (error: unknown) {
@@ -249,46 +135,8 @@ export async function updateAccountsOrder(workspaceId: string, input: UpdateAcco
 
 export async function getArchivedAccounts(workspaceId: string) {
   try {
-    await requireWorkspaceAccess(workspaceId);
-
-    const accounts = await prisma.account.findMany({
-      where: {
-        workspaceId,
-        archived: true,
-      },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        _count: {
-          select: {
-            paymentTransactions: true,
-            outgoingTransfers: true,
-            incomingTransfers: true,
-            debts: true,
-            debtTransactions: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return ok(
-      accounts.map((account) => ({
-        ...account,
-        _count: {
-          transactions:
-            account._count.paymentTransactions + account._count.outgoingTransfers + account._count.incomingTransfers,
-          debts: account._count.debts,
-          debtTransactions: account._count.debtTransactions,
-        },
-      }))
-    );
+    const response = await listApiArchivedAccounts(workspaceId, await getServerApiRequestOptions());
+    return ok(response.accounts.map(toLegacyArchivedAccount));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить архивированные счета");
   }
@@ -296,32 +144,7 @@ export async function getArchivedAccounts(workspaceId: string) {
 
 export async function unarchiveAccount(id: string) {
   try {
-    await requireUserId();
-
-    const account = await prisma.account.findUnique({
-      where: { id },
-    });
-
-    if (!account) {
-      return { error: "Счёт не найден" };
-    }
-
-    await requireWorkspaceAccess(account.workspaceId);
-
-    if (!account.archived) {
-      revalidateAccountingRoutes();
-      return success();
-    }
-
-    const accountsCount = await prisma.account.count({
-      where: { workspaceId: account.workspaceId, archived: false },
-    });
-
-    await prisma.account.update({
-      where: { id },
-      data: { archived: false, order: accountsCount },
-    });
-
+    await unarchiveApiAccount(id, await getServerApiRequestOptions());
     revalidateAccountingRoutes();
     return success();
   } catch (error: unknown) {
@@ -331,35 +154,7 @@ export async function unarchiveAccount(id: string) {
 
 export async function deleteArchivedAccount(id: string) {
   try {
-    await requireUserId();
-
-    const account = await prisma.account.findUnique({
-      where: { id },
-    });
-
-    if (!account) {
-      return { error: "Счёт не найден" };
-    }
-
-    await requireWorkspaceAccess(account.workspaceId);
-
-    if (!account.archived) {
-      return { error: "Можно удалить только архивный счёт" };
-    }
-
-    const dependencyCounts = await getAccountDependencyCounts(account.id);
-
-    if (Object.values(dependencyCounts).some((count) => count > 0)) {
-      const dependencyBreakdown = formatAccountDependencyBreakdown(dependencyCounts);
-      return {
-        error: `Нельзя удалить счёт из архива: у счёта есть связанные ${dependencyBreakdown}.`,
-      };
-    }
-
-    await prisma.account.delete({
-      where: { id },
-    });
-
+    await deleteApiArchivedAccount(id, await getServerApiRequestOptions());
     revalidateAccountingRoutes();
     return success();
   } catch (error: unknown) {
