@@ -55,6 +55,21 @@ describe("fetchServerSession", () => {
     });
   });
 
+  it("builds server API request options from the API auth cookie", async () => {
+    cookiesMock.mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: "session token" }),
+    });
+
+    const { getServerApiRequestOptions } = await import("./api-session");
+
+    await expect(getServerApiRequestOptions()).resolves.toEqual({
+      cache: "no-store",
+      headers: {
+        cookie: "finnn_session=session%20token",
+      },
+    });
+  });
+
   it("returns null when the backend rejects the session lookup", async () => {
     vi.stubGlobal(
       "fetch",

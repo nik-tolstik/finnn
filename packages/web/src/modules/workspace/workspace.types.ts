@@ -1,6 +1,15 @@
-import type { Workspace, WorkspaceMember } from "@prisma/client";
+interface WorkspaceBase {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string | null;
+  baseCurrency: string;
+  ownerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export type WorkspaceWithOwner = Workspace & {
+export type WorkspaceWithOwner = WorkspaceBase & {
   owner: {
     id: string;
     name: string | null;
@@ -12,21 +21,22 @@ export type WorkspaceWithOwner = Workspace & {
   };
 };
 
-export type WorkspaceWithMembers = Workspace & {
+export type WorkspaceWithMembers = WorkspaceBase & {
   owner: {
     id: string;
     name: string | null;
     email: string;
     image: string | null;
   };
-  members: (WorkspaceMember & {
+  members: {
+    role: string;
     user: {
       id: string;
       name: string | null;
       email: string;
       image: string | null;
     };
-  })[];
+  }[];
 };
 
 export interface WorkspaceSummary {
