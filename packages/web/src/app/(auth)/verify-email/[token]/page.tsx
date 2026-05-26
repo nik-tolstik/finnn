@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { verifyEmail } from "@/modules/auth/auth.service";
+import { verifyEmail } from "@/shared/api/generated/auth/auth";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
@@ -27,10 +27,11 @@ export default function VerifyEmailPage() {
         }
 
         const result = await verifyEmail(token);
-        if (result.error) {
-          setError(result.error);
+        if (!result.success) {
+          const message = "Не удалось подтвердить email";
+          setError(message);
           setStatus("error");
-          toast.error(result.error);
+          toast.error(message);
         } else {
           setStatus("success");
           toast.success("Email успешно подтвержден");
@@ -38,10 +39,11 @@ export default function VerifyEmailPage() {
             router.push("/login");
           }, 2000);
         }
-      } catch {
-        setError("Не удалось подтвердить email");
+      } catch (verifyError) {
+        const message = verifyError instanceof Error ? verifyError.message : "Не удалось подтвердить email";
+        setError(message);
         setStatus("error");
-        toast.error("Не удалось подтвердить email");
+        toast.error(message);
       }
     };
 

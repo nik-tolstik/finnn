@@ -9,12 +9,12 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 
+import { register as registerUser } from "@/shared/api/generated/auth/auth";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
-import { registerAction } from "../../auth.service";
 import { registerFormSchema } from "../../auth.validations";
 
 type RegisterFormInput = z.infer<typeof registerFormSchema>;
@@ -37,17 +37,12 @@ export function RegisterForm() {
     setIsLoading(true);
     try {
       const { confirmPassword: _confirmPassword, ...registerData } = data;
-      const result = await registerAction(registerData);
-
-      if (result?.error) {
-        toast.error(result.error);
-        return;
-      }
+      await registerUser(registerData);
 
       toast.success("Аккаунт создан! Письмо с подтверждением отправлено на ваш email.");
       router.push("/login");
-    } catch {
-      toast.error("Что-то пошло не так");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Что-то пошло не так");
     } finally {
       setIsLoading(false);
     }
