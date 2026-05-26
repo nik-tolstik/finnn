@@ -1,42 +1,43 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  DEBT_TRANSACTION_FILTER_VALUE,
-  PaymentTransactionType,
-  TRANSFER_TRANSACTION_FILTER_VALUE,
-} from "./transaction.constants";
+import { CategoryType } from "@/modules/categories/category.constants";
 
-const paymentFindManyMock = vi.fn();
-const paymentCountMock = vi.fn();
-const transferFindManyMock = vi.fn();
-const transferCountMock = vi.fn();
-const debtTransactionFindManyMock = vi.fn();
-const debtTransactionCountMock = vi.fn();
-const requireWorkspaceAccessMock = vi.fn();
+import { PaymentTransactionType } from "./transaction.constants";
 
-vi.mock("@/shared/lib/prisma", () => ({
-  prisma: {
-    paymentTransaction: {
-      findMany: paymentFindManyMock,
-      count: paymentCountMock,
-    },
-    transferTransaction: {
-      findMany: transferFindManyMock,
-      count: transferCountMock,
-    },
-    debtTransaction: {
-      findMany: debtTransactionFindManyMock,
-      count: debtTransactionCountMock,
-    },
-  },
+const createApiPaymentTransactionMock = vi.fn();
+const createApiTransferTransactionMock = vi.fn();
+const deleteApiPaymentTransactionMock = vi.fn();
+const deleteApiTransferTransactionMock = vi.fn();
+const getApiCombinedTransactionsMock = vi.fn();
+const updateApiPaymentTransactionMock = vi.fn();
+const updateApiTransferTransactionMock = vi.fn();
+const getServerApiRequestOptionsMock = vi.fn();
+const revalidateAccountingRoutesMock = vi.fn();
+
+vi.mock("@/shared/api/generated/transactions/transactions", () => ({
+  createPaymentTransaction: createApiPaymentTransactionMock,
+  createTransferTransaction: createApiTransferTransactionMock,
+  deletePaymentTransaction: deleteApiPaymentTransactionMock,
+  deleteTransferTransaction: deleteApiTransferTransactionMock,
+  getCombinedTransactions: getApiCombinedTransactionsMock,
+  updatePaymentTransaction: updateApiPaymentTransactionMock,
+  updateTransferTransaction: updateApiTransferTransactionMock,
 }));
 
-vi.mock("@/shared/lib/server-access", () => ({
-  requireUserId: vi.fn(),
-  requireWorkspaceAccess: requireWorkspaceAccessMock,
+vi.mock("@/shared/lib/api-session", () => ({
+  getServerApiRequestOptions: getServerApiRequestOptionsMock,
 }));
 
-function createAccount(id: string, ownerId = "user-1") {
+vi.mock("@/shared/lib/revalidate-app-routes", () => ({
+  revalidateAccountingRoutes: revalidateAccountingRoutesMock,
+}));
+
+const requestOptions = {
+  cache: "no-store",
+  headers: { cookie: "finnn_session=token" },
+};
+
+function createAccountDto(id = "account-1", ownerId: string | null = "user-1") {
   return {
     id,
     name: id,
@@ -44,219 +45,292 @@ function createAccount(id: string, ownerId = "user-1") {
     color: null,
     icon: null,
     ownerId,
-    owner: {
-      id: ownerId,
-      name: ownerId,
-      email: `${ownerId}@example.com`,
-      image: null,
-    },
+    owner: ownerId
+      ? {
+          id: ownerId,
+          name: ownerId,
+          email: `${ownerId}@example.com`,
+          image: null,
+        }
+      : null,
   };
 }
 
-function createPaymentTransaction(id: string, amount: string, date = "2026-04-01T00:00:00.000Z") {
+function createPaymentTransactionDto(overrides: Record<string, unknown> = {}) {
   return {
-    id,
+    id: "payment-1",
     workspaceId: "workspace-1",
     accountId: "account-1",
-    amount,
-    type: PaymentTransactionType.EXPENSE,
+    amount: "125.50",
+    type: "expense",
     description: "Groceries",
-    date: new Date(date),
+    date: "2026-04-01T10:00:00.000Z",
     categoryId: "category-1",
-    createdAt: new Date(date),
-    updatedAt: new Date(date),
-    account: createAccount("account-1"),
+    createdAt: "2026-04-01T10:00:00.000Z",
+    updatedAt: "2026-04-02T10:00:00.000Z",
+    account: createAccountDto("account-1"),
     category: {
       id: "category-1",
       name: "Food",
     },
+    ...overrides,
   };
 }
 
-function createTransferTransaction(id: string, amount: string, toAmount: string, date = "2026-04-02T00:00:00.000Z") {
+function createTransferTransactionDto(overrides: Record<string, unknown> = {}) {
   return {
-    id,
+    id: "transfer-1",
     workspaceId: "workspace-1",
     fromAccountId: "account-1",
     toAccountId: "account-2",
     createdById: "user-1",
-    amount,
-    toAmount,
-    description: "Transfer",
-    date: new Date(date),
-    createdAt: new Date(date),
-    updatedAt: new Date(date),
-    fromAccount: createAccount("account-1"),
-    toAccount: createAccount("account-2", "user-2"),
+    amount: "50",
+    toAmount: "49.50",
+    description: "Move cash",
+    date: "2026-04-03T10:00:00.000Z",
+    createdAt: "2026-04-03T10:00:00.000Z",
+    updatedAt: "2026-04-04T10:00:00.000Z",
+    fromAccount: createAccountDto("account-1"),
+    toAccount: createAccountDto("account-2", null),
     createdBy: {
       id: "user-1",
       name: "User",
       email: "user@example.com",
       image: null,
     },
+    ...overrides,
   };
 }
 
-function createDebtTransaction(id: string, amount: string, date = "2026-04-03T00:00:00.000Z") {
+function createDebtTransactionDto(overrides: Record<string, unknown> = {}) {
   return {
-    id,
+    id: "debt-transaction-1",
     workspaceId: "workspace-1",
     debtId: "debt-1",
     accountId: "account-1",
     type: "created",
-    amount,
+    amount: "300",
     toAmount: null,
-    date: new Date(date),
-    createdAt: new Date(date),
+    date: "2026-04-05T10:00:00.000Z",
+    createdAt: "2026-04-05T10:00:00.000Z",
     debt: {
       id: "debt-1",
       workspaceId: "workspace-1",
       type: "lent",
       personName: "Alex",
-      amount,
-      remainingAmount: amount,
+      amount: "300",
+      remainingAmount: "300",
       currency: "USD",
       accountId: "account-1",
-      date: new Date(date),
+      date: "2026-04-05T10:00:00.000Z",
       status: "open",
-      createdAt: new Date(date),
-      updatedAt: new Date(date),
+      createdAt: "2026-04-05T10:00:00.000Z",
+      updatedAt: "2026-04-06T10:00:00.000Z",
     },
-    account: createAccount("account-1"),
+    account: createAccountDto("account-1"),
+    ...overrides,
   };
 }
 
-describe("getCombinedTransactions", () => {
+describe("transaction.service API adapter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    requireWorkspaceAccessMock.mockResolvedValue({ userId: "user-1" });
-    paymentFindManyMock.mockResolvedValue([]);
-    transferFindManyMock.mockResolvedValue([]);
-    debtTransactionFindManyMock.mockResolvedValue([]);
-    paymentCountMock.mockResolvedValue(0);
-    transferCountMock.mockResolvedValue(0);
-    debtTransactionCountMock.mockResolvedValue(0);
+    getServerApiRequestOptionsMock.mockResolvedValue(requestOptions);
   });
 
-  it("pushes payment filters and pagination limits into Prisma when amount filters are absent", async () => {
-    const { getCombinedTransactions } = await import("./transaction.service");
-    paymentCountMock.mockResolvedValue(7);
+  it("maps combined transaction DTOs to the legacy paginated Date shape", async () => {
+    getApiCombinedTransactionsMock.mockResolvedValue({
+      data: [
+        {
+          kind: "paymentTransaction",
+          data: createPaymentTransactionDto({ category: null, categoryId: null }),
+        },
+        {
+          kind: "transferTransaction",
+          data: createTransferTransactionDto(),
+        },
+        {
+          kind: "debtTransaction",
+          data: createDebtTransactionDto(),
+        },
+      ],
+      total: 3,
+    });
 
+    const { getCombinedTransactions } = await import("./transaction.service");
     const result = await getCombinedTransactions("workspace-1", {
       skip: 5,
       take: 10,
-      dateFrom: "2026-04-01",
-      dateTo: "2026-04-30",
-      transactionTypes: [PaymentTransactionType.INCOME],
+      transactionTypes: [PaymentTransactionType.EXPENSE, "transfer", "debt"],
       accountIds: ["account-1"],
-      categoryIds: ["category-1"],
-      userIds: ["user-1"],
-      description: "salary",
+      includeDebtTransactions: true,
     });
 
-    expect(result).toEqual({ data: [], total: 7 });
-    expect(paymentFindManyMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          workspaceId: "workspace-1",
-          date: {
-            gte: new Date("2026-04-01T00:00:00"),
-            lte: new Date("2026-04-30T23:59:59.999"),
-          },
-          type: { in: [PaymentTransactionType.INCOME] },
-          accountId: { in: ["account-1"] },
-          categoryId: { in: ["category-1"] },
-          description: { contains: "salary", mode: "insensitive" },
-          account: {
-            is: {
-              ownerId: { in: ["user-1"] },
-            },
-          },
-        },
-        orderBy: { date: "desc" },
-        take: 15,
-      })
+    expect(getApiCombinedTransactionsMock).toHaveBeenCalledWith(
+      "workspace-1",
+      {
+        skip: 5,
+        take: 10,
+        amountFrom: undefined,
+        amountTo: undefined,
+        userIds: undefined,
+        transactionTypes: [PaymentTransactionType.EXPENSE, "transfer", "debt"],
+        categoryIds: undefined,
+        accountIds: ["account-1"],
+        description: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        includeDebtTransactions: true,
+      },
+      requestOptions
     );
-    expect(paymentCountMock).toHaveBeenCalledWith({
-      where: expect.objectContaining({
-        workspaceId: "workspace-1",
-        type: { in: [PaymentTransactionType.INCOME] },
-      }),
-    });
-    expect(transferFindManyMock).not.toHaveBeenCalled();
-    expect(debtTransactionFindManyMock).not.toHaveBeenCalled();
-  });
-
-  it("pushes transfer account, owner, description, date, and type filters into Prisma", async () => {
-    const { getCombinedTransactions } = await import("./transaction.service");
-    transferCountMock.mockResolvedValue(3);
-
-    const result = await getCombinedTransactions("workspace-1", {
-      take: 20,
-      dateFrom: "2026-05-01",
-      transactionTypes: [TRANSFER_TRANSACTION_FILTER_VALUE],
-      accountIds: ["account-1", "account-2"],
-      userIds: ["user-1"],
-      description: "fx",
-    });
-
-    expect(result).toEqual({ data: [], total: 3 });
-    expect(transferFindManyMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          workspaceId: "workspace-1",
-          date: {
-            gte: new Date("2026-05-01T00:00:00"),
-          },
-          description: { contains: "fx", mode: "insensitive" },
-          OR: [
-            { fromAccountId: { in: ["account-1", "account-2"] } },
-            { toAccountId: { in: ["account-1", "account-2"] } },
-          ],
-          AND: [
-            {
-              OR: [
-                { fromAccount: { is: { ownerId: { in: ["user-1"] } } } },
-                { toAccount: { is: { ownerId: { in: ["user-1"] } } } },
-              ],
-            },
-          ],
+    expect(result).toEqual({
+      data: [
+        {
+          kind: "paymentTransaction",
+          data: expect.objectContaining({
+            id: "payment-1",
+            categoryId: null,
+            category: null,
+            date: new Date("2026-04-01T10:00:00.000Z"),
+            updatedAt: new Date("2026-04-02T10:00:00.000Z"),
+          }),
         },
-        take: 20,
-      })
-    );
-    expect(paymentFindManyMock).not.toHaveBeenCalled();
-    expect(debtTransactionFindManyMock).not.toHaveBeenCalled();
-  });
-
-  it("keeps exact totals by post-filtering amount ranges after database filters", async () => {
-    const { getCombinedTransactions } = await import("./transaction.service");
-    paymentFindManyMock.mockResolvedValue([
-      createPaymentTransaction("payment-small", "50"),
-      createPaymentTransaction("payment-large", "150"),
-    ]);
-    transferFindManyMock.mockResolvedValue([createTransferTransaction("transfer-large", "20", "200")]);
-    debtTransactionFindManyMock.mockResolvedValue([createDebtTransaction("debt-small", "10")]);
-
-    const result = await getCombinedTransactions("workspace-1", {
-      amountFrom: "100",
-      transactionTypes: [
-        PaymentTransactionType.EXPENSE,
-        TRANSFER_TRANSACTION_FILTER_VALUE,
-        DEBT_TRANSACTION_FILTER_VALUE,
+        {
+          kind: "transferTransaction",
+          data: expect.objectContaining({
+            id: "transfer-1",
+            toAccount: expect.objectContaining({ ownerId: null, owner: null }),
+            createdBy: expect.objectContaining({ id: "user-1" }),
+            date: new Date("2026-04-03T10:00:00.000Z"),
+          }),
+        },
+        {
+          kind: "debtTransaction",
+          data: expect.objectContaining({
+            id: "debt-transaction-1",
+            date: new Date("2026-04-05T10:00:00.000Z"),
+            debt: expect.objectContaining({
+              updatedAt: new Date("2026-04-06T10:00:00.000Z"),
+            }),
+          }),
+        },
       ],
+      total: 3,
+    });
+  });
+
+  it("serializes payment mutation dates, unwraps responses, and revalidates", async () => {
+    createApiPaymentTransactionMock.mockResolvedValue({
+      transaction: createPaymentTransactionDto({ id: "payment-new" }),
+    });
+    updateApiPaymentTransactionMock.mockResolvedValue({
+      transaction: createPaymentTransactionDto({ id: "payment-1", amount: "99" }),
     });
 
-    expect("data" in result ? result.total : 0).toBe(2);
-    expect("data" in result ? result.data.map((item) => item.data.id) : []).toEqual([
-      "transfer-large",
-      "payment-large",
-    ]);
-    expect(paymentFindManyMock).toHaveBeenCalledWith(expect.not.objectContaining({ take: expect.any(Number) }));
-    expect(transferFindManyMock).toHaveBeenCalledWith(expect.not.objectContaining({ take: expect.any(Number) }));
-    expect(debtTransactionFindManyMock).toHaveBeenCalledWith(expect.not.objectContaining({ take: expect.any(Number) }));
-    expect(paymentCountMock).not.toHaveBeenCalled();
-    expect(transferCountMock).not.toHaveBeenCalled();
-    expect(debtTransactionCountMock).not.toHaveBeenCalled();
+    const { createPaymentTransaction, updatePaymentTransaction } = await import("./transaction.service");
+
+    await expect(
+      createPaymentTransaction("workspace-1", {
+        accountId: "account-1",
+        amount: "125.50",
+        type: PaymentTransactionType.EXPENSE,
+        description: "Groceries",
+        date: new Date("2026-04-07T12:00:00.000Z"),
+        categoryId: "category-1",
+        newCategory: { name: "Food", type: CategoryType.EXPENSE },
+      })
+    ).resolves.toEqual({
+      data: expect.objectContaining({ id: "payment-new", date: new Date("2026-04-01T10:00:00.000Z") }),
+    });
+    await expect(
+      updatePaymentTransaction("payment-1", {
+        amount: "99",
+        date: new Date("2026-04-08T12:00:00.000Z"),
+        categoryId: null,
+      })
+    ).resolves.toEqual({
+      data: expect.objectContaining({ id: "payment-1", amount: "99" }),
+    });
+
+    expect(createApiPaymentTransactionMock).toHaveBeenCalledWith(
+      "workspace-1",
+      expect.objectContaining({
+        date: "2026-04-07T12:00:00.000Z",
+        newCategory: { name: "Food", type: CategoryType.EXPENSE },
+      }),
+      requestOptions
+    );
+    expect(updateApiPaymentTransactionMock).toHaveBeenCalledWith(
+      "payment-1",
+      expect.objectContaining({
+        date: "2026-04-08T12:00:00.000Z",
+        categoryId: null,
+      }),
+      requestOptions
+    );
+    expect(revalidateAccountingRoutesMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("serializes transfer mutation dates and preserves success result compatibility", async () => {
+    createApiTransferTransactionMock.mockResolvedValue({
+      transfer: createTransferTransactionDto({ id: "transfer-new" }),
+    });
+    updateApiTransferTransactionMock.mockResolvedValue({
+      transfer: createTransferTransactionDto({ id: "transfer-1" }),
+    });
+    deleteApiTransferTransactionMock.mockResolvedValue(undefined);
+    deleteApiPaymentTransactionMock.mockResolvedValue(undefined);
+
+    const {
+      createTransferTransaction,
+      deletePaymentTransaction,
+      deleteTransferTransaction,
+      updateTransferTransaction,
+    } = await import("./transaction.service");
+
+    await expect(
+      createTransferTransaction("workspace-1", {
+        fromAccountId: "account-1",
+        toAccountId: "account-2",
+        amount: "50",
+        toAmount: "49.50",
+        description: "Move cash",
+        date: new Date("2026-04-09T12:00:00.000Z"),
+      })
+    ).resolves.toEqual({
+      data: expect.objectContaining({ id: "transfer-new" }),
+    });
+    await expect(
+      updateTransferTransaction("transfer-1", {
+        fromAccountId: "account-1",
+        toAccountId: "account-2",
+        amount: "60",
+        toAmount: "59.50",
+        date: new Date("2026-04-10T12:00:00.000Z"),
+      })
+    ).resolves.toEqual({ success: true });
+    await expect(deleteTransferTransaction("transfer-1")).resolves.toEqual({ success: true });
+    await expect(deletePaymentTransaction("payment-1")).resolves.toEqual({ success: true });
+
+    expect(createApiTransferTransactionMock).toHaveBeenCalledWith(
+      "workspace-1",
+      expect.objectContaining({ date: "2026-04-09T12:00:00.000Z" }),
+      requestOptions
+    );
+    expect(updateApiTransferTransactionMock).toHaveBeenCalledWith(
+      "transfer-1",
+      expect.objectContaining({ date: "2026-04-10T12:00:00.000Z" }),
+      requestOptions
+    );
+    expect(revalidateAccountingRoutesMock).toHaveBeenCalledTimes(4);
+  });
+
+  it("normalizes API failures into legacy action errors", async () => {
+    getApiCombinedTransactionsMock.mockRejectedValue(new Error("No access"));
+
+    const { getCombinedTransactions } = await import("./transaction.service");
+
+    await expect(getCombinedTransactions("workspace-1")).resolves.toEqual({ error: "No access" });
   });
 });

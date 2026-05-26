@@ -1,5 +1,3 @@
-import type { PaymentTransaction, TransferTransaction } from "@prisma/client";
-
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 
 export type TransactionUser = {
@@ -19,7 +17,17 @@ export type TransactionAccountWithOwner = {
   owner: TransactionUser | null;
 };
 
-export type PaymentTransactionWithRelations = PaymentTransaction & {
+export type PaymentTransactionWithRelations = {
+  id: string;
+  workspaceId: string;
+  accountId: string;
+  amount: string;
+  type: string;
+  description: string | null;
+  date: Date;
+  categoryId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   account: TransactionAccountWithOwner;
   category: {
     id: string;
@@ -27,7 +35,18 @@ export type PaymentTransactionWithRelations = PaymentTransaction & {
   } | null;
 };
 
-export type TransferTransactionWithRelations = TransferTransaction & {
+export type TransferTransactionWithRelations = {
+  id: string;
+  workspaceId: string;
+  fromAccountId: string;
+  toAccountId: string;
+  createdById: string | null;
+  amount: string;
+  toAmount: string;
+  description: string | null;
+  date: Date;
+  createdAt: Date;
+  updatedAt: Date;
   fromAccount: TransactionAccountWithOwner;
   toAccount: TransactionAccountWithOwner;
   createdBy: TransactionUser | null;
