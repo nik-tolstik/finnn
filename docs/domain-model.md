@@ -116,16 +116,15 @@ Currency support is centered around BYN, USD, and EUR.
 
 Important files:
 
-- `src/modules/currency/currency.service.ts` fetches rates from external providers.
-- `src/modules/currency/exchange-rate.service.ts` persists and reads daily exchange rates.
-- `src/app/api/cron/update-exchange-rates/route.ts` triggers daily persistence.
-- `src/app/api/exchange-rates/route.ts` exposes exchange-rate data for the app.
+- `packages/api/src/currency/exchange-rate.service.ts` fetches external rates, persists daily exchange rates, and derives cross-rates.
+- `packages/api/src/currency/currency.controller.ts` exposes exchange-rate reads and the protected cron endpoint.
+- `packages/web/src/shared/api/generated/currency` is the frontend contract client for exchange-rate UI.
 
-The cron endpoint must be protected with `CRON_SECRET`.
+The API cron endpoint must be protected with `CRON_SECRET`.
 
 ## PWA Cache Boundary
 
-The service worker in `public/sw.js` only caches static assets.
+The service worker in `packages/web/public/sw.js` only caches static assets.
 
 It must not cache:
 

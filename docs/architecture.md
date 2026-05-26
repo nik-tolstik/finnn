@@ -2,28 +2,27 @@
 
 ## High-Level Shape
 
-Finnn is a Next.js App Router application with server-first pages, feature modules, Prisma-backed server actions, and TanStack Query hydration for interactive client views.
+Finnn is migrating to a `pnpm` monorepo with a Next.js App Router frontend in `packages/web` and a NestJS API in `packages/api`.
 
 ```text
-src/app          App Router pages, layouts, providers, route handlers
-src/modules      Feature modules and business-facing services
-src/shared       Cross-cutting UI, components, hooks, lib helpers, utilities
-src/stores       Client-side Zustand stores
-prisma           Database schema
-scripts          Seed, import/export, and static tests
-public           PWA assets and service worker
-docs             Project documentation
+packages/web/src/app       App Router pages, layouts, and providers
+packages/web/src/modules   Feature UI, frontend hooks, and transitional server actions
+packages/web/src/shared    Cross-cutting UI, generated API client, lib helpers, utilities
+packages/web/public        PWA assets and service worker
+packages/api/src           NestJS controllers, services, guards, and modules
+packages/api/prisma        Prisma schema and generated client source
+packages/api/scripts       Seed, import, and export scripts
+docs                       Project documentation
 ```
 
 ## App Router
 
 Route groups:
 
-- `src/app/(auth)` contains login, registration, invite acceptance, and email verification pages.
-- `src/app/(dashboard)` contains authenticated pages and layout.
-- `src/app/api/auth/[...nextauth]/route.ts` exposes NextAuth.
-- `src/app/api/exchange-rates/route.ts` proxies exchange-rate data.
-- `src/app/api/cron/update-exchange-rates/route.ts` persists daily exchange rates and validates `CRON_SECRET`.
+- `packages/web/src/app/(auth)` contains login, registration, invite acceptance, and email verification pages.
+- `packages/web/src/app/(dashboard)` contains authenticated pages and layout.
+- `packages/web/src/app/api/auth/[...nextauth]/route.ts` temporarily exposes NextAuth until frontend auth is fully wired to the API.
+- Exchange-rate reads and cron persistence are owned by `packages/api/src/currency`.
 
 Dashboard pages are server components that load session/workspace context, normalize `workspaceId` search params, prefetch TanStack Query data, and render client content inside `HydrationBoundary`.
 

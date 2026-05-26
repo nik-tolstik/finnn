@@ -4,7 +4,7 @@ import type { Currency } from "@prisma/client";
 import { useCallback, useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 
-import { getExchangeRate } from "@/modules/currency/exchange-rate.service";
+import { getExchangeRate } from "@/shared/api/generated/currency/currency";
 import type {
   CreateTransferTransactionInput,
   UpdateTransferTransactionInput,
@@ -56,15 +56,14 @@ export function useTransferAmountSync({
 
       setIsLoadingRate(true);
       try {
-        const result = await getExchangeRate(date, fromCurrency, toCurrency);
+        const result = await getExchangeRate({
+          date: date.toISOString(),
+          fromCurrency,
+          toCurrency,
+        });
         if (!isCurrent) return;
 
-        if ("data" in result) {
-          setExchangeRate(result.data);
-        } else {
-          console.error("Failed to get exchange rate:", result.error);
-          setExchangeRate(null);
-        }
+        setExchangeRate(result.data);
       } catch (error) {
         if (!isCurrent) return;
 
