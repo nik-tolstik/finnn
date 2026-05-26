@@ -2,11 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { UserPlus } from "lucide-react";
-import { useSession } from "next-auth/react";
 
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { useSession } from "@/shared/lib/api-session-client";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 

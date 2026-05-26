@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,6 +13,7 @@ import { SelectAccountDialog } from "@/modules/accounts/components/select-accoun
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CURRENCY_OPTIONS, type Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { useSession } from "@/shared/lib/api-session-client";
 import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
 import {
   insertDebtsInCache,

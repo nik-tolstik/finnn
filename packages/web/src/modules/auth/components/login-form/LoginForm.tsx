@@ -1,15 +1,17 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { acceptInvite } from "@/modules/workspace/workspace.service";
+import { login } from "@/shared/api/generated/auth/auth";
+import { acceptWorkspaceInvite } from "@/shared/api/generated/workspace-invites/workspace-invites";
+import { apiSessionQueryKey } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
@@ -20,6 +22,7 @@ import { type LoginInput, loginSchema } from "../../auth.validations";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
@@ -38,36 +41,23 @@ export function LoginForm() {
   const onSubmit = async (data: LoginInput) => {
     setIsSubmitting(true);
     try {
-      const result = await signIn("credentials", {
+      await login({
         email: data.email,
         password: data.password,
-        redirect: false,
       });
-
-      if (result?.error) {
-        if (result.error.includes("Email не подтвержден")) {
-          toast.error("Email не подтвержден. Пожалуйста, проверьте вашу почту и подтвердите email.");
-        } else {
-          toast.error("Неверный email или пароль");
-        }
-        setIsSubmitting(false);
-        return;
-      }
+      await queryClient.invalidateQueries({ queryKey: apiSessionQueryKey });
 
       if (inviteToken) {
-        const acceptResult = await acceptInvite(inviteToken);
-        if (acceptResult.error) {
-          toast.error(acceptResult.error);
-        } else {
-          toast.success("Приглашение принято");
-        }
+        await acceptWorkspaceInvite(inviteToken);
+        toast.success("Приглашение принято");
       }
 
       startTransition(() => {
         router.replace("/dashboard");
       });
-    } catch {
-      toast.error("Что-то пошло не так");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Что-то пошло не так";
+      toast.error(message.includes("Email не подтвержден") ? message : message || "Неверный email или пароль");
       setIsSubmitting(false);
     }
   };

@@ -3,19 +3,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { updateUser as updateApiUser } from "@/shared/api/generated/auth/auth";
 import { UserAvatar } from "@/shared/components/UserAvatar";
+import { useSession } from "@/shared/lib/api-session-client";
 import { runOptimisticWorkspaceMutation, updateUserReferencesInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { cn } from "@/shared/utils/cn";
 
-import { updateUser } from "../../auth.service";
 import { type UpdateUserInput, updateUserSchema } from "../../auth.validations";
 import { AvatarPickerDialog } from "../avatar-picker-dialog/AvatarPickerDialog";
 
@@ -76,15 +76,13 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
           ? ["workspaces", "workspaceMembers", "accounts", "archivedAccounts", "transactions"]
           : ["workspaces"],
         apply: (context) => updateUserReferencesInCache(context, [userPatch]),
-        mutation: () => updateUser(data),
+        mutation: async () => {
+          const result = await updateApiUser(data);
+          return { data: result.user };
+        },
       });
     },
     onSuccess: async (result) => {
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-
       if (result.data) {
         await updateSession();
         reset({

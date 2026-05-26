@@ -5,7 +5,6 @@ import { Currency } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,6 +13,7 @@ import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/wo
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from "@/shared/constants/currency";
+import { useSession } from "@/shared/lib/api-session-client";
 import { insertAccountsInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { type CreateAccountInput, createAccountSchema } from "@/shared/lib/validations/account";

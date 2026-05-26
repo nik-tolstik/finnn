@@ -13,7 +13,6 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } 
 import { CSS } from "@dnd-kit/utilities";
 import type { Account } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -21,6 +20,7 @@ import { updateAccountsOrder } from "@/modules/accounts/account.service";
 import { resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
+import { useSession } from "@/shared/lib/api-session-client";
 import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/utils/cn";

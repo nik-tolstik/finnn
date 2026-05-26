@@ -1,12 +1,12 @@
 "use client";
 
 import { ChevronDown, LogOut, Settings } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
+import { signOut, useSession } from "@/shared/lib/api-session-client";
 import { Popover } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 

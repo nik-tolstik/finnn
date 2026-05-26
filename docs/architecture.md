@@ -21,7 +21,8 @@ Route groups:
 
 - `packages/web/src/app/(auth)` contains login, registration, invite acceptance, and email verification pages.
 - `packages/web/src/app/(dashboard)` contains authenticated pages and layout.
-- `packages/web/src/app/api/auth/[...nextauth]/route.ts` temporarily exposes NextAuth until frontend auth is fully wired to the API.
+- `packages/web/src/shared/lib/api-session.ts` reads the API-owned HTTP-only session cookie during server rendering and checks it through `GET /auth/session`.
+- `packages/web/src/shared/lib/api-session-client.tsx` provides client session state from the generated API client.
 - Exchange-rate reads and cron persistence are owned by `packages/api/src/currency`.
 
 Dashboard pages are server components that load session/workspace context, normalize `workspaceId` search params, prefetch TanStack Query data, and render client content inside `HydrationBoundary`.
@@ -99,15 +100,16 @@ These files use `prisma.$transaction` to keep domain writes consistent. They als
 
 ## Auth And Access
 
-Auth is configured in `src/shared/lib/auth.ts`:
+Authentication is owned by `packages/api/src/auth`:
 
-- NextAuth credentials provider.
-- Prisma Adapter.
-- JWT sessions.
-- Custom sign-in page at `/login`.
-- Email verification enforcement for users that still have a pending registration.
+- `POST /auth/register` starts email-verified registration.
+- `POST /auth/verify-email/:token` verifies pending registrations.
+- `POST /auth/login` issues the HTTP-only `finnn_session` cookie.
+- `POST /auth/logout` clears and invalidates the session.
+- `GET /auth/session` returns the current API session.
+- `PATCH /auth/user` updates user settings.
 
-Server session access is cached through `src/shared/lib/auth-session.ts`.
+`packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `src/shared/lib/auth-session.ts`, which now delegates to the API session bridge.
 
 Workspace authorization is handled by `requireWorkspaceAccess`:
 

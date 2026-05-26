@@ -2,13 +2,13 @@
 
 import type { Account } from "@prisma/client";
 import dynamic from "next/dynamic";
-import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { useSession } from "@/shared/lib/api-session-client";
 import { Badge } from "@/shared/ui/badge";
 
 import { getVisibleAccounts, resolveViewerUserId } from "../../account-visibility";

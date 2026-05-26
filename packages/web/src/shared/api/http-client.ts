@@ -16,7 +16,7 @@ async function parseResponseBody(response: Response): Promise<unknown> {
   return contentType.includes("application/json") ? JSON.parse(body) : body;
 }
 
-function getApiBaseUrl(): string {
+export function getApiBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
 }
 

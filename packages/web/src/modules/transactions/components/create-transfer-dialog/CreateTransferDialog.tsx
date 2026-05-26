@@ -3,13 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Account } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Session } from "next-auth";
-import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.service";
+import type { Session } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session-client";
 import { addAccountBalanceDelta, getTransferTransactionBalanceDeltas } from "@/shared/lib/balance-domain";
 import {
   insertTransactionsInCache,

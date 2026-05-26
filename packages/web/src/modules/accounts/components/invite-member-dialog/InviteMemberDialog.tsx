@@ -6,8 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { createInvite } from "@/modules/workspace/workspace.service";
-import { sendInviteEmail } from "@/shared/lib/email";
+import { createWorkspaceInvite } from "@/shared/api/generated/workspaces/workspaces";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { Button } from "@/shared/ui/button";
 import {
@@ -48,26 +47,12 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
 
   const inviteMutation = useMutation({
     mutationFn: async (data: InviteInput) => {
-      const inviteResult = await createInvite(workspaceId, {
+      const inviteResult = await createWorkspaceInvite(workspaceId, {
         email: data.email,
         expiresInDays: 7,
       });
 
-      if (inviteResult.error) {
-        throw new Error(inviteResult.error);
-      }
-
-      if (!inviteResult.data) {
-        throw new Error("Не удалось создать приглашение");
-      }
-
-      const emailResult = await sendInviteEmail(data.email, inviteResult.data.token, workspaceName);
-
-      if (emailResult.error) {
-        throw new Error(emailResult.error);
-      }
-
-      return inviteResult.data;
+      return inviteResult.invite;
     },
     onSuccess: async () => {
       toast.success("Приглашение отправлено");

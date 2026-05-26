@@ -6,8 +6,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowDown, ArrowLeftRight, ArrowUp, X } from "lucide-react";
-import type { Session } from "next-auth";
-import { useSession } from "next-auth/react";
 import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -18,6 +16,8 @@ import { getCategories } from "@/modules/categories/category.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import type { Session } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session-client";
 import {
   addAccountBalanceDelta,
   getPaymentTransactionBalanceDelta,

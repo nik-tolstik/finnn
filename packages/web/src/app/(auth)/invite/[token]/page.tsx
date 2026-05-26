@@ -1,11 +1,11 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { acceptInvite, getWorkspaceInvite } from "@/modules/workspace/workspace.service";
+import { acceptWorkspaceInvite, getWorkspaceInvite } from "@/shared/api/generated/workspace-invites/workspace-invites";
+import { useSession } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
@@ -31,25 +31,13 @@ export default function InvitePage() {
         }
 
         const result = await getWorkspaceInvite(token);
-        if (result.error) {
-          setError(result.error);
-          setIsLoading(false);
-          return;
-        }
-
-        if (!result.data) {
-          setError("Не удалось загрузить приглашение");
-          setIsLoading(false);
-          return;
-        }
-
         setInviteData({
-          email: result.data.email,
-          workspaceName: result.data.workspaceName,
+          email: result.invite.email,
+          workspaceName: result.invite.workspaceName,
         });
         setIsLoading(false);
-      } catch {
-        setError("Не удалось загрузить приглашение");
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "Не удалось загрузить приглашение");
         setIsLoading(false);
       }
     };
@@ -71,17 +59,13 @@ export default function InvitePage() {
             return;
           }
 
-          const result = await acceptInvite(token);
-          if (result.error) {
-            toast.error(result.error);
-            setError(result.error);
-          } else {
-            toast.success("Приглашение принято");
-            router.push("/dashboard");
-          }
-        } catch {
-          toast.error("Не удалось принять приглашение");
-          setError("Не удалось принять приглашение");
+          await acceptWorkspaceInvite(token);
+          toast.success("Приглашение принято");
+          router.push("/dashboard");
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Не удалось принять приглашение";
+          toast.error(message);
+          setError(message);
         }
       }
     };

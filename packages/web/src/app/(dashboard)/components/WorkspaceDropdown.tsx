@@ -16,7 +16,6 @@ import {
   Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useRef, useState } from "react";
 
 import { ArchivedAccountsDialog } from "@/modules/accounts/components/archived-accounts-dialog";
@@ -24,6 +23,7 @@ import { SettingsDialog } from "@/modules/accounts/components/settings-dialog";
 import { CreateWorkspaceDialog } from "@/modules/workspace/components/create-workspace-dialog";
 import { getWorkspaces } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { useSession } from "@/shared/lib/api-session-client";
 import { workspacesKeys } from "@/shared/lib/query-keys";
 import { Popover } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";

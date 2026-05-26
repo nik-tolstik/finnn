@@ -3,12 +3,12 @@
 import { BarChart3, Grip, HandCoins, LogOut, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
+import { signOut, useSession } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";

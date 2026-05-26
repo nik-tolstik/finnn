@@ -3,13 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { getWorkspaceSummary, updateWorkspace } from "@/modules/workspace/workspace.service";
+import { useSession } from "@/shared/lib/api-session-client";
 import { runOptimisticWorkspaceMutation, updateWorkspaceCaches } from "@/shared/lib/optimistic-workspace-updates";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";

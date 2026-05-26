@@ -4,7 +4,6 @@ import type { Account } from "@prisma/client";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
@@ -22,6 +21,7 @@ import { getCombinedTransactions } from "@/modules/transactions/transaction.serv
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
 import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { useSession } from "@/shared/lib/api-session-client";
 import { accountKeys, categoryKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";

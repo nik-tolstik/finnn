@@ -1,11 +1,11 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SessionProvider } from "next-auth/react";
 import { ThemeProvider, useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 import { ServiceWorkerRegistration } from "@/shared/components/ServiceWorkerRegistration";
+import { ApiSessionProvider } from "@/shared/lib/api-session-client";
 
 function ThemeClassSync() {
   const { resolvedTheme, theme } = useTheme();
@@ -41,14 +41,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <SessionProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <QueryClientProvider client={queryClient}>
+        <ApiSessionProvider>
           <ThemeClassSync />
           {children}
           <ServiceWorkerRegistration />
-        </QueryClientProvider>
-      </ThemeProvider>
-    </SessionProvider>
+        </ApiSessionProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

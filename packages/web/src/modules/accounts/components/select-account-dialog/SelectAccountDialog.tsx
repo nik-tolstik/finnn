@@ -2,12 +2,12 @@
 
 import type { Account } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
+import { useSession } from "@/shared/lib/api-session-client";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
