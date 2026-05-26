@@ -8,7 +8,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { getWorkspaceSummary, updateWorkspace } from "@/modules/workspace/workspace.service";
+import { getWorkspaceSummary, updateWorkspace } from "@/modules/workspace/workspace.api";
 import { useSession } from "@/shared/lib/api-session-client";
 import { runOptimisticWorkspaceMutation, updateWorkspaceCaches } from "@/shared/lib/optimistic-workspace-updates";
 import { workspaceKeys } from "@/shared/lib/query-keys";

@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
-import { createWorkspace } from "../../workspace.service";
+import { createWorkspace } from "../../workspace.api";
 import type { WorkspaceWithOwner } from "../../workspace.types";
 import { generateSlug } from "../../workspace.utils";
 

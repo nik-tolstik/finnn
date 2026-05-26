@@ -19,7 +19,7 @@ import {
   TransactionsFilterDrawer,
   useTransactionFilters,
 } from "@/modules/transactions/components/transactions-filters";
-import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
+import { getWorkspaceMembers } from "@/modules/workspace/workspace.api";
 import { getAnalyticsOverview as getApiAnalyticsOverview } from "@/shared/api/generated/analytics/analytics";
 import { accountKeys, analyticsKeys, categoryKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";

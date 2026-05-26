@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { getWorkspaceSummary } from "@/modules/workspace/workspace.service";
+import { getWorkspaceSummary } from "@/modules/workspace/workspace.api";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 
 import { getWorkspaceIcon } from "../utils/workspace-icons";

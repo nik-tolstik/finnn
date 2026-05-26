@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
-import { getWorkspaces } from "@/modules/workspace/workspace.service";
+import { getWorkspaces } from "@/modules/workspace/workspace.api";
+import { getServerApiRequestOptions } from "@/shared/lib/api-session";
 
 import { DebtsContent } from "./components/DebtsContent";
 
@@ -10,7 +11,7 @@ interface DebtsPageProps {
 }
 
 export default async function DebtsPage({ searchParams }: DebtsPageProps) {
-  const workspacesResult = await getWorkspaces();
+  const workspacesResult = await getWorkspaces(await getServerApiRequestOptions());
 
   if (workspacesResult.error || !workspacesResult.data || workspacesResult.data.length === 0) {
     return <CreateWorkspacePrompt />;

@@ -8,7 +8,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import type { Account } from "@/modules/accounts/account.types";
-import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.service";
+import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.api";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";

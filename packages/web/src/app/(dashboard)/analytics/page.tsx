@@ -10,7 +10,7 @@ import {
 import { getCategories } from "@/modules/categories/category.service";
 import { parseTransactionFilters } from "@/modules/transactions/components/transactions-filters";
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
-import { getWorkspaceMembers, getWorkspaces } from "@/modules/workspace/workspace.service";
+import { getWorkspaceMembers, getWorkspaces } from "@/modules/workspace/workspace.api";
 import {
   buildWorkspaceRedirectQueryString,
   getFirstSearchParamValue,
@@ -28,7 +28,8 @@ interface AnalyticsPageProps {
 }
 
 export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps) {
-  const workspacesResult = await getWorkspaces();
+  const requestOptions = await getServerApiRequestOptions();
+  const workspacesResult = await getWorkspaces(requestOptions);
 
   if (workspacesResult.error || !workspacesResult.data || workspacesResult.data.length === 0) {
     return <CreateWorkspacePrompt />;
@@ -59,7 +60,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
     }),
     queryClient.prefetchQuery({
       queryKey: workspaceKeys.members(workspaceId),
-      queryFn: () => getWorkspaceMembers(workspaceId),
+      queryFn: () => getWorkspaceMembers(workspaceId, requestOptions),
     }),
     queryClient.prefetchQuery({
       queryKey: analyticsKeys.overview(workspaceId, appliedFilters),
@@ -68,7 +69,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           const response = await getApiAnalyticsOverview(
             workspaceId,
             toAnalyticsOverviewParams(appliedFilters),
-            await getServerApiRequestOptions()
+            requestOptions
           );
           return toAnalyticsOverviewResult(response);
         } catch (error: unknown) {

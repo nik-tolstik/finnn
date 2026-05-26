@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { getWorkspaceSummary } from "@/modules/workspace/workspace.service";
+import { getWorkspaceSummary } from "@/modules/workspace/workspace.api";
 import { getTodayExchangeRates } from "@/shared/api/generated/currency/currency";
 import { Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { exchangeRateKeys, workspaceKeys } from "@/shared/lib/query-keys";

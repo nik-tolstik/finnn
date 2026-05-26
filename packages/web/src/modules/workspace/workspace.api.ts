@@ -1,5 +1,3 @@
-"use server";
-
 import type { WorkspaceMemberDto, WorkspaceSummaryDto } from "@/shared/api/generated/model";
 import {
   createWorkspace as createApiWorkspace,
@@ -10,8 +8,6 @@ import {
   updateWorkspace as updateApiWorkspace,
 } from "@/shared/api/generated/workspaces/workspaces";
 import { fail, ok, success } from "@/shared/lib/action-result";
-import { getServerApiRequestOptions } from "@/shared/lib/api-session";
-import { revalidateWorkspaceRoutes } from "@/shared/lib/revalidate-app-routes";
 import type { CreateWorkspaceInput, UpdateWorkspaceInput } from "@/shared/lib/validations/workspace";
 
 import type { WorkspaceSummary, WorkspaceWithOwner } from "./workspace.types";
@@ -59,57 +55,54 @@ function toWorkspaceMember(member: WorkspaceMemberDto) {
   };
 }
 
-export async function createWorkspace(input: CreateWorkspaceInput) {
+export async function createWorkspace(input: CreateWorkspaceInput, options?: RequestInit) {
   try {
-    const response = await createApiWorkspace(input, await getServerApiRequestOptions());
-    revalidateWorkspaceRoutes();
+    const response = await createApiWorkspace(input, options);
     return ok(toWorkspaceWithOwner(response.workspace));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать рабочий стол");
   }
 }
 
-export async function updateWorkspace(id: string, input: UpdateWorkspaceInput) {
+export async function updateWorkspace(id: string, input: UpdateWorkspaceInput, options?: RequestInit) {
   try {
-    const response = await updateApiWorkspace(id, input, await getServerApiRequestOptions());
-    revalidateWorkspaceRoutes();
+    const response = await updateApiWorkspace(id, input, options);
     return ok(toWorkspaceSummary(response.workspace));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить рабочий стол");
   }
 }
 
-export async function getWorkspaces() {
+export async function getWorkspaces(options?: RequestInit) {
   try {
-    const response = await listApiWorkspaces(await getServerApiRequestOptions());
+    const response = await listApiWorkspaces(options);
     return ok(response.workspaces.map(toWorkspaceWithOwner));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить рабочие столы");
   }
 }
 
-export async function getWorkspaceSummary(id: string) {
+export async function getWorkspaceSummary(id: string, options?: RequestInit) {
   try {
-    const response = await getApiWorkspaceSummary(id, await getServerApiRequestOptions());
+    const response = await getApiWorkspaceSummary(id, options);
     return ok(toWorkspaceSummary(response.workspace));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить рабочий стол");
   }
 }
 
-export async function getWorkspaceMembers(workspaceId: string) {
+export async function getWorkspaceMembers(workspaceId: string, options?: RequestInit) {
   try {
-    const response = await getApiWorkspaceMembers(workspaceId, await getServerApiRequestOptions());
+    const response = await getApiWorkspaceMembers(workspaceId, options);
     return ok(response.members.map(toWorkspaceMember));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить участников рабочего стола");
   }
 }
 
-export async function leaveWorkspace(workspaceId: string) {
+export async function leaveWorkspace(workspaceId: string, options?: RequestInit) {
   try {
-    await leaveApiWorkspace(workspaceId, await getServerApiRequestOptions());
-    revalidateWorkspaceRoutes();
+    await leaveApiWorkspace(workspaceId, options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось покинуть рабочий стол");

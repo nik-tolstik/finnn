@@ -19,7 +19,7 @@ import {
 import { TransactionsListSkeleton } from "@/modules/transactions/components/transactions-list-skeleton";
 import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
-import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
+import { getWorkspaceMembers } from "@/modules/workspace/workspace.api";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { useSession } from "@/shared/lib/api-session-client";
 import { accountKeys, categoryKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";

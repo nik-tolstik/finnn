@@ -67,7 +67,7 @@ Server-facing service files use `"use server"` and return structured action resu
 - `success()` for successful commands without data.
 - `fail(error, fallback)` for normalized errors.
 
-During the backend migration, modules that have been wired to NestJS may keep a temporary `*.service.ts` adapter that calls generated API client functions and preserves the old `ActionResult` shape for existing UI code. `packages/web/src/modules/workspace/workspace.service.ts` is one such adapter; new backend logic should continue to live in `packages/api`.
+During the backend migration, modules that have been wired to NestJS may keep temporary frontend adapters that call generated API client functions and preserve the old `ActionResult` shape for existing UI code. Prefer pure `*.api.ts` helpers without `"use server"` when callers can use the generated API client directly from client components or server pages. New backend logic should continue to live in `packages/api`.
 
 Shared helpers:
 

@@ -9,14 +9,14 @@ import {
 } from "@/modules/transactions/components/transactions-filters";
 import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
-import { getWorkspaceMembers, getWorkspaces } from "@/modules/workspace/workspace.service";
+import { getWorkspaceMembers, getWorkspaces } from "@/modules/workspace/workspace.api";
 import {
   buildWorkspaceRedirectQueryString,
   getFirstSearchParamValue,
   toURLSearchParams,
   type WorkspacePageSearchParams,
 } from "@/modules/workspace/workspace-search-params";
-import { getCachedServerSession } from "@/shared/lib/api-session";
+import { getCachedServerSession, getServerApiRequestOptions } from "@/shared/lib/api-session";
 import { accountKeys, categoryKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";
 
 import { DashboardContent } from "./components/DashboardContent";
@@ -26,7 +26,8 @@ interface DashboardPageProps {
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const [session, workspacesResult] = await Promise.all([getCachedServerSession(), getWorkspaces()]);
+  const requestOptions = await getServerApiRequestOptions();
+  const [session, workspacesResult] = await Promise.all([getCachedServerSession(), getWorkspaces(requestOptions)]);
 
   if (workspacesResult.error || !workspacesResult.data || workspacesResult.data.length === 0) {
     return <CreateWorkspacePrompt />;
@@ -60,7 +61,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     }),
     queryClient.prefetchQuery({
       queryKey: workspaceKeys.members(workspaceId),
-      queryFn: () => getWorkspaceMembers(workspaceId),
+      queryFn: () => getWorkspaceMembers(workspaceId, requestOptions),
     }),
     queryClient.prefetchQuery({
       queryKey: categoryKeys.list(workspaceId),
