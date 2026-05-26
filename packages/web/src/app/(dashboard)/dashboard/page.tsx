@@ -16,7 +16,7 @@ import {
   toURLSearchParams,
   type WorkspacePageSearchParams,
 } from "@/modules/workspace/workspace-search-params";
-import { getCachedServerSession } from "@/shared/lib/auth-session";
+import { getCachedServerSession } from "@/shared/lib/api-session";
 import { accountKeys, categoryKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";
 
 import { DashboardContent } from "./components/DashboardContent";

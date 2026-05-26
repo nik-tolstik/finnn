@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { getCachedServerSession } from "@/shared/lib/auth-session";
+import { getCachedServerSession } from "@/shared/lib/api-session";
 
 import { ExchangeRatesTicker } from "./components/ExchangeRatesTicker";
 import { FloatingActionButton } from "./components/FloatingActionButton";

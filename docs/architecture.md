@@ -6,7 +6,7 @@ Finnn is migrating to a `pnpm` monorepo with a Next.js App Router frontend in `p
 
 ```text
 packages/web/src/app       App Router pages, layouts, and providers
-packages/web/src/modules   Feature UI, frontend hooks, and transitional server actions
+packages/web/src/modules   Feature UI, frontend hooks, and API-backed adapters
 packages/web/src/shared    Cross-cutting UI, generated API client, lib helpers, utilities
 packages/web/public        PWA assets and service worker
 packages/api/src           NestJS controllers, services, guards, and modules
@@ -111,7 +111,7 @@ Authentication is owned by `packages/api/src/auth`:
 - `GET /auth/session` returns the current API session.
 - `PATCH /auth/user` updates user settings.
 
-`packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `src/shared/lib/auth-session.ts`, which now delegates to the API session bridge.
+`packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `src/shared/lib/api-session.ts`, which forwards the API session cookie to the backend session endpoint.
 
 Workspace authorization is handled by `requireWorkspaceAccess`:
 
