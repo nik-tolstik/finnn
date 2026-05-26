@@ -2,7 +2,7 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 import { redirect } from "next/navigation";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import { getCategories } from "@/modules/categories/category.service";
+import { getCategories } from "@/modules/categories/category.api";
 import {
   parseTransactionFilters,
   shouldIncludeDebtTransactions,
@@ -65,7 +65,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     }),
     queryClient.prefetchQuery({
       queryKey: categoryKeys.list(workspaceId),
-      queryFn: () => getCategories(workspaceId),
+      queryFn: () => getCategories(workspaceId, undefined, requestOptions),
     }),
     queryClient.prefetchQuery({
       queryKey: transactionKeys.list(workspaceId, initialTransactionFilters),

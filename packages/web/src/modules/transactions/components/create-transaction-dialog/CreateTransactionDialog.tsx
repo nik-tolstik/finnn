@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { getAccounts } from "@/modules/accounts/account.service";
 import type { Account } from "@/modules/accounts/account.types";
 import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
-import { getCategories } from "@/modules/categories/category.service";
+import { getCategories } from "@/modules/categories/category.api";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useDialogState } from "@/shared/hooks/useDialogState";

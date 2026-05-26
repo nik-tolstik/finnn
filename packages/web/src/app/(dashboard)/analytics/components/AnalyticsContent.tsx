@@ -13,7 +13,7 @@ import {
   toAnalyticsOverviewResult,
 } from "@/modules/analytics/analytics.api";
 import type { AnalyticsOverviewResult } from "@/modules/analytics/analytics.types";
-import { getCategories } from "@/modules/categories/category.service";
+import { getCategories } from "@/modules/categories/category.api";
 import {
   TransactionsFilterButton,
   TransactionsFilterDrawer,

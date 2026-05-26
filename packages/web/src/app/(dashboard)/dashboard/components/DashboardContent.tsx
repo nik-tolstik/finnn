@@ -9,7 +9,7 @@ import { getAccounts } from "@/modules/accounts/account.service";
 import type { Account } from "@/modules/accounts/account.types";
 import { getVisibleAccounts, resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountsCards } from "@/modules/accounts/components/accounts-cards";
-import { getCategories } from "@/modules/categories/category.service";
+import { getCategories } from "@/modules/categories/category.api";
 import { CombinedTransactionsList } from "@/modules/transactions/components/combined-transactions-list";
 import {
   TransactionsFilterButton,

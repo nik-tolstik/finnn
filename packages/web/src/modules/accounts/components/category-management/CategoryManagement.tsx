@@ -16,14 +16,14 @@ import { ArrowDown, ArrowUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-r
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { CategoryType } from "@/modules/categories/category.constants";
 import {
   deleteCategory,
   getCategories,
   getCategoryTransactionCount,
   updateCategoriesOrder,
   updateCategory,
-} from "@/modules/categories/category.service";
+} from "@/modules/categories/category.api";
+import { CategoryType } from "@/modules/categories/category.constants";
 import type { Category } from "@/modules/categories/category.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {

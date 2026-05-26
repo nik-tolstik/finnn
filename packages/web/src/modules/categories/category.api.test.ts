@@ -8,8 +8,6 @@ const getApiCategoryTransactionCountMock = vi.fn();
 const listApiCategoriesMock = vi.fn();
 const updateApiCategoriesOrderMock = vi.fn();
 const updateApiCategoryMock = vi.fn();
-const getServerApiRequestOptionsMock = vi.fn();
-const revalidateAccountingRoutesMock = vi.fn();
 
 vi.mock("@/shared/api/generated/categories/categories", () => ({
   createCategory: createApiCategoryMock,
@@ -20,16 +18,8 @@ vi.mock("@/shared/api/generated/categories/categories", () => ({
   updateCategory: updateApiCategoryMock,
 }));
 
-vi.mock("@/shared/lib/api-session", () => ({
-  getServerApiRequestOptions: getServerApiRequestOptionsMock,
-}));
-
-vi.mock("@/shared/lib/revalidate-app-routes", () => ({
-  revalidateAccountingRoutes: revalidateAccountingRoutesMock,
-}));
-
 const requestOptions = {
-  cache: "no-store",
+  cache: "no-store" as const,
   headers: { cookie: "finnn_session=token" },
 };
 
@@ -48,10 +38,9 @@ function createCategoryDto(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe("category.service API adapter", () => {
+describe("category.api", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getServerApiRequestOptionsMock.mockResolvedValue(requestOptions);
   });
 
   it("maps category lists to legacy count and date shapes", async () => {
@@ -59,8 +48,8 @@ describe("category.service API adapter", () => {
       categories: [createCategoryDto()],
     });
 
-    const { getCategories } = await import("./category.service");
-    const result = await getCategories("workspace-1", "expense");
+    const { getCategories } = await import("./category.api");
+    const result = await getCategories("workspace-1", "expense", requestOptions);
 
     expect(listApiCategoriesMock).toHaveBeenCalledWith("workspace-1", { type: "expense" }, requestOptions);
     expect(result).toEqual({
@@ -78,7 +67,7 @@ describe("category.service API adapter", () => {
     });
   });
 
-  it("unwraps category mutation responses and revalidates accounting routes", async () => {
+  it("unwraps category mutation responses without requiring server actions", async () => {
     createApiCategoryMock.mockResolvedValue({
       category: createCategoryDto({ id: "category-2", name: "Salary", type: "income" }),
     });
@@ -87,7 +76,7 @@ describe("category.service API adapter", () => {
     });
     deleteApiCategoryMock.mockResolvedValue(undefined);
 
-    const { createCategory, deleteCategory, updateCategory } = await import("./category.service");
+    const { createCategory, deleteCategory, updateCategory } = await import("./category.api");
 
     await expect(createCategory("workspace-1", { name: "Salary", type: CategoryType.INCOME })).resolves.toEqual({
       data: expect.objectContaining({ id: "category-2", type: "income" }),
@@ -99,27 +88,36 @@ describe("category.service API adapter", () => {
 
     expect(createApiCategoryMock).toHaveBeenCalledWith(
       "workspace-1",
-      { name: "Salary", type: "income", icon: undefined },
-      requestOptions
+      {
+        name: "Salary",
+        type: "income",
+        icon: undefined,
+      },
+      undefined
     );
     expect(updateApiCategoryMock).toHaveBeenCalledWith(
       "category-1",
-      { name: "Food", type: undefined, icon: undefined, order: 2 },
-      requestOptions
+      {
+        name: "Food",
+        type: undefined,
+        icon: undefined,
+        order: 2,
+      },
+      undefined
     );
-    expect(revalidateAccountingRoutesMock).toHaveBeenCalledTimes(3);
+    expect(deleteApiCategoryMock).toHaveBeenCalledWith("category-1", undefined);
   });
 
   it("forwards order payloads and unwraps transaction counts", async () => {
     updateApiCategoriesOrderMock.mockResolvedValue({ success: true });
     getApiCategoryTransactionCountMock.mockResolvedValue({ count: 7 });
 
-    const { getCategoryTransactionCount, updateCategoriesOrder } = await import("./category.service");
+    const { getCategoryTransactionCount, updateCategoriesOrder } = await import("./category.api");
 
-    await expect(updateCategoriesOrder("workspace-1", ["category-2", "category-1"])).resolves.toEqual({
+    await expect(updateCategoriesOrder("workspace-1", ["category-2", "category-1"], requestOptions)).resolves.toEqual({
       success: true,
     });
-    await expect(getCategoryTransactionCount("category-1")).resolves.toEqual({ data: 7 });
+    await expect(getCategoryTransactionCount("category-1", requestOptions)).resolves.toEqual({ data: 7 });
 
     expect(updateApiCategoriesOrderMock).toHaveBeenCalledWith(
       "workspace-1",
@@ -127,13 +125,12 @@ describe("category.service API adapter", () => {
       requestOptions
     );
     expect(getApiCategoryTransactionCountMock).toHaveBeenCalledWith("category-1", requestOptions);
-    expect(revalidateAccountingRoutesMock).toHaveBeenCalledTimes(1);
   });
 
   it("normalizes API failures into action errors", async () => {
     listApiCategoriesMock.mockRejectedValue(new Error("No access"));
 
-    const { getCategories } = await import("./category.service");
+    const { getCategories } = await import("./category.api");
 
     await expect(getCategories("workspace-1")).resolves.toEqual({ error: "No access" });
   });

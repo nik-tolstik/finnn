@@ -7,7 +7,7 @@ import {
   toAnalyticsOverviewParams,
   toAnalyticsOverviewResult,
 } from "@/modules/analytics/analytics.api";
-import { getCategories } from "@/modules/categories/category.service";
+import { getCategories } from "@/modules/categories/category.api";
 import { parseTransactionFilters } from "@/modules/transactions/components/transactions-filters";
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
 import { getWorkspaceMembers, getWorkspaces } from "@/modules/workspace/workspace.api";
@@ -56,7 +56,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
     }),
     queryClient.prefetchQuery({
       queryKey: categoryKeys.list(workspaceId),
-      queryFn: () => getCategories(workspaceId),
+      queryFn: () => getCategories(workspaceId, undefined, requestOptions),
     }),
     queryClient.prefetchQuery({
       queryKey: workspaceKeys.members(workspaceId),

@@ -6,8 +6,8 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { createCategory } from "@/modules/categories/category.api";
 import { CategoryType } from "@/modules/categories/category.constants";
-import { createCategory } from "@/modules/categories/category.service";
 import { insertCategoriesInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { categoryKeys } from "@/shared/lib/query-keys";
 import { type CreateCategoryInput, createCategorySchema } from "@/shared/lib/validations/category";
