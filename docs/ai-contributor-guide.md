@@ -8,44 +8,45 @@ Before editing, inspect:
 
 ```bash
 git status --short --branch
-find src -maxdepth 3 -type d | sort
+find packages -maxdepth 3 -type d | sort
 sed -n '1,220p' package.json
-sed -n '1,260p' prisma/schema.prisma
+sed -n '1,260p' packages/api/prisma/schema.prisma
 sed -n '1,220p' AGENTS.md
 ```
 
 Then inspect the narrow module involved in the task.
 
-For framework or library behavior that may have changed, use Context7. Next.js App Router, Prisma MongoDB, NextAuth, TanStack Query, and Tailwind changes are good candidates for documentation lookup.
+For framework or library behavior that may have changed, use Context7. Next.js App Router, NestJS, Prisma MongoDB, TanStack Query, Orval, and Tailwind changes are good candidates for documentation lookup.
 
 ## Decision Rules
 
-- Preserve the existing feature-module structure.
-- Put server action boundaries in `*.service.ts`.
-- Put complex transactional domain logic in `*.application.ts`.
-- Put feature UI inside `src/modules/<feature>/components`.
-- Put reusable primitives in `src/shared/ui` only when they are genuinely reusable.
-- Put cross-feature helpers in `src/shared/lib` or `src/shared/utils` based on whether they are domain/application helpers or low-level utilities.
+- Preserve the existing package and feature-module structure.
+- Put new backend behavior in `packages/api` NestJS modules.
+- Put frontend response-shaping helpers in pure `packages/web/src/modules/<feature>/<feature>.api.ts` files when generated client functions need adaptation.
+- Put complex transactional domain logic in API services using `prisma.$transaction`.
+- Put feature UI inside `packages/web/src/modules/<feature>/components`.
+- Put reusable primitives in `packages/web/src/shared/ui` only when they are genuinely reusable.
+- Put cross-feature frontend helpers in `packages/web/src/shared/lib` or `packages/web/src/shared/utils` based on whether they are domain/application helpers or low-level utilities.
 - Update `docs/` when changing setup, architecture, domain rules, operations, or AI-facing conventions.
 
-## Server Mutation Checklist
+## Backend Mutation Checklist
 
-For a new or changed server mutation:
+For a new or changed API mutation:
 
-1. Mark the file with `"use server"` when it exports server actions.
-2. Validate input with an existing or new Zod schema from `src/shared/lib/validations`.
-3. Use `requireUserId` or `requireWorkspaceAccess`.
-4. Keep balance-changing writes inside `prisma.$transaction`.
-5. Use money and balance helpers rather than raw arithmetic.
-6. Return `ok`, `success`, or `fail`.
-7. Invalidate affected client query domains through centralized query helpers.
-8. Add or update focused tests for domain rules and failure cases.
+1. Validate input with NestJS DTOs and global validation.
+2. Use auth guards and `WorkspaceAccessGuard` for protected workspace data.
+3. Keep balance-changing writes inside `prisma.$transaction`.
+4. Use money and balance helpers rather than raw arithmetic.
+5. Return explicit DTO response shapes and update Swagger metadata.
+6. Run `pnpm api:generate` after contract changes.
+7. Add or update focused API tests for domain rules and failure cases.
+8. Update frontend generated-client usage or adapters when response shapes change.
 
 ## Client Data Checklist
 
 For a client view or mutation:
 
-- Use query keys from `src/shared/lib/query-keys.ts`.
+- Use query keys from `packages/web/src/shared/lib/query-keys.ts`.
 - Reuse existing optimistic update helpers where possible.
 - Keep server-prefetched query data and client query keys aligned.
 - Avoid duplicating workspace selection logic; follow the page-level patterns in dashboard and analytics routes.
@@ -68,11 +69,11 @@ When changing accounts, transactions, transfers, debts, or analytics:
 Focused tests:
 
 ```bash
-pnpm test src/shared/lib/balance-domain.test.ts
-pnpm test src/modules/transactions/transaction.api.test.ts
-pnpm test src/modules/debts/debt.api.test.ts
-pnpm test src/shared/lib/optimistic-workspace-updates.test.ts
-pnpm test src/shared/lib/service-worker-cache-policy.test.ts
+pnpm --filter web test src/shared/lib/balance-domain.test.ts
+pnpm --filter web test src/modules/transactions/transaction.api.test.ts
+pnpm --filter web test src/modules/debts/debt.api.test.ts
+pnpm --filter web test src/shared/lib/optimistic-workspace-updates.test.ts
+pnpm --filter web test src/shared/lib/service-worker-cache-policy.test.ts
 ```
 
 Full checks:

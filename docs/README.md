@@ -11,40 +11,41 @@ This documentation is written for two audiences:
 
 - [Development](./development.md) - local setup, environment variables, commands, database workflow, and verification.
 - [Architecture](./architecture.md) - directory map, request/data flow, feature module conventions, and cross-cutting helpers.
-- [Backend Migration](./backend-migration.md) - planned NestJS API package, web package, Orval contract workflow, and Railway deployment steps.
+- [Backend Migration](./backend-migration.md) - monorepo migration plan, progress log, Orval contract workflow, and Railway deployment steps.
 - [Domain Model](./domain-model.md) - core entities, money invariants, workspaces, transactions, transfers, debts, exchange rates, and PWA cache boundaries.
-- [Operations](./operations.md) - Vercel, cron, MongoDB import/export, email, service worker, and production checks.
+- [Operations](./operations.md) - deployment, cron, MongoDB import/export, email, service worker, and production checks.
 - [AI Contributor Guide](./ai-contributor-guide.md) - how Codex or another AI agent should approach changes in this repo.
 
 ## Project At A Glance
 
-- Framework: Next.js App Router, React, TypeScript.
-- Data: Prisma ORM with MongoDB.
-- Auth: NextAuth credentials provider with Prisma Adapter and JWT sessions.
+- Framework: Next.js App Router frontend and NestJS API, both in TypeScript.
+- Data: Prisma ORM with MongoDB in `packages/api`.
+- Auth: API-owned HTTP-only cookie sessions.
+- Contract: NestJS OpenAPI with Orval-generated web clients.
 - Client data: TanStack Query with server-side prefetch and hydration.
 - UI: Tailwind CSS, local UI primitives, lucide-react, Recharts.
-- Validation: Zod schemas in `src/shared/lib/validations`.
-- Tests: Vitest plus static UI structure tests in `scripts`.
+- Validation: NestJS DTO validation in `packages/api` plus frontend Zod schemas in `packages/web/src/shared/lib/validations`.
+- Tests: Vitest plus static UI structure tests in package-local `scripts`.
 - Formatting/linting: Biome.
-- Deployment: Vercel with a daily cron job for exchange rates.
+- Deployment: `packages/api` on Railway or equivalent backend hosting; `packages/web` as the frontend deployment.
 
 ## Primary User Flows
 
 1. A user registers, verifies email, signs in, and creates or joins a workspace.
 2. A workspace owner or member creates accounts and categories.
 3. A user records income, expense, transfer, or debt activity.
-4. Server-side application logic updates balances transactionally in MongoDB.
+4. API domain logic updates balances transactionally in MongoDB.
 5. The dashboard and analytics views prefetch data on the server and hydrate client components.
-6. Exchange rates are fetched and stored for conversion-aware analytics and UI display.
+6. The protected API cron endpoint fetches and stores exchange rates for conversion-aware analytics and UI display.
 
 ## Important Invariants
 
 - Money amounts are stored as strings and should be manipulated only through money/domain helpers.
 - Workspace access must be checked on every server-side read or mutation that depends on workspace data.
 - Balance-changing operations should be transactional.
-- Query keys must come from `src/shared/lib/query-keys.ts`.
+- Query keys must come from `packages/web/src/shared/lib/query-keys.ts`.
 - Client cache invalidation should use centralized query keys and domain invalidation helpers.
-- The service worker must not cache financial app documents, API responses, server action responses, or dashboard data routes.
+- The service worker must not cache financial app documents, API responses, or dashboard data routes.
 
 ## Fast Verification
 

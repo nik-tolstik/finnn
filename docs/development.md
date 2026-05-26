@@ -83,7 +83,6 @@ Database scripts:
 ```bash
 pnpm db:generate  # Generate Prisma Client
 pnpm db:push      # Apply schema and indexes to MongoDB
-pnpm --filter web db:studio # Open Prisma Studio against the API schema
 pnpm db:seed      # Seed sample data
 pnpm db:export    # Export MongoDB data
 pnpm db:import <backup-dir> --drop --db=<database-name> # Import MongoDB data
@@ -126,7 +125,7 @@ Broaden to the full suite when changes affect:
 - Balance rules.
 - Transactions, transfers, debts, accounts, or categories.
 - Query cache updates.
-- App Router pages or route handlers.
+- App Router pages, API client adapters, or generated-client contracts.
 - Service worker cache policy.
 - Prisma schema.
 
@@ -145,5 +144,5 @@ pnpm build
 - TypeScript path alias is `@/*` mapped to `src/*`.
 - TypeScript is strict.
 - Comments should be in English.
-- Use existing UI primitives from `src/shared/ui` before adding a new primitive.
+- Use existing UI primitives from `packages/web/src/shared/ui` before adding a new primitive.
 - Use `lucide-react` for icons where appropriate.

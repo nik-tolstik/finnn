@@ -2,7 +2,7 @@
 
 ## High-Level Shape
 
-Finnn is migrating to a `pnpm` monorepo with a Next.js App Router frontend in `packages/web` and a NestJS API in `packages/api`.
+Finnn is a `pnpm` monorepo with a Next.js App Router frontend in `packages/web` and a NestJS API in `packages/api`.
 
 ```text
 packages/web/src/app       App Router pages, layouts, and providers
@@ -29,29 +29,28 @@ Dashboard pages are server components that load session/workspace context, norma
 
 Examples:
 
-- `src/app/(dashboard)/dashboard/page.tsx`
-- `src/app/(dashboard)/analytics/page.tsx`
-- `src/app/(dashboard)/debts/page.tsx`
+- `packages/web/src/app/(dashboard)/dashboard/page.tsx`
+- `packages/web/src/app/(dashboard)/analytics/page.tsx`
+- `packages/web/src/app/(dashboard)/debts/page.tsx`
 
 ## Feature Modules
 
-Feature modules live under `src/modules`.
+Frontend feature modules live under `packages/web/src/modules`.
 
 - `accounts` - account CRUD, archive/delete behavior, ownership visibility, cards, ordering, settings.
 - `analytics` - analytics aggregation, date range helpers, chart data.
 - `auth` - registration, verification, user settings.
 - `categories` - income/expense category CRUD and ordering.
-- `currency` - external exchange-rate fetching, fallback providers, persisted daily rates.
+- `currency` - exchange-rate UI and generated API client usage.
 - `debts` - debt creation, closing, additions, edits, debt transactions, debt UI.
 - `transactions` - payment transactions, transfers, combined transaction feed, filtering.
 - `workspace` - workspace CRUD, members, roles, invites, workspace selection.
 
-The typical module shape is:
+The typical frontend module shape is:
 
 ```text
 module/
-  module.service.ts       Server action boundary and revalidation
-  module.application.ts   Transactional business logic when needed
+  module.api.ts           Pure generated-client adapter when response shaping is needed
   module.types.ts         Shared module types
   module.constants.ts     Domain constants
   components/             Client/server UI for the feature
@@ -59,38 +58,40 @@ module/
 
 Not every module has every file; follow the local pattern already used by that module.
 
-## Server Action Pattern
+Backend domain modules live under `packages/api/src`. They own controllers, DTOs, guards, Prisma access, email, cron, OpenAPI metadata, and finance transaction rules.
 
-Server-facing service files use `"use server"` and return structured action results:
+## API Adapter Pattern
+
+Frontend API adapters are pure TypeScript helpers that call generated Orval client functions and return structured action results where existing UI code expects them:
 
 - `ok(data)` for data responses.
 - `success()` for successful commands without data.
 - `fail(error, fallback)` for normalized errors.
 
-During the backend migration, modules that have been wired to NestJS may keep temporary frontend adapters that call generated API client functions and preserve the old `ActionResult` shape for existing UI code. Prefer pure `*.api.ts` helpers without `"use server"` when callers can use the generated API client directly from client components or server pages. New backend logic should continue to live in `packages/api`.
+Prefer direct generated client functions when no response normalization is needed. Use pure `*.api.ts` helpers when a module must preserve legacy UI shapes such as `Date` instances, nullable owner/account fields, or `ActionResult` wrappers. New backend logic should live in `packages/api`.
 
 Shared helpers:
 
-- `src/shared/lib/action-result.ts`
-- `src/shared/lib/api-session.ts`
-- `src/shared/lib/query-invalidation.ts`
-- `src/shared/lib/validations`
+- `packages/web/src/shared/lib/action-result.ts`
+- `packages/web/src/shared/lib/api-session.ts`
+- `packages/web/src/shared/lib/query-invalidation.ts`
+- `packages/web/src/shared/lib/validations`
 
-Server mutation flow:
+Backend mutation flow:
 
-1. Check session and workspace access with `requireUserId` or `requireWorkspaceAccess`.
-2. Validate inputs with Zod schemas.
-3. Execute Prisma reads/writes.
-4. For balance-changing operations, use application-layer transactional helpers.
-5. Revalidate affected app routes.
-6. Return `ok`, `success`, or `fail`.
+1. Authenticate with API auth guards.
+2. Check workspace access with `WorkspaceAccessGuard` and role metadata when needed.
+3. Validate inputs with NestJS DTOs.
+4. Execute Prisma reads/writes in API services.
+5. Keep balance-changing operations inside `prisma.$transaction`.
+6. Return explicit DTO response shapes documented in OpenAPI.
 
 ## Transactional Application Layer
 
-Balance-sensitive logic lives in application files:
+Balance-sensitive persisted logic lives in API services:
 
-- `src/modules/transactions/transaction.application.ts`
-- `src/modules/debts/debt.application.ts`
+- `packages/api/src/transactions/transactions.service.ts`
+- `packages/api/src/debts/debts.service.ts`
 
 These files use `prisma.$transaction` to keep domain writes consistent. They also centralize important checks such as:
 
@@ -111,9 +112,9 @@ Authentication is owned by `packages/api/src/auth`:
 - `GET /auth/session` returns the current API session.
 - `PATCH /auth/user` updates user settings.
 
-`packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `src/shared/lib/api-session.ts`, which forwards the API session cookie to the backend session endpoint.
+`packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `packages/web/src/shared/lib/api-session.ts`, which forwards the API session cookie to the backend session endpoint.
 
-Workspace authorization is handled by `requireWorkspaceAccess`:
+Workspace authorization is handled in the API by `WorkspaceAccessGuard` and `WorkspaceRoles`:
 
 - Owners have the highest effective role.
 - Members are resolved through `WorkspaceMember`.
@@ -121,19 +122,19 @@ Workspace authorization is handled by `requireWorkspaceAccess`:
 
 ## Client Data And Cache
 
-TanStack Query keys are centralized in `src/shared/lib/query-keys.ts`.
+TanStack Query keys are centralized in `packages/web/src/shared/lib/query-keys.ts`.
 
 Server pages prefetch data and dehydrate it. Client components consume the same keys to avoid duplicate loading and keep cache behavior predictable.
 
-Optimistic updates are centralized in `src/shared/lib/optimistic-workspace-updates.ts`. Use these helpers when changing account, category, debt, transaction, workspace, or user references in client cache.
+Optimistic updates are centralized in `packages/web/src/shared/lib/optimistic-workspace-updates.ts`. Use these helpers when changing account, category, debt, transaction, workspace, or user references in client cache.
 
 ## UI System
 
-Reusable UI primitives live in `src/shared/ui`.
+Reusable UI primitives live in `packages/web/src/shared/ui`.
 
-Reusable composed components live in `src/shared/components`.
+Reusable composed components live in `packages/web/src/shared/components`.
 
-Prefer existing primitives for dialogs, sheets, selects, popovers, buttons, cards, tables, forms, and date controls. Feature-specific components should stay inside the relevant `src/modules/*/components` directory.
+Prefer existing primitives for dialogs, sheets, selects, popovers, buttons, cards, tables, forms, and date controls. Feature-specific components should stay inside the relevant `packages/web/src/modules/*/components` directory.
 
 ## Invalidation
 
