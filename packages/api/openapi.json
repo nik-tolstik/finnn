@@ -3182,6 +3182,213 @@
         "tags": ["Analytics"]
       }
     },
+    "/exchange-rates": {
+      "get": {
+        "operationId": "getLatestExchangeRates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRatesResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get latest exchange rates",
+        "tags": ["Currency"]
+      }
+    },
+    "/exchange-rates/rate": {
+      "get": {
+        "operationId": "getExchangeRate",
+        "parameters": [
+          {
+            "name": "toCurrency",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": ["USD", "EUR", "BYN"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "fromCurrency",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": ["USD", "EUR", "BYN"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get one exchange rate for a date",
+        "tags": ["Currency"]
+      }
+    },
+    "/exchange-rates/today": {
+      "get": {
+        "operationId": "getTodayExchangeRates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRatesResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get today's exchange rates",
+        "tags": ["Currency"]
+      }
+    },
+    "/exchange-rates/yesterday": {
+      "get": {
+        "operationId": "getYesterdayExchangeRates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRatesResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get yesterday's exchange rates",
+        "tags": ["Currency"]
+      }
+    },
+    "/cron/update-exchange-rates": {
+      "get": {
+        "operationId": "updateExchangeRatesCron",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "description": "Bearer CRON_SECRET",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateExchangeRatesResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Persist daily exchange rates",
+        "tags": ["Cron"]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "getHealth",
@@ -3228,6 +3435,14 @@
     },
     {
       "name": "Debts",
+      "description": ""
+    },
+    {
+      "name": "Currency",
+      "description": ""
+    },
+    {
+      "name": "Cron",
       "description": ""
     }
   ],
@@ -5571,6 +5786,103 @@
           "debtsByPerson",
           "largestMovements"
         ]
+      },
+      "ExchangeRateQueryDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "fromCurrency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "USD"
+          },
+          "toCurrency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "BYN"
+          }
+        },
+        "required": ["date", "fromCurrency", "toCurrency"]
+      },
+      "ExchangeRatesResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "BYN": 1,
+              "EUR": 3.6124,
+              "USD": 3.2721
+            }
+          }
+        },
+        "required": ["data"]
+      },
+      "ExchangeRateResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "number",
+            "example": 3.2721
+          }
+        },
+        "required": ["data"]
+      },
+      "SavedExchangeRateDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T00:00:00.000Z",
+            "format": "date-time"
+          },
+          "fromCurrency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "USD"
+          },
+          "toCurrency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "BYN"
+          },
+          "rate": {
+            "type": "number",
+            "example": 3.2721
+          }
+        },
+        "required": ["id", "date", "fromCurrency", "toCurrency", "rate"]
+      },
+      "UpdateExchangeRatesResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "saved": {
+            "type": "number",
+            "example": 2
+          },
+          "rates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SavedExchangeRateDto"
+            }
+          }
+        },
+        "required": ["success", "saved", "rates"]
       },
       "HealthResponseDto": {
         "type": "object",

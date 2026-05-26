@@ -6,6 +6,7 @@ import { AnalyticsModule } from "./analytics/analytics.module";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { CategoriesModule } from "./categories/categories.module";
+import { CurrencyModule } from "./currency/currency.module";
 import { DebtsModule } from "./debts/debts.module";
 import { TransactionsModule } from "./transactions/transactions.module";
 import { WorkspaceModule } from "./workspace/workspace.module";
@@ -20,6 +21,7 @@ import { WorkspaceModule } from "./workspace/workspace.module";
     DebtsModule,
     TransactionsModule,
     AnalyticsModule,
+    CurrencyModule,
   ],
   controllers: [AppController],
 })

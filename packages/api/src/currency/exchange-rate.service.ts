@@ -309,7 +309,7 @@ export class ExchangeRateService {
   private async saveBaseRates(date: Date, baseRates: BaseRates) {
     const normalizedDate = this.normalizeDate(date);
 
-    await Promise.all(
+    return Promise.all(
       NON_BASE_CURRENCIES.map(async (currency) => {
         const rate = baseRates[currency];
 
@@ -434,5 +434,83 @@ export class ExchangeRateService {
     }
 
     return rates;
+  }
+
+  private buildRatesResponse(date: Date, rates: Map<string, number>) {
+    return Object.fromEntries(
+      NON_BASE_CURRENCIES.flatMap((currency) => {
+        const rate = rates.get(
+          this.getRequestKey({
+            date,
+            fromCurrency: currency,
+            toCurrency: BASE_CURRENCY,
+          })
+        );
+
+        return typeof rate === "number" ? [[currency, rate]] : [];
+      })
+    );
+  }
+
+  async saveDailyExchangeRates() {
+    const today = this.normalizeDate(new Date());
+    const apiResult = await this.getNBRBExchangeRates();
+
+    if ("error" in apiResult) {
+      throw new Error(apiResult.error);
+    }
+
+    const baseRates = this.toBaseRates(apiResult.data);
+    if (!this.hasCompleteBaseRates(baseRates)) {
+      throw new Error(`Курсы USD/EUR на ${this.getDateKey(today)} не найдены`);
+    }
+
+    return this.saveBaseRates(today, baseRates);
+  }
+
+  async getExchangeRate(date: Date, fromCurrency: Currency, toCurrency: Currency) {
+    if (fromCurrency === toCurrency) {
+      return 1;
+    }
+
+    const request = {
+      date,
+      fromCurrency,
+      toCurrency,
+    };
+    const rates = await this.preloadExchangeRates([request]);
+    const rate = rates.get(this.getRequestKey(request));
+
+    if (typeof rate !== "number") {
+      throw new Error(`Курс для ${fromCurrency}/${toCurrency} на ${this.getDateKey(date)} не найден`);
+    }
+
+    return rate;
+  }
+
+  private async getCurrencyRatesForDate(date: Date) {
+    const rates = await this.preloadExchangeRates(
+      NON_BASE_CURRENCIES.map((currency) => ({
+        date,
+        fromCurrency: currency,
+        toCurrency: BASE_CURRENCY,
+      }))
+    );
+
+    const response = this.buildRatesResponse(date, rates);
+
+    if (Object.keys(response).length === 0) {
+      throw new Error("Не удалось получить курсы валют");
+    }
+
+    return response;
+  }
+
+  async getTodayExchangeRates() {
+    return this.getCurrencyRatesForDate(this.normalizeDate(new Date()));
+  }
+
+  async getYesterdayExchangeRates() {
+    return this.getCurrencyRatesForDate(this.normalizeDate(new Date(Date.now() - 24 * 60 * 60 * 1000)));
   }
 }
