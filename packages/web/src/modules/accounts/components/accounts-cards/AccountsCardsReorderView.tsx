@@ -15,7 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { updateAccountsOrder } from "@/modules/accounts/account.service";
+import { updateAccountsOrder } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
 import { resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";

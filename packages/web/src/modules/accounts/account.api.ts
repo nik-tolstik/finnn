@@ -1,5 +1,3 @@
-"use server";
-
 import {
   archiveAccount as archiveApiAccount,
   createAccount as createApiAccount,
@@ -13,8 +11,6 @@ import {
 } from "@/shared/api/generated/accounts/accounts";
 import type { AccountDto, ArchivedAccountDto, CreateAccountDto, UpdateAccountDto } from "@/shared/api/generated/model";
 import { fail, ok, success } from "@/shared/lib/action-result";
-import { getServerApiRequestOptions } from "@/shared/lib/api-session";
-import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import type {
   CreateAccountInput,
   UpdateAccountInput,
@@ -75,87 +71,81 @@ function toUpdateAccountDto(input: UpdateAccountInput): UpdateAccountDto {
   };
 }
 
-export async function createAccount(workspaceId: string, input: CreateAccountInput) {
+export async function createAccount(workspaceId: string, input: CreateAccountInput, options?: RequestInit) {
   try {
-    const response = await createApiAccount(workspaceId, toCreateAccountDto(input), await getServerApiRequestOptions());
-    revalidateAccountingRoutes();
+    const response = await createApiAccount(workspaceId, toCreateAccountDto(input), options);
     return ok(toLegacyAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать счёт");
   }
 }
 
-export async function updateAccount(id: string, input: UpdateAccountInput) {
+export async function updateAccount(id: string, input: UpdateAccountInput, options?: RequestInit) {
   try {
-    const response = await updateApiAccount(id, toUpdateAccountDto(input), await getServerApiRequestOptions());
-    revalidateAccountingRoutes();
+    const response = await updateApiAccount(id, toUpdateAccountDto(input), options);
     return ok(toLegacyAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить счёт");
   }
 }
 
-export async function archiveAccount(id: string) {
+export async function archiveAccount(id: string, options?: RequestInit) {
   try {
-    await archiveApiAccount(id, await getServerApiRequestOptions());
-    revalidateAccountingRoutes();
+    await archiveApiAccount(id, options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось архивировать счёт");
   }
 }
 
-export async function getAccounts(workspaceId: string) {
+export async function getAccounts(workspaceId: string, options?: RequestInit) {
   try {
-    const response = await listApiAccounts(workspaceId, await getServerApiRequestOptions());
+    const response = await listApiAccounts(workspaceId, options);
     return ok(response.accounts.map(toLegacyAccount));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить счета");
   }
 }
 
-export async function getAccount(id: string) {
+export async function getAccount(id: string, options?: RequestInit) {
   try {
-    const response = await getApiAccount(id, await getServerApiRequestOptions());
+    const response = await getApiAccount(id, options);
     return ok(toLegacyAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить счёт");
   }
 }
 
-export async function updateAccountsOrder(workspaceId: string, input: UpdateAccountsOrderInput) {
+export async function updateAccountsOrder(workspaceId: string, input: UpdateAccountsOrderInput, options?: RequestInit) {
   try {
-    await updateApiAccountsOrder(workspaceId, input, await getServerApiRequestOptions());
-    revalidateAccountingRoutes();
+    await updateApiAccountsOrder(workspaceId, input, options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить порядок счетов");
   }
 }
 
-export async function getArchivedAccounts(workspaceId: string) {
+export async function getArchivedAccounts(workspaceId: string, options?: RequestInit) {
   try {
-    const response = await listApiArchivedAccounts(workspaceId, await getServerApiRequestOptions());
+    const response = await listApiArchivedAccounts(workspaceId, options);
     return ok(response.accounts.map(toLegacyArchivedAccount));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить архивированные счета");
   }
 }
 
-export async function unarchiveAccount(id: string) {
+export async function unarchiveAccount(id: string, options?: RequestInit) {
   try {
-    await unarchiveApiAccount(id, await getServerApiRequestOptions());
-    revalidateAccountingRoutes();
+    await unarchiveApiAccount(id, options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось удалить счёт из архива");
   }
 }
 
-export async function deleteArchivedAccount(id: string) {
+export async function deleteArchivedAccount(id: string, options?: RequestInit) {
   try {
-    await deleteApiArchivedAccount(id, await getServerApiRequestOptions());
-    revalidateAccountingRoutes();
+    await deleteApiArchivedAccount(id, options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось удалить архивный счёт");

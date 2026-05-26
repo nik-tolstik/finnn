@@ -1,7 +1,7 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import { redirect } from "next/navigation";
 
-import { getAccounts } from "@/modules/accounts/account.service";
+import { getAccounts } from "@/modules/accounts/account.api";
 import {
   toAnalyticsErrorResult,
   toAnalyticsOverviewParams,
@@ -52,7 +52,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: accountKeys.list(workspaceId),
-      queryFn: () => getAccounts(workspaceId),
+      queryFn: () => getAccounts(workspaceId, requestOptions),
     }),
     queryClient.prefetchQuery({
       queryKey: categoryKeys.list(workspaceId),

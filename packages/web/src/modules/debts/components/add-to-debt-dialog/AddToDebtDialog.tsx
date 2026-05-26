@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { getAccounts } from "@/modules/accounts/account.service";
+import { getAccounts } from "@/modules/accounts/account.api";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
 import {

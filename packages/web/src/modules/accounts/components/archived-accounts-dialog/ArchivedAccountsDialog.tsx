@@ -17,7 +17,7 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Tooltip } from "@/shared/ui/tooltip";
 
-import { getArchivedAccounts, unarchiveAccount } from "../../account.service";
+import { getArchivedAccounts, unarchiveAccount } from "../../account.api";
 import { DeleteArchivedAccountDialog } from "../delete-archived-account-dialog/DeleteArchivedAccountDialog";
 
 type ArchivedAccount = Account & {

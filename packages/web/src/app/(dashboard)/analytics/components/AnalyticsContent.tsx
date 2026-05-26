@@ -6,7 +6,7 @@ import { ArrowRightLeft, HandCoins, TrendingDown, TrendingUp, Wallet } from "luc
 import dynamic from "next/dynamic";
 import { type ReactNode, useState } from "react";
 
-import { getAccounts } from "@/modules/accounts/account.service";
+import { getAccounts } from "@/modules/accounts/account.api";
 import {
   toAnalyticsErrorResult,
   toAnalyticsOverviewParams,

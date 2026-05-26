@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 
-import { getAccounts } from "@/modules/accounts/account.service";
+import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
 import { getVisibleAccounts, resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountsCards } from "@/modules/accounts/components/accounts-cards";

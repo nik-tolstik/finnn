@@ -8,7 +8,7 @@ import { removeAccountsFromCache, runOptimisticWorkspaceMutation } from "@/share
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
-import { deleteArchivedAccount } from "../../account.service";
+import { deleteArchivedAccount } from "../../account.api";
 
 interface DeleteArchivedAccountDialogProps {
   account: {

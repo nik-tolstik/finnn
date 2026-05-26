@@ -34,7 +34,7 @@ import { Select } from "@/shared/ui/select";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 
-import { createAccount } from "../../account.service";
+import { createAccount } from "../../account.api";
 
 const WORKSPACE_ICONS: Record<string, LucideIcon> = {
   Building2,

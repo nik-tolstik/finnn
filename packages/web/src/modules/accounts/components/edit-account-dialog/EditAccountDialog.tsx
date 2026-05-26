@@ -31,7 +31,7 @@ import { Select } from "@/shared/ui/select";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 
-import { updateAccount } from "../../account.service";
+import { updateAccount } from "../../account.api";
 
 const ColorPicker = dynamic(() => import("@/shared/ui/color-picker").then((mod) => mod.ColorPicker));
 

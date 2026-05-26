@@ -12,7 +12,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
-import { archiveAccount } from "../../account.service";
+import { archiveAccount } from "../../account.api";
 
 interface ArchiveAccountDialogProps {
   account: Account;

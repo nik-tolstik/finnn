@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { getAccounts } from "@/modules/accounts/account.service";
+import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
 import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
 import { getCategories } from "@/modules/categories/category.api";
