@@ -69,7 +69,7 @@ Focused tests:
 
 ```bash
 pnpm test src/shared/lib/balance-domain.test.ts
-pnpm test src/modules/transactions/transaction.service.test.ts
+pnpm test src/modules/transactions/transaction.api.test.ts
 pnpm test src/modules/debts/debt.service.test.ts
 pnpm test src/shared/lib/optimistic-workspace-updates.test.ts
 pnpm test src/shared/lib/service-worker-cache-policy.test.ts

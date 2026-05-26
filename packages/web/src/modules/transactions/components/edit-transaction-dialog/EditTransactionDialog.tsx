@@ -41,7 +41,7 @@ import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
 import { compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
-import { updatePaymentTransaction } from "../../transaction.service";
+import { updatePaymentTransaction } from "../../transaction.api";
 import type { CombinedTransaction, PaymentTransactionWithRelations, TransactionUser } from "../../transaction.types";
 import {
   getEditPaymentDefaultValues,

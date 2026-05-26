@@ -46,8 +46,8 @@ import { Segmented } from "@/shared/ui/segmented";
 import { Textarea } from "@/shared/ui/textarea";
 import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
 
+import { createPaymentTransaction, createTransferTransaction } from "../../transaction.api";
 import { PaymentTransactionType } from "../../transaction.constants";
-import { createPaymentTransaction, createTransferTransaction } from "../../transaction.service";
 import type { CombinedTransaction, TransactionAccountWithOwner, TransactionUser } from "../../transaction.types";
 import { TransferForm } from "../transfer-form/TransferForm";
 import {

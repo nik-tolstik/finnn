@@ -24,7 +24,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
-import { createTransferTransaction } from "../../transaction.service";
+import { createTransferTransaction } from "../../transaction.api";
 import type { CombinedTransaction, TransactionAccountWithOwner, TransactionUser } from "../../transaction.types";
 import { TransferForm } from "../transfer-form/TransferForm";
 import { TransferFormSubmitButton } from "../transfer-form-submit-button/TransferFormSubmitButton";

@@ -17,7 +17,7 @@ import {
   useTransactionFilters,
 } from "@/modules/transactions/components/transactions-filters";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/transactions-list-skeleton";
-import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
+import { getCombinedTransactions } from "@/modules/transactions/transaction.api";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
 import { getWorkspaceMembers } from "@/modules/workspace/workspace.api";
 import { useDialogState } from "@/shared/hooks/useDialogState";

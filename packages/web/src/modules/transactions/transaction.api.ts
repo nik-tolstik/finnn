@@ -1,5 +1,3 @@
-"use server";
-
 import type {
   CreatePaymentTransactionDto,
   CreateTransferTransactionDto,
@@ -22,8 +20,6 @@ import {
   updateTransferTransaction as updateApiTransferTransaction,
 } from "@/shared/api/generated/transactions/transactions";
 import { fail, ok, success } from "@/shared/lib/action-result";
-import { getServerApiRequestOptions } from "@/shared/lib/api-session";
-import { revalidateAccountingRoutes } from "@/shared/lib/revalidate-app-routes";
 import type {
   CreatePaymentTransactionInput,
   CreateTransferTransactionInput,
@@ -201,72 +197,70 @@ function toCombinedTransactionParams(filters?: CombinedTransactionFilters): GetC
   };
 }
 
-export async function createPaymentTransaction(workspaceId: string, input: CreatePaymentTransactionInput) {
+export async function createPaymentTransaction(
+  workspaceId: string,
+  input: CreatePaymentTransactionInput,
+  options?: RequestInit
+) {
   try {
-    const response = await createApiPaymentTransaction(
-      workspaceId,
-      toCreatePaymentTransactionDto(input),
-      await getServerApiRequestOptions()
-    );
-    revalidateAccountingRoutes();
+    const response = await createApiPaymentTransaction(workspaceId, toCreatePaymentTransactionDto(input), options);
     return ok(toLegacyPaymentTransaction(response.transaction));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать транзакцию");
   }
 }
 
-export async function createTransferTransaction(workspaceId: string, input: CreateTransferTransactionInput) {
+export async function createTransferTransaction(
+  workspaceId: string,
+  input: CreateTransferTransactionInput,
+  options?: RequestInit
+) {
   try {
-    const response = await createApiTransferTransaction(
-      workspaceId,
-      toCreateTransferTransactionDto(input),
-      await getServerApiRequestOptions()
-    );
-    revalidateAccountingRoutes();
+    const response = await createApiTransferTransaction(workspaceId, toCreateTransferTransactionDto(input), options);
     return ok(toLegacyTransferTransaction(response.transfer));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать перевод");
   }
 }
 
-export async function updatePaymentTransaction(id: string, input: UpdatePaymentTransactionInput) {
+export async function updatePaymentTransaction(
+  id: string,
+  input: UpdatePaymentTransactionInput,
+  options?: RequestInit
+) {
   try {
-    const response = await updateApiPaymentTransaction(
-      id,
-      toUpdatePaymentTransactionDto(input),
-      await getServerApiRequestOptions()
-    );
-    revalidateAccountingRoutes();
+    const response = await updateApiPaymentTransaction(id, toUpdatePaymentTransactionDto(input), options);
     return ok(toLegacyPaymentTransaction(response.transaction));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить транзакцию");
   }
 }
 
-export async function updateTransferTransaction(id: string, input: UpdateTransferTransactionInput) {
+export async function updateTransferTransaction(
+  id: string,
+  input: UpdateTransferTransactionInput,
+  options?: RequestInit
+) {
   try {
-    await updateApiTransferTransaction(id, toUpdateTransferTransactionDto(input), await getServerApiRequestOptions());
-    revalidateAccountingRoutes();
+    await updateApiTransferTransaction(id, toUpdateTransferTransactionDto(input), options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить перевод");
   }
 }
 
-export async function deleteTransferTransaction(id: string) {
+export async function deleteTransferTransaction(id: string, options?: RequestInit) {
   try {
-    await deleteApiTransferTransaction(id, await getServerApiRequestOptions());
-    revalidateAccountingRoutes();
+    await deleteApiTransferTransaction(id, options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось удалить перевод");
   }
 }
 
-export async function deletePaymentTransaction(id: string) {
+export async function deletePaymentTransaction(id: string, options?: RequestInit) {
   try {
-    await deleteApiPaymentTransaction(id, await getServerApiRequestOptions());
-    revalidateAccountingRoutes();
+    await deleteApiPaymentTransaction(id, options);
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось удалить транзакцию");
@@ -277,14 +271,11 @@ export type CombinedTransactionFilters = TransactionListFilters;
 
 export async function getCombinedTransactions(
   workspaceId: string,
-  filters?: CombinedTransactionFilters
+  filters?: CombinedTransactionFilters,
+  options?: RequestInit
 ): Promise<{ data: CombinedTransaction[]; total: number } | { error: string }> {
   try {
-    const response = await getApiCombinedTransactions(
-      workspaceId,
-      toCombinedTransactionParams(filters),
-      await getServerApiRequestOptions()
-    );
+    const response = await getApiCombinedTransactions(workspaceId, toCombinedTransactionParams(filters), options);
 
     return {
       data: response.data.map(toLegacyCombinedTransaction),

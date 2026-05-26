@@ -31,7 +31,7 @@ import {
 } from "@/shared/ui/dialog";
 import { subtractMoney } from "@/shared/utils/money";
 
-import { updateTransferTransaction } from "../../transaction.service";
+import { updateTransferTransaction } from "../../transaction.api";
 import type {
   CombinedTransaction,
   TransactionAccountWithOwner,

@@ -20,8 +20,8 @@ import {
 } from "@/shared/lib/optimistic-workspace-updates";
 import { compareMoney, subtractMoney } from "@/shared/utils/money";
 
+import { deletePaymentTransaction, deleteTransferTransaction } from "../../../transaction.api";
 import type { PaymentTransactionType } from "../../../transaction.constants";
-import { deletePaymentTransaction, deleteTransferTransaction } from "../../../transaction.service";
 import type {
   ActionableCombinedTransaction,
   CreateTransactionDialogData,

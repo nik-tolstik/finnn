@@ -11,8 +11,6 @@ const deleteApiTransferTransactionMock = vi.fn();
 const getApiCombinedTransactionsMock = vi.fn();
 const updateApiPaymentTransactionMock = vi.fn();
 const updateApiTransferTransactionMock = vi.fn();
-const getServerApiRequestOptionsMock = vi.fn();
-const revalidateAccountingRoutesMock = vi.fn();
 
 vi.mock("@/shared/api/generated/transactions/transactions", () => ({
   createPaymentTransaction: createApiPaymentTransactionMock,
@@ -24,16 +22,8 @@ vi.mock("@/shared/api/generated/transactions/transactions", () => ({
   updateTransferTransaction: updateApiTransferTransactionMock,
 }));
 
-vi.mock("@/shared/lib/api-session", () => ({
-  getServerApiRequestOptions: getServerApiRequestOptionsMock,
-}));
-
-vi.mock("@/shared/lib/revalidate-app-routes", () => ({
-  revalidateAccountingRoutes: revalidateAccountingRoutesMock,
-}));
-
 const requestOptions = {
-  cache: "no-store",
+  cache: "no-store" as const,
   headers: { cookie: "finnn_session=token" },
 };
 
@@ -132,10 +122,9 @@ function createDebtTransactionDto(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe("transaction.service API adapter", () => {
+describe("transaction.api", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getServerApiRequestOptionsMock.mockResolvedValue(requestOptions);
   });
 
   it("maps combined transaction DTOs to the legacy paginated Date shape", async () => {
@@ -157,14 +146,18 @@ describe("transaction.service API adapter", () => {
       total: 3,
     });
 
-    const { getCombinedTransactions } = await import("./transaction.service");
-    const result = await getCombinedTransactions("workspace-1", {
-      skip: 5,
-      take: 10,
-      transactionTypes: [PaymentTransactionType.EXPENSE, "transfer", "debt"],
-      accountIds: ["account-1"],
-      includeDebtTransactions: true,
-    });
+    const { getCombinedTransactions } = await import("./transaction.api");
+    const result = await getCombinedTransactions(
+      "workspace-1",
+      {
+        skip: 5,
+        take: 10,
+        transactionTypes: [PaymentTransactionType.EXPENSE, "transfer", "debt"],
+        accountIds: ["account-1"],
+        includeDebtTransactions: true,
+      },
+      requestOptions
+    );
 
     expect(getApiCombinedTransactionsMock).toHaveBeenCalledWith(
       "workspace-1",
@@ -220,7 +213,7 @@ describe("transaction.service API adapter", () => {
     });
   });
 
-  it("serializes payment mutation dates, unwraps responses, and revalidates", async () => {
+  it("serializes payment mutation dates and unwraps responses", async () => {
     createApiPaymentTransactionMock.mockResolvedValue({
       transaction: createPaymentTransactionDto({ id: "payment-new" }),
     });
@@ -228,27 +221,35 @@ describe("transaction.service API adapter", () => {
       transaction: createPaymentTransactionDto({ id: "payment-1", amount: "99" }),
     });
 
-    const { createPaymentTransaction, updatePaymentTransaction } = await import("./transaction.service");
+    const { createPaymentTransaction, updatePaymentTransaction } = await import("./transaction.api");
 
     await expect(
-      createPaymentTransaction("workspace-1", {
-        accountId: "account-1",
-        amount: "125.50",
-        type: PaymentTransactionType.EXPENSE,
-        description: "Groceries",
-        date: new Date("2026-04-07T12:00:00.000Z"),
-        categoryId: "category-1",
-        newCategory: { name: "Food", type: CategoryType.EXPENSE },
-      })
+      createPaymentTransaction(
+        "workspace-1",
+        {
+          accountId: "account-1",
+          amount: "125.50",
+          type: PaymentTransactionType.EXPENSE,
+          description: "Groceries",
+          date: new Date("2026-04-07T12:00:00.000Z"),
+          categoryId: "category-1",
+          newCategory: { name: "Food", type: CategoryType.EXPENSE },
+        },
+        requestOptions
+      )
     ).resolves.toEqual({
       data: expect.objectContaining({ id: "payment-new", date: new Date("2026-04-01T10:00:00.000Z") }),
     });
     await expect(
-      updatePaymentTransaction("payment-1", {
-        amount: "99",
-        date: new Date("2026-04-08T12:00:00.000Z"),
-        categoryId: null,
-      })
+      updatePaymentTransaction(
+        "payment-1",
+        {
+          amount: "99",
+          date: new Date("2026-04-08T12:00:00.000Z"),
+          categoryId: null,
+        },
+        requestOptions
+      )
     ).resolves.toEqual({
       data: expect.objectContaining({ id: "payment-1", amount: "99" }),
     });
@@ -269,7 +270,6 @@ describe("transaction.service API adapter", () => {
       }),
       requestOptions
     );
-    expect(revalidateAccountingRoutesMock).toHaveBeenCalledTimes(2);
   });
 
   it("serializes transfer mutation dates and preserves success result compatibility", async () => {
@@ -287,31 +287,39 @@ describe("transaction.service API adapter", () => {
       deletePaymentTransaction,
       deleteTransferTransaction,
       updateTransferTransaction,
-    } = await import("./transaction.service");
+    } = await import("./transaction.api");
 
     await expect(
-      createTransferTransaction("workspace-1", {
-        fromAccountId: "account-1",
-        toAccountId: "account-2",
-        amount: "50",
-        toAmount: "49.50",
-        description: "Move cash",
-        date: new Date("2026-04-09T12:00:00.000Z"),
-      })
+      createTransferTransaction(
+        "workspace-1",
+        {
+          fromAccountId: "account-1",
+          toAccountId: "account-2",
+          amount: "50",
+          toAmount: "49.50",
+          description: "Move cash",
+          date: new Date("2026-04-09T12:00:00.000Z"),
+        },
+        requestOptions
+      )
     ).resolves.toEqual({
       data: expect.objectContaining({ id: "transfer-new" }),
     });
     await expect(
-      updateTransferTransaction("transfer-1", {
-        fromAccountId: "account-1",
-        toAccountId: "account-2",
-        amount: "60",
-        toAmount: "59.50",
-        date: new Date("2026-04-10T12:00:00.000Z"),
-      })
+      updateTransferTransaction(
+        "transfer-1",
+        {
+          fromAccountId: "account-1",
+          toAccountId: "account-2",
+          amount: "60",
+          toAmount: "59.50",
+          date: new Date("2026-04-10T12:00:00.000Z"),
+        },
+        requestOptions
+      )
     ).resolves.toEqual({ success: true });
-    await expect(deleteTransferTransaction("transfer-1")).resolves.toEqual({ success: true });
-    await expect(deletePaymentTransaction("payment-1")).resolves.toEqual({ success: true });
+    await expect(deleteTransferTransaction("transfer-1", requestOptions)).resolves.toEqual({ success: true });
+    await expect(deletePaymentTransaction("payment-1", requestOptions)).resolves.toEqual({ success: true });
 
     expect(createApiTransferTransactionMock).toHaveBeenCalledWith(
       "workspace-1",
@@ -323,13 +331,14 @@ describe("transaction.service API adapter", () => {
       expect.objectContaining({ date: "2026-04-10T12:00:00.000Z" }),
       requestOptions
     );
-    expect(revalidateAccountingRoutesMock).toHaveBeenCalledTimes(4);
+    expect(deleteApiTransferTransactionMock).toHaveBeenCalledWith("transfer-1", requestOptions);
+    expect(deleteApiPaymentTransactionMock).toHaveBeenCalledWith("payment-1", requestOptions);
   });
 
   it("normalizes API failures into legacy action errors", async () => {
     getApiCombinedTransactionsMock.mockRejectedValue(new Error("No access"));
 
-    const { getCombinedTransactions } = await import("./transaction.service");
+    const { getCombinedTransactions } = await import("./transaction.api");
 
     await expect(getCombinedTransactions("workspace-1")).resolves.toEqual({ error: "No access" });
   });

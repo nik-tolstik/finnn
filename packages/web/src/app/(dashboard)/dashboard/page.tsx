@@ -7,7 +7,7 @@ import {
   parseTransactionFilters,
   shouldIncludeDebtTransactions,
 } from "@/modules/transactions/components/transactions-filters";
-import { getCombinedTransactions } from "@/modules/transactions/transaction.service";
+import { getCombinedTransactions } from "@/modules/transactions/transaction.api";
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
 import { getWorkspaceMembers, getWorkspaces } from "@/modules/workspace/workspace.api";
 import {
@@ -69,7 +69,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     }),
     queryClient.prefetchQuery({
       queryKey: transactionKeys.list(workspaceId, initialTransactionFilters),
-      queryFn: () => getCombinedTransactions(workspaceId, initialTransactionFilters),
+      queryFn: () => getCombinedTransactions(workspaceId, initialTransactionFilters, requestOptions),
     }),
   ]);
 
