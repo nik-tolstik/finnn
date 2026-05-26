@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 
 import { AccountsModule } from "./accounts/accounts.module";
+import { AnalyticsModule } from "./analytics/analytics.module";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { CategoriesModule } from "./categories/categories.module";
@@ -18,6 +19,7 @@ import { WorkspaceModule } from "./workspace/workspace.module";
     CategoriesModule,
     DebtsModule,
     TransactionsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
 })

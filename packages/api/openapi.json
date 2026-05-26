@@ -3024,6 +3024,164 @@
         "tags": ["Transactions"]
       }
     },
+    "/workspaces/{workspaceId}/analytics/overview": {
+      "get": {
+        "operationId": "getAnalyticsOverview",
+        "parameters": [
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "description",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "categoryIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "transactionTypes",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "userIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "amountTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "amountFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsOverviewResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get workspace analytics overview",
+        "tags": ["Analytics"]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "getHealth",
@@ -5077,6 +5235,342 @@
           }
         },
         "required": ["fromAccountId", "toAccountId", "amount", "toAmount", "date"]
+      },
+      "AnalyticsOverviewQueryDto": {
+        "type": "object",
+        "properties": {
+          "amountFrom": {
+            "type": "string",
+            "example": "10"
+          },
+          "amountTo": {
+            "type": "string",
+            "example": "500"
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "transactionTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["income", "expense", "transfer", "debt"]
+            }
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "example": "lunch"
+          },
+          "dateFrom": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "dateTo": {
+            "type": "string",
+            "example": "2026-05-31"
+          }
+        }
+      },
+      "AnalyticsEffectiveRangeDto": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2026-05-31"
+          },
+          "previousStartDate": {
+            "type": "string",
+            "example": "2026-04-01"
+          },
+          "previousEndDate": {
+            "type": "string",
+            "example": "2026-04-30"
+          },
+          "dayCount": {
+            "type": "number",
+            "example": 31
+          },
+          "isImplicit": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "required": ["startDate", "endDate", "previousStartDate", "previousEndDate", "dayCount", "isImplicit"]
+      },
+      "AnalyticsSummaryMetricDto": {
+        "type": "object",
+        "properties": {
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "previousTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "percentageChange": {
+            "type": "number",
+            "nullable": true
+          },
+          "transactionCount": {
+            "type": "number"
+          }
+        },
+        "required": ["totalInBaseCurrency", "previousTotalInBaseCurrency", "transactionCount"]
+      },
+      "AnalyticsNetFlowMetricDto": {
+        "type": "object",
+        "properties": {
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "previousTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "percentageChange": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": ["totalInBaseCurrency", "previousTotalInBaseCurrency"]
+      },
+      "AnalyticsTransferVolumeMetricDto": {
+        "type": "object",
+        "properties": {
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "transactionCount": {
+            "type": "number"
+          }
+        },
+        "required": ["totalInBaseCurrency", "transactionCount"]
+      },
+      "AnalyticsOpenDebtsMetricDto": {
+        "type": "object",
+        "properties": {
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "debtCount": {
+            "type": "number"
+          }
+        },
+        "required": ["totalInBaseCurrency", "debtCount"]
+      },
+      "AnalyticsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "income": {
+            "$ref": "#/components/schemas/AnalyticsSummaryMetricDto"
+          },
+          "expense": {
+            "$ref": "#/components/schemas/AnalyticsSummaryMetricDto"
+          },
+          "netFlow": {
+            "$ref": "#/components/schemas/AnalyticsNetFlowMetricDto"
+          },
+          "transferVolume": {
+            "$ref": "#/components/schemas/AnalyticsTransferVolumeMetricDto"
+          },
+          "openDebts": {
+            "$ref": "#/components/schemas/AnalyticsOpenDebtsMetricDto"
+          }
+        },
+        "required": ["income", "expense", "netFlow", "transferVolume", "openDebts"]
+      },
+      "AnalyticsComparisonDto": {
+        "type": "object",
+        "properties": {
+          "incomePreviousTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "expensePreviousTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "netFlowPreviousTotalInBaseCurrency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "incomePreviousTotalInBaseCurrency",
+          "expensePreviousTotalInBaseCurrency",
+          "netFlowPreviousTotalInBaseCurrency"
+        ]
+      },
+      "AnalyticsTimeSeriesPointDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "incomeTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "expenseTotalInBaseCurrency": {
+            "type": "string"
+          }
+        },
+        "required": ["date", "incomeTotalInBaseCurrency", "expenseTotalInBaseCurrency"]
+      },
+      "AnalyticsExpenseCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "transactionCount": {
+            "type": "number"
+          },
+          "sharePercent": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "name", "totalInBaseCurrency", "transactionCount", "sharePercent"]
+      },
+      "AnalyticsDebtByPersonDto": {
+        "type": "object",
+        "properties": {
+          "personName": {
+            "type": "string"
+          },
+          "lentTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "borrowedTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "netExposureInBaseCurrency": {
+            "type": "string"
+          },
+          "debtCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "personName",
+          "lentTotalInBaseCurrency",
+          "borrowedTotalInBaseCurrency",
+          "netExposureInBaseCurrency",
+          "debtCount"
+        ]
+      },
+      "AnalyticsLargestMovementDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["paymentTransaction", "transferTransaction", "debtTransaction"]
+          },
+          "kindLabel": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "primaryLabel": {
+            "type": "string"
+          },
+          "secondaryLabel": {
+            "type": "string"
+          },
+          "originalAmount": {
+            "type": "string"
+          },
+          "amountInBaseCurrency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "kindLabel",
+          "date",
+          "primaryLabel",
+          "secondaryLabel",
+          "originalAmount",
+          "amountInBaseCurrency"
+        ]
+      },
+      "AnalyticsOverviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "baseCurrency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "effectiveRange": {
+            "$ref": "#/components/schemas/AnalyticsEffectiveRangeDto"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AnalyticsSummaryDto"
+          },
+          "comparison": {
+            "$ref": "#/components/schemas/AnalyticsComparisonDto"
+          },
+          "timeSeries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsTimeSeriesPointDto"
+            }
+          },
+          "expenseCategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsExpenseCategoryDto"
+            }
+          },
+          "debtsByPerson": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsDebtByPersonDto"
+            }
+          },
+          "largestMovements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsLargestMovementDto"
+            }
+          }
+        },
+        "required": [
+          "baseCurrency",
+          "effectiveRange",
+          "summary",
+          "comparison",
+          "timeSeries",
+          "expenseCategories",
+          "debtsByPerson",
+          "largestMovements"
+        ]
       },
       "HealthResponseDto": {
         "type": "object",
