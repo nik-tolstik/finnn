@@ -7,7 +7,11 @@ import dynamic from "next/dynamic";
 import { type ReactNode, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import { getAnalyticsOverview } from "@/modules/analytics/analytics.service";
+import {
+  toAnalyticsErrorResult,
+  toAnalyticsOverviewParams,
+  toAnalyticsOverviewResult,
+} from "@/modules/analytics/analytics.api";
 import type { AnalyticsOverviewResult } from "@/modules/analytics/analytics.types";
 import { getCategories } from "@/modules/categories/category.service";
 import {
@@ -16,6 +20,7 @@ import {
   useTransactionFilters,
 } from "@/modules/transactions/components/transactions-filters";
 import { getWorkspaceMembers } from "@/modules/workspace/workspace.service";
+import { getAnalyticsOverview as getApiAnalyticsOverview } from "@/shared/api/generated/analytics/analytics";
 import { accountKeys, analyticsKeys, categoryKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -151,7 +156,14 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
     isFetching,
   } = useQuery({
     queryKey: analyticsKeys.overview(workspaceId, appliedFilters),
-    queryFn: () => getAnalyticsOverview(workspaceId, appliedFilters),
+    queryFn: async () => {
+      try {
+        const response = await getApiAnalyticsOverview(workspaceId, toAnalyticsOverviewParams(appliedFilters));
+        return toAnalyticsOverviewResult(response);
+      } catch (error: unknown) {
+        return toAnalyticsErrorResult(error);
+      }
+    },
     placeholderData: keepPreviousData,
   });
 

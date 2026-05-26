@@ -2,7 +2,11 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 import { redirect } from "next/navigation";
 
 import { getAccounts } from "@/modules/accounts/account.service";
-import { getAnalyticsOverview } from "@/modules/analytics/analytics.service";
+import {
+  toAnalyticsErrorResult,
+  toAnalyticsOverviewParams,
+  toAnalyticsOverviewResult,
+} from "@/modules/analytics/analytics.api";
 import { getCategories } from "@/modules/categories/category.service";
 import { parseTransactionFilters } from "@/modules/transactions/components/transactions-filters";
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
@@ -13,6 +17,8 @@ import {
   toURLSearchParams,
   type WorkspacePageSearchParams,
 } from "@/modules/workspace/workspace-search-params";
+import { getAnalyticsOverview as getApiAnalyticsOverview } from "@/shared/api/generated/analytics/analytics";
+import { getServerApiRequestOptions } from "@/shared/lib/api-session";
 import { accountKeys, analyticsKeys, categoryKeys, workspaceKeys } from "@/shared/lib/query-keys";
 
 import { AnalyticsContent } from "./components/AnalyticsContent";
@@ -57,7 +63,18 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
     }),
     queryClient.prefetchQuery({
       queryKey: analyticsKeys.overview(workspaceId, appliedFilters),
-      queryFn: () => getAnalyticsOverview(workspaceId, appliedFilters),
+      queryFn: async () => {
+        try {
+          const response = await getApiAnalyticsOverview(
+            workspaceId,
+            toAnalyticsOverviewParams(appliedFilters),
+            await getServerApiRequestOptions()
+          );
+          return toAnalyticsOverviewResult(response);
+        } catch (error: unknown) {
+          return toAnalyticsErrorResult(error);
+        }
+      },
     }),
   ]);
 

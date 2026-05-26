@@ -1,18 +1,14 @@
-"use server";
-
-import { getAnalyticsOverview as getApiAnalyticsOverview } from "@/shared/api/generated/analytics/analytics";
 import type {
   AnalyticsOverviewResponseDto,
   AnalyticsSummaryMetricDto,
   GetAnalyticsOverviewParams,
 } from "@/shared/api/generated/model";
 import { fail } from "@/shared/lib/action-result";
-import { getServerApiRequestOptions } from "@/shared/lib/api-session";
 
 import type { TransactionViewFilters } from "../transactions/components/transactions-filters";
 import type { AnalyticsOverviewResult, AnalyticsSummaryMetric } from "./analytics.types";
 
-function toAnalyticsOverviewParams(filters?: TransactionViewFilters): GetAnalyticsOverviewParams | undefined {
+export function toAnalyticsOverviewParams(filters?: TransactionViewFilters): GetAnalyticsOverviewParams | undefined {
   if (!filters || Object.values(filters).every((value) => value === undefined)) {
     return undefined;
   }
@@ -37,7 +33,7 @@ function toSummaryMetric(metric: AnalyticsSummaryMetricDto): AnalyticsSummaryMet
   };
 }
 
-function toAnalyticsOverviewResult(response: AnalyticsOverviewResponseDto): AnalyticsOverviewResult {
+export function toAnalyticsOverviewResult(response: AnalyticsOverviewResponseDto): AnalyticsOverviewResult {
   return {
     ...response,
     summary: {
@@ -57,19 +53,6 @@ function toAnalyticsOverviewResult(response: AnalyticsOverviewResponseDto): Anal
   };
 }
 
-export async function getAnalyticsOverview(
-  workspaceId: string,
-  filters: TransactionViewFilters = {}
-): Promise<AnalyticsOverviewResult | { error: string }> {
-  try {
-    const response = await getApiAnalyticsOverview(
-      workspaceId,
-      toAnalyticsOverviewParams(filters),
-      await getServerApiRequestOptions()
-    );
-
-    return toAnalyticsOverviewResult(response);
-  } catch (error: unknown) {
-    return fail(error, "Не удалось загрузить аналитику");
-  }
+export function toAnalyticsErrorResult(error: unknown): { error: string } {
+  return fail(error, "Не удалось загрузить аналитику");
 }
