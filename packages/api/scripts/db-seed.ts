@@ -5,26 +5,16 @@ import Big from "big.js";
 
 import { ensureDatabaseUrl } from "../src/common/env/database-url";
 
-const ADMIN_EMAIL = "admin@finnn.com";
-const ADMIN_PASSWORD = "123456";
-const WORKSPACE_SLUG = "first-workspace";
-const WORKSPACE_NAME = "First workspace";
-const TRANSACTIONS_TARGET_COUNT = 45;
+export const ADMIN_EMAIL = "admin@finnn.com";
+export const ADMIN_PASSWORD = "123456";
+export const WORKSPACE_SLUG = "first-workspace";
+export const WORKSPACE_NAME = "First workspace";
+export const TRANSACTIONS_TARGET_COUNT = 45;
 
 const TRANSACTION_TYPE = {
   INCOME: "income",
   EXPENSE: "expense",
 } as const;
-
-const databaseUrl = ensureDatabaseUrl();
-
-const prisma = new PrismaClient(
-  databaseUrl
-    ? {
-        datasourceUrl: databaseUrl,
-      }
-    : undefined
-);
 
 type CategoryType = "income" | "expense";
 type SeedAccount = {
@@ -52,7 +42,22 @@ const seedCategories: Array<{ name: string; type: CategoryType; icon: string; or
   { name: "Подписки", type: "expense", icon: "tv", order: 5 },
 ];
 
-function createRng(seed: number) {
+type SeedOptions = {
+  now?: Date;
+  hashPassword?: (password: string) => Promise<string>;
+};
+
+export function createSeedPrismaClient(databaseUrl = ensureDatabaseUrl()): PrismaClient {
+  return new PrismaClient(
+    databaseUrl
+      ? {
+          datasourceUrl: databaseUrl,
+        }
+      : undefined
+  );
+}
+
+export function createRng(seed: number) {
   let state = seed >>> 0;
   return () => {
     state = (state * 1664525 + 1013904223) >>> 0;
@@ -60,36 +65,38 @@ function createRng(seed: number) {
   };
 }
 
-function randomAmount(min: number, max: number, rng: () => number): string {
+export function randomAmount(min: number, max: number, rng: () => number): string {
   const value = new Big(min).plus(new Big(max - min).times(rng()));
   return value.round(2, Big.roundHalfUp).toFixed(2);
 }
 
-function pickOne<T>(items: T[], rng: () => number): T {
+export function pickOne<T>(items: T[], rng: () => number): T {
   const index = Math.floor(rng() * items.length);
   return items[index];
 }
 
-function shiftDays(baseDate: Date, dayOffset: number): Date {
+export function shiftDays(baseDate: Date, dayOffset: number): Date {
   const date = new Date(baseDate);
   date.setDate(date.getDate() + dayOffset);
   return date;
 }
 
-async function main() {
-  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+export async function runSeed(prisma: PrismaClient, options: SeedOptions = {}): Promise<void> {
+  const now = options.now ?? new Date();
+  const hashPassword = options.hashPassword ?? ((password: string) => bcrypt.hash(password, 10));
+  const passwordHash = await hashPassword(ADMIN_PASSWORD);
 
   const user = await prisma.user.upsert({
     where: { email: ADMIN_EMAIL },
     update: {
       password: passwordHash,
-      emailVerified: new Date(),
+      emailVerified: new Date(now),
       name: "Admin",
     },
     create: {
       email: ADMIN_EMAIL,
       password: passwordHash,
-      emailVerified: new Date(),
+      emailVerified: new Date(now),
       name: "Admin",
     },
   });
@@ -124,17 +131,9 @@ async function main() {
     },
   });
 
-  const existingTransactions = await prisma.paymentTransaction.findMany({
+  await prisma.transferTransaction.deleteMany({
     where: { workspaceId: workspace.id },
-    select: { id: true },
   });
-  const existingTransactionIds = existingTransactions.map((item) => item.id);
-
-  if (existingTransactionIds.length > 0) {
-    await prisma.transferTransaction.deleteMany({
-      where: { workspaceId: workspace.id },
-    });
-  }
 
   await prisma.paymentTransaction.deleteMany({
     where: { workspaceId: workspace.id },
@@ -211,7 +210,7 @@ async function main() {
   const incomeCategories = [...categoryMap.entries()].filter(([, category]) => category.type === "income");
   const expenseCategories = [...categoryMap.entries()].filter(([, category]) => category.type === "expense");
 
-  const baseDate = shiftDays(new Date(), -70);
+  const baseDate = shiftDays(now, -70);
   let createdTransactions = 0;
 
   const incomeCount = 25;
@@ -320,25 +319,17 @@ async function main() {
       data: { balance: balance.toFixed(2) },
     });
   }
-
-  const summaryAccounts = await prisma.account.findMany({
-    where: { workspaceId: workspace.id, id: { in: accountEntries.map(([, account]) => account.id) } },
-    select: {
-      name: true,
-      currency: true,
-      balance: true,
-    },
-    orderBy: { order: "asc" },
-  });
-  for (const _account of summaryAccounts) {
-  }
 }
 
-main()
-  .catch((error) => {
-    console.error("Seed failed:", error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (require.main === module) {
+  const prisma = createSeedPrismaClient();
+
+  runSeed(prisma)
+    .catch((error) => {
+      console.error("Seed failed:", error);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

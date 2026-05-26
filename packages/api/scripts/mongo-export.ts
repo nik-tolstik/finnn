@@ -9,28 +9,43 @@ import { getDatabaseUrl } from "../src/common/env/database-url";
 
 const { EJSON } = BSON;
 
-type ExportedCollection = {
+export type ExportedCollection = {
   name: string;
   documentsFile: string;
   indexesFile: string;
   count: number;
 };
 
-type BackupManifest = {
+export type BackupManifest = {
   database: string;
   exportedAt: string;
   collections: ExportedCollection[];
 };
 
-function getOutputDir(): string {
-  const cliArg = process.argv[2]?.trim();
+type MongoExportOptions = {
+  argv?: string[];
+  cwd?: string;
+  databaseUrl?: string;
+  now?: Date;
+  stdout?: Pick<NodeJS.WriteStream, "write">;
+  createClient?: (databaseUrl: string) => MongoClient;
+};
+
+export function getOutputDir(options: Pick<MongoExportOptions, "argv" | "cwd" | "now"> = {}): string {
+  const argv = options.argv ?? process.argv;
+  const cwd = options.cwd ?? process.cwd();
+  const now = options.now ?? new Date();
+  const cliArg = argv
+    .slice(2)
+    .find((arg) => arg !== "--" && !arg.startsWith("--"))
+    ?.trim();
   if (cliArg) return path.resolve(cliArg);
 
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  return path.resolve(process.cwd(), "backups", `mongo-${stamp}`);
+  const stamp = now.toISOString().replace(/[:.]/g, "-");
+  return path.resolve(cwd, "backups", `mongo-${stamp}`);
 }
 
-async function writeJsonLine(stream: ReturnType<typeof createWriteStream>, document: Document): Promise<void> {
+export async function writeJsonLine(stream: ReturnType<typeof createWriteStream>, document: Document): Promise<void> {
   const payload = `${EJSON.stringify(document, { relaxed: false })}\n`;
 
   if (!stream.write(payload)) {
@@ -38,7 +53,7 @@ async function writeJsonLine(stream: ReturnType<typeof createWriteStream>, docum
   }
 }
 
-async function exportCollection(
+export async function exportCollection(
   client: MongoClient,
   databaseName: string,
   outputDir: string,
@@ -78,16 +93,17 @@ async function exportCollection(
   };
 }
 
-async function main() {
-  const databaseUrl = getDatabaseUrl();
+export async function runMongoExport(options: MongoExportOptions = {}): Promise<BackupManifest> {
+  const databaseUrl = options.databaseUrl ?? getDatabaseUrl();
   if (!databaseUrl) {
     throw new Error("DATABASE_URL must be provided.");
   }
 
-  const outputDir = getOutputDir();
+  const outputDir = getOutputDir(options);
   await mkdir(outputDir, { recursive: true });
 
-  const client = new MongoClient(databaseUrl);
+  const stdout = options.stdout ?? process.stdout;
+  const client = options.createClient?.(databaseUrl) ?? new MongoClient(databaseUrl);
 
   try {
     await client.connect();
@@ -105,26 +121,29 @@ async function main() {
 
     const manifest: BackupManifest = {
       database: databaseName,
-      exportedAt: new Date().toISOString(),
+      exportedAt: (options.now ?? new Date()).toISOString(),
       collections: [],
     };
 
     for (const collectionName of collectionNames) {
       const exported = await exportCollection(client, databaseName, outputDir, collectionName);
       manifest.collections.push(exported);
-      process.stdout.write(`Exported ${collectionName}: ${exported.count} documents\n`);
+      stdout.write(`Exported ${collectionName}: ${exported.count} documents\n`);
     }
 
     await writeFile(path.join(outputDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
 
-    process.stdout.write(`Backup saved to ${outputDir}\n`);
+    stdout.write(`Backup saved to ${outputDir}\n`);
+    return manifest;
   } finally {
     await client.close();
   }
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.stack || error.message : String(error);
-  process.stderr.write(`${message}\n`);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  runMongoExport().catch((error: unknown) => {
+    const message = error instanceof Error ? error.stack || error.message : String(error);
+    process.stderr.write(`${message}\n`);
+    process.exitCode = 1;
+  });
+}

@@ -17,21 +17,36 @@ import { getDatabaseUrl } from "../src/common/env/database-url";
 const { EJSON } = BSON;
 const BATCH_SIZE = 1000;
 
-type ExportedCollection = {
+export type ExportedCollection = {
   name: string;
   documentsFile: string;
   indexesFile: string;
   count: number;
 };
 
-type BackupManifest = {
+export type BackupManifest = {
   database: string;
   exportedAt: string;
   collections: ExportedCollection[];
 };
 
-function getBackupDir(): string {
-  const cliArg = process.argv
+export type MongoImportCliArgs = {
+  backupDir: string;
+  dropCollections: boolean;
+  targetDatabaseName?: string;
+  allowProduction: boolean;
+};
+
+type MongoImportOptions = {
+  argv?: string[];
+  databaseUrl?: string;
+  env?: NodeJS.ProcessEnv;
+  stdout?: Pick<NodeJS.WriteStream, "write">;
+  createClient?: (databaseUrl: string) => MongoClient;
+};
+
+export function parseMongoImportArgs(argv = process.argv): MongoImportCliArgs {
+  const cliArg = argv
     .slice(2)
     .find((arg) => !arg.startsWith("--"))
     ?.trim();
@@ -40,24 +55,34 @@ function getBackupDir(): string {
     throw new Error("Backup directory path is required.");
   }
 
-  return path.resolve(cliArg);
-}
-
-function shouldDropCollections(): boolean {
-  return process.argv.includes("--drop");
-}
-
-function getTargetDatabaseName(defaultDatabaseName: string): string {
-  const override = process.argv
+  const targetDatabaseName = argv
     .slice(2)
     .find((arg) => arg.startsWith("--db="))
     ?.slice("--db=".length)
     .trim();
 
-  return override || defaultDatabaseName;
+  return {
+    backupDir: path.resolve(cliArg),
+    dropCollections: argv.includes("--drop"),
+    targetDatabaseName: targetDatabaseName || undefined,
+    allowProduction: argv.includes("--allow-production"),
+  };
 }
 
-function getIndexLabel(index: IndexDescriptionInfo): string {
+export function assertImportTargetAllowed(args: Pick<MongoImportCliArgs, "allowProduction">, env = process.env): void {
+  if (env.NODE_ENV === "production" && !args.allowProduction) {
+    throw new Error("Refusing to import into a production environment without --allow-production.");
+  }
+}
+
+export function getTargetDatabaseName(
+  defaultDatabaseName: string,
+  args: Pick<MongoImportCliArgs, "targetDatabaseName">
+): string {
+  return args.targetDatabaseName || defaultDatabaseName;
+}
+
+export function getIndexLabel(index: IndexDescriptionInfo): string {
   if (index.name) {
     return index.name;
   }
@@ -67,13 +92,13 @@ function getIndexLabel(index: IndexDescriptionInfo): string {
     .join("_");
 }
 
-type RestorableIndex = {
+export type RestorableIndex = {
   key: IndexDescriptionInfo["key"];
   name: string;
   options: CreateIndexesOptions;
 };
 
-function toRestorableIndex(index: IndexDescriptionInfo): RestorableIndex | null {
+export function toRestorableIndex(index: IndexDescriptionInfo): RestorableIndex | null {
   if (index.name === "_id_") {
     return null;
   }
@@ -155,7 +180,11 @@ function toRestorableIndex(index: IndexDescriptionInfo): RestorableIndex | null 
   };
 }
 
-async function insertBatch(collection: Collection<Document>, batch: Document[], sourcePath: string): Promise<number> {
+export async function insertBatch(
+  collection: Collection<Document>,
+  batch: Document[],
+  sourcePath: string
+): Promise<number> {
   if (batch.length === 0) return 0;
 
   try {
@@ -167,7 +196,7 @@ async function insertBatch(collection: Collection<Document>, batch: Document[], 
   }
 }
 
-async function importDocuments(collection: Collection<Document>, documentsPath: string): Promise<number> {
+export async function importDocuments(collection: Collection<Document>, documentsPath: string): Promise<number> {
   const stream = createReadStream(documentsPath, { encoding: "utf8" });
   const reader = readline.createInterface({ input: stream, crlfDelay: Infinity });
 
@@ -190,7 +219,15 @@ async function importDocuments(collection: Collection<Document>, documentsPath: 
   return importedCount;
 }
 
-async function recreateIndexes(collection: Collection<Document>, indexesPath: string): Promise<void> {
+export function assertImportedCount(exportedCollection: ExportedCollection, importedCount: number): void {
+  if (importedCount !== exportedCollection.count) {
+    throw new Error(
+      `Imported ${exportedCollection.name}: expected ${exportedCollection.count} documents, got ${importedCount}.`
+    );
+  }
+}
+
+export async function recreateIndexes(collection: Collection<Document>, indexesPath: string): Promise<void> {
   const raw = await readFile(indexesPath, "utf8");
   const parsedIndexes = EJSON.parse(raw, { relaxed: false }) as IndexDescriptionInfo[];
 
@@ -210,24 +247,27 @@ async function recreateIndexes(collection: Collection<Document>, indexesPath: st
   }
 }
 
-async function main() {
-  const backupDir = getBackupDir();
+export async function runMongoImport(options: MongoImportOptions = {}): Promise<void> {
+  const args = parseMongoImportArgs(options.argv);
+  assertImportTargetAllowed(args, options.env);
+
+  const backupDir = args.backupDir;
   const manifestPath = path.join(backupDir, "manifest.json");
   const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as BackupManifest;
 
-  const databaseUrl = getDatabaseUrl();
+  const databaseUrl = options.databaseUrl ?? getDatabaseUrl();
   if (!databaseUrl) {
     throw new Error("DATABASE_URL must be provided.");
   }
 
-  const dropCollections = shouldDropCollections();
-  const client = new MongoClient(databaseUrl);
+  const stdout = options.stdout ?? process.stdout;
+  const client = options.createClient?.(databaseUrl) ?? new MongoClient(databaseUrl);
 
   try {
     await client.connect();
 
     const defaultDatabaseName = client.db().databaseName;
-    const targetDatabaseName = getTargetDatabaseName(defaultDatabaseName);
+    const targetDatabaseName = getTargetDatabaseName(defaultDatabaseName, args);
     const db = client.db(targetDatabaseName);
 
     const existingCollections = new Set(
@@ -236,10 +276,10 @@ async function main() {
         .filter((name): name is string => Boolean(name))
     );
 
-    process.stdout.write(`Restoring backup from ${manifest.database} into ${targetDatabaseName}\n`);
+    stdout.write(`Restoring backup from ${manifest.database} into ${targetDatabaseName}\n`);
 
     for (const exportedCollection of manifest.collections) {
-      if (dropCollections && existingCollections.has(exportedCollection.name)) {
+      if (args.dropCollections && existingCollections.has(exportedCollection.name)) {
         await db.collection(exportedCollection.name).drop();
         existingCollections.delete(exportedCollection.name);
       }
@@ -254,19 +294,22 @@ async function main() {
       const indexesPath = path.join(backupDir, exportedCollection.indexesFile);
 
       const importedCount = await importDocuments(collection, documentsPath);
+      assertImportedCount(exportedCollection, importedCount);
       await recreateIndexes(collection, indexesPath);
 
-      process.stdout.write(`Imported ${exportedCollection.name}: ${importedCount} documents\n`);
+      stdout.write(`Imported ${exportedCollection.name}: ${importedCount} documents\n`);
     }
 
-    process.stdout.write("Restore finished\n");
+    stdout.write("Restore finished\n");
   } finally {
     await client.close();
   }
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.stack || error.message : String(error);
-  process.stderr.write(`${message}\n`);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  runMongoImport().catch((error: unknown) => {
+    const message = error instanceof Error ? error.stack || error.message : String(error);
+    process.stderr.write(`${message}\n`);
+    process.exitCode = 1;
+  });
+}
