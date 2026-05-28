@@ -2,7 +2,7 @@ import { type CanActivate, type ExecutionContext, Inject, Injectable, Unauthoriz
 
 import { AuthService } from "./auth.service";
 import type { AuthenticatedRequest } from "./auth.types";
-import { parseSessionCookie } from "./session-cookie";
+import { parseSessionCookie, parseSessionCookies } from "./session-cookie";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -10,8 +10,9 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const tokens = parseSessionCookies(request.headers.cookie);
     const token = parseSessionCookie(request.headers.cookie);
-    const user = await this.authService.getUserBySessionToken(token);
+    const user = await this.authService.getUserBySessionTokens(tokens);
 
     if (!token || !user) {
       throw new UnauthorizedException("Не авторизован");

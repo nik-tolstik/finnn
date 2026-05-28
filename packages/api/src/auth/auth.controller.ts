@@ -30,7 +30,13 @@ import { AuthGuard } from "./auth.guard";
 import { AuthService } from "./auth.service";
 import type { AuthenticatedUser } from "./auth.types";
 import { CurrentUser } from "./current-user.decorator";
-import { AUTH_COOKIE_NAME, createClearSessionCookie, createSessionCookie, parseSessionCookie } from "./session-cookie";
+import {
+  AUTH_COOKIE_NAME,
+  createClearSessionCookie,
+  createSessionCookie,
+  parseSessionCookie,
+  parseSessionCookies,
+} from "./session-cookie";
 
 @Controller("auth")
 @ApiTags("Auth")
@@ -98,7 +104,8 @@ export class AuthController {
   @ApiOperation({ operationId: "getSession", summary: "Read the current authenticated session" })
   @ApiOkResponse({ type: SessionResponseDto })
   async session(@Req() request: Request) {
-    const user = await this.authService.getUserBySessionToken(parseSessionCookie(request.headers.cookie));
+    const tokens = parseSessionCookies(request.headers.cookie);
+    const user = await this.authService.getUserBySessionTokens(tokens);
     return { authenticated: Boolean(user), user };
   }
 

@@ -17,7 +17,27 @@ async function parseResponseBody(response: Response): Promise<unknown> {
 }
 
 export function getApiBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
+  const configuredUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
+
+  if (typeof window === "undefined") {
+    return configuredUrl;
+  }
+
+  try {
+    const apiUrl = new URL(configuredUrl);
+    const webHostname = window.location.hostname;
+    const apiHostname = apiUrl.hostname;
+    const loopbackHosts = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
+
+    if (loopbackHosts.has(apiHostname) && loopbackHosts.has(webHostname) && apiHostname !== webHostname) {
+      apiUrl.hostname = webHostname;
+      return apiUrl.toString().replace(/\/$/, "");
+    }
+  } catch {
+    return configuredUrl;
+  }
+
+  return configuredUrl;
 }
 
 function getErrorMessage(body: unknown): string {

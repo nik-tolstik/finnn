@@ -8,7 +8,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
-import type { User } from "@prisma/client";
+import type { Prisma, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 import { EmailService } from "@/email/email.service";
@@ -34,6 +34,14 @@ function getRegistrationExpiryDate(): Date {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + REGISTRATION_EXPIRY_DAYS);
   return expiresAt;
+}
+
+function getActiveSessionWhere(token: string): Prisma.AuthSessionWhereInput {
+  return {
+    tokenHash: hashSessionToken(token),
+    OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
+    expiresAt: { gt: new Date() },
+  };
 }
 
 @Injectable()
@@ -168,6 +176,7 @@ export class AuthService {
         userId: user.id,
         tokenHash: hashSessionToken(token),
         expiresAt: getSessionExpiresAt(),
+        revokedAt: null,
       },
     });
 
@@ -188,11 +197,7 @@ export class AuthService {
     if (!token) return null;
 
     const session = await this.prisma.authSession.findFirst({
-      where: {
-        tokenHash: hashSessionToken(token),
-        revokedAt: null,
-        expiresAt: { gt: new Date() },
-      },
+      where: getActiveSessionWhere(token),
       select: { userId: true },
     });
 
@@ -209,6 +214,15 @@ export class AuthService {
     });
 
     return user ? toAuthUser(user) : null;
+  }
+
+  async getUserBySessionTokens(tokens: string[]): Promise<ReturnType<typeof toAuthUser> | null> {
+    for (const token of tokens.toReversed()) {
+      const user = await this.getUserBySessionToken(token);
+      if (user) return user;
+    }
+
+    return null;
   }
 
   async updateUser(userId: string, input: UpdateUserDto): Promise<ReturnType<typeof toAuthUser>> {

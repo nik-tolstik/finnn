@@ -25,6 +25,7 @@ type MockPrisma = {
     create: ReturnType<typeof vi.fn>;
     deleteMany: ReturnType<typeof vi.fn>;
     findFirst: ReturnType<typeof vi.fn>;
+    count: ReturnType<typeof vi.fn>;
   };
 };
 
@@ -44,6 +45,7 @@ function createPrismaMock(): MockPrisma {
       create: vi.fn(),
       deleteMany: vi.fn(),
       findFirst: vi.fn(),
+      count: vi.fn(),
     },
   };
 }
@@ -79,6 +81,7 @@ describe("Auth API", () => {
     prisma.user.findUnique.mockResolvedValue(null);
     prisma.pendingRegistration.findUnique.mockResolvedValue(null);
     prisma.authSession.deleteMany.mockResolvedValue({ count: 0 });
+    prisma.authSession.count.mockResolvedValue(0);
     emailService.sendVerificationEmail.mockResolvedValue({ success: true });
   });
 
@@ -245,6 +248,30 @@ describe("Auth API", () => {
     const createCall = prisma.authSession.create.mock.calls[0][0];
     expect(createCall.data.userId).toBe("user-1");
     expect(createCall.data.tokenHash).toHaveLength(64);
+    expect(createCall.data.revokedAt).toBeNull();
+  });
+
+  it("keeps local SameSite=None cookies browser-acceptable by falling back to Lax without Secure", async () => {
+    process.env.API_COOKIE_SAME_SITE = "none";
+    process.env.API_COOKIE_SECURE = "false";
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      password: await bcrypt.hash("secret123", 10),
+      emailVerified: new Date(),
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/login")
+      .send({ email: "ada@example.com", password: "secret123" })
+      .expect(200);
+
+    expect(response.headers["set-cookie"][0]).toContain("SameSite=Lax");
+    expect(response.headers["set-cookie"][0]).not.toContain("Secure");
+
+    process.env.API_COOKIE_SAME_SITE = "lax";
   });
 
   it("returns the current session user from the auth cookie", async () => {
@@ -274,11 +301,76 @@ describe("Auth API", () => {
     expect(prisma.authSession.findFirst).toHaveBeenCalledWith({
       where: {
         tokenHash: hashSessionToken(token),
-        revokedAt: null,
+        OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
         expiresAt: { gt: expect.any(Date) },
       },
       select: { userId: true },
     });
+  });
+
+  it("uses the newest duplicated session cookie value when browsers send stale and fresh cookies together", async () => {
+    const staleToken = "stale-session-token";
+    const freshToken = "fresh-session-token";
+    prisma.authSession.findFirst.mockImplementation(async ({ where }) =>
+      where.tokenHash === hashSessionToken(freshToken) ? { userId: "user-1" } : null
+    );
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+    });
+
+    await request(app.getHttpServer())
+      .get("/auth/session")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=${staleToken}; ${AUTH_COOKIE_NAME}=${freshToken}`)
+      .expect(200)
+      .expect({
+        authenticated: true,
+        user: {
+          id: "user-1",
+          email: "ada@example.com",
+          name: "Ada",
+          image: null,
+        },
+      });
+
+    expect(prisma.authSession.findFirst).toHaveBeenCalledWith({
+      where: {
+        tokenHash: hashSessionToken(freshToken),
+        OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
+        expiresAt: { gt: expect.any(Date) },
+      },
+      select: { userId: true },
+    });
+  });
+
+  it("still authenticates duplicate session cookies when browser ordering puts the fresh cookie first", async () => {
+    const freshToken = "fresh-session-token";
+    const staleToken = "stale-session-token";
+    prisma.authSession.findFirst.mockImplementation(async ({ where }) =>
+      where.tokenHash === hashSessionToken(freshToken) ? { userId: "user-1" } : null
+    );
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+    });
+
+    await request(app.getHttpServer())
+      .get("/auth/session")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=${freshToken}; ${AUTH_COOKIE_NAME}=${staleToken}`)
+      .expect(200)
+      .expect({
+        authenticated: true,
+        user: {
+          id: "user-1",
+          email: "ada@example.com",
+          name: "Ada",
+          image: null,
+        },
+      });
   });
 
   it("requires a valid session to update the current user", async () => {

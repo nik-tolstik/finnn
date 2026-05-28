@@ -14,6 +14,11 @@ function normalizeSameSite(value: string | undefined): "Lax" | "Strict" | "None"
   }
 }
 
+function getConfiguredCookieDomain(): string | null {
+  const domain = process.env.API_COOKIE_DOMAIN?.trim();
+  return domain ? domain : null;
+}
+
 function shouldUseSecureCookie(): boolean {
   if (process.env.API_COOKIE_SECURE) {
     return process.env.API_COOKIE_SECURE === "true";
@@ -22,50 +27,70 @@ function shouldUseSecureCookie(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
+function getCookieOptions() {
+  const sameSite = normalizeSameSite(process.env.API_COOKIE_SAME_SITE);
+  const secure = shouldUseSecureCookie();
+
+  if (sameSite === "None" && !secure) {
+    return { sameSite: "Lax" as const, secure };
+  }
+
+  return { sameSite, secure };
+}
+
 export function hashSessionToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export function parseSessionCookie(cookieHeader: string | undefined): string | null {
-  if (!cookieHeader) return null;
+export function parseSessionCookies(cookieHeader: string | undefined): string[] {
+  if (!cookieHeader) return [];
 
+  const tokens: string[] = [];
   for (const cookie of cookieHeader.split(";")) {
     const [name, ...rawValue] = cookie.trim().split("=");
     if (name === AUTH_COOKIE_NAME) {
-      return decodeURIComponent(rawValue.join("="));
+      tokens.push(decodeURIComponent(rawValue.join("=")));
     }
   }
 
-  return null;
+  return tokens;
+}
+
+export function parseSessionCookie(cookieHeader: string | undefined): string | null {
+  return parseSessionCookies(cookieHeader).at(-1) ?? null;
 }
 
 export function createSessionCookie(token: string): string {
+  const { sameSite, secure } = getCookieOptions();
   const parts = [
     `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
     "HttpOnly",
     "Path=/",
     `Max-Age=${SESSION_MAX_AGE_SECONDS}`,
-    `SameSite=${normalizeSameSite(process.env.API_COOKIE_SAME_SITE)}`,
+    `SameSite=${sameSite}`,
   ];
 
-  if (shouldUseSecureCookie()) parts.push("Secure");
-  if (process.env.API_COOKIE_DOMAIN) parts.push(`Domain=${process.env.API_COOKIE_DOMAIN}`);
+  if (secure) parts.push("Secure");
+  const domain = getConfiguredCookieDomain();
+  if (domain) parts.push(`Domain=${domain}`);
 
   return parts.join("; ");
 }
 
 export function createClearSessionCookie(): string {
+  const { sameSite, secure } = getCookieOptions();
   const parts = [
     `${AUTH_COOKIE_NAME}=`,
     "HttpOnly",
     "Path=/",
     "Max-Age=0",
     "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
-    `SameSite=${normalizeSameSite(process.env.API_COOKIE_SAME_SITE)}`,
+    `SameSite=${sameSite}`,
   ];
 
-  if (shouldUseSecureCookie()) parts.push("Secure");
-  if (process.env.API_COOKIE_DOMAIN) parts.push(`Domain=${process.env.API_COOKIE_DOMAIN}`);
+  if (secure) parts.push("Secure");
+  const domain = getConfiguredCookieDomain();
+  if (domain) parts.push(`Domain=${domain}`);
 
   return parts.join("; ");
 }

@@ -9,7 +9,7 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { login } from "@/shared/api/generated/auth/auth";
+import { getSession, login } from "@/shared/api/generated/auth/auth";
 import { acceptWorkspaceInvite } from "@/shared/api/generated/workspace-invites/workspace-invites";
 import { apiSessionQueryKey } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
@@ -45,7 +45,16 @@ export function LoginForm() {
         email: data.email,
         password: data.password,
       });
-      await queryClient.invalidateQueries({ queryKey: apiSessionQueryKey });
+
+      const sessionResponse = await queryClient.fetchQuery({
+        queryKey: apiSessionQueryKey,
+        queryFn: getSession,
+        staleTime: 0,
+      });
+
+      if (!sessionResponse.authenticated || !sessionResponse.user) {
+        throw new Error("Сессия не была создана. Проверьте адрес web/API и настройки cookie.");
+      }
 
       if (inviteToken) {
         await acceptWorkspaceInvite(inviteToken);
@@ -54,6 +63,7 @@ export function LoginForm() {
 
       startTransition(() => {
         router.replace("/dashboard");
+        router.refresh();
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Что-то пошло не так";
