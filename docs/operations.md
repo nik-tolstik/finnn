@@ -33,6 +33,53 @@ pnpm build
 
 This script builds the API package first, then the web package.
 
+## Railway Backend Deployment
+
+Deploy the backend as the `api` service from `packages/api`.
+
+Railway setup:
+
+- Set the service root directory to `/packages/api`.
+- Set the config-as-code file path to `/packages/api/railway.json`.
+- Keep the checked-in config on the Railpack builder with `pnpm build`, `pnpm start`, and `/health`.
+- Confirm the service listens on Railway's injected `PORT`; the NestJS bootstrap already binds `0.0.0.0`.
+
+Required Railway variables:
+
+```env
+DATABASE_URL="mongodb-connection-string"
+API_AUTH_SECRET="production-secret"
+API_COOKIE_SECRET="production-cookie-secret"
+API_COOKIE_SECURE="true"
+API_COOKIE_SAME_SITE="none"
+API_COOKIE_DOMAIN=""
+API_ALLOWED_ORIGINS="https://production-app-url"
+WEB_APP_URL="https://production-app-url"
+CRON_SECRET="production-cron-secret"
+SMTP_HOST="smtp-host"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="smtp-user"
+SMTP_PASSWORD="smtp-password"
+SMTP_FROM="Finnn <no-reply@example.com>"
+```
+
+Frontend production variables stay with the web deployment:
+
+```env
+NEXT_PUBLIC_API_URL="https://production-api-url"
+NEXT_PUBLIC_APP_URL="https://production-app-url"
+```
+
+After deployment, verify:
+
+```bash
+curl https://production-api-url/health
+curl -H "Authorization: Bearer $CRON_SECRET" https://production-api-url/cron/update-exchange-rates
+```
+
+Railway health checks only gate startup, so keep logs or external uptime monitoring for continuous runtime visibility.
+
 ## Backend Cron
 
 The migration target is for Railway or another backend scheduler to call the API cron endpoint:

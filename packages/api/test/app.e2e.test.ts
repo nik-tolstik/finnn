@@ -4,6 +4,7 @@ import { IsString } from "class-validator";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import railwayConfig from "../railway.json";
 import { AppModule } from "../src/app.module";
 import { API_HOST, configureApp, getAllowedOrigins, getCorsOptions, getPort } from "../src/main";
 import { configureOpenApi } from "../src/openapi";
@@ -66,6 +67,17 @@ describe("App", () => {
     expect(getPort({})).toBe(4000);
     expect(getPort({ PORT: "4010" })).toBe(4010);
     expect(getPort({ PORT: "not-a-port" })).toBe(4000);
+  });
+
+  it("keeps the Railway deployment config aligned with the API package scripts", () => {
+    expect(railwayConfig.build).toMatchObject({
+      builder: "RAILPACK",
+      buildCommand: "pnpm build",
+    });
+    expect(railwayConfig.deploy).toMatchObject({
+      startCommand: "pnpm start",
+      healthcheckPath: "/health",
+    });
   });
 
   it("enables credentialed CORS only for configured origins", () => {
