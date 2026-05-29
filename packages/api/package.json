@@ -1,0 +1,53 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "check": "biome check . --error-on-warnings",
+    "check:fix": "biome check . --write --unsafe",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "openapi:generate": "node --import tsx scripts/generate-openapi.ts && biome format openapi.json --write",
+    "postinstall": "prisma generate --schema prisma/schema.prisma",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:push": "prisma db push --schema prisma/schema.prisma",
+    "db:seed": "node --import tsx scripts/db-seed.ts",
+    "db:export": "node --import tsx scripts/mongo-export.ts",
+    "db:import": "node --import tsx scripts/mongo-import.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.9",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.9",
+    "@nestjs/platform-express": "^11.1.9",
+    "@nestjs/swagger": "^11.4.4",
+    "@prisma/client": "^6.19.1",
+    "bcryptjs": "^3.0.3",
+    "big.js": "^7.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
+    "mongodb": "^7.0.0",
+    "nodemailer": "^7.0.12",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.9",
+    "@nestjs/cli": "^11.0.14",
+    "@nestjs/testing": "^11.1.9",
+    "@types/big.js": "^6.2.2",
+    "@types/express": "^5.0.6",
+    "@types/node": "^20",
+    "@types/nodemailer": "^7.0.4",
+    "@types/supertest": "^6.0.3",
+    "prisma": "^6.19.1",
+    "supertest": "^7.1.4",
+    "typescript": "^5",
+    "vitest": "^4.1.2"
+  }
+}

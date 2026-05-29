@@ -6,9 +6,9 @@ Required variables:
 
 ```env
 DATABASE_URL="mongodb-connection-string"
-NEXTAUTH_URL="https://production-app-url"
-NEXTAUTH_SECRET="production-secret"
-NEXT_PUBLIC_APP_URL="https://production-app-url"
+API_AUTH_SECRET="production-secret"
+API_COOKIE_SECRET="production-cookie-secret"
+API_ALLOWED_ORIGINS="https://production-app-url"
 CRON_SECRET="production-cron-secret"
 ```
 
@@ -31,48 +31,93 @@ The production build runs:
 pnpm build
 ```
 
-This script first generates Prisma Client, then runs `next build`.
+This script builds the API package first, then the web package.
 
-## Vercel
+## Railway Backend Deployment
 
-`vercel.json` configures a daily cron:
+Deploy the backend as the `api` service from `packages/api`.
 
-```json
-{
-  "path": "/api/cron/update-exchange-rates",
-  "schedule": "0 0 * * *"
-}
+Railway setup:
+
+- Set the service root directory to `/packages/api`.
+- Set the config-as-code file path to `/packages/api/railway.json`.
+- Keep the checked-in config on the Railpack builder with `pnpm build`, `pnpm start`, and `/health`.
+- Confirm the service listens on Railway's injected `PORT`; the NestJS bootstrap already binds `0.0.0.0`.
+
+Required Railway variables:
+
+```env
+DATABASE_URL="mongodb-connection-string"
+API_AUTH_SECRET="production-secret"
+API_COOKIE_SECRET="production-cookie-secret"
+API_COOKIE_SECURE="true"
+API_COOKIE_SAME_SITE="none"
+API_COOKIE_DOMAIN=""
+API_ALLOWED_ORIGINS="https://production-app-url"
+WEB_APP_URL="https://production-app-url"
+CRON_SECRET="production-cron-secret"
+SMTP_HOST="smtp-host"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="smtp-user"
+SMTP_PASSWORD="smtp-password"
+SMTP_FROM="Finnn <no-reply@example.com>"
 ```
 
-The route handler is `src/app/api/cron/update-exchange-rates/route.ts`.
+Frontend production variables stay with the web deployment:
+
+```env
+NEXT_PUBLIC_API_URL="https://production-api-url"
+NEXT_PUBLIC_APP_URL="https://production-app-url"
+```
+
+After deployment, verify:
+
+```bash
+curl https://production-api-url/health
+curl -H "Authorization: Bearer $CRON_SECRET" https://production-api-url/cron/update-exchange-rates
+```
+
+Railway health checks only gate startup, so keep logs or external uptime monitoring for continuous runtime visibility.
+
+## Backend Cron
+
+The migration target is for Railway or another backend scheduler to call the API cron endpoint:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://api.example.com/cron/update-exchange-rates
+```
+
+The API handler is `packages/api/src/currency/currency.controller.ts`.
 
 Operational requirements:
 
-- Set the same `CRON_SECRET` in Vercel and in any caller that manually invokes the route.
+- Set the same `CRON_SECRET` in the API environment and in any scheduler that invokes the route.
 - Confirm `DATABASE_URL` points to a MongoDB deployment that supports Prisma's transaction requirements.
-- Set `NEXTAUTH_URL` to the deployed URL.
-- Keep `NEXT_PUBLIC_APP_URL` aligned with the deployed app URL for email links and client-facing absolute URLs.
+- Keep `NEXT_PUBLIC_API_URL` in the web deployment aligned with the deployed API URL.
+- Keep `NEXT_PUBLIC_APP_URL` aligned with the deployed web URL for client-facing absolute URLs.
 
 ## MongoDB Import And Export
 
 Scripts:
 
-- `scripts/mongo-export.ts`
-- `scripts/mongo-import.ts`
-- `scripts/db-seed.ts`
+- `packages/api/scripts/mongo-export.ts`
+- `packages/api/scripts/mongo-import.ts`
+- `packages/api/scripts/db-seed.ts`
 
 Commands:
 
 ```bash
-pnpm db:export
-pnpm db:import
+pnpm db:export ./backups/manual
+pnpm db:import ./backups/manual --drop --db=finnn_restore
 pnpm db:seed
 ```
 
 Before import/export:
 
 - Confirm `DATABASE_URL`.
-- Avoid running imports against production unless the target dataset and overwrite behavior are fully understood.
+- Use throwaway database names for import verification.
+- Production imports are blocked unless `--allow-production` is passed. Use that flag only when the target dataset and overwrite behavior are fully understood.
 - Run `pnpm db:generate` if schema or Prisma version changed.
 
 ## Database Schema Changes
@@ -88,11 +133,11 @@ pnpm typecheck
 pnpm test
 ```
 
-When adding indexes, verify they are represented in `prisma/schema.prisma` and applied through `pnpm db:push`.
+When adding indexes, verify they are represented in `packages/api/prisma/schema.prisma` and applied through `pnpm db:push`.
 
 ## Email
 
-Email helpers live in `src/shared/lib/email.ts`.
+Email delivery is owned by `packages/api/src/email/email.service.ts`.
 
 Current email use cases:
 
@@ -101,7 +146,7 @@ Current email use cases:
 
 Email depends on:
 
-- `NEXT_PUBLIC_APP_URL` for generated links.
+- API and web public URL variables for generated links.
 - SMTP variables for transport.
 
 If email delivery fails locally, verify `.env`, SMTP credentials, provider app-password requirements, and whether the SMTP account allows the selected port/security mode.
@@ -110,10 +155,10 @@ If email delivery fails locally, verify `.env`, SMTP credentials, provider app-p
 
 The service worker is intentionally conservative. It caches only static assets and avoids financial data.
 
-After changing `public/sw.js`, run:
+After changing `packages/web/public/sw.js`, run:
 
 ```bash
-pnpm test src/shared/lib/service-worker-cache-policy.test.ts
+pnpm --filter web test src/shared/lib/service-worker-cache-policy.test.ts
 ```
 
 Then run the full test suite for broader changes:
@@ -139,5 +184,5 @@ Also verify:
 - MongoDB accepts Prisma transactions.
 - `pnpm db:push` has been run for schema/index changes.
 - Cron endpoint returns success with a valid secret.
-- Auth redirects use the production `NEXTAUTH_URL`.
-- Email links use the production `NEXT_PUBLIC_APP_URL`.
+- API auth cookie variables match the deployed API and web hosts.
+- Email links use the production web URL.

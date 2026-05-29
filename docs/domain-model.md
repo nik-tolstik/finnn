@@ -2,7 +2,7 @@
 
 ## Core Entities
 
-The Prisma schema in `prisma/schema.prisma` is the source of truth.
+The Prisma schema in `packages/api/prisma/schema.prisma` is the source of truth.
 
 Main models:
 
@@ -21,15 +21,15 @@ Main models:
 
 ## Workspace Boundary
 
-Most domain data belongs to a workspace. Server reads and mutations must enforce that the current user has access to that workspace.
+Most domain data belongs to a workspace. API reads and mutations must enforce that the current user has access to that workspace.
 
 Use:
 
-- `requireUserId()` when only authentication is required.
-- `requireWorkspaceAccess(workspaceId)` for regular workspace access.
-- `requireWorkspaceAccess(workspaceId, { roles: [...] })` when a command requires admin or owner permissions.
+- API auth guards when only authentication is required.
+- `WorkspaceAccessGuard` for regular workspace access.
+- `WorkspaceRoles(...)` metadata when a command requires admin or owner permissions.
 
-Workspace roles are defined in `src/modules/workspace/workspace.constants.ts`.
+Workspace roles are defined in `packages/api/src/workspace/workspace.constants.ts`. Frontend display constants live in `packages/web/src/modules/workspace/workspace.constants.ts`.
 
 ## Money Rules
 
@@ -37,15 +37,16 @@ Persisted financial amounts are strings. This avoids binary floating point issue
 
 Use:
 
-- `src/shared/utils/money.ts` for low-level operations such as add, subtract, compare, multiply, divide, and formatting.
-- `src/shared/lib/balance-domain.ts` for business rules that map transactions, transfers, and debt operations to account balance deltas.
-- `src/shared/lib/domain-types.ts` for branded IDs and money/currency domain values.
+- `packages/api/src/common/money.ts` for persisted backend money operations.
+- `packages/web/src/shared/utils/money.ts` for frontend add, subtract, compare, multiply, divide, and formatting.
+- `packages/web/src/shared/lib/balance-domain.ts` for UI/cache projections that map transactions, transfers, and debt operations to account balance deltas.
+- `packages/web/src/shared/lib/domain-types.ts` for frontend branded IDs and money/currency domain values.
 
 Do not use raw JavaScript arithmetic for persisted money behavior.
 
 ## Accounts
 
-Accounts belong to a workspace and can optionally have an owner. Owner visibility rules live in `src/modules/accounts/account-visibility.ts`.
+Accounts belong to a workspace and can optionally have an owner. Frontend owner visibility rules live in `packages/web/src/modules/accounts/account-visibility.ts`.
 
 Accounts are archived instead of deleted for normal user flows. Deletion must account for dependencies:
 
@@ -63,9 +64,9 @@ Categories belong to a workspace and have a `type`:
 - `income`
 - `expense`
 
-New workspaces are seeded with standard expense categories and one income category in `createWorkspace`.
+New workspaces are seeded with standard expense categories and one income category by the API workspace service.
 
-Category changes revalidate accounting routes because transaction lists, filters, and analytics may depend on category metadata.
+Category changes should invalidate accounting-related client query domains because transaction lists, filters, and analytics may depend on category metadata.
 
 ## Payment Transactions
 
@@ -101,14 +102,14 @@ Transfers support cross-currency use cases by storing both source `amount` and d
 
 Debts track money lent or borrowed and can be open or closed.
 
-Debt types are defined in `src/modules/debts/debt.constants.ts`. Debt operations can affect:
+Debt types are defined in `packages/web/src/modules/debts/debt.constants.ts` for frontend UI and mirrored by API DTO/domain values. Debt operations can affect:
 
 - The debt amount.
 - The remaining amount.
 - The linked account balance.
 - Related payment-category records when closing or settling.
 
-Debt application logic is intentionally centralized in `src/modules/debts/debt.application.ts` because several operations need coordinated account and debt updates.
+Debt mutation logic is intentionally centralized in `packages/api/src/debts/debts.service.ts` because several operations need coordinated account and debt updates.
 
 ## Exchange Rates
 
@@ -116,23 +117,22 @@ Currency support is centered around BYN, USD, and EUR.
 
 Important files:
 
-- `src/modules/currency/currency.service.ts` fetches rates from external providers.
-- `src/modules/currency/exchange-rate.service.ts` persists and reads daily exchange rates.
-- `src/app/api/cron/update-exchange-rates/route.ts` triggers daily persistence.
-- `src/app/api/exchange-rates/route.ts` exposes exchange-rate data for the app.
+- `packages/api/src/currency/exchange-rate.service.ts` fetches external rates, persists daily exchange rates, and derives cross-rates.
+- `packages/api/src/currency/currency.controller.ts` exposes exchange-rate reads and the protected cron endpoint.
+- `packages/web/src/shared/api/generated/currency` is the frontend contract client for exchange-rate UI.
 
-The cron endpoint must be protected with `CRON_SECRET`.
+The API cron endpoint must be protected with `CRON_SECRET`.
 
 ## PWA Cache Boundary
 
-The service worker in `public/sw.js` only caches static assets.
+The service worker in `packages/web/public/sw.js` only caches static assets.
 
 It must not cache:
 
 - `/api/**`
 - App documents and dashboard routes.
 - `/_next/data/**`
-- Server action or data responses.
+- API or data responses.
 - Non-GET requests.
 
-The test `src/shared/lib/service-worker-cache-policy.test.ts` protects this boundary.
+The test `packages/web/src/shared/lib/service-worker-cache-policy.test.ts` protects this boundary.
