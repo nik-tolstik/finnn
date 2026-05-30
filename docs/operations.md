@@ -97,6 +97,28 @@ Operational requirements:
 - Keep `NEXT_PUBLIC_API_URL` in the web deployment aligned with the deployed API URL.
 - Keep `NEXT_PUBLIC_APP_URL` aligned with the deployed web URL for client-facing absolute URLs.
 
+Railway setup:
+
+- Keep the API service as a persistent web service.
+- Create a separate Railway cron service in the same environment.
+- Set the cron service schedule to run once per day after NBRB publishes rates. NBRB daily-rate aggregators
+  report an update schedule around 11:00 Europe/Minsk, so use `30 8 * * *` for 11:30 Minsk time.
+- Give the cron service `API_BASE_URL` and `CRON_SECRET` variables.
+- Use a start command that calls the API endpoint and then exits.
+
+Example cron service variables:
+
+```env
+API_BASE_URL="https://api-dev.finnn.xyz"
+CRON_SECRET="same-secret-as-api"
+```
+
+Example cron service start command:
+
+```bash
+node -e "fetch(`${process.env.API_BASE_URL}/cron/update-exchange-rates`, { headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` } }).then(async (response) => { const body = await response.text(); console.log(body); if (!response.ok) process.exit(1); }).catch((error) => { console.error(error); process.exit(1); })"
+```
+
 ## MongoDB Import And Export
 
 Scripts:
