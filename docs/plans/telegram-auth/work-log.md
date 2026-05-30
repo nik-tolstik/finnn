@@ -256,3 +256,46 @@ pnpm --filter api check:fix
 ### Blockers / Follow-ups
 
 - Workspace invite acceptance still needs explicit no-email and email-verification safety updates in Phase 4.
+
+## 2026-05-30 19:27 +03 - Codex / Developer
+
+### Scope
+
+- Phase 4 invite and workspace safety.
+- Updated workspace invite acceptance to require an authenticated user's matching verified email.
+- Added explicit API errors for users without email and users with unverified email.
+- Updated workspace tests for nullable-email users and the new `user.findFirst` invite lookup.
+
+### Files Changed
+
+- `packages/api/src/workspace/workspace.service.ts`
+- `packages/api/test/workspace.e2e.test.ts`
+- `docs/plans/telegram-auth/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter api test test/workspace.e2e.test.ts
+pnpm --filter api typecheck
+pnpm --filter api check
+```
+
+### Results
+
+- `pnpm --filter api test test/workspace.e2e.test.ts`: first run failed because the workspace test mock did not yet expose `user.findFirst`; passed after updating the mock. Final result: 17 tests passed.
+- `pnpm --filter api typecheck`: passed.
+- `pnpm --filter api check`: passed.
+
+### Decisions
+
+- No-email invite acceptance returns `400` with a clear add-email message.
+- Unverified matching email returns `403` with a clear verify-email message.
+- Invite creation remains email-based and still requires an existing registered user with that email.
+
+### Subagent Contributions
+
+- Backend explorer identified that invite acceptance previously did not require verified email and returned a generic unauthorized error for no-email users.
+
+### Blockers / Follow-ups
+
+- Frontend invite UI still needs to render the new no-email and unverified-email messages clearly after generated client updates.

@@ -7,7 +7,6 @@ import {
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
-  UnauthorizedException,
 } from "@nestjs/common";
 import type { Prisma, User, Workspace } from "@prisma/client";
 
@@ -418,11 +417,15 @@ export class WorkspaceService {
 
     const user = await this.prisma.user.findUnique({
       where: { id: currentUser.id },
-      select: { email: true },
+      select: { email: true, emailVerified: true },
     });
 
     if (!user?.email) {
-      throw new UnauthorizedException("Не авторизован");
+      throw new BadRequestException("Добавьте email в настройках аккаунта, чтобы принять приглашение по email");
+    }
+
+    if (!user.emailVerified) {
+      throw new ForbiddenException("Подтвердите email, чтобы принять приглашение");
     }
 
     if (invite.email !== user.email) {
