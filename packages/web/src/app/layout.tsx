@@ -1,3 +1,4 @@
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Onest } from "next/font/google";
 
@@ -55,6 +56,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <Toaster />
+          <SpeedInsights />
         </Providers>
       </body>
     </html>
