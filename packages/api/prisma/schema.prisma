@@ -29,6 +29,7 @@ model User {
   createdTransfers TransferTransaction[] @relation("TransferCreatedBy")
   authSessions    AuthSession[]
   authIdentities   AuthIdentity[]
+  pendingEmailVerifications PendingEmailVerification[]
 
   @@map("users")
 }
@@ -49,6 +50,22 @@ model AuthIdentity {
   @@unique([provider, providerUserId])
   @@index([userId])
   @@map("auth_identities")
+}
+
+model PendingEmailVerification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("pending_email_verifications")
 }
 
 model AuthSession {

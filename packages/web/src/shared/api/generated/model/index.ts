@@ -103,6 +103,7 @@ export * from "./paymentTransactionDto";
 export * from "./paymentTransactionDtoType";
 export * from "./paymentTransactionResponseDto";
 export * from "./registerDto";
+export * from "./requestEmailVerificationDto";
 export * from "./savedExchangeRateDto";
 export * from "./savedExchangeRateDtoFromCurrency";
 export * from "./savedExchangeRateDtoToCurrency";

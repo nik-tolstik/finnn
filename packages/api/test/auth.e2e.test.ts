@@ -33,6 +33,11 @@ type MockPrisma = {
     create: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
   };
+  pendingEmailVerification: {
+    findUnique: ReturnType<typeof vi.fn>;
+    upsert: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+  };
   authSession: {
     create: ReturnType<typeof vi.fn>;
     deleteMany: ReturnType<typeof vi.fn>;
@@ -61,6 +66,11 @@ function createPrismaMock(): MockPrisma {
     pendingRegistration: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      delete: vi.fn(),
+    },
+    pendingEmailVerification: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
       delete: vi.fn(),
     },
     authSession: {
@@ -146,6 +156,9 @@ describe("Auth API", () => {
     prisma.authIdentity.upsert.mockResolvedValue({ id: "identity-1" });
     prisma.authIdentity.delete.mockResolvedValue({ id: "identity-1" });
     prisma.pendingRegistration.findUnique.mockResolvedValue(null);
+    prisma.pendingEmailVerification.findUnique.mockResolvedValue(null);
+    prisma.pendingEmailVerification.upsert.mockResolvedValue({ id: "pending-email-1" });
+    prisma.pendingEmailVerification.delete.mockResolvedValue({ id: "pending-email-1" });
     prisma.authSession.deleteMany.mockResolvedValue({ count: 0 });
     prisma.authSession.count.mockResolvedValue(0);
     emailService.sendVerificationEmail.mockResolvedValue({ success: true });
@@ -273,6 +286,73 @@ describe("Auth API", () => {
       }),
     });
     expect(prisma.pendingRegistration.delete).toHaveBeenCalledWith({ where: { id: "pending-1" } });
+  });
+
+  it("requests email verification for an existing Telegram-only user", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: null,
+        name: "Ada",
+        image: null,
+        authIdentities: [{ provider: "telegram", username: "ada", displayName: "Ada", photoUrl: null }],
+      })
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: null,
+        name: "Ada",
+        emailVerified: null,
+      });
+
+    await request(app.getHttpServer())
+      .post("/auth/email")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ email: "ada@example.com" })
+      .expect(200)
+      .expect({ success: true });
+
+    const upsertCall = prisma.pendingEmailVerification.upsert.mock.calls[0][0];
+    expect(upsertCall).toMatchObject({
+      where: { userId: "user-1" },
+      create: expect.objectContaining({
+        userId: "user-1",
+        email: "ada@example.com",
+      }),
+    });
+    expect(upsertCall.create.token).toHaveLength(64);
+    expect(emailService.sendVerificationEmail).toHaveBeenCalledWith("ada@example.com", upsertCall.create.token, "Ada");
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: {
+        email: "ada@example.com",
+        emailVerified: null,
+      },
+    });
+  });
+
+  it("verifies an email added by an existing user", async () => {
+    prisma.pendingEmailVerification.findUnique.mockResolvedValue({
+      id: "pending-email-1",
+      userId: "user-1",
+      email: "ada@example.com",
+      token: "email-token",
+      expiresAt: new Date(Date.now() + 1000),
+    });
+
+    await request(app.getHttpServer())
+      .post("/auth/verify-email/email-token")
+      .expect(200)
+      .expect({ success: true, userId: "user-1" });
+
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: {
+        email: "ada@example.com",
+        emailVerified: expect.any(Date),
+      },
+    });
+    expect(prisma.pendingEmailVerification.delete).toHaveBeenCalledWith({ where: { id: "pending-email-1" } });
   });
 
   it("rejects unverified login when a pending registration still exists", async () => {

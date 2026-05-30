@@ -464,3 +464,69 @@ pnpm --filter web check
 ### Blockers / Follow-ups
 
 - Run full verification in Phase 9.
+
+## 2026-05-30 20:19 +03 - Codex / Developer
+
+### Scope
+
+- Completed the add-email verification flow for existing users, closing the remaining optional-email requirement.
+- Added `PendingEmailVerification` for signed-in users adding or changing email.
+- Added `POST /auth/email` to send a verification email for the current user.
+- Extended `POST /auth/verify-email/:token` to verify both pending registrations and existing-user email additions.
+- Added account settings UI for entering an email and requesting verification.
+- Regenerated OpenAPI and Orval clients.
+- Ran final Phase 9 verification.
+
+### Files Changed
+
+- `packages/api/prisma/schema.prisma`
+- `packages/api/src/auth/auth.controller.ts`
+- `packages/api/src/auth/auth.dto.ts`
+- `packages/api/src/auth/auth.service.ts`
+- `packages/api/test/auth.e2e.test.ts`
+- `packages/api/openapi.json`
+- `packages/web/src/modules/auth/components/account-settings/AccountSettings.tsx`
+- `packages/web/src/shared/api/generated/auth/auth.ts`
+- `packages/web/src/shared/api/generated/model/index.ts`
+- `packages/web/src/shared/api/generated/model/requestEmailVerificationDto.ts`
+- `docs/architecture.md`
+- `docs/domain-model.md`
+- `docs/plans/telegram-auth/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm db:generate
+pnpm api:generate
+pnpm api:check-generated
+pnpm --filter api test test/auth.e2e.test.ts
+pnpm --filter api test test/workspace.e2e.test.ts
+pnpm --filter web test src/shared/lib/api-session.test.ts
+pnpm typecheck
+pnpm check
+pnpm test
+pnpm build
+```
+
+### Results
+
+- `pnpm --filter api test test/auth.e2e.test.ts`: passed, 23 tests.
+- `pnpm --filter api test test/workspace.e2e.test.ts`: passed, 17 tests.
+- `pnpm --filter web test src/shared/lib/api-session.test.ts`: passed, 5 tests.
+- `pnpm typecheck`: passed.
+- `pnpm check`: passed.
+- `pnpm test`: passed, API 113 tests and web 85 tests.
+- `pnpm build`: passed.
+
+### Decisions
+
+- Existing-user email additions use a separate pending model instead of reusing `PendingRegistration`, because registrations also carry password and name setup.
+- The shared verify-email endpoint now accepts both registration tokens and existing-user email verification tokens.
+
+### Subagent Contributions
+
+- Frontend explorer had flagged the missing add-email path as a settings requirement; this phase implemented it.
+
+### Blockers / Follow-ups
+
+- None.

@@ -42,6 +42,12 @@ export class UpdateUserDto {
   image!: string | null;
 }
 
+export class RequestEmailVerificationDto {
+  @ApiProperty({ example: "user@example.com", type: String })
+  @IsEmail()
+  email!: string;
+}
+
 export class TelegramAuthStatusDto {
   @ApiProperty({ example: true, type: Boolean })
   linked!: boolean;

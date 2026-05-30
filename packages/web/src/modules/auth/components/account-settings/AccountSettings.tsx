@@ -7,7 +7,11 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { unlinkTelegram, updateUser as updateApiUser } from "@/shared/api/generated/auth/auth";
+import {
+  requestEmailVerification,
+  unlinkTelegram,
+  updateUser as updateApiUser,
+} from "@/shared/api/generated/auth/auth";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { useSession } from "@/shared/lib/api-session-client";
 import { runOptimisticWorkspaceMutation, updateUserReferencesInCache } from "@/shared/lib/optimistic-workspace-updates";
@@ -29,6 +33,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
   const { data: session, update: updateSession } = useSession();
   const queryClient = useQueryClient();
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [emailValue, setEmailValue] = useState(session?.user?.email ?? "");
   const searchParams = useSearchParams();
   const workspaceId = searchParams.get("workspaceId");
 
@@ -56,6 +61,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
         name: session.user.name || "",
         image: session.user.image || null,
       });
+      setEmailValue(session.user.email ?? "");
     }
   }, [session?.user, reset]);
 
@@ -108,6 +114,17 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Не удалось отключить Telegram");
+    },
+  });
+
+  const emailVerificationMutation = useMutation({
+    mutationFn: (data: { email: string }) => requestEmailVerification(data),
+    onSuccess: async () => {
+      await updateSession();
+      toast.success("Письмо подтверждения отправлено");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Не удалось отправить подтверждение email");
     },
   });
 
@@ -183,13 +200,25 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="email">Почта</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={session.user.email ?? "Email не добавлен"}
-                  disabled
-                  className="bg-muted cursor-not-allowed"
-                />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    id="email"
+                    type="email"
+                    value={emailValue}
+                    onChange={(event) => setEmailValue(event.target.value)}
+                    placeholder="example@mail.com"
+                    disabled={emailVerificationMutation.isPending}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!emailValue || emailValue === session.user.email || emailVerificationMutation.isPending}
+                    className="sm:w-auto"
+                    onClick={() => emailVerificationMutation.mutate({ email: emailValue })}
+                  >
+                    {emailVerificationMutation.isPending ? "Отправка..." : "Подтвердить"}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

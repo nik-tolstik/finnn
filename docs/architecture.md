@@ -115,6 +115,7 @@ Authentication is owned by `packages/api/src/auth`:
 - `POST /auth/logout` clears and invalidates the session.
 - `GET /auth/session` returns the current API session.
 - `PATCH /auth/user` updates user settings.
+- `POST /auth/email` sends a verification email for a signed-in user adding or changing email.
 
 `packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `packages/web/src/shared/lib/api-session.ts`, which forwards the API session cookie to the backend session endpoint.
 

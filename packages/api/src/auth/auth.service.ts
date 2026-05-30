@@ -14,13 +14,14 @@ import bcrypt from "bcryptjs";
 import { EmailService } from "@/email/email.service";
 import { PrismaService } from "@/prisma/prisma.service";
 
-import type { LoginDto, RegisterDto, UpdateUserDto } from "./auth.dto";
+import type { LoginDto, RegisterDto, RequestEmailVerificationDto, UpdateUserDto } from "./auth.dto";
 import { getSessionExpiresAt, hashSessionToken } from "./session-cookie";
 import { type TelegramClaims, TelegramOidcClient } from "./telegram-oidc.client";
 
 const VERIFICATION_TOKEN_BYTES = 32;
 const SESSION_TOKEN_BYTES = 32;
 const REGISTRATION_EXPIRY_DAYS = 7;
+const EMAIL_VERIFICATION_EXPIRY_DAYS = 7;
 const TELEGRAM_PROVIDER = "telegram";
 const TELEGRAM_STATE_BYTES = 32;
 const TELEGRAM_NONCE_BYTES = 32;
@@ -101,6 +102,12 @@ function toAuthUser(user: AuthUserWithIdentities) {
 function getRegistrationExpiryDate(): Date {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + REGISTRATION_EXPIRY_DAYS);
+  return expiresAt;
+}
+
+function getEmailVerificationExpiryDate(): Date {
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + EMAIL_VERIFICATION_EXPIRY_DAYS);
   return expiresAt;
 }
 
@@ -261,7 +268,7 @@ export class AuthService {
     });
 
     if (!pendingRegistration) {
-      throw new BadRequestException("Неверный токен подтверждения");
+      return this.verifyPendingUserEmail(token);
     }
 
     if (pendingRegistration.expiresAt < new Date()) {
@@ -296,6 +303,51 @@ export class AuthService {
     });
 
     return { success: true, userId: user.id };
+  }
+
+  private async verifyPendingUserEmail(token: string): Promise<{ success: true; userId: string }> {
+    const pendingEmail = await this.prisma.pendingEmailVerification.findUnique({
+      where: { token },
+    });
+
+    if (!pendingEmail) {
+      throw new BadRequestException("Неверный токен подтверждения");
+    }
+
+    if (pendingEmail.expiresAt < new Date()) {
+      await this.prisma.pendingEmailVerification.delete({
+        where: { id: pendingEmail.id },
+      });
+      throw new BadRequestException("Токен подтверждения истек. Пожалуйста, запросите подтверждение email заново.");
+    }
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        email: pendingEmail.email,
+        id: { not: pendingEmail.userId },
+      },
+    });
+
+    if (existingUser) {
+      await this.prisma.pendingEmailVerification.delete({
+        where: { id: pendingEmail.id },
+      });
+      throw new ConflictException("Пользователь с таким email уже существует");
+    }
+
+    await this.prisma.user.update({
+      where: { id: pendingEmail.userId },
+      data: {
+        email: pendingEmail.email,
+        emailVerified: new Date(),
+      },
+    });
+
+    await this.prisma.pendingEmailVerification.delete({
+      where: { id: pendingEmail.id },
+    });
+
+    return { success: true, userId: pendingEmail.userId };
   }
 
   async login(input: LoginDto): Promise<{ token: string; user: ReturnType<typeof toAuthUser> }> {
@@ -395,6 +447,67 @@ export class AuthService {
     });
 
     return toAuthUser(user);
+  }
+
+  async requestEmailVerification(userId: string, input: RequestEmailVerificationDto): Promise<{ success: true }> {
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        email: input.email,
+        id: { not: userId },
+      },
+    });
+
+    if (existingUser) {
+      throw new ConflictException("Пользователь с таким email уже существует");
+    }
+
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, emailVerified: true },
+    });
+
+    if (!currentUser) {
+      throw new UnauthorizedException("Не авторизован");
+    }
+
+    if (currentUser.email === input.email && currentUser.emailVerified) {
+      throw new ConflictException("Этот email уже подтвержден");
+    }
+
+    const token = randomBytes(VERIFICATION_TOKEN_BYTES).toString("hex");
+    await this.prisma.pendingEmailVerification.upsert({
+      where: { userId },
+      update: {
+        email: input.email,
+        token,
+        expiresAt: getEmailVerificationExpiryDate(),
+      },
+      create: {
+        userId,
+        email: input.email,
+        token,
+        expiresAt: getEmailVerificationExpiryDate(),
+      },
+    });
+
+    const emailResult = await this.emailService.sendVerificationEmail(input.email, token, currentUser.name);
+
+    if ("error" in emailResult) {
+      await this.prisma.pendingEmailVerification.delete({
+        where: { userId },
+      });
+      throw new ServiceUnavailableException(`Не удалось отправить письмо подтверждения: ${emailResult.error}`);
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: input.email,
+        emailVerified: null,
+      },
+    });
+
+    return { success: true };
   }
 
   startTelegramLogin(returnTo?: string): { authorizationUrl: string; stateCookieValue: string; ttlSeconds: number } {

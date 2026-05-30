@@ -36,6 +36,7 @@ import {
   AuthUserResponseDto,
   LoginDto,
   RegisterDto,
+  RequestEmailVerificationDto,
   SessionResponseDto,
   SuccessResponseDto,
   UpdateUserDto,
@@ -206,6 +207,21 @@ export class AuthController {
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
   async updateUser(@CurrentUser() user: AuthenticatedUser, @Body() body: UpdateUserDto) {
     return { user: await this.authService.updateUser(user.id, body) };
+  }
+
+  @Post("email")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(AUTH_COOKIE_NAME)
+  @ApiOperation({ operationId: "requestEmailVerification", summary: "Request verification for current user email" })
+  @ApiBody({ type: RequestEmailVerificationDto })
+  @ApiOkResponse({ type: SuccessResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiConflictResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  async requestEmailVerification(@CurrentUser() user: AuthenticatedUser, @Body() body: RequestEmailVerificationDto) {
+    return this.authService.requestEmailVerification(user.id, body);
   }
 
   @Delete("telegram/link")

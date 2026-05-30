@@ -18,12 +18,15 @@ Main models:
 - `DebtTransaction` - operation applied to a debt, optionally linked to an account.
 - `WorkspaceInvite` - tokenized invite to a workspace.
 - `PendingRegistration` - pre-verification registration state.
+- `PendingEmailVerification` - verification state for an existing user adding or changing email.
 - `ExchangeRate` - persisted daily currency rate.
 
 ## Identity And Email
 
 `User.email` is optional because Telegram-authenticated users can exist before adding email. Email/password
 registration and login still require email, and `PendingRegistration` remains email-based.
+Existing signed-in users add or change email through `PendingEmailVerification`; the email is not treated as verified
+until the token is confirmed through the shared email verification endpoint.
 
 External identities are stored in `AuthIdentity`:
 

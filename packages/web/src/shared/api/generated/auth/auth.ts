@@ -30,6 +30,7 @@ import type {
   CompleteTelegramAuthParams,
   LoginDto,
   RegisterDto,
+  RequestEmailVerificationDto,
   SessionResponseDto,
   StartTelegramAuthParams,
   StartTelegramLinkParams,
@@ -829,6 +830,131 @@ export function useUpdateUser<TData = Awaited<ReturnType<typeof updateUser>>, TE
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getUpdateUserQueryOptions(updateUserDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getRequestEmailVerificationUrl = () => {
+  return `/auth/email`;
+};
+
+/**
+ * @summary Request verification for current user email
+ */
+export const requestEmailVerification = async (
+  requestEmailVerificationDto: RequestEmailVerificationDto,
+  options?: RequestInit
+): Promise<SuccessResponseDto> => {
+  return apiClient<SuccessResponseDto>(getRequestEmailVerificationUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(requestEmailVerificationDto),
+  });
+};
+
+export const getRequestEmailVerificationQueryKey = (
+  requestEmailVerificationDto?: BodyType<RequestEmailVerificationDto>
+) => {
+  return ["POST", `/auth/email`, requestEmailVerificationDto] as const;
+};
+
+export const getRequestEmailVerificationQueryOptions = <
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRequestEmailVerificationQueryKey(requestEmailVerificationDto);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof requestEmailVerification>>> = ({ signal }) =>
+    requestEmailVerification(requestEmailVerificationDto, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof requestEmailVerification>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RequestEmailVerificationQueryResult = NonNullable<Awaited<ReturnType<typeof requestEmailVerification>>>;
+export type RequestEmailVerificationQueryError = ErrorType<ApiErrorDto>;
+
+export function useRequestEmailVerification<
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof requestEmailVerification>>,
+          TError,
+          Awaited<ReturnType<typeof requestEmailVerification>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRequestEmailVerification<
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof requestEmailVerification>>,
+          TError,
+          Awaited<ReturnType<typeof requestEmailVerification>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRequestEmailVerification<
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Request verification for current user email
+ */
+
+export function useRequestEmailVerification<
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getRequestEmailVerificationQueryOptions(requestEmailVerificationDto, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
