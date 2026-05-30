@@ -2,29 +2,36 @@
 
 Finnn - личное и совместное приложение для учета финансов. В проекте есть рабочие столы, счета, категории, платежные транзакции, переводы, долги, аналитика, импорт/экспорт MongoDB и PWA-обвязка.
 
+## Документация
+
+Подробная документация находится в [`docs/`](./docs/README.md): локальная разработка, архитектура, доменная модель, операции и AI-facing guide для Codex.
+
 ## Стек
 
+- `pnpm` workspace: `packages/web` и `packages/api`
 - Next.js App Router, React, TypeScript
-- Prisma + MongoDB
-- NextAuth + Prisma Adapter
+- NestJS API, Prisma + MongoDB
+- API-owned HTTP-only cookie auth
+- OpenAPI + Orval-generated web client
 - TanStack Query для клиентского кеша и SSR hydration
 - Tailwind CSS, собственные UI-компоненты, lucide-react
 - Recharts для аналитики, lazy-loaded client chunks
 - Vitest для unit/static tests
 - Biome для форматирования и lint
-- Vercel cron для обновления курсов валют
+- Backend cron endpoint для обновления курсов валют
 
 ## Локальный запуск
 
 ```bash
 pnpm install
-cp .env.example .env
+cp packages/api/.env.example packages/api/.env
+cp packages/web/.env.example packages/web/.env
 pnpm db:generate
 pnpm db:push
 pnpm dev
 ```
 
-Приложение поднимается на [http://localhost:3000](http://localhost:3000).
+API поднимается на [http://localhost:4000](http://localhost:4000), web-приложение - на [http://localhost:3000](http://localhost:3000).
 
 Для локальной MongoDB можно использовать `docker-compose.yml`:
 
@@ -34,13 +41,13 @@ docker compose up -d
 
 ## Env Variables
 
-Минимальный набор:
+Минимальный набор для `packages/api/.env`:
 
 ```env
 DATABASE_URL="mongodb://localhost:27017/finnn"
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="paste-generated-secret-here"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+API_AUTH_SECRET="paste-generated-secret-here"
+API_COOKIE_SECRET="paste-generated-secret-here"
+API_ALLOWED_ORIGINS="http://localhost:3000"
 CRON_SECRET="paste-cron-secret-here"
 ```
 
@@ -55,7 +62,14 @@ SMTP_PASSWORD="paste-smtp-password-here"
 SMTP_FROM="Finnn <your-email@example.com>"
 ```
 
-`NEXTAUTH_SECRET` можно сгенерировать так:
+Минимальный набор для `packages/web/.env`:
+
+```env
+NEXT_PUBLIC_API_URL="http://localhost:4000"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+API-секреты можно сгенерировать так:
 
 ```bash
 openssl rand -base64 32
@@ -68,10 +82,9 @@ openssl rand -base64 32
 ```bash
 pnpm db:generate  # сгенерировать Prisma Client
 pnpm db:push      # применить schema.prisma и индексы в MongoDB
-pnpm db:studio    # открыть Prisma Studio
 ```
 
-После изменения `prisma/schema.prisma` запускайте `pnpm db:generate`. Для применения новых индексов и моделей к MongoDB запускайте `pnpm db:push`.
+После изменения `packages/api/prisma/schema.prisma` запускайте `pnpm db:generate`. Для применения новых индексов и моделей к MongoDB запускайте `pnpm db:push`.
 
 ## Seed, Import, Export
 
@@ -81,11 +94,18 @@ pnpm db:export
 pnpm db:import
 ```
 
-Скрипты лежат в `scripts/`:
+Скрипты лежат в `packages/api/scripts/`:
 
 - `db-seed.ts` - наполнение базы тестовыми данными.
 - `mongo-export.ts` - экспорт данных MongoDB.
 - `mongo-import.ts` - импорт данных MongoDB.
+
+Для безопасной проверки импорта используйте отдельную базу:
+
+```bash
+pnpm db:export ./backups/manual
+pnpm db:import ./backups/manual --drop --db=finnn_restore
+```
 
 ## Проверки
 
@@ -96,45 +116,39 @@ pnpm test
 pnpm build
 ```
 
-`pnpm check` запускает Biome с ошибкой на warning. `pnpm build` сначала выполняет `prisma generate`, затем `next build`.
+`pnpm check` проверяет API contract drift и запускает Biome в обоих пакетах. `pnpm build` сначала собирает NestJS API, затем Next.js web.
 
-## Vercel и Cron
+## Backend Cron
 
-Cron настроен в `vercel.json` и дергает `/api/cron/update-exchange-rates`. Для защиты endpoint нужен `CRON_SECRET`; тот же секрет должен быть в переменных окружения Vercel.
+Backend endpoint `/cron/update-exchange-rates` защищен `CRON_SECRET`. Планировщик должен передавать его в заголовке `Authorization: Bearer <secret>`.
 
 Для production также нужны:
 
 - `DATABASE_URL` на MongoDB.
-- `NEXTAUTH_URL` с production URL.
-- `NEXTAUTH_SECRET`.
-- `NEXT_PUBLIC_APP_URL`.
+- `API_AUTH_SECRET` и `API_COOKIE_SECRET`.
+- `API_ALLOWED_ORIGINS` с production URL web-приложения.
+- `NEXT_PUBLIC_API_URL` с production URL API.
 - SMTP-переменные, если включены приглашения и подтверждение email.
 
 ## PWA и Service Worker
 
-Service Worker находится в `public/sw.js`. Политика кеширования намеренно ограничена static assets:
+Service Worker находится в `packages/web/public/sw.js`. Политика кеширования намеренно ограничена static assets:
 
 - `/_next/static/**`
 - favicon/icons/manifest
 - static images/fonts/styles/scripts
 
-SW не кеширует `/api/**`, document requests, dashboard/app routes, `/_next/data/**`, server action/data responses и любые non-GET requests. Финансовые данные должны приходить с сервера или из контролируемого клиентского кеша, а не из offline-кеша браузера.
+SW не кеширует `/api/**`, document requests, dashboard/app routes, `/_next/data/**`, API/data responses и любые non-GET requests. Финансовые данные должны приходить с сервера или из контролируемого клиентского кеша, а не из offline-кеша браузера.
 
 ## Архитектура
 
-- `src/app` - App Router страницы, layouts, API routes и providers.
-- `src/modules/accounts` - счета, сортировка, архив, UI-карточки.
-- `src/modules/categories` - категории доходов и расходов.
-- `src/modules/transactions` - платежи, переводы, общий transaction feed, фильтры.
-- `src/modules/debts` - долги, закрытия, добавления, редактирование debt transactions.
-- `src/modules/analytics` - серверная агрегация аналитики и lazy-loaded графики.
-- `src/modules/workspace` - рабочие столы, участники, приглашения.
-- `src/modules/auth` - регистрация, подтверждение email, профиль.
-- `src/modules/currency` - курсы валют, cron persistence, fallback providers.
-- `src/shared/lib` - Prisma, auth/session helpers, query keys, invalidation, result helpers, balance domain.
-- `src/shared/ui` - базовые UI-компоненты.
-- `src/shared/utils` - низкоуровневые утилиты, включая арифметику денег.
+- `packages/web/src/app` - App Router страницы, layouts и providers.
+- `packages/web/src/modules` - UI-модули для счетов, категорий, транзакций, долгов, аналитики, workspace и auth.
+- `packages/web/src/shared` - frontend helpers, API client, query keys, UI primitives и низкоуровневые утилиты.
+- `packages/api/src` - NestJS backend modules, auth/session ownership, workspace guards, finance endpoints, cron, email и Prisma access.
+- `packages/api/prisma/schema.prisma` - source of truth для MongoDB collections, relations, indexes и enums.
+- `packages/api/scripts` - seed, MongoDB import/export и OpenAPI generation.
 
 ## Денежная логика
 
-Низкоуровневая арифметика находится в `src/shared/utils/money.ts`. Доменные правила изменения балансов находятся отдельно в `src/shared/lib/balance-domain.ts`, чтобы одни и те же правила использовались server actions и client preview в формах.
+Низкоуровневая frontend-арифметика находится в `packages/web/src/shared/utils/money.ts`. Backend сохраняет money-as-string инвариант в `packages/api/src/common/money.ts` и доменных сервисах NestJS.

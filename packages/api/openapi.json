@@ -1,0 +1,5900 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "operationId": "register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Start email-verified registration",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/verify-email/{token}": {
+      "post": {
+        "operationId": "verifyEmail",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyEmailResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Verify a pending registration email token",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "headers": {
+              "Set-Cookie": {
+                "description": "HTTP-only finnn_session session cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthUserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create an authenticated session cookie",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Invalidate the current session cookie",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/session": {
+      "get": {
+        "operationId": "getSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Read the current authenticated session",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/user": {
+      "patch": {
+        "operationId": "updateUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthUserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update current user settings",
+        "tags": ["Auth"]
+      }
+    },
+    "/workspaces": {
+      "post": {
+        "operationId": "createWorkspace",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkspaceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a workspace",
+        "tags": ["Workspaces"]
+      },
+      "get": {
+        "operationId": "listWorkspaces",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List accessible workspaces",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}": {
+      "get": {
+        "operationId": "getWorkspace",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get workspace details",
+        "tags": ["Workspaces"]
+      },
+      "patch": {
+        "operationId": "updateWorkspace",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkspaceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a workspace",
+        "tags": ["Workspaces"]
+      },
+      "delete": {
+        "operationId": "deleteWorkspace",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a workspace",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/summary": {
+      "get": {
+        "operationId": "getWorkspaceSummary",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSummaryResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get workspace summary",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/members": {
+      "get": {
+        "operationId": "getWorkspaceMembers",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceMembersResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get workspace members",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/leave": {
+      "post": {
+        "operationId": "leaveWorkspace",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaveWorkspaceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Leave a workspace",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/invites": {
+      "post": {
+        "operationId": "createWorkspaceInvite",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInviteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateInviteResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a workspace invite",
+        "tags": ["Workspaces"]
+      }
+    },
+    "/workspace-invites/{token}": {
+      "get": {
+        "operationId": "getWorkspaceInvite",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceInvitePreviewResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Preview a workspace invite",
+        "tags": ["Workspace Invites"]
+      }
+    },
+    "/workspace-invites/{token}/accept": {
+      "post": {
+        "operationId": "acceptWorkspaceInvite",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptInviteResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Accept a workspace invite",
+        "tags": ["Workspace Invites"]
+      }
+    },
+    "/workspaces/{workspaceId}/accounts": {
+      "post": {
+        "operationId": "createAccount",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create an account",
+        "tags": ["Accounts"]
+      },
+      "get": {
+        "operationId": "listAccounts",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List active accounts",
+        "tags": ["Accounts"]
+      }
+    },
+    "/workspaces/{workspaceId}/accounts/archived": {
+      "get": {
+        "operationId": "listArchivedAccounts",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchivedAccountListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List archived accounts",
+        "tags": ["Accounts"]
+      }
+    },
+    "/workspaces/{workspaceId}/accounts/order": {
+      "patch": {
+        "operationId": "updateAccountsOrder",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountsOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update account order",
+        "tags": ["Accounts"]
+      }
+    },
+    "/accounts/{accountId}": {
+      "get": {
+        "operationId": "getAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get an account",
+        "tags": ["Accounts"]
+      },
+      "patch": {
+        "operationId": "updateAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update an account",
+        "tags": ["Accounts"]
+      },
+      "delete": {
+        "operationId": "deleteArchivedAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete an archived account",
+        "tags": ["Accounts"]
+      }
+    },
+    "/accounts/{accountId}/archive": {
+      "post": {
+        "operationId": "archiveAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Archive an account",
+        "tags": ["Accounts"]
+      }
+    },
+    "/accounts/{accountId}/unarchive": {
+      "post": {
+        "operationId": "unarchiveAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Restore an archived account",
+        "tags": ["Accounts"]
+      }
+    },
+    "/workspaces/{workspaceId}/categories": {
+      "post": {
+        "operationId": "createCategory",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a category",
+        "tags": ["Categories"]
+      },
+      "get": {
+        "operationId": "listCategories",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["income", "expense"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List categories",
+        "tags": ["Categories"]
+      }
+    },
+    "/workspaces/{workspaceId}/categories/order": {
+      "patch": {
+        "operationId": "updateCategoriesOrder",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoriesOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategorySuccessResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update category order",
+        "tags": ["Categories"]
+      }
+    },
+    "/categories/{categoryId}": {
+      "patch": {
+        "operationId": "updateCategory",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a category",
+        "tags": ["Categories"]
+      },
+      "delete": {
+        "operationId": "deleteCategory",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a category",
+        "tags": ["Categories"]
+      }
+    },
+    "/categories/{categoryId}/transaction-count": {
+      "get": {
+        "operationId": "getCategoryTransactionCount",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryTransactionCountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get category transaction count",
+        "tags": ["Categories"]
+      }
+    },
+    "/workspaces/{workspaceId}/debts": {
+      "get": {
+        "operationId": "listDebts",
+        "parameters": [
+          {
+            "name": "personName",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List debts",
+        "tags": ["Debts"]
+      },
+      "post": {
+        "operationId": "createDebt",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDebtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a debt",
+        "tags": ["Debts"]
+      }
+    },
+    "/debts/{debtId}/edit-data": {
+      "get": {
+        "operationId": "getDebtEditData",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtEditDataResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get debt edit data",
+        "tags": ["Debts"]
+      }
+    },
+    "/debts/{debtId}": {
+      "patch": {
+        "operationId": "updateDebt",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDebtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a debt",
+        "tags": ["Debts"]
+      },
+      "delete": {
+        "operationId": "deleteDebt",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a debt",
+        "tags": ["Debts"]
+      }
+    },
+    "/debts/{debtId}/add": {
+      "post": {
+        "operationId": "addToDebt",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddToDebtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Add to a debt",
+        "tags": ["Debts"]
+      }
+    },
+    "/debts/{debtId}/close": {
+      "post": {
+        "operationId": "closeDebt",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseDebtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Close or pay down a debt",
+        "tags": ["Debts"]
+      }
+    },
+    "/debt-transactions/{debtTransactionId}": {
+      "patch": {
+        "operationId": "updateDebtTransaction",
+        "parameters": [
+          {
+            "name": "debtTransactionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDebtEntryTransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtTransactionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a debt transaction",
+        "tags": ["Debts"]
+      },
+      "delete": {
+        "operationId": "deleteDebtTransaction",
+        "parameters": [
+          {
+            "name": "debtTransactionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a debt transaction",
+        "tags": ["Debts"]
+      }
+    },
+    "/workspaces/{workspaceId}/transactions": {
+      "get": {
+        "operationId": "getCombinedTransactions",
+        "parameters": [
+          {
+            "name": "includeDebtTransactions",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "description",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "categoryIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "transactionTypes",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "userIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "amountTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "amountFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "skip",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CombinedTransactionsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List combined transactions",
+        "tags": ["Transactions"]
+      }
+    },
+    "/workspaces/{workspaceId}/payment-transactions": {
+      "post": {
+        "operationId": "createPaymentTransaction",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentTransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTransactionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a payment transaction",
+        "tags": ["Transactions"]
+      }
+    },
+    "/payment-transactions/{transactionId}": {
+      "patch": {
+        "operationId": "updatePaymentTransaction",
+        "parameters": [
+          {
+            "name": "transactionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePaymentTransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTransactionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a payment transaction",
+        "tags": ["Transactions"]
+      },
+      "delete": {
+        "operationId": "deletePaymentTransaction",
+        "parameters": [
+          {
+            "name": "transactionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a payment transaction",
+        "tags": ["Transactions"]
+      }
+    },
+    "/workspaces/{workspaceId}/transfers": {
+      "post": {
+        "operationId": "createTransferTransaction",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransferTransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferTransactionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a transfer transaction",
+        "tags": ["Transactions"]
+      }
+    },
+    "/transfers/{transferId}": {
+      "patch": {
+        "operationId": "updateTransferTransaction",
+        "parameters": [
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTransferTransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferTransactionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a transfer transaction",
+        "tags": ["Transactions"]
+      },
+      "delete": {
+        "operationId": "deleteTransferTransaction",
+        "parameters": [
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a transfer transaction",
+        "tags": ["Transactions"]
+      }
+    },
+    "/workspaces/{workspaceId}/analytics/overview": {
+      "get": {
+        "operationId": "getAnalyticsOverview",
+        "parameters": [
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "description",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "categoryIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "transactionTypes",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "userIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "amountTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "amountFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsOverviewResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get workspace analytics overview",
+        "tags": ["Analytics"]
+      }
+    },
+    "/exchange-rates": {
+      "get": {
+        "operationId": "getLatestExchangeRates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRatesResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get latest exchange rates",
+        "tags": ["Currency"]
+      }
+    },
+    "/exchange-rates/rate": {
+      "get": {
+        "operationId": "getExchangeRate",
+        "parameters": [
+          {
+            "name": "toCurrency",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": ["USD", "EUR", "BYN"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "fromCurrency",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": ["USD", "EUR", "BYN"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get one exchange rate for a date",
+        "tags": ["Currency"]
+      }
+    },
+    "/exchange-rates/today": {
+      "get": {
+        "operationId": "getTodayExchangeRates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRatesResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get today's exchange rates",
+        "tags": ["Currency"]
+      }
+    },
+    "/exchange-rates/yesterday": {
+      "get": {
+        "operationId": "getYesterdayExchangeRates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRatesResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get yesterday's exchange rates",
+        "tags": ["Currency"]
+      }
+    },
+    "/cron/update-exchange-rates": {
+      "get": {
+        "operationId": "updateExchangeRatesCron",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "description": "Bearer CRON_SECRET",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateExchangeRatesResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Persist daily exchange rates",
+        "tags": ["Cron"]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read API health status",
+        "tags": ["Health"]
+      }
+    }
+  },
+  "info": {
+    "title": "Finnn API",
+    "description": "Backend API for Finnn finance tracking",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": ""
+    },
+    {
+      "name": "Auth",
+      "description": ""
+    },
+    {
+      "name": "Workspace Invites",
+      "description": ""
+    },
+    {
+      "name": "Transactions",
+      "description": ""
+    },
+    {
+      "name": "Debts",
+      "description": ""
+    },
+    {
+      "name": "Currency",
+      "description": ""
+    },
+    {
+      "name": "Cron",
+      "description": ""
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "finnn_session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "finnn_session"
+      }
+    },
+    "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Finn User",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "correct-horse-battery",
+            "minLength": 6
+          }
+        },
+        "required": ["name", "email", "password"]
+      },
+      "SuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["success"]
+      },
+      "ApiErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "path": {
+            "type": "string",
+            "example": "/auth/register"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["statusCode", "message", "error", "path", "timestamp"]
+      },
+      "VerifyEmailResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "userId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          }
+        },
+        "required": ["success", "userId"]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "correct-horse-battery",
+            "minLength": 1
+          }
+        },
+        "required": ["email", "password"]
+      },
+      "AuthUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "name": {
+            "type": "string",
+            "example": "Finn User"
+          },
+          "image": {
+            "type": "string",
+            "example": "avatar-01",
+            "nullable": true
+          }
+        },
+        "required": ["id", "email", "name"]
+      },
+      "AuthUserResponseDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AuthUserDto"
+          }
+        },
+        "required": ["user"]
+      },
+      "SessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "authenticated": {
+            "type": "boolean",
+            "example": true
+          },
+          "user": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuthUserDto"
+              }
+            ]
+          }
+        },
+        "required": ["authenticated"]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Finn User",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "image": {
+            "type": "string",
+            "example": "avatar-01",
+            "nullable": true
+          }
+        },
+        "required": ["name"]
+      },
+      "CreateWorkspaceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Personal budget",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "slug": {
+            "type": "string",
+            "example": "personal-budget",
+            "maxLength": 50,
+            "minLength": 1
+          }
+        },
+        "required": ["name", "slug"]
+      },
+      "WorkspaceOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "name": {
+            "type": "string",
+            "example": "Finn User",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "image": {
+            "type": "string",
+            "example": "avatar-01",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name", "email"]
+      },
+      "WorkspaceMemberDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f3333"
+          },
+          "name": {
+            "type": "string",
+            "example": "Finn User",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "image": {
+            "type": "string",
+            "example": "avatar-01",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "example": "owner",
+            "enum": ["owner", "admin", "member"]
+          }
+        },
+        "required": ["id", "name", "email", "role"]
+      },
+      "WorkspaceDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "name": {
+            "type": "string",
+            "example": "Personal budget"
+          },
+          "slug": {
+            "type": "string",
+            "example": "personal-budget"
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          },
+          "baseCurrency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "membersCount": {
+            "type": "number",
+            "example": 3
+          },
+          "owner": {
+            "$ref": "#/components/schemas/WorkspaceOwnerDto"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceMemberDto"
+            }
+          }
+        },
+        "required": ["id", "name", "slug", "baseCurrency", "ownerId", "membersCount", "owner", "members"]
+      },
+      "WorkspaceResponseDto": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "$ref": "#/components/schemas/WorkspaceDetailDto"
+          }
+        },
+        "required": ["workspace"]
+      },
+      "WorkspaceSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "name": {
+            "type": "string",
+            "example": "Personal budget"
+          },
+          "slug": {
+            "type": "string",
+            "example": "personal-budget"
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          },
+          "baseCurrency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "membersCount": {
+            "type": "number",
+            "example": 3
+          },
+          "owner": {
+            "$ref": "#/components/schemas/WorkspaceOwnerDto"
+          }
+        },
+        "required": ["id", "name", "slug", "baseCurrency", "ownerId", "membersCount", "owner"]
+      },
+      "WorkspaceListResponseDto": {
+        "type": "object",
+        "properties": {
+          "workspaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSummaryDto"
+            }
+          }
+        },
+        "required": ["workspaces"]
+      },
+      "WorkspaceSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "$ref": "#/components/schemas/WorkspaceSummaryDto"
+          }
+        },
+        "required": ["workspace"]
+      },
+      "WorkspaceMembersResponseDto": {
+        "type": "object",
+        "properties": {
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceMemberDto"
+            }
+          }
+        },
+        "required": ["members"]
+      },
+      "UpdateWorkspaceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Family budget",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "slug": {
+            "type": "string",
+            "example": "family-budget",
+            "maxLength": 50,
+            "minLength": 1
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          }
+        }
+      },
+      "LeaveWorkspaceResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["success"]
+      },
+      "CreateInviteDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "member@example.com"
+          },
+          "expiresInDays": {
+            "type": "number",
+            "default": 7,
+            "maximum": 30,
+            "minimum": 1
+          }
+        },
+        "required": ["email"]
+      },
+      "WorkspaceInviteDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "email": {
+            "type": "string",
+            "example": "member@example.com"
+          },
+          "token": {
+            "type": "string",
+            "example": "b6f13a6bead..."
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-06-01T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "workspaceId", "email", "token", "expiresAt"]
+      },
+      "CreateInviteResponseDto": {
+        "type": "object",
+        "properties": {
+          "invite": {
+            "$ref": "#/components/schemas/WorkspaceInviteDto"
+          }
+        },
+        "required": ["invite"]
+      },
+      "WorkspaceInvitePreviewDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "member@example.com"
+          },
+          "workspaceName": {
+            "type": "string",
+            "example": "Personal budget"
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-06-01T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["email", "workspaceName", "workspaceId", "expiresAt"]
+      },
+      "WorkspaceInvitePreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "invite": {
+            "$ref": "#/components/schemas/WorkspaceInvitePreviewDto"
+          }
+        },
+        "required": ["invite"]
+      },
+      "AcceptInviteResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          }
+        },
+        "required": ["success", "workspaceId"]
+      },
+      "CreateAccountDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Main card",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "balance": {
+            "type": "string",
+            "example": "125.50"
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "BYN"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "example": "#0f766e"
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["name", "balance", "currency", "createdAt"]
+      },
+      "AccountOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "name": {
+            "type": "string",
+            "example": "Ada",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "example": "ada@example.com"
+          },
+          "image": {
+            "type": "string",
+            "example": "avatar-01",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name", "email"]
+      },
+      "AccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f3333"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "example": "Main card"
+          },
+          "balance": {
+            "type": "string",
+            "example": "125.50"
+          },
+          "currency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "description": {
+            "type": "string",
+            "example": "Everyday spending",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "example": "#0f766e",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean",
+            "example": false
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "owner": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountOwnerDto"
+              }
+            ]
+          }
+        },
+        "required": ["id", "workspaceId", "name", "balance", "currency", "archived", "order", "createdAt", "updatedAt"]
+      },
+      "AccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountDto"
+          }
+        },
+        "required": ["account"]
+      },
+      "AccountListResponseDto": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountDto"
+            }
+          }
+        },
+        "required": ["accounts"]
+      },
+      "AccountDependencyCountsDto": {
+        "type": "object",
+        "properties": {
+          "transactions": {
+            "type": "number",
+            "example": 3
+          },
+          "debts": {
+            "type": "number",
+            "example": 1
+          },
+          "debtTransactions": {
+            "type": "number",
+            "example": 2
+          }
+        },
+        "required": ["transactions", "debts", "debtTransactions"]
+      },
+      "ArchivedAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f3333"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "example": "Main card"
+          },
+          "balance": {
+            "type": "string",
+            "example": "125.50"
+          },
+          "currency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "description": {
+            "type": "string",
+            "example": "Everyday spending",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "example": "#0f766e",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "example": "wallet",
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean",
+            "example": false
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "owner": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountOwnerDto"
+              }
+            ]
+          },
+          "_count": {
+            "$ref": "#/components/schemas/AccountDependencyCountsDto"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "name",
+          "balance",
+          "currency",
+          "archived",
+          "order",
+          "createdAt",
+          "updatedAt",
+          "_count"
+        ]
+      },
+      "ArchivedAccountListResponseDto": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArchivedAccountDto"
+            }
+          }
+        },
+        "required": ["accounts"]
+      },
+      "AccountOrderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          }
+        },
+        "required": ["id", "order"]
+      },
+      "UpdateAccountsOrderDto": {
+        "type": "object",
+        "properties": {
+          "accountOrders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountOrderDto"
+            }
+          }
+        },
+        "required": ["accountOrders"]
+      },
+      "AccountSuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["success"]
+      },
+      "UpdateAccountDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Savings",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "balance": {
+            "type": "string",
+            "example": "200.00"
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "USD"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "example": "#2563eb"
+          },
+          "icon": {
+            "type": "string",
+            "example": "landmark"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "order": {
+            "type": "number",
+            "example": 2
+          }
+        }
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Groceries",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"],
+            "example": "expense"
+          },
+          "icon": {
+            "type": "string",
+            "example": "shopping-cart"
+          }
+        },
+        "required": ["name", "type"]
+      },
+      "CategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f3333"
+          },
+          "name": {
+            "type": "string",
+            "example": "Groceries"
+          },
+          "type": {
+            "type": "string",
+            "example": "expense"
+          },
+          "icon": {
+            "type": "string",
+            "example": "shopping-cart",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "transactionCount": {
+            "type": "number",
+            "example": 4
+          }
+        },
+        "required": ["id", "workspaceId", "name", "type", "order", "createdAt", "updatedAt", "transactionCount"]
+      },
+      "CategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CategoryDto"
+          }
+        },
+        "required": ["category"]
+      },
+      "CategoryListResponseDto": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryDto"
+            }
+          }
+        },
+        "required": ["categories"]
+      },
+      "UpdateCategoriesOrderDto": {
+        "type": "object",
+        "properties": {
+          "categoryIds": {
+            "example": ["665f5d865ef5a20c0d2f1111", "665f5d865ef5a20c0d2f2222"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["categoryIds"]
+      },
+      "CategorySuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["success"]
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Salary",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"],
+            "example": "income"
+          },
+          "icon": {
+            "type": "string",
+            "example": "briefcase"
+          },
+          "order": {
+            "type": "number",
+            "example": 0
+          }
+        }
+      },
+      "CategoryTransactionCountResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "example": 4
+          }
+        },
+        "required": ["count"]
+      },
+      "DebtAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name", "currency"]
+      },
+      "DebtDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["lent", "borrowed"]
+          },
+          "personName": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "remainingAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "closed"]
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "account": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DebtAccountDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "type",
+          "personName",
+          "amount",
+          "remainingAmount",
+          "currency",
+          "date",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DebtListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DebtDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": ["data", "total"]
+      },
+      "CreateDebtDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["lent", "borrowed"],
+            "example": "lent"
+          },
+          "personName": {
+            "type": "string",
+            "example": "Grace",
+            "minLength": 1
+          },
+          "amount": {
+            "type": "string",
+            "example": "100"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "useAccount": {
+            "type": "boolean",
+            "example": true
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "currency": {
+            "type": "string",
+            "example": "BYN"
+          }
+        },
+        "required": ["type", "personName", "amount", "date", "useAccount"]
+      },
+      "DebtResponseDto": {
+        "type": "object",
+        "properties": {
+          "debt": {
+            "$ref": "#/components/schemas/DebtDto"
+          }
+        },
+        "required": ["debt"]
+      },
+      "DebtEditDataDto": {
+        "type": "object",
+        "properties": {
+          "personName": {
+            "type": "string"
+          },
+          "initialAmount": {
+            "type": "string"
+          },
+          "initialDate": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": ["personName", "initialAmount", "initialDate", "currency"]
+      },
+      "DebtEditDataResponseDto": {
+        "type": "object",
+        "properties": {
+          "debt": {
+            "$ref": "#/components/schemas/DebtEditDataDto"
+          }
+        },
+        "required": ["debt"]
+      },
+      "UpdateDebtDto": {
+        "type": "object",
+        "properties": {
+          "personName": {
+            "type": "string",
+            "example": "Grace",
+            "minLength": 1
+          },
+          "amount": {
+            "type": "string",
+            "example": "120"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["personName", "amount", "date"]
+      },
+      "AddToDebtDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "20"
+          },
+          "useAccount": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["amount", "useAccount"]
+      },
+      "CloseDebtDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "80"
+          },
+          "toAmount": {
+            "type": "string",
+            "example": "81.50"
+          },
+          "paymentAmount": {
+            "type": "string",
+            "example": "95"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "closeEarly": {
+            "type": "boolean",
+            "example": false
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "useAccount": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["amount", "useAccount"]
+      },
+      "UpdateDebtEntryTransactionDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "30"
+          },
+          "toAmount": {
+            "type": "string",
+            "example": "31.50"
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["amount", "date"]
+      },
+      "DebtEntryTransactionDebtDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["lent", "borrowed"]
+          },
+          "personName": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "remainingAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "closed"]
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "type",
+          "personName",
+          "amount",
+          "remainingAmount",
+          "currency",
+          "date",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DebtAccountWithOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "owner": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name", "currency"]
+      },
+      "DebtEntryTransactionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "debtId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": ["created", "closed", "added"]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "toAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "debt": {
+            "$ref": "#/components/schemas/DebtEntryTransactionDebtDto"
+          },
+          "account": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DebtAccountWithOwnerDto"
+              }
+            ]
+          }
+        },
+        "required": ["id", "workspaceId", "debtId", "type", "amount", "date", "createdAt", "debt"]
+      },
+      "DebtTransactionResponseDto": {
+        "type": "object",
+        "properties": {
+          "debtTransaction": {
+            "$ref": "#/components/schemas/DebtEntryTransactionDto"
+          }
+        },
+        "required": ["debtTransaction"]
+      },
+      "CombinedTransactionsQueryDto": {
+        "type": "object",
+        "properties": {
+          "skip": {
+            "type": "number",
+            "example": 0,
+            "minimum": 0
+          },
+          "take": {
+            "type": "number",
+            "example": 50,
+            "minimum": 1
+          },
+          "amountFrom": {
+            "type": "string",
+            "example": "10"
+          },
+          "amountTo": {
+            "type": "string",
+            "example": "500"
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "transactionTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["income", "expense", "transfer", "debt"]
+            }
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "example": "lunch"
+          },
+          "dateFrom": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "dateTo": {
+            "type": "string",
+            "example": "2026-05-31"
+          },
+          "includeDebtTransactions": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "TransactionUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "email"]
+      },
+      "TransactionAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "owner": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionUserDto"
+              }
+            ]
+          }
+        },
+        "required": ["id", "name", "currency"]
+      },
+      "TransactionCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "PaymentTransactionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "account": {
+            "$ref": "#/components/schemas/TransactionAccountDto"
+          },
+          "category": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionCategoryDto"
+              }
+            ]
+          }
+        },
+        "required": ["id", "workspaceId", "accountId", "amount", "type", "date", "createdAt", "updatedAt", "account"]
+      },
+      "PaymentCombinedTransactionDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["paymentTransaction"]
+          },
+          "data": {
+            "$ref": "#/components/schemas/PaymentTransactionDto"
+          }
+        },
+        "required": ["kind", "data"]
+      },
+      "TransferTransactionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "fromAccountId": {
+            "type": "string"
+          },
+          "toAccountId": {
+            "type": "string"
+          },
+          "createdById": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "string"
+          },
+          "toAmount": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fromAccount": {
+            "$ref": "#/components/schemas/TransactionAccountDto"
+          },
+          "toAccount": {
+            "$ref": "#/components/schemas/TransactionAccountDto"
+          },
+          "createdBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionUserDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "fromAccountId",
+          "toAccountId",
+          "amount",
+          "toAmount",
+          "date",
+          "createdAt",
+          "updatedAt",
+          "fromAccount",
+          "toAccount"
+        ]
+      },
+      "TransferCombinedTransactionDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["transferTransaction"]
+          },
+          "data": {
+            "$ref": "#/components/schemas/TransferTransactionDto"
+          }
+        },
+        "required": ["kind", "data"]
+      },
+      "DebtTransactionDebtDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "personName": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "remainingAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "type",
+          "personName",
+          "amount",
+          "remainingAmount",
+          "currency",
+          "date",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DebtTransactionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "debtId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "toAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "debt": {
+            "$ref": "#/components/schemas/DebtTransactionDebtDto"
+          },
+          "account": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionAccountDto"
+              }
+            ]
+          }
+        },
+        "required": ["id", "workspaceId", "debtId", "type", "amount", "date", "createdAt", "debt"]
+      },
+      "DebtCombinedTransactionDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["debtTransaction"]
+          },
+          "data": {
+            "$ref": "#/components/schemas/DebtTransactionDto"
+          }
+        },
+        "required": ["kind", "data"]
+      },
+      "CombinedTransactionsResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/PaymentCombinedTransactionDto"
+                },
+                {
+                  "$ref": "#/components/schemas/TransferCombinedTransactionDto"
+                },
+                {
+                  "$ref": "#/components/schemas/DebtCombinedTransactionDto"
+                }
+              ]
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          }
+        },
+        "required": ["data", "total"]
+      },
+      "NewPaymentCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Groceries",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"],
+            "example": "expense"
+          }
+        },
+        "required": ["name", "type"]
+      },
+      "CreatePaymentTransactionDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "amount": {
+            "type": "string",
+            "example": "125.50"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"],
+            "example": "expense"
+          },
+          "description": {
+            "type": "string",
+            "example": "Lunch"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "newCategory": {
+            "$ref": "#/components/schemas/NewPaymentCategoryDto"
+          }
+        },
+        "required": ["accountId", "amount", "type", "date"]
+      },
+      "PaymentTransactionResponseDto": {
+        "type": "object",
+        "properties": {
+          "transaction": {
+            "$ref": "#/components/schemas/PaymentTransactionDto"
+          }
+        },
+        "required": ["transaction"]
+      },
+      "UpdatePaymentTransactionDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "amount": {
+            "type": "string",
+            "example": "125.50"
+          },
+          "description": {
+            "type": "string",
+            "example": "Lunch"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222",
+            "nullable": true
+          }
+        }
+      },
+      "CreateTransferTransactionDto": {
+        "type": "object",
+        "properties": {
+          "fromAccountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "toAccountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "amount": {
+            "type": "string",
+            "example": "50"
+          },
+          "toAmount": {
+            "type": "string",
+            "example": "49.50"
+          },
+          "description": {
+            "type": "string",
+            "example": "Cash move"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["fromAccountId", "toAccountId", "amount", "toAmount", "date"]
+      },
+      "TransferTransactionResponseDto": {
+        "type": "object",
+        "properties": {
+          "transfer": {
+            "$ref": "#/components/schemas/TransferTransactionDto"
+          }
+        },
+        "required": ["transfer"]
+      },
+      "UpdateTransferTransactionDto": {
+        "type": "object",
+        "properties": {
+          "fromAccountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "toAccountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "amount": {
+            "type": "string",
+            "example": "50"
+          },
+          "toAmount": {
+            "type": "string",
+            "example": "49.50"
+          },
+          "description": {
+            "type": "string",
+            "example": "Cash move"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["fromAccountId", "toAccountId", "amount", "toAmount", "date"]
+      },
+      "AnalyticsOverviewQueryDto": {
+        "type": "object",
+        "properties": {
+          "amountFrom": {
+            "type": "string",
+            "example": "10"
+          },
+          "amountTo": {
+            "type": "string",
+            "example": "500"
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "transactionTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["income", "expense", "transfer", "debt"]
+            }
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "example": "lunch"
+          },
+          "dateFrom": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "dateTo": {
+            "type": "string",
+            "example": "2026-05-31"
+          }
+        }
+      },
+      "AnalyticsEffectiveRangeDto": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2026-05-31"
+          },
+          "previousStartDate": {
+            "type": "string",
+            "example": "2026-04-01"
+          },
+          "previousEndDate": {
+            "type": "string",
+            "example": "2026-04-30"
+          },
+          "dayCount": {
+            "type": "number",
+            "example": 31
+          },
+          "isImplicit": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "required": ["startDate", "endDate", "previousStartDate", "previousEndDate", "dayCount", "isImplicit"]
+      },
+      "AnalyticsSummaryMetricDto": {
+        "type": "object",
+        "properties": {
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "previousTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "percentageChange": {
+            "type": "number",
+            "nullable": true
+          },
+          "transactionCount": {
+            "type": "number"
+          }
+        },
+        "required": ["totalInBaseCurrency", "previousTotalInBaseCurrency", "transactionCount"]
+      },
+      "AnalyticsNetFlowMetricDto": {
+        "type": "object",
+        "properties": {
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "previousTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "percentageChange": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": ["totalInBaseCurrency", "previousTotalInBaseCurrency"]
+      },
+      "AnalyticsTransferVolumeMetricDto": {
+        "type": "object",
+        "properties": {
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "transactionCount": {
+            "type": "number"
+          }
+        },
+        "required": ["totalInBaseCurrency", "transactionCount"]
+      },
+      "AnalyticsOpenDebtsMetricDto": {
+        "type": "object",
+        "properties": {
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "debtCount": {
+            "type": "number"
+          }
+        },
+        "required": ["totalInBaseCurrency", "debtCount"]
+      },
+      "AnalyticsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "income": {
+            "$ref": "#/components/schemas/AnalyticsSummaryMetricDto"
+          },
+          "expense": {
+            "$ref": "#/components/schemas/AnalyticsSummaryMetricDto"
+          },
+          "netFlow": {
+            "$ref": "#/components/schemas/AnalyticsNetFlowMetricDto"
+          },
+          "transferVolume": {
+            "$ref": "#/components/schemas/AnalyticsTransferVolumeMetricDto"
+          },
+          "openDebts": {
+            "$ref": "#/components/schemas/AnalyticsOpenDebtsMetricDto"
+          }
+        },
+        "required": ["income", "expense", "netFlow", "transferVolume", "openDebts"]
+      },
+      "AnalyticsComparisonDto": {
+        "type": "object",
+        "properties": {
+          "incomePreviousTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "expensePreviousTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "netFlowPreviousTotalInBaseCurrency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "incomePreviousTotalInBaseCurrency",
+          "expensePreviousTotalInBaseCurrency",
+          "netFlowPreviousTotalInBaseCurrency"
+        ]
+      },
+      "AnalyticsTimeSeriesPointDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "incomeTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "expenseTotalInBaseCurrency": {
+            "type": "string"
+          }
+        },
+        "required": ["date", "incomeTotalInBaseCurrency", "expenseTotalInBaseCurrency"]
+      },
+      "AnalyticsExpenseCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "totalInBaseCurrency": {
+            "type": "string"
+          },
+          "transactionCount": {
+            "type": "number"
+          },
+          "sharePercent": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "name", "totalInBaseCurrency", "transactionCount", "sharePercent"]
+      },
+      "AnalyticsDebtByPersonDto": {
+        "type": "object",
+        "properties": {
+          "personName": {
+            "type": "string"
+          },
+          "lentTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "borrowedTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "netExposureInBaseCurrency": {
+            "type": "string"
+          },
+          "debtCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "personName",
+          "lentTotalInBaseCurrency",
+          "borrowedTotalInBaseCurrency",
+          "netExposureInBaseCurrency",
+          "debtCount"
+        ]
+      },
+      "AnalyticsLargestMovementDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["paymentTransaction", "transferTransaction", "debtTransaction"]
+          },
+          "kindLabel": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "primaryLabel": {
+            "type": "string"
+          },
+          "secondaryLabel": {
+            "type": "string"
+          },
+          "originalAmount": {
+            "type": "string"
+          },
+          "amountInBaseCurrency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "kindLabel",
+          "date",
+          "primaryLabel",
+          "secondaryLabel",
+          "originalAmount",
+          "amountInBaseCurrency"
+        ]
+      },
+      "AnalyticsOverviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "baseCurrency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "effectiveRange": {
+            "$ref": "#/components/schemas/AnalyticsEffectiveRangeDto"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AnalyticsSummaryDto"
+          },
+          "comparison": {
+            "$ref": "#/components/schemas/AnalyticsComparisonDto"
+          },
+          "timeSeries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsTimeSeriesPointDto"
+            }
+          },
+          "expenseCategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsExpenseCategoryDto"
+            }
+          },
+          "debtsByPerson": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsDebtByPersonDto"
+            }
+          },
+          "largestMovements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsLargestMovementDto"
+            }
+          }
+        },
+        "required": [
+          "baseCurrency",
+          "effectiveRange",
+          "summary",
+          "comparison",
+          "timeSeries",
+          "expenseCategories",
+          "debtsByPerson",
+          "largestMovements"
+        ]
+      },
+      "ExchangeRateQueryDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "fromCurrency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "USD"
+          },
+          "toCurrency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "BYN"
+          }
+        },
+        "required": ["date", "fromCurrency", "toCurrency"]
+      },
+      "ExchangeRatesResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "BYN": 1,
+              "EUR": 3.6124,
+              "USD": 3.2721
+            }
+          }
+        },
+        "required": ["data"]
+      },
+      "ExchangeRateResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "number",
+            "example": 3.2721
+          }
+        },
+        "required": ["data"]
+      },
+      "SavedExchangeRateDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T00:00:00.000Z",
+            "format": "date-time"
+          },
+          "fromCurrency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "USD"
+          },
+          "toCurrency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "BYN"],
+            "example": "BYN"
+          },
+          "rate": {
+            "type": "number",
+            "example": 3.2721
+          }
+        },
+        "required": ["id", "date", "fromCurrency", "toCurrency", "rate"]
+      },
+      "UpdateExchangeRatesResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "saved": {
+            "type": "number",
+            "example": 2
+          },
+          "rates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SavedExchangeRateDto"
+            }
+          }
+        },
+        "required": ["success", "saved", "rates"]
+      },
+      "HealthResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok"],
+            "example": "ok"
+          }
+        },
+        "required": ["status"]
+      }
+    }
+  }
+}

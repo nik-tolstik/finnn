@@ -1,0 +1,75 @@
+"use client";
+
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { removeDebtsFromCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
+import { Button } from "@/shared/ui/button";
+import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { formatMoney } from "@/shared/utils/money";
+
+import { deleteDebt } from "../../debt.api";
+import type { DebtWithRelations } from "../../debt.types";
+
+interface DeleteDebtDialogProps {
+  debt: DebtWithRelations;
+  workspaceId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: DeleteDebtDialogProps) {
+  const queryClient = useQueryClient();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId,
+        domains: ["debts", "transactions", "accounts"],
+        apply: (context) => removeDebtsFromCache(context, [debt.id]),
+        mutation: () => deleteDebt(debt.id),
+      });
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Долг удалён");
+        onOpenChange(false);
+      }
+    } catch {
+      toast.error("Не удалось удалить долг");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Удалить долг?</DialogTitle>
+          <DialogDescription>
+            Вы уверены, что хотите удалить долг {debt.personName} на сумму{" "}
+            {formatMoney(debt.remainingAmount, debt.currency)}? Это действие нельзя отменить.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" disabled={isDeleting} onClick={() => onOpenChange(false)}>
+            Отмена
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            type="button"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isDeleting ? "Удаление..." : "Удалить"}
+          </Button>
+        </DialogFooter>
+      </DialogWindow>
+    </Dialog>
+  );
+}
