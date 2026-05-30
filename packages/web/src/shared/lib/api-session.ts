@@ -33,10 +33,15 @@ export async function fetchServerSession(): Promise<Session | null> {
     return null;
   }
 
-  const response = await fetch(`${getApiBaseUrl()}/auth/session`, {
-    headers: requestOptions.headers,
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${getApiBaseUrl()}/auth/session`, {
+      headers: requestOptions.headers,
+      cache: "no-store",
+    });
+  } catch {
+    return null;
+  }
 
   if (!response.ok) {
     return null;

@@ -1,23 +1,13 @@
-import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import { redirect } from "next/navigation";
 
-import { getAccounts } from "@/modules/accounts/account.api";
-import { getCategories } from "@/modules/categories/category.api";
-import {
-  parseTransactionFilters,
-  shouldIncludeDebtTransactions,
-} from "@/modules/transactions/components/transactions-filters";
-import { getCombinedTransactions } from "@/modules/transactions/transaction.api";
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
-import { getWorkspaceMembers, getWorkspaces } from "@/modules/workspace/workspace.api";
+import { getWorkspaces } from "@/modules/workspace/workspace.api";
 import {
   buildWorkspaceRedirectQueryString,
   getFirstSearchParamValue,
-  toURLSearchParams,
   type WorkspacePageSearchParams,
 } from "@/modules/workspace/workspace-search-params";
 import { getCachedServerSession, getServerApiRequestOptions } from "@/shared/lib/api-session";
-import { accountKeys, categoryKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";
 
 import { DashboardContent } from "./components/DashboardContent";
 
@@ -45,37 +35,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   const currentUserId = session?.user?.id;
-  const queryClient = new QueryClient();
-  const appliedFilters = parseTransactionFilters(toURLSearchParams(resolvedSearchParams));
-  const initialTransactionFilters = {
-    ...appliedFilters,
-    skip: 0,
-    take: 20,
-    includeDebtTransactions: shouldIncludeDebtTransactions(appliedFilters.transactionTypes),
-  };
 
-  await Promise.all([
-    queryClient.prefetchQuery({
-      queryKey: accountKeys.list(workspaceId),
-      queryFn: () => getAccounts(workspaceId, requestOptions),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: workspaceKeys.members(workspaceId),
-      queryFn: () => getWorkspaceMembers(workspaceId, requestOptions),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: categoryKeys.list(workspaceId),
-      queryFn: () => getCategories(workspaceId, undefined, requestOptions),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: transactionKeys.list(workspaceId, initialTransactionFilters),
-      queryFn: () => getCombinedTransactions(workspaceId, initialTransactionFilters, requestOptions),
-    }),
-  ]);
-
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <DashboardContent initialCurrentUserId={currentUserId} workspaceId={workspaceId} />
-    </HydrationBoundary>
-  );
+  return <DashboardContent initialCurrentUserId={currentUserId} workspaceId={workspaceId} />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { TransactionViewFilters } from "../types";
 import {
@@ -12,12 +12,24 @@ import {
 } from "../utils/search-params";
 
 export function useTransactionFilters() {
-  const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [isNavigationPending, startNavigationTransition] = useTransition();
+  const [appliedFilters, setAppliedFilters] = useState(() => parseTransactionFilters(searchParams));
 
-  const appliedFilters = useMemo(() => parseTransactionFilters(searchParams), [searchParams]);
+  useEffect(() => {
+    setAppliedFilters(parseTransactionFilters(searchParams));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setAppliedFilters(parseTransactionFilters(new URLSearchParams(window.location.search)));
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
   const appliedFiltersCount = useMemo(() => countActiveTransactionFilterGroups(appliedFilters), [appliedFilters]);
   const appliedFiltersKey = useMemo(() => JSON.stringify(appliedFilters), [appliedFilters]);
   const includeDebtTransactions = useMemo(
@@ -27,14 +39,26 @@ export function useTransactionFilters() {
 
   const applyFilters = useCallback(
     (nextFilters: TransactionViewFilters) => {
-      const nextSearchParams = applyTransactionFiltersToSearchParams(searchParams, nextFilters);
+      const currentSearchParams =
+        typeof window === "undefined"
+          ? new URLSearchParams(searchParams.toString())
+          : new URLSearchParams(window.location.search);
+      const nextSearchParams = applyTransactionFiltersToSearchParams(currentSearchParams, nextFilters);
       const queryString = nextSearchParams.toString();
+      const nextUrl =
+        typeof window === "undefined"
+          ? queryString
+            ? `?${queryString}`
+            : ""
+          : `${window.location.pathname}${queryString ? `?${queryString}` : ""}${window.location.hash}`;
 
-      startNavigationTransition(() => {
-        router.replace(queryString ? `${pathname}?${queryString}` : pathname);
-      });
+      setAppliedFilters(parseTransactionFilters(nextSearchParams));
+
+      if (typeof window !== "undefined") {
+        window.history.replaceState(window.history.state, "", nextUrl);
+      }
     },
-    [pathname, router, searchParams]
+    [searchParams]
   );
 
   const resetFilters = useCallback(() => {
@@ -46,7 +70,7 @@ export function useTransactionFilters() {
     appliedFiltersCount,
     appliedFiltersKey,
     includeDebtTransactions,
-    isNavigationPending,
+    isNavigationPending: false,
     applyFilters,
     resetFilters,
   };
