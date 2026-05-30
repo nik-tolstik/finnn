@@ -178,6 +178,136 @@
         "tags": ["Auth"]
       }
     },
+    "/auth/telegram/start": {
+      "get": {
+        "operationId": "startTelegramAuth",
+        "parameters": [
+          {
+            "name": "returnTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Start Telegram OIDC authentication",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/telegram/link/start": {
+      "get": {
+        "operationId": "startTelegramLink",
+        "parameters": [
+          {
+            "name": "returnTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Start Telegram account linking",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/telegram/callback": {
+      "get": {
+        "operationId": "completeTelegramAuth",
+        "parameters": [
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Complete Telegram OIDC authentication",
+        "tags": ["Auth"]
+      }
+    },
     "/auth/logout": {
       "post": {
         "operationId": "logout",
@@ -280,6 +410,51 @@
           }
         ],
         "summary": "Update current user settings",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/telegram/link": {
+      "delete": {
+        "operationId": "unlinkTelegram",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthUserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Unlink Telegram from the current user",
         "tags": ["Auth"]
       }
     },
@@ -3543,6 +3718,31 @@
         },
         "required": ["email", "password"]
       },
+      "TelegramAuthStatusDto": {
+        "type": "object",
+        "properties": {
+          "linked": {
+            "type": "boolean",
+            "example": true
+          },
+          "username": {
+            "type": "string",
+            "example": "finn_user",
+            "nullable": true
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Finn User",
+            "nullable": true
+          },
+          "photoUrl": {
+            "type": "string",
+            "example": "https://t.me/i/userpic/320/example.jpg",
+            "nullable": true
+          }
+        },
+        "required": ["linked"]
+      },
       "AuthUserDto": {
         "type": "object",
         "properties": {
@@ -3552,19 +3752,24 @@
           },
           "email": {
             "type": "string",
-            "example": "user@example.com"
+            "example": "user@example.com",
+            "nullable": true
           },
           "name": {
             "type": "string",
-            "example": "Finn User"
+            "example": "Finn User",
+            "nullable": true
           },
           "image": {
             "type": "string",
             "example": "avatar-01",
             "nullable": true
+          },
+          "telegram": {
+            "$ref": "#/components/schemas/TelegramAuthStatusDto"
           }
         },
-        "required": ["id", "email", "name"]
+        "required": ["id", "telegram"]
       },
       "AuthUserResponseDto": {
         "type": "object",
@@ -3643,7 +3848,8 @@
           },
           "email": {
             "type": "string",
-            "example": "user@example.com"
+            "example": "user@example.com",
+            "nullable": true
           },
           "image": {
             "type": "string",
@@ -3651,7 +3857,7 @@
             "nullable": true
           }
         },
-        "required": ["id", "name", "email"]
+        "required": ["id", "name"]
       },
       "WorkspaceMemberDto": {
         "type": "object",
@@ -3667,7 +3873,8 @@
           },
           "email": {
             "type": "string",
-            "example": "user@example.com"
+            "example": "user@example.com",
+            "nullable": true
           },
           "image": {
             "type": "string",
@@ -3680,7 +3887,7 @@
             "enum": ["owner", "admin", "member"]
           }
         },
-        "required": ["id", "name", "email", "role"]
+        "required": ["id", "name", "role"]
       },
       "WorkspaceDetailDto": {
         "type": "object",
@@ -3989,7 +4196,8 @@
           },
           "email": {
             "type": "string",
-            "example": "ada@example.com"
+            "example": "ada@example.com",
+            "nullable": true
           },
           "image": {
             "type": "string",
@@ -3997,7 +4205,7 @@
             "nullable": true
           }
         },
-        "required": ["id", "name", "email"]
+        "required": ["id", "name"]
       },
       "AccountDto": {
         "type": "object",
@@ -4939,14 +5147,15 @@
             "nullable": true
           },
           "email": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "image": {
             "type": "string",
             "nullable": true
           }
         },
-        "required": ["id", "email"]
+        "required": ["id"]
       },
       "TransactionAccountDto": {
         "type": "object",

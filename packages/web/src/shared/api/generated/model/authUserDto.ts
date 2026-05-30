@@ -5,11 +5,15 @@
  * Backend API for Finnn finance tracking
  * OpenAPI spec version: 0.1.0
  */
+import type { TelegramAuthStatusDto } from "./telegramAuthStatusDto";
 
 export interface AuthUserDto {
   id: string;
-  email: string;
-  name: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  name?: string | null;
   /** @nullable */
   image?: string | null;
+  telegram: TelegramAuthStatusDto;
 }

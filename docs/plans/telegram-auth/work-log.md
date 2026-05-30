@@ -299,3 +299,52 @@ pnpm --filter api check
 ### Blockers / Follow-ups
 
 - Frontend invite UI still needs to render the new no-email and unverified-email messages clearly after generated client updates.
+
+## 2026-05-30 19:30 +03 - Codex / Developer
+
+### Scope
+
+- Phase 5 OpenAPI and generated client update.
+- Regenerated the API OpenAPI schema after backend Telegram and nullable-email DTO changes.
+- Regenerated the web Orval client and models without hand-editing generated files.
+- Verified generated files are in sync.
+
+### Files Changed
+
+- `packages/api/openapi.json`
+- `packages/web/src/shared/api/generated/auth/auth.ts`
+- `packages/web/src/shared/api/generated/model/accountOwnerDto.ts`
+- `packages/web/src/shared/api/generated/model/authUserDto.ts`
+- `packages/web/src/shared/api/generated/model/completeTelegramAuthParams.ts`
+- `packages/web/src/shared/api/generated/model/index.ts`
+- `packages/web/src/shared/api/generated/model/startTelegramAuthParams.ts`
+- `packages/web/src/shared/api/generated/model/startTelegramLinkParams.ts`
+- `packages/web/src/shared/api/generated/model/telegramAuthStatusDto.ts`
+- `packages/web/src/shared/api/generated/model/transactionUserDto.ts`
+- `packages/web/src/shared/api/generated/model/workspaceMemberDto.ts`
+- `packages/web/src/shared/api/generated/model/workspaceOwnerDto.ts`
+- `docs/plans/telegram-auth/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm api:generate
+pnpm api:check-generated
+```
+
+### Results
+
+- `pnpm api:generate`: passed.
+- `pnpm api:check-generated`: passed; the script reran generation and reported no drift.
+
+### Decisions
+
+- Accepted the generated Telegram query param model names because they are clear enough and align with operation IDs.
+
+### Subagent Contributions
+
+- Frontend explorer had flagged that generated `AuthUserDto`, owner/member, and transaction user models would need regeneration rather than manual edits.
+
+### Blockers / Follow-ups
+
+- Frontend code now needs to compile against nullable generated email fields and new Telegram auth functions.
