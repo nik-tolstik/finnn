@@ -45,8 +45,8 @@ export class WorkspaceOwnerDto {
   @ApiProperty({ example: "Finn User", nullable: true, type: String })
   name!: string | null;
 
-  @ApiProperty({ example: "user@example.com", type: String })
-  email!: string;
+  @ApiPropertyOptional({ example: "user@example.com", nullable: true, type: String })
+  email!: string | null;
 
   @ApiPropertyOptional({ example: "avatar-01", nullable: true, type: String })
   image!: string | null;
@@ -59,8 +59,8 @@ export class WorkspaceMemberDto {
   @ApiProperty({ example: "Finn User", nullable: true, type: String })
   name!: string | null;
 
-  @ApiProperty({ example: "user@example.com", type: String })
-  email!: string;
+  @ApiPropertyOptional({ example: "user@example.com", nullable: true, type: String })
+  email!: string | null;
 
   @ApiPropertyOptional({ example: "avatar-01", nullable: true, type: String })
   image!: string | null;

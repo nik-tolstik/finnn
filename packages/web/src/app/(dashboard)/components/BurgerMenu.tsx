@@ -36,7 +36,10 @@ export function BurgerMenu() {
     await signOut({ callbackUrl: "/login" });
   };
 
-  const displayName = session?.user?.name || session?.user?.email || "User";
+  const telegramName = session?.user?.telegram.username
+    ? `@${session.user.telegram.username}`
+    : session?.user?.telegram.displayName;
+  const displayName = session?.user?.name || session?.user?.email || telegramName || "User";
   const email = session?.user?.email;
 
   return (
@@ -50,7 +53,12 @@ export function BurgerMenu() {
           <div className="flex h-full flex-col">
             <div className="px-4 mt-10">
               <div className="flex items-center gap-3 p-2 border rounded-lg">
-                <UserAvatar name={session?.user?.name} email={email} image={session?.user?.image} size="lg" />
+                <UserAvatar
+                  name={session?.user?.name || telegramName}
+                  email={email}
+                  image={session?.user?.image}
+                  size="lg"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{displayName}</div>
                   {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}

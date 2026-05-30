@@ -92,7 +92,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
       { value: sharedValue, label: sharedLabel },
       ...members.map((member) => ({
         value: member.id,
-        label: member.name || member.email,
+        label: member.name || member.email || "User",
       })),
     ];
   }, [workspaceName, members]);

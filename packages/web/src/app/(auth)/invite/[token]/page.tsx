@@ -48,6 +48,11 @@ export default function InvitePage() {
   useEffect(() => {
     const acceptInviteIfLoggedIn = async () => {
       if (status === "authenticated" && session?.user && inviteData) {
+        if (!session.user.email) {
+          setError("Добавьте email в настройках аккаунта, чтобы принять приглашение по email");
+          return;
+        }
+
         if (session.user.email !== inviteData.email) {
           setError("Email приглашения не совпадает с вашим аккаунтом");
           return;

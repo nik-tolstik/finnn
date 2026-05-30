@@ -42,18 +42,41 @@ export class UpdateUserDto {
   image!: string | null;
 }
 
+export class RequestEmailVerificationDto {
+  @ApiProperty({ example: "user@example.com", type: String })
+  @IsEmail()
+  email!: string;
+}
+
+export class TelegramAuthStatusDto {
+  @ApiProperty({ example: true, type: Boolean })
+  linked!: boolean;
+
+  @ApiPropertyOptional({ example: "finn_user", nullable: true, type: String })
+  username!: string | null;
+
+  @ApiPropertyOptional({ example: "Finn User", nullable: true, type: String })
+  displayName!: string | null;
+
+  @ApiPropertyOptional({ example: "https://t.me/i/userpic/320/example.jpg", nullable: true, type: String })
+  photoUrl!: string | null;
+}
+
 export class AuthUserDto {
   @ApiProperty({ example: "665f5d865ef5a20c0d2f1111", type: String })
   id!: string;
 
-  @ApiProperty({ example: "user@example.com", type: String })
-  email!: string;
+  @ApiPropertyOptional({ example: "user@example.com", nullable: true, type: String })
+  email!: string | null;
 
-  @ApiProperty({ example: "Finn User", type: String })
-  name!: string;
+  @ApiPropertyOptional({ example: "Finn User", nullable: true, type: String })
+  name!: string | null;
 
   @ApiPropertyOptional({ example: "avatar-01", nullable: true, type: String })
   image!: string | null;
+
+  @ApiProperty({ type: TelegramAuthStatusDto })
+  telegram!: TelegramAuthStatusDto;
 }
 
 export class SuccessResponseDto {

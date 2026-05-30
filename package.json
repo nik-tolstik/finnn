@@ -22,6 +22,7 @@
     "api:check-generated": "node scripts/check-api-generated.mjs",
     "db:generate": "pnpm --filter api db:generate",
     "db:push": "pnpm --filter api db:push",
+    "db:ensure-indexes": "pnpm --filter api db:ensure-indexes",
     "db:seed": "pnpm --filter api db:seed",
     "db:export": "pnpm --filter api db:export",
     "db:import": "pnpm --filter api db:import"

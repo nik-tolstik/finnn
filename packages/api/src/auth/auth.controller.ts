@@ -1,4 +1,18 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Req, Res, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -9,6 +23,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiServiceUnavailableResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -21,6 +36,7 @@ import {
   AuthUserResponseDto,
   LoginDto,
   RegisterDto,
+  RequestEmailVerificationDto,
   SessionResponseDto,
   SuccessResponseDto,
   UpdateUserDto,
@@ -37,6 +53,16 @@ import {
   parseSessionCookie,
   parseSessionCookies,
 } from "./session-cookie";
+import {
+  createClearTelegramStateCookie,
+  createTelegramStateCookie,
+  parseTelegramStateCookie,
+} from "./telegram-state-cookie";
+
+function getWebRedirectUrl(returnTo: string): string {
+  const baseUrl = process.env.WEB_APP_URL?.trim() || "http://localhost:3000";
+  return new URL(returnTo, baseUrl).toString();
+}
 
 @Controller("auth")
 @ApiTags("Auth")
@@ -87,6 +113,68 @@ export class AuthController {
     return { user: result.user };
   }
 
+  @Get("telegram/start")
+  @ApiOperation({ operationId: "startTelegramAuth", summary: "Start Telegram OIDC authentication" })
+  @ApiQuery({ name: "returnTo", required: false, type: String })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async startTelegramAuth(@Query("returnTo") returnTo: string | undefined, @Res() response: Response) {
+    const result = this.authService.startTelegramLogin(returnTo);
+    response.setHeader("Set-Cookie", createTelegramStateCookie(result.stateCookieValue, result.ttlSeconds));
+    response.redirect(result.authorizationUrl);
+  }
+
+  @Get("telegram/link/start")
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(AUTH_COOKIE_NAME)
+  @ApiOperation({ operationId: "startTelegramLink", summary: "Start Telegram account linking" })
+  @ApiQuery({ name: "returnTo", required: false, type: String })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async startTelegramLink(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query("returnTo") returnTo: string | undefined,
+    @Res() response: Response
+  ) {
+    const result = this.authService.startTelegramLink(user.id, returnTo);
+    response.setHeader("Set-Cookie", createTelegramStateCookie(result.stateCookieValue, result.ttlSeconds));
+    response.redirect(result.authorizationUrl);
+  }
+
+  @Get("telegram/callback")
+  @ApiOperation({ operationId: "completeTelegramAuth", summary: "Complete Telegram OIDC authentication" })
+  @ApiQuery({ name: "code", required: false, type: String })
+  @ApiQuery({ name: "state", required: false, type: String })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiConflictResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  async completeTelegramAuth(
+    @Query("code") code: string | undefined,
+    @Query("state") state: string | undefined,
+    @Query("error") error: string | undefined,
+    @Req() request: Request,
+    @Res() response: Response
+  ) {
+    response.setHeader("Set-Cookie", createClearTelegramStateCookie());
+
+    if (error || !code || !state) {
+      response.redirect(
+        getWebRedirectUrl(`/login?telegramError=${encodeURIComponent(error || "telegram_auth_failed")}`)
+      );
+      return;
+    }
+
+    const result = await this.authService.completeTelegramCallback({
+      code,
+      state,
+      stateCookieValue: parseTelegramStateCookie(request.headers.cookie),
+    });
+
+    if (result.token) {
+      response.setHeader("Set-Cookie", [createClearTelegramStateCookie(), createSessionCookie(result.token)]);
+    }
+    response.redirect(getWebRedirectUrl(result.returnTo));
+  }
+
   @Post("logout")
   @HttpCode(200)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
@@ -119,5 +207,31 @@ export class AuthController {
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
   async updateUser(@CurrentUser() user: AuthenticatedUser, @Body() body: UpdateUserDto) {
     return { user: await this.authService.updateUser(user.id, body) };
+  }
+
+  @Post("email")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(AUTH_COOKIE_NAME)
+  @ApiOperation({ operationId: "requestEmailVerification", summary: "Request verification for current user email" })
+  @ApiBody({ type: RequestEmailVerificationDto })
+  @ApiOkResponse({ type: SuccessResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiConflictResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  async requestEmailVerification(@CurrentUser() user: AuthenticatedUser, @Body() body: RequestEmailVerificationDto) {
+    return this.authService.requestEmailVerification(user.id, body);
+  }
+
+  @Delete("telegram/link")
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(AUTH_COOKIE_NAME)
+  @ApiOperation({ operationId: "unlinkTelegram", summary: "Unlink Telegram from the current user" })
+  @ApiOkResponse({ type: AuthUserResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  async unlinkTelegram(@CurrentUser() user: AuthenticatedUser) {
+    return this.authService.unlinkTelegram(user.id);
   }
 }

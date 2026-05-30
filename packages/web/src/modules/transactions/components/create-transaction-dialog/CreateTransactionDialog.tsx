@@ -75,7 +75,7 @@ interface CreateTransactionDialogProps {
 }
 
 function toTransactionUser(user: Session["user"] | undefined): TransactionUser | null {
-  if (!user?.id || !user.email) {
+  if (!user?.id) {
     return null;
   }
 

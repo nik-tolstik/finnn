@@ -232,8 +232,8 @@ export class TransactionUserDto {
   @ApiPropertyOptional({ nullable: true, type: String })
   name!: string | null;
 
-  @ApiProperty({ type: String })
-  email!: string;
+  @ApiPropertyOptional({ nullable: true, type: String })
+  email!: string | null;
 
   @ApiPropertyOptional({ nullable: true, type: String })
   image!: string | null;

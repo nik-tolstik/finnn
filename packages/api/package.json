@@ -15,6 +15,7 @@
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:push": "prisma db push --schema prisma/schema.prisma",
+    "db:ensure-indexes": "node --import tsx scripts/ensure-indexes.ts",
     "db:seed": "node --import tsx scripts/db-seed.ts",
     "db:export": "node --import tsx scripts/mongo-export.ts",
     "db:import": "node --import tsx scripts/mongo-import.ts"
@@ -30,6 +31,7 @@
     "big.js": "^7.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "jose": "^6.2.3",
     "mongodb": "^7.0.0",
     "nodemailer": "^7.0.12",
     "reflect-metadata": "^0.2.2",

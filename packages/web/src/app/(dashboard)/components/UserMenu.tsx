@@ -24,17 +24,20 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
   const resolvedName = session?.user?.name ?? name;
   const resolvedEmail = session?.user?.email ?? email;
   const resolvedImage = session?.user?.image ?? image;
+  const resolvedTelegramName = session?.user?.telegram.username
+    ? `@${session.user.telegram.username}`
+    : session?.user?.telegram.displayName;
 
   const handleLogout = async () => {
     setOpen(false);
     await signOut({ callbackUrl: "/login" });
   };
 
-  if (!resolvedName && !resolvedEmail) {
+  if (!resolvedName && !resolvedEmail && !resolvedTelegramName) {
     return null;
   }
 
-  const displayName = resolvedName || resolvedEmail || "User";
+  const displayName = resolvedName || resolvedEmail || resolvedTelegramName || "User";
 
   return (
     <>
@@ -45,7 +48,12 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
         className="w-80 p-0"
         trigger={({ ref, ...triggerProps }) => (
           <button ref={ref} type="button" className="flex items-center py-1.5 px-2" {...triggerProps}>
-            <UserAvatar name={resolvedName} email={resolvedEmail} image={resolvedImage} size="sm" />
+            <UserAvatar
+              name={resolvedName || resolvedTelegramName}
+              email={resolvedEmail}
+              image={resolvedImage}
+              size="sm"
+            />
             <span className="hidden md:block max-w-[150px] truncate text-sm ml-2">{displayName}</span>
             <ChevronDown className="size-4 text-foreground ml-1" />
           </button>

@@ -54,7 +54,7 @@ export interface DebtTransactionWithRelations {
     owner: {
       id: string;
       name: string | null;
-      email: string;
+      email?: string | null;
       image: string | null;
     } | null;
   } | null;
