@@ -15,6 +15,7 @@
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:push": "prisma db push --schema prisma/schema.prisma",
+    "db:ensure-indexes": "node --import tsx scripts/ensure-indexes.ts",
     "db:seed": "node --import tsx scripts/db-seed.ts",
     "db:export": "node --import tsx scripts/mongo-export.ts",
     "db:import": "node --import tsx scripts/mongo-import.ts"

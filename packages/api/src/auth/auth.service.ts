@@ -52,7 +52,7 @@ export class AuthService {
   ) {}
 
   async register(input: RegisterDto): Promise<{ success: true }> {
-    const existingUser = await this.prisma.user.findUnique({
+    const existingUser = await this.prisma.user.findFirst({
       where: { email: input.email },
     });
 
@@ -119,7 +119,7 @@ export class AuthService {
       throw new BadRequestException("Токен подтверждения истек. Пожалуйста, зарегистрируйтесь заново.");
     }
 
-    const existingUser = await this.prisma.user.findUnique({
+    const existingUser = await this.prisma.user.findFirst({
       where: { email: pendingRegistration.email },
     });
 
@@ -147,7 +147,7 @@ export class AuthService {
   }
 
   async login(input: LoginDto): Promise<{ token: string; user: ReturnType<typeof toAuthUser> }> {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findFirst({
       where: { email: input.email },
     });
 

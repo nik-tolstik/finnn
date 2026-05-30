@@ -46,11 +46,11 @@ export class AuthUserDto {
   @ApiProperty({ example: "665f5d865ef5a20c0d2f1111", type: String })
   id!: string;
 
-  @ApiProperty({ example: "user@example.com", type: String })
-  email!: string;
+  @ApiPropertyOptional({ example: "user@example.com", nullable: true, type: String })
+  email!: string | null;
 
-  @ApiProperty({ example: "Finn User", type: String })
-  name!: string;
+  @ApiPropertyOptional({ example: "Finn User", nullable: true, type: String })
+  name!: string | null;
 
   @ApiPropertyOptional({ example: "avatar-01", nullable: true, type: String })
   image!: string | null;

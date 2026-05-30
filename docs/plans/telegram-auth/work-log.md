@@ -138,3 +138,64 @@ rg -n "session\\.user|user\\.email|email" packages/web/src -g '*.ts' -g '*.tsx'
 ### Blockers / Follow-ups
 
 - None for Phase 1.
+
+## 2026-05-30 18:57 +03 - Codex / Developer
+
+### Scope
+
+- Phase 2 backend data model updates.
+- Made `User.email` nullable in Prisma and added the provider-based `AuthIdentity` model.
+- Regenerated the Prisma client.
+- Updated schema-dependent email lookups and DTOs to allow nullable user email where user summaries are returned.
+- Added an explicit MongoDB maintenance script to replace old users email indexes with a partial unique email index for string emails only.
+- Updated seed-script tests and Mongo script tests for the new lookup/index behavior.
+
+### Files Changed
+
+- `package.json`
+- `packages/api/package.json`
+- `packages/api/prisma/schema.prisma`
+- `packages/api/scripts/db-seed.ts`
+- `packages/api/scripts/ensure-indexes.ts`
+- `packages/api/src/accounts/accounts.dto.ts`
+- `packages/api/src/auth/auth.dto.ts`
+- `packages/api/src/auth/auth.service.ts`
+- `packages/api/src/auth/auth.types.ts`
+- `packages/api/src/debts/debts.dto.ts`
+- `packages/api/src/transactions/transactions.dto.ts`
+- `packages/api/src/workspace/workspace.dto.ts`
+- `packages/api/src/workspace/workspace.service.ts`
+- `packages/api/test/db-seed.test.ts`
+- `packages/api/test/mongo-scripts.test.ts`
+- `docs/plans/telegram-auth/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm db:generate
+pnpm --filter api typecheck
+pnpm --filter api test test/db-seed.test.ts test/mongo-scripts.test.ts
+pnpm --filter api check
+```
+
+### Results
+
+- `pnpm db:generate`: passed.
+- `pnpm --filter api typecheck`: passed after updating test imports.
+- `pnpm --filter api test test/db-seed.test.ts test/mongo-scripts.test.ts`: first run failed because the seed test mock still exposed `user.upsert`; passed after updating the mock to `findFirst`/`create`/`update`.
+- `pnpm --filter api check`: first run failed on Biome import ordering; passed after sorting imports.
+
+### Decisions
+
+- Removed Prisma's `@unique` from nullable `User.email` to avoid MongoDB's single-null unique-index behavior.
+- Added `pnpm db:ensure-indexes` so deployments can explicitly create `users_email_unique_partial` with `partialFilterExpression: { email: { $type: "string" } }`.
+- Switched app-level email lookups to `findFirst` while keeping registration/login/invite DTOs email-required.
+
+### Subagent Contributions
+
+- Backend explorer identified the nullable-email Prisma unique-index risk, the needed auth DTO/type changes, invite safety follow-up, and test surfaces.
+- Frontend explorer identified generated-client and UI places that will need nullable-email handling after OpenAPI regeneration.
+
+### Blockers / Follow-ups
+
+- Document `pnpm db:ensure-indexes` in operations/development docs during the documentation phase.

@@ -86,20 +86,26 @@ export async function runSeed(prisma: PrismaClient, options: SeedOptions = {}): 
   const hashPassword = options.hashPassword ?? ((password: string) => bcrypt.hash(password, 10));
   const passwordHash = await hashPassword(ADMIN_PASSWORD);
 
-  const user = await prisma.user.upsert({
+  const existingUser = await prisma.user.findFirst({
     where: { email: ADMIN_EMAIL },
-    update: {
-      password: passwordHash,
-      emailVerified: new Date(now),
-      name: "Admin",
-    },
-    create: {
-      email: ADMIN_EMAIL,
-      password: passwordHash,
-      emailVerified: new Date(now),
-      name: "Admin",
-    },
   });
+  const user = existingUser
+    ? await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          password: passwordHash,
+          emailVerified: new Date(now),
+          name: "Admin",
+        },
+      })
+    : await prisma.user.create({
+        data: {
+          email: ADMIN_EMAIL,
+          password: passwordHash,
+          emailVerified: new Date(now),
+          name: "Admin",
+        },
+      });
 
   const workspace = await prisma.workspace.upsert({
     where: { slug: WORKSPACE_SLUG },

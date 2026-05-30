@@ -330,7 +330,7 @@ export class WorkspaceService {
       throw new NotFoundException("Рабочий стол не найден");
     }
 
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findFirst({
       where: { email: input.email },
       select: { id: true },
     });

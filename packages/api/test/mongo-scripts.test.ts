@@ -1,9 +1,10 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { BSON, type Collection, type Document, ObjectId } from "mongodb";
+import { BSON, type Collection, type Document, type MongoClient, ObjectId } from "mongodb";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ensureIndexes } from "../scripts/ensure-indexes";
 import { getOutputDir } from "../scripts/mongo-export";
 import {
   assertImportedCount,
@@ -76,6 +77,52 @@ describe("MongoDB import/export scripts", () => {
         unique: true,
       },
     });
+  });
+
+  it("replaces non-partial users email indexes with a partial unique index", async () => {
+    const dropIndex = vi.fn(async () => undefined);
+    const createIndex = vi.fn(async () => "users_email_unique_partial");
+    const collection = {
+      createIndex,
+      dropIndex,
+      listIndexes: () => ({
+        toArray: async () => [
+          { key: { _id: 1 }, name: "_id_" },
+          { key: { email: 1 }, name: "email_1", unique: true },
+          {
+            key: { email: 1 },
+            name: "users_email_unique_partial",
+            partialFilterExpression: { email: { $type: "string" } },
+            unique: true,
+          },
+        ],
+      }),
+    };
+    const client = {
+      close: vi.fn(async () => undefined),
+      connect: vi.fn(async () => undefined),
+      db: () => ({
+        collection: () => collection,
+      }),
+    };
+    const stdout = { write: vi.fn() };
+
+    await ensureIndexes({
+      databaseUrl: "mongodb://localhost:27017/finnn",
+      createClient: () => client as unknown as MongoClient,
+      stdout,
+    });
+
+    expect(dropIndex).toHaveBeenCalledWith("email_1");
+    expect(createIndex).toHaveBeenCalledWith(
+      { email: 1 },
+      {
+        name: "users_email_unique_partial",
+        partialFilterExpression: { email: { $type: "string" } },
+        unique: true,
+      }
+    );
+    expect(client.close).toHaveBeenCalled();
   });
 
   it("imports JSONL documents as strict Extended JSON and writes ordered batches", async () => {
