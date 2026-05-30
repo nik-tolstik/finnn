@@ -39,7 +39,7 @@ function toDate(value: string) {
   return new Date(value);
 }
 
-function toLegacyUser(user?: TransactionUserDto | null) {
+function toUiUser(user?: TransactionUserDto | null) {
   if (!user) {
     return null;
   }
@@ -52,7 +52,7 @@ function toLegacyUser(user?: TransactionUserDto | null) {
   };
 }
 
-function toLegacyAccount(account: TransactionAccountDto) {
+function toUiAccount(account: TransactionAccountDto) {
   return {
     id: account.id,
     name: account.name,
@@ -60,11 +60,11 @@ function toLegacyAccount(account: TransactionAccountDto) {
     color: account.color ?? null,
     icon: account.icon ?? null,
     ownerId: account.ownerId ?? null,
-    owner: toLegacyUser(account.owner),
+    owner: toUiUser(account.owner),
   };
 }
 
-function toLegacyPaymentTransaction(transaction: PaymentTransactionDto): PaymentTransactionWithRelations {
+function toUiPaymentTransaction(transaction: PaymentTransactionDto): PaymentTransactionWithRelations {
   return {
     ...transaction,
     description: transaction.description ?? null,
@@ -72,12 +72,12 @@ function toLegacyPaymentTransaction(transaction: PaymentTransactionDto): Payment
     date: toDate(transaction.date),
     createdAt: toDate(transaction.createdAt),
     updatedAt: toDate(transaction.updatedAt),
-    account: toLegacyAccount(transaction.account),
+    account: toUiAccount(transaction.account),
     category: transaction.category ?? null,
   };
 }
 
-function toLegacyTransferTransaction(transaction: TransferTransactionDto): TransferTransactionWithRelations {
+function toUiTransferTransaction(transaction: TransferTransactionDto): TransferTransactionWithRelations {
   return {
     ...transaction,
     createdById: transaction.createdById ?? null,
@@ -85,13 +85,13 @@ function toLegacyTransferTransaction(transaction: TransferTransactionDto): Trans
     date: toDate(transaction.date),
     createdAt: toDate(transaction.createdAt),
     updatedAt: toDate(transaction.updatedAt),
-    fromAccount: toLegacyAccount(transaction.fromAccount),
-    toAccount: toLegacyAccount(transaction.toAccount),
-    createdBy: toLegacyUser(transaction.createdBy),
+    fromAccount: toUiAccount(transaction.fromAccount),
+    toAccount: toUiAccount(transaction.toAccount),
+    createdBy: toUiUser(transaction.createdBy),
   };
 }
 
-function toLegacyDebtTransaction(transaction: DebtTransactionDto): DebtTransactionWithRelations {
+function toUiDebtTransaction(transaction: DebtTransactionDto): DebtTransactionWithRelations {
   return {
     ...transaction,
     accountId: transaction.accountId ?? null,
@@ -105,30 +105,30 @@ function toLegacyDebtTransaction(transaction: DebtTransactionDto): DebtTransacti
       createdAt: toDate(transaction.debt.createdAt),
       updatedAt: toDate(transaction.debt.updatedAt),
     },
-    account: transaction.account ? toLegacyAccount(transaction.account) : null,
+    account: transaction.account ? toUiAccount(transaction.account) : null,
   } as DebtTransactionWithRelations;
 }
 
-function toLegacyCombinedTransaction(
+function toUiCombinedTransaction(
   transaction: Awaited<ReturnType<typeof getApiCombinedTransactions>>["data"][number]
 ): CombinedTransaction {
   if (transaction.kind === "transferTransaction") {
     return {
       kind: "transferTransaction",
-      data: toLegacyTransferTransaction(transaction.data),
+      data: toUiTransferTransaction(transaction.data),
     };
   }
 
   if (transaction.kind === "debtTransaction") {
     return {
       kind: "debtTransaction",
-      data: toLegacyDebtTransaction(transaction.data),
+      data: toUiDebtTransaction(transaction.data),
     };
   }
 
   return {
     kind: "paymentTransaction",
-    data: toLegacyPaymentTransaction(transaction.data),
+    data: toUiPaymentTransaction(transaction.data),
   };
 }
 
@@ -204,7 +204,7 @@ export async function createPaymentTransaction(
 ) {
   try {
     const response = await createApiPaymentTransaction(workspaceId, toCreatePaymentTransactionDto(input), options);
-    return ok(toLegacyPaymentTransaction(response.transaction));
+    return ok(toUiPaymentTransaction(response.transaction));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать транзакцию");
   }
@@ -217,7 +217,7 @@ export async function createTransferTransaction(
 ) {
   try {
     const response = await createApiTransferTransaction(workspaceId, toCreateTransferTransactionDto(input), options);
-    return ok(toLegacyTransferTransaction(response.transfer));
+    return ok(toUiTransferTransaction(response.transfer));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать перевод");
   }
@@ -230,7 +230,7 @@ export async function updatePaymentTransaction(
 ) {
   try {
     const response = await updateApiPaymentTransaction(id, toUpdatePaymentTransactionDto(input), options);
-    return ok(toLegacyPaymentTransaction(response.transaction));
+    return ok(toUiPaymentTransaction(response.transaction));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить транзакцию");
   }
@@ -278,7 +278,7 @@ export async function getCombinedTransactions(
     const response = await getApiCombinedTransactions(workspaceId, toCombinedTransactionParams(filters), options);
 
     return {
-      data: response.data.map(toLegacyCombinedTransaction),
+      data: response.data.map(toUiCombinedTransaction),
       total: response.total,
     };
   } catch (error: unknown) {

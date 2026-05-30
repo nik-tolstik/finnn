@@ -85,4 +85,15 @@ describe("fetchServerSession", () => {
 
     await expect(fetchServerSession()).resolves.toBeNull();
   });
+
+  it("returns null when the backend session lookup is unavailable", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("connect ECONNREFUSED")));
+    cookiesMock.mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: "stale" }),
+    });
+
+    const { fetchServerSession } = await import("./api-session");
+
+    await expect(fetchServerSession()).resolves.toBeNull();
+  });
 });

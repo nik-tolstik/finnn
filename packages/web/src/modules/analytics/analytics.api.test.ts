@@ -139,7 +139,7 @@ describe("analytics API helpers", () => {
     );
   });
 
-  it("normalizes API failures into the legacy error result", () => {
+  it("normalizes API failures into the UI-facing error result", () => {
     expect(toAnalyticsErrorResult(new Error("No access"))).toEqual({ error: "No access" });
   });
 });

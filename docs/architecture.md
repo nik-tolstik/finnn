@@ -68,7 +68,7 @@ Frontend API adapters are pure TypeScript helpers that call generated Orval clie
 - `success()` for successful commands without data.
 - `fail(error, fallback)` for normalized errors.
 
-Prefer direct generated client functions when no response normalization is needed. Use pure `*.api.ts` helpers when a module must preserve legacy UI shapes such as `Date` instances, nullable owner/account fields, or `ActionResult` wrappers. New backend logic should live in `packages/api`.
+Prefer direct generated client functions when no response normalization is needed. Use pure `*.api.ts` helpers when a module must preserve UI-facing shapes such as `Date` instances, nullable owner/account fields, or `ActionResult` wrappers. New backend logic should live in `packages/api`.
 
 Shared helpers:
 

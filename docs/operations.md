@@ -41,7 +41,7 @@ Railway setup:
 
 - Set the service root directory to `/packages/api`.
 - Set the config-as-code file path to `/packages/api/railway.json`.
-- Keep the checked-in config on the Railpack builder with `pnpm build`, `pnpm start`, and `/health`.
+- Keep the checked-in config on the Railpack builder with `pnpm --filter api build`, `pnpm --filter api start`, and `/health`.
 - Confirm the service listens on Railway's injected `PORT`; the NestJS bootstrap already binds `0.0.0.0`.
 
 Required Railway variables:
@@ -82,7 +82,7 @@ Railway health checks only gate startup, so keep logs or external uptime monitor
 
 ## Backend Cron
 
-The migration target is for Railway or another backend scheduler to call the API cron endpoint:
+Railway or another backend scheduler should call the API cron endpoint:
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" https://api.example.com/cron/update-exchange-rates
@@ -144,7 +144,7 @@ Before import/export:
 
 ## Database Schema Changes
 
-For MongoDB, the project uses Prisma `db push` rather than a SQL migration workflow.
+For MongoDB, the project uses Prisma `db push` rather than SQL-style change files.
 
 Recommended sequence:
 

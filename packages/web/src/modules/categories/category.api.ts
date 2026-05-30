@@ -15,7 +15,7 @@ import type {
 import { fail, ok, success } from "@/shared/lib/action-result";
 import type { CreateCategoryInput, UpdateCategoryInput } from "@/shared/lib/validations/category";
 
-function toLegacyCategory(category: CategoryDto) {
+function toUiCategory(category: CategoryDto) {
   return {
     ...category,
     icon: category.icon ?? null,
@@ -47,7 +47,7 @@ function toUpdateCategoryDto(input: UpdateCategoryInput): UpdateCategoryDto {
 export async function createCategory(workspaceId: string, input: CreateCategoryInput, options?: RequestInit) {
   try {
     const response = await createApiCategory(workspaceId, toCreateCategoryDto(input), options);
-    return ok(toLegacyCategory(response.category));
+    return ok(toUiCategory(response.category));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать категорию");
   }
@@ -56,7 +56,7 @@ export async function createCategory(workspaceId: string, input: CreateCategoryI
 export async function updateCategory(id: string, input: UpdateCategoryInput, options?: RequestInit) {
   try {
     const response = await updateApiCategory(id, toUpdateCategoryDto(input), options);
-    return ok(toLegacyCategory(response.category));
+    return ok(toUiCategory(response.category));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить категорию");
   }
@@ -75,7 +75,7 @@ export async function getCategories(workspaceId: string, type?: string, options?
   try {
     const params = type ? ({ type } as ListCategoriesParams) : undefined;
     const response = await listApiCategories(workspaceId, params, options);
-    return ok(response.categories.map(toLegacyCategory));
+    return ok(response.categories.map(toUiCategory));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить категории");
   }

@@ -43,7 +43,7 @@ describe("category.api", () => {
     vi.clearAllMocks();
   });
 
-  it("maps category lists to legacy count and date shapes", async () => {
+  it("maps category lists to UI-facing count and date shapes", async () => {
     listApiCategoriesMock.mockResolvedValue({
       categories: [createCategoryDto()],
     });
@@ -67,7 +67,7 @@ describe("category.api", () => {
     });
   });
 
-  it("unwraps category mutation responses without requiring server actions", async () => {
+  it("unwraps category mutation responses through API adapters", async () => {
     createApiCategoryMock.mockResolvedValue({
       category: createCategoryDto({ id: "category-2", name: "Salary", type: "income" }),
     });

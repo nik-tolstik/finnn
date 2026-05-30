@@ -57,7 +57,7 @@ describe("account.api", () => {
     vi.clearAllMocks();
   });
 
-  it("maps active account lists to the legacy ActionResult shape", async () => {
+  it("maps active account lists to the UI-facing ActionResult shape", async () => {
     listApiAccountsMock.mockResolvedValue({
       accounts: [createAccountDto({ owner: undefined, ownerId: null })],
     });
