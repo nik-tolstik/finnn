@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getApiBaseUrl } from "./http-client";
+import { apiClient, getApiBaseUrl } from "./http-client";
 
 function stubBrowserHostname(hostname: string) {
   vi.stubGlobal("window", {
@@ -39,5 +39,22 @@ describe("getApiBaseUrl", () => {
     stubBrowserHostname("app.example.com");
 
     expect(getApiBaseUrl()).toBe("https://api.example.com");
+  });
+});
+
+describe("apiClient", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.NEXT_PUBLIC_API_URL;
+  });
+
+  it("wraps network failures with an actionable API connection error", async () => {
+    process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";
+    const fetchMock = vi.fn().mockRejectedValue(new Error("Load failed"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(apiClient("/auth/login", { method: "POST" })).rejects.toThrow(
+      "Не удалось подключиться к API: Load failed"
+    );
   });
 });

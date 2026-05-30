@@ -25,6 +25,8 @@ const inviteSchema = z.object({
   email: z.string().email("Неверный адрес электронной почты"),
 });
 
+const INVITE_MEMBER_FORM_ID = "invite-member-form";
+
 type InviteInput = z.infer<typeof inviteSchema>;
 
 interface InviteMemberDialogProps {
@@ -78,7 +80,7 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
           </DialogDescription>
         </DialogHeader>
         <DialogContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form id={INVITE_MEMBER_FORM_ID} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" required>
                 Email
@@ -99,7 +101,7 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
-          <Button type="submit" disabled={isSubmitting || inviteMutation.isPending}>
+          <Button type="submit" form={INVITE_MEMBER_FORM_ID} disabled={isSubmitting || inviteMutation.isPending}>
             {isSubmitting || inviteMutation.isPending ? "Отправка..." : "Отправить приглашение"}
           </Button>
         </DialogFooter>

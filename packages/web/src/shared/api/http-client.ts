@@ -49,13 +49,23 @@ function getErrorMessage(body: unknown): string {
 }
 
 export async function apiClient<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${getApiBaseUrl()}${url}`, {
-    ...options,
-    credentials: "include",
-    headers: {
-      ...options.headers,
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${getApiBaseUrl()}${url}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        ...options.headers,
+      },
+    });
+  } catch (error) {
+    throw new Error(
+      error instanceof Error && error.message
+        ? `Не удалось подключиться к API: ${error.message}`
+        : "Не удалось подключиться к API"
+    );
+  }
+
   const body = await parseResponseBody(response);
 
   if (!response.ok) {
