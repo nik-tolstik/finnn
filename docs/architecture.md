@@ -108,11 +108,19 @@ Authentication is owned by `packages/api/src/auth`:
 - `POST /auth/register` starts email-verified registration.
 - `POST /auth/verify-email/:token` verifies pending registrations.
 - `POST /auth/login` issues the HTTP-only `finnn_session` cookie.
+- `GET /auth/telegram/start` starts Telegram OIDC login with PKCE.
+- `GET /auth/telegram/callback` validates Telegram state, nonce, and ID token before issuing the same session cookie.
+- `GET /auth/telegram/link/start` starts Telegram account linking for an authenticated user.
+- `DELETE /auth/telegram/link` unlinks Telegram when another viable sign-in method remains.
 - `POST /auth/logout` clears and invalidates the session.
 - `GET /auth/session` returns the current API session.
 - `PATCH /auth/user` updates user settings.
 
 `packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `packages/web/src/shared/lib/api-session.ts`, which forwards the API session cookie to the backend session endpoint.
+
+Telegram redirects are navigated in the browser with explicit API URLs because the API endpoints intentionally issue
+cross-site redirects. Telegram identities are stored in `AuthIdentity`; the returned session user includes nullable
+email plus Telegram link status for UI display and settings.
 
 Workspace authorization is handled in the API by `WorkspaceAccessGuard` and `WorkspaceRoles`:
 

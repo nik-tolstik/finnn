@@ -12,6 +12,24 @@ API_ALLOWED_ORIGINS="https://production-app-url"
 CRON_SECRET="production-cron-secret"
 ```
 
+Telegram authentication variables are required when Telegram login/linking is enabled:
+
+```env
+WEB_APP_URL="https://production-app-url"
+TELEGRAM_CLIENT_ID="bot-or-client-id-from-botfather"
+TELEGRAM_CLIENT_SECRET="telegram-client-secret"
+TELEGRAM_REDIRECT_URI="https://production-api-url/auth/telegram/callback"
+TELEGRAM_AUTH_STATE_SECRET="production-telegram-state-secret"
+TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
+```
+
+BotFather setup:
+
+- Create or select the production bot.
+- Open Bot Settings > Web Login.
+- Register the production web URL and API callback host.
+- Store the issued client ID and secret in the API deployment environment.
+
 Email variables are required when registration verification and workspace invites should send real email:
 
 ```env
@@ -21,6 +39,11 @@ SMTP_SECURE="false"
 SMTP_USER="smtp-user"
 SMTP_PASSWORD="smtp-password"
 SMTP_FROM="Finnn <no-reply@example.com>"
+TELEGRAM_CLIENT_ID="bot-or-client-id-from-botfather"
+TELEGRAM_CLIENT_SECRET="telegram-client-secret"
+TELEGRAM_REDIRECT_URI="https://production-api-url/auth/telegram/callback"
+TELEGRAM_AUTH_STATE_SECRET="production-telegram-state-secret"
+TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
 ```
 
 ## Build
@@ -126,6 +149,7 @@ Scripts:
 - `packages/api/scripts/mongo-export.ts`
 - `packages/api/scripts/mongo-import.ts`
 - `packages/api/scripts/db-seed.ts`
+- `packages/api/scripts/ensure-indexes.ts`
 
 Commands:
 
@@ -133,6 +157,7 @@ Commands:
 pnpm db:export ./backups/manual
 pnpm db:import ./backups/manual --drop --db=finnn_restore
 pnpm db:seed
+pnpm db:ensure-indexes
 ```
 
 Before import/export:
@@ -141,6 +166,9 @@ Before import/export:
 - Use throwaway database names for import verification.
 - Production imports are blocked unless `--allow-production` is passed. Use that flag only when the target dataset and overwrite behavior are fully understood.
 - Run `pnpm db:generate` if schema or Prisma version changed.
+- Run `pnpm db:ensure-indexes` after deploying optional-email schema changes. The command ensures
+  `users_email_unique_partial` exists with `partialFilterExpression: { email: { $type: "string" } }` and drops
+  older non-partial `users.email` indexes that would allow only one missing/null email.
 
 ## Database Schema Changes
 
@@ -151,11 +179,13 @@ Recommended sequence:
 ```bash
 pnpm db:generate
 pnpm db:push
+pnpm db:ensure-indexes
 pnpm typecheck
 pnpm test
 ```
 
 When adding indexes, verify they are represented in `packages/api/prisma/schema.prisma` and applied through `pnpm db:push`.
+For MongoDB partial indexes that Prisma cannot express, add or update an explicit script under `packages/api/scripts`.
 
 ## Email
 
@@ -207,4 +237,5 @@ Also verify:
 - `pnpm db:push` has been run for schema/index changes.
 - Cron endpoint returns success with a valid secret.
 - API auth cookie variables match the deployed API and web hosts.
+- Telegram redirect URI is registered in BotFather and matches `TELEGRAM_REDIRECT_URI`.
 - Email links use the production web URL.

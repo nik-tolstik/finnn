@@ -421,3 +421,46 @@ pnpm --filter web test src/shared/lib/api-session.test.ts
 ### Blockers / Follow-ups
 
 - A full add-email/update-email verification flow is still not implemented; current settings display missing email explicitly.
+
+## 2026-05-30 19:59 +03 - Codex / Developer
+
+### Scope
+
+- Phase 8 documentation.
+- Documented Telegram environment variables and BotFather Web Login setup for local development and production.
+- Documented `pnpm db:ensure-indexes` and the partial unique email index requirement.
+- Updated domain model docs for optional email and `AuthIdentity`.
+- Updated architecture docs for Telegram auth endpoints and browser redirect behavior.
+
+### Files Changed
+
+- `docs/development.md`
+- `docs/operations.md`
+- `docs/domain-model.md`
+- `docs/architecture.md`
+- `docs/plans/telegram-auth/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter api check
+pnpm --filter web check
+```
+
+### Results
+
+- `pnpm --filter api check`: passed.
+- `pnpm --filter web check`: passed.
+
+### Decisions
+
+- `AGENTS.md` was not changed because no new agent-facing conventions were added.
+- README was not expanded; detailed setup belongs in `docs/development.md` and `docs/operations.md`.
+
+### Subagent Contributions
+
+- None in this phase.
+
+### Blockers / Follow-ups
+
+- Run full verification in Phase 9.

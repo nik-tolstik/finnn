@@ -6,7 +6,8 @@ The Prisma schema in `packages/api/prisma/schema.prisma` is the source of truth.
 
 Main models:
 
-- `User` - authenticated user with optional password and verified email state.
+- `User` - authenticated user with optional email, optional password, and verified email state.
+- `AuthIdentity` - external sign-in identity linked to a user, currently used for Telegram.
 - `Workspace` - shared financial space with owner, members, accounts, categories, transactions, transfers, debts, and invites.
 - `WorkspaceMember` - user membership and role inside a workspace.
 - `Account` - balance container with currency, owner, archive state, display metadata, and order.
@@ -18,6 +19,26 @@ Main models:
 - `WorkspaceInvite` - tokenized invite to a workspace.
 - `PendingRegistration` - pre-verification registration state.
 - `ExchangeRate` - persisted daily currency rate.
+
+## Identity And Email
+
+`User.email` is optional because Telegram-authenticated users can exist before adding email. Email/password
+registration and login still require email, and `PendingRegistration` remains email-based.
+
+External identities are stored in `AuthIdentity`:
+
+- `provider` identifies the external provider, such as `telegram`.
+- `providerUserId` is the provider's durable user identifier.
+- `username`, `displayName`, and `photoUrl` are display metadata.
+
+The pair `(provider, providerUserId)` is unique. MongoDB must also keep a partial unique index on `users.email`
+for string email values only, so multiple users without email are valid while duplicate real email addresses are not.
+
+Workspace invites remain email-based:
+
+- Creating an invite requires an email target.
+- Accepting an invite requires the signed-in user to have the same verified email.
+- Telegram-only users must add and verify email before accepting email invites.
 
 ## Workspace Boundary
 
