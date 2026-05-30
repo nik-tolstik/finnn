@@ -397,7 +397,7 @@ describe("Workspace API", () => {
     expect(prisma.authSession.findFirst).toHaveBeenCalledWith({
       where: {
         tokenHash: hashSessionToken("session-token"),
-        revokedAt: null,
+        OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
         expiresAt: { gt: expect.any(Date) },
       },
       select: { userId: true },

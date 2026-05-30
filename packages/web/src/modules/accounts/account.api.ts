@@ -17,7 +17,7 @@ import type {
   UpdateAccountsOrderInput,
 } from "@/shared/lib/validations/account";
 
-function toLegacyAccount(account: AccountDto) {
+function toUiAccount(account: AccountDto) {
   const owner = account.owner
     ? {
         id: account.owner.id,
@@ -39,9 +39,9 @@ function toLegacyAccount(account: AccountDto) {
   };
 }
 
-function toLegacyArchivedAccount(account: ArchivedAccountDto) {
+function toUiArchivedAccount(account: ArchivedAccountDto) {
   return {
-    ...toLegacyAccount(account),
+    ...toUiAccount(account),
     _count: account._count,
   };
 }
@@ -74,7 +74,7 @@ function toUpdateAccountDto(input: UpdateAccountInput): UpdateAccountDto {
 export async function createAccount(workspaceId: string, input: CreateAccountInput, options?: RequestInit) {
   try {
     const response = await createApiAccount(workspaceId, toCreateAccountDto(input), options);
-    return ok(toLegacyAccount(response.account));
+    return ok(toUiAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать счёт");
   }
@@ -83,7 +83,7 @@ export async function createAccount(workspaceId: string, input: CreateAccountInp
 export async function updateAccount(id: string, input: UpdateAccountInput, options?: RequestInit) {
   try {
     const response = await updateApiAccount(id, toUpdateAccountDto(input), options);
-    return ok(toLegacyAccount(response.account));
+    return ok(toUiAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить счёт");
   }
@@ -101,7 +101,7 @@ export async function archiveAccount(id: string, options?: RequestInit) {
 export async function getAccounts(workspaceId: string, options?: RequestInit) {
   try {
     const response = await listApiAccounts(workspaceId, options);
-    return ok(response.accounts.map(toLegacyAccount));
+    return ok(response.accounts.map(toUiAccount));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить счета");
   }
@@ -110,7 +110,7 @@ export async function getAccounts(workspaceId: string, options?: RequestInit) {
 export async function getAccount(id: string, options?: RequestInit) {
   try {
     const response = await getApiAccount(id, options);
-    return ok(toLegacyAccount(response.account));
+    return ok(toUiAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить счёт");
   }
@@ -128,7 +128,7 @@ export async function updateAccountsOrder(workspaceId: string, input: UpdateAcco
 export async function getArchivedAccounts(workspaceId: string, options?: RequestInit) {
   try {
     const response = await listApiArchivedAccounts(workspaceId, options);
-    return ok(response.accounts.map(toLegacyArchivedAccount));
+    return ok(response.accounts.map(toUiArchivedAccount));
   } catch (error: unknown) {
     return fail(error, "Не удалось загрузить архивированные счета");
   }

@@ -72,10 +72,10 @@ describe("App", () => {
   it("keeps the Railway deployment config aligned with the API package scripts", () => {
     expect(railwayConfig.build).toMatchObject({
       builder: "RAILPACK",
-      buildCommand: "pnpm build",
+      buildCommand: "pnpm --filter api build",
     });
     expect(railwayConfig.deploy).toMatchObject({
-      startCommand: "pnpm start",
+      startCommand: "pnpm --filter api start",
       healthcheckPath: "/health",
     });
   });

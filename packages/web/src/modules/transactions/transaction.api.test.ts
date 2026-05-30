@@ -127,7 +127,7 @@ describe("transaction.api", () => {
     vi.clearAllMocks();
   });
 
-  it("maps combined transaction DTOs to the legacy paginated Date shape", async () => {
+  it("maps combined transaction DTOs to the UI-facing paginated Date shape", async () => {
     getApiCombinedTransactionsMock.mockResolvedValue({
       data: [
         {
@@ -335,7 +335,7 @@ describe("transaction.api", () => {
     expect(deleteApiPaymentTransactionMock).toHaveBeenCalledWith("payment-1", requestOptions);
   });
 
-  it("normalizes API failures into legacy action errors", async () => {
+  it("normalizes API failures into UI-facing action errors", async () => {
     getApiCombinedTransactionsMock.mockRejectedValue(new Error("No access"));
 
     const { getCombinedTransactions } = await import("./transaction.api");

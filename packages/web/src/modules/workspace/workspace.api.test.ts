@@ -119,7 +119,7 @@ describe("workspace.api", () => {
     expect(getApiWorkspaceMembersMock).toHaveBeenCalledWith("workspace-1", requestOptions);
   });
 
-  it("maps workspace mutation responses without requiring server actions", async () => {
+  it("maps workspace mutation responses through API adapters", async () => {
     createApiWorkspaceMock.mockResolvedValue({
       workspace: createWorkspaceDto(),
     });

@@ -102,7 +102,7 @@ describe("debt.api", () => {
     vi.clearAllMocks();
   });
 
-  it("maps debt lists to the legacy Date shape and forwards filters", async () => {
+  it("maps debt lists to the UI-facing Date shape and forwards filters", async () => {
     listApiDebtsMock.mockResolvedValue({
       data: [createDebtDto({ accountId: null, account: null })],
       total: 1,
@@ -194,7 +194,7 @@ describe("debt.api", () => {
     );
   });
 
-  it("adapts add, close, and delete debt mutations to legacy action results", async () => {
+  it("adapts add, close, and delete debt mutations to UI-facing action results", async () => {
     addToApiDebtMock.mockResolvedValue({ debt: createDebtDto({ amount: "120" }) });
     closeApiDebtMock.mockResolvedValue({ debt: createDebtDto({ status: DebtStatus.CLOSED, remainingAmount: "0" }) });
     deleteApiDebtMock.mockResolvedValue(undefined);
@@ -292,7 +292,7 @@ describe("debt.api", () => {
     expect(deleteApiDebtTransactionMock).toHaveBeenCalledWith("debt-transaction-1", requestOptions);
   });
 
-  it("normalizes API failures into legacy action errors", async () => {
+  it("normalizes API failures into UI-facing action errors", async () => {
     listApiDebtsMock.mockRejectedValue(new Error("No access"));
     createApiDebtMock.mockRejectedValue(new Error("Invalid debt"));
 

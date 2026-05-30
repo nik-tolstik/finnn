@@ -44,7 +44,7 @@ function toDate(value: string) {
   return new Date(value);
 }
 
-function toLegacyDebtAccount(account?: DebtAccountDto | null) {
+function toUiDebtAccount(account?: DebtAccountDto | null) {
   if (!account) {
     return null;
   }
@@ -58,7 +58,7 @@ function toLegacyDebtAccount(account?: DebtAccountDto | null) {
   };
 }
 
-function toLegacyDebtAccountWithOwner(account?: DebtAccountWithOwnerDto | null) {
+function toUiDebtAccountWithOwner(account?: DebtAccountWithOwnerDto | null) {
   if (!account) {
     return null;
   }
@@ -84,18 +84,18 @@ function toLegacyDebtAccountWithOwner(account?: DebtAccountWithOwnerDto | null) 
   };
 }
 
-function toLegacyDebt(debt: DebtDto): DebtWithRelations {
+function toUiDebt(debt: DebtDto): DebtWithRelations {
   return {
     ...debt,
     accountId: debt.accountId ?? null,
     date: toDate(debt.date),
     createdAt: toDate(debt.createdAt),
     updatedAt: toDate(debt.updatedAt),
-    account: toLegacyDebtAccount(debt.account),
+    account: toUiDebtAccount(debt.account),
   };
 }
 
-function toLegacyDebtTransaction(transaction: DebtEntryTransactionDto): DebtTransactionWithRelations {
+function toUiDebtTransaction(transaction: DebtEntryTransactionDto): DebtTransactionWithRelations {
   return {
     ...transaction,
     accountId: transaction.accountId ?? null,
@@ -109,7 +109,7 @@ function toLegacyDebtTransaction(transaction: DebtEntryTransactionDto): DebtTran
       createdAt: toDate(transaction.debt.createdAt),
       updatedAt: toDate(transaction.debt.updatedAt),
     },
-    account: toLegacyDebtAccountWithOwner(transaction.account),
+    account: toUiDebtAccountWithOwner(transaction.account),
   };
 }
 
@@ -176,7 +176,7 @@ function toListDebtsParams(filters?: DebtFilters): ListDebtsParams | undefined {
 export async function createDebt(workspaceId: string, input: CreateDebtInput, options?: RequestInit) {
   try {
     const response = await createApiDebt(workspaceId, toCreateDebtDto(input), options);
-    return ok(toLegacyDebt(response.debt));
+    return ok(toUiDebt(response.debt));
   } catch (error: unknown) {
     return fail(error, "Не удалось создать долг");
   }
@@ -185,7 +185,7 @@ export async function createDebt(workspaceId: string, input: CreateDebtInput, op
 export async function closeDebt(id: string, input: CloseDebtInput, options?: RequestInit) {
   try {
     const response = await closeApiDebt(id, toCloseDebtDto(input), options);
-    return ok(toLegacyDebt(response.debt));
+    return ok(toUiDebt(response.debt));
   } catch (error: unknown) {
     return fail(error, "Не удалось закрыть долг");
   }
@@ -194,7 +194,7 @@ export async function closeDebt(id: string, input: CloseDebtInput, options?: Req
 export async function addToDebt(id: string, input: AddToDebtInput, options?: RequestInit) {
   try {
     const response = await addToApiDebt(id, toAddToDebtDto(input), options);
-    return ok(toLegacyDebt(response.debt));
+    return ok(toUiDebt(response.debt));
   } catch (error: unknown) {
     return fail(error, "Не удалось добавить к долгу");
   }
@@ -221,7 +221,7 @@ export async function getDebtEditData(debtId: string, options?: RequestInit) {
 export async function updateDebt(debtId: string, input: UpdateDebtInput, options?: RequestInit) {
   try {
     const response = await updateApiDebt(debtId, toUpdateDebtDto(input), options);
-    return ok(toLegacyDebt(response.debt));
+    return ok(toUiDebt(response.debt));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить долг");
   }
@@ -230,7 +230,7 @@ export async function updateDebt(debtId: string, input: UpdateDebtInput, options
 export async function updateDebtTransaction(id: string, input: UpdateDebtTransactionInput, options?: RequestInit) {
   try {
     const response = await updateApiDebtTransaction(id, toUpdateDebtTransactionDto(input), options);
-    return ok(toLegacyDebtTransaction(response.debtTransaction));
+    return ok(toUiDebtTransaction(response.debtTransaction));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить транзакцию долга");
   }
@@ -258,7 +258,7 @@ export async function getDebts(
 ): Promise<{ data: DebtWithRelations[]; total: number }> {
   try {
     const response = await listApiDebts(workspaceId, toListDebtsParams(filters), options);
-    return { data: response.data.map(toLegacyDebt), total: response.total };
+    return { data: response.data.map(toUiDebt), total: response.total };
   } catch {
     throw new Error("Не удалось загрузить долги");
   }

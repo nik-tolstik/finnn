@@ -11,7 +11,6 @@ This documentation is written for two audiences:
 
 - [Development](./development.md) - local setup, environment variables, commands, database workflow, and verification.
 - [Architecture](./architecture.md) - directory map, request/data flow, feature module conventions, and cross-cutting helpers.
-- [Backend Migration](./backend-migration.md) - monorepo migration plan, progress log, Orval contract workflow, and Railway deployment steps.
 - [Domain Model](./domain-model.md) - core entities, money invariants, workspaces, transactions, transfers, debts, exchange rates, and PWA cache boundaries.
 - [Operations](./operations.md) - deployment, cron, MongoDB import/export, email, service worker, and production checks.
 - [AI Contributor Guide](./ai-contributor-guide.md) - how Codex or another AI agent should approach changes in this repo.

@@ -605,13 +605,13 @@ describe("optimistic workspace updates", () => {
     expect(updatedMembers.data).toEqual([{ id: "member-1", name: "Old", email: "old@example.com", image: null }]);
 
     removeWorkspacesInCache(context, ["ws-old"]);
-    const afterLegacyRemoval = queryClient.getQueryData(workspacesKeys.list()) as {
+    const afterWorkspaceRemoval = queryClient.getQueryData(workspacesKeys.list()) as {
       data: WorkspaceWithOwner[];
       total?: number;
     };
-    expect(afterLegacyRemoval.total).toBe(2);
+    expect(afterWorkspaceRemoval.total).toBe(2);
     expect(removeWorkspacesFromCache).toBe(removeWorkspacesInCache);
-    expect(afterLegacyRemoval.data).toHaveLength(2);
+    expect(afterWorkspaceRemoval.data).toHaveLength(2);
   });
 
   it("updates user references across accounts, workspace caches, and transactions", async () => {
