@@ -30,7 +30,7 @@ type AccountWithOwner = Account & {
   owner?: {
     id: string;
     name: string | null;
-    email: string;
+    email?: string | null;
     image: string | null;
   } | null;
 };
@@ -76,7 +76,7 @@ function groupAccountsByOwner(items: AccountWithOwner[], viewerUserId?: string |
     {} as Record<
       string,
       {
-        owner: { id: string; name: string | null; email: string; image: string | null } | null;
+        owner: { id: string; name: string | null; email?: string | null; image: string | null } | null;
         ownerName: string;
         accounts: AccountWithOwner[];
       }

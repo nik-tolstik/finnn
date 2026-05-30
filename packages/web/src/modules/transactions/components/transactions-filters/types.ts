@@ -5,7 +5,7 @@ export type TransactionViewFilters = TransactionFilters;
 export interface TransactionFilterMember {
   id: string;
   name: string | null;
-  email: string;
+  email?: string | null;
   image: string | null;
 }
 
@@ -23,6 +23,6 @@ export interface TransactionFilterAccount {
   ownerId: string | null;
   owner: {
     name: string | null;
-    email: string;
+    email?: string | null;
   } | null;
 }

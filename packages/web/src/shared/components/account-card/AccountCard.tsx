@@ -14,7 +14,7 @@ interface AccountCardProps {
   account: Account & {
     owner?: {
       name: string | null;
-      email: string;
+      email?: string | null;
       image: string | null;
     } | null;
   };

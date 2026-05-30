@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -18,6 +18,8 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
 import { type LoginInput, loginSchema } from "../../auth.validations";
+import { redirectToTelegramAuth } from "../../telegram-auth-url";
+import { TelegramAuthButton } from "../telegram-auth-button";
 
 export function LoginForm() {
   const router = useRouter();
@@ -36,7 +38,14 @@ export function LoginForm() {
   });
 
   const inviteToken = searchParams.get("inviteToken");
+  const telegramError = searchParams.get("telegramError");
   const isLoading = isSubmitting || isPending;
+
+  useEffect(() => {
+    if (telegramError) {
+      toast.error("Не удалось войти через Telegram");
+    }
+  }, [telegramError]);
 
   const onSubmit = async (data: LoginInput) => {
     setIsSubmitting(true);
@@ -123,6 +132,13 @@ export function LoginForm() {
             {isLoading ? "Вход..." : "Войти"}
           </Button>
         </form>
+
+        <div className="mt-3">
+          <TelegramAuthButton
+            disabled={isLoading}
+            onClick={() => redirectToTelegramAuth(inviteToken ? `/invite/${inviteToken}` : "/dashboard")}
+          />
+        </div>
 
         <div className="mt-4 text-center text-sm">
           <span className="text-muted-foreground">Нет аккаунта? </span>

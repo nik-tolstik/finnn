@@ -66,7 +66,7 @@ export function SelectAccountDialog({
       {} as Record<
         string,
         {
-          owner: { id: string; name: string | null; email: string; image: string | null } | null;
+          owner: { id: string; name: string | null; email?: string | null; image: string | null } | null;
           accounts: typeof filtered;
         }
       >

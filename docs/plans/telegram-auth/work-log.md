@@ -348,3 +348,76 @@ pnpm api:check-generated
 ### Blockers / Follow-ups
 
 - Frontend code now needs to compile against nullable generated email fields and new Telegram auth functions.
+
+## 2026-05-30 19:54 +03 - Codex / Developer
+
+### Scope
+
+- Phase 6 frontend auth UI and Phase 7 frontend settings/null-email UI.
+- Added a reusable Telegram auth button with Telegram logo and outlined styling.
+- Added Telegram continuation to login and registration pages.
+- Preserved invite flow by returning Telegram sign-in users to `/invite/<token>`.
+- Added Telegram link/unlink controls to account settings.
+- Updated session/user display fallbacks to include Telegram username/display name.
+- Updated invite page no-email handling.
+- Updated frontend account, workspace, transaction, debt, filter, and owner/member types for nullable generated email fields.
+- Fixed transaction and transfer optimistic user creation so users without email are no longer dropped.
+
+### Files Changed
+
+- `packages/web/src/app/(auth)/invite/[token]/page.tsx`
+- `packages/web/src/app/(dashboard)/components/BurgerMenu.tsx`
+- `packages/web/src/app/(dashboard)/components/UserMenu.tsx`
+- `packages/web/src/app/(dashboard)/dashboard/components/DashboardContent.tsx`
+- `packages/web/src/modules/accounts/account.types.ts`
+- `packages/web/src/modules/accounts/components/accounts-cards/AccountsCards.tsx`
+- `packages/web/src/modules/accounts/components/accounts-cards/AccountsCardsReorderView.tsx`
+- `packages/web/src/modules/accounts/components/archived-accounts-dialog/ArchivedAccountsDialog.tsx`
+- `packages/web/src/modules/accounts/components/create-account-dialog/CreateAccountDialog.tsx`
+- `packages/web/src/modules/accounts/components/edit-account-dialog/EditAccountDialog.tsx`
+- `packages/web/src/modules/accounts/components/select-account-dialog/SelectAccountDialog.tsx`
+- `packages/web/src/modules/auth/components/account-settings/AccountSettings.tsx`
+- `packages/web/src/modules/auth/components/login-form/LoginForm.tsx`
+- `packages/web/src/modules/auth/components/register-form/RegisterForm.tsx`
+- `packages/web/src/modules/auth/components/telegram-auth-button/TelegramAuthButton.tsx`
+- `packages/web/src/modules/auth/components/telegram-auth-button/index.ts`
+- `packages/web/src/modules/auth/telegram-auth-url.ts`
+- `packages/web/src/modules/debts/debt.types.ts`
+- `packages/web/src/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog.tsx`
+- `packages/web/src/modules/transactions/components/create-transfer-dialog/CreateTransferDialog.tsx`
+- `packages/web/src/modules/transactions/components/transactions-filters/types.ts`
+- `packages/web/src/modules/transactions/components/transactions-filters/utils/options.ts`
+- `packages/web/src/modules/transactions/transaction.types.ts`
+- `packages/web/src/modules/workspace/workspace.types.ts`
+- `packages/web/src/shared/components/AccountChip.tsx`
+- `packages/web/src/shared/components/account-card/AccountCard.tsx`
+- `docs/plans/telegram-auth/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter web typecheck
+pnpm --filter web check
+pnpm --filter web check:fix
+pnpm --filter web test src/shared/lib/api-session.test.ts
+```
+
+### Results
+
+- `pnpm --filter web typecheck`: first run exposed nullable-email type fallout; passed after updating local domain and component types.
+- `pnpm --filter web check`: first run reported formatting/import ordering; passed after `pnpm --filter web check:fix`.
+- `pnpm --filter web test src/shared/lib/api-session.test.ts`: passed, 5 tests.
+
+### Decisions
+
+- Browser navigation to Telegram uses explicit API URLs instead of generated fetch helpers because the endpoints intentionally redirect out of the app.
+- Invite Telegram sign-in returns to the invite page, where the authenticated invite acceptance flow already runs.
+- Settings link callback currently returns to `/dashboard`; the user can reopen settings after redirect.
+
+### Subagent Contributions
+
+- Frontend explorer identified login/register insertion points, settings link/unlink surface, invite return behavior, nullable-email owner/member assumptions, and transaction/transfer helpers that dropped users without email.
+
+### Blockers / Follow-ups
+
+- A full add-email/update-email verification flow is still not implemented; current settings display missing email explicitly.

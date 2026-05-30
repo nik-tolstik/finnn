@@ -24,7 +24,7 @@ type ArchivedAccount = Account & {
   owner?: {
     id: string;
     name: string | null;
-    email: string;
+    email?: string | null;
     image: string | null;
   } | null;
   _count: {

@@ -134,7 +134,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
       { value: sharedValue, label: sharedLabel },
       ...members.map((member) => ({
         value: member.id,
-        label: member.name || member.email,
+        label: member.name || member.email || "User",
       })),
     ];
   }, [workspaceName, members]);

@@ -28,7 +28,8 @@ export function buildTransactionTypeOptions(): SelectOption<DashboardTransaction
 }
 
 function getMemberLabel(member: TransactionFilterMember) {
-  return member.name ? `${member.name} (${member.email})` : member.email;
+  if (member.name && member.email) return `${member.name} (${member.email})`;
+  return member.name || member.email || "User";
 }
 
 function getAccountLabel(account: TransactionFilterAccount) {

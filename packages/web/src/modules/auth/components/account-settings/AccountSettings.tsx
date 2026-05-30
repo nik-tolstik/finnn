@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { updateUser as updateApiUser } from "@/shared/api/generated/auth/auth";
+import { unlinkTelegram, updateUser as updateApiUser } from "@/shared/api/generated/auth/auth";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { useSession } from "@/shared/lib/api-session-client";
 import { runOptimisticWorkspaceMutation, updateUserReferencesInCache } from "@/shared/lib/optimistic-workspace-updates";
@@ -17,7 +17,9 @@ import { Label } from "@/shared/ui/label";
 import { cn } from "@/shared/utils/cn";
 
 import { type UpdateUserInput, updateUserSchema } from "../../auth.validations";
+import { redirectToTelegramLink } from "../../telegram-auth-url";
 import { AvatarPickerDialog } from "../avatar-picker-dialog/AvatarPickerDialog";
+import { TelegramAuthButton } from "../telegram-auth-button";
 
 interface AccountSettingsProps {
   onSaved?: () => void;
@@ -98,6 +100,17 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
     },
   });
 
+  const unlinkTelegramMutation = useMutation({
+    mutationFn: unlinkTelegram,
+    onSuccess: async () => {
+      await updateSession();
+      toast.success("Telegram отключен");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Не удалось отключить Telegram");
+    },
+  });
+
   const onSubmit = (data: UpdateUserInput) => {
     updateMutation.mutate({
       name: data.name,
@@ -173,7 +186,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
                 <Input
                   id="email"
                   type="email"
-                  value={session.user.email}
+                  value={session.user.email ?? "Email не добавлен"}
                   disabled
                   className="bg-muted cursor-not-allowed"
                 />
@@ -205,6 +218,38 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
           </Button>
         </div>
       </form>
+
+      <div className="space-y-3 border-t pt-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Telegram</div>
+            <div className="truncate text-xs text-muted-foreground">
+              {session.user.telegram.linked
+                ? session.user.telegram.username
+                  ? `@${session.user.telegram.username}`
+                  : session.user.telegram.displayName || "Подключен"
+                : "Не подключен"}
+            </div>
+          </div>
+          {session.user.telegram.linked ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => unlinkTelegramMutation.mutate({})}
+              disabled={unlinkTelegramMutation.isPending}
+            >
+              {unlinkTelegramMutation.isPending ? "Отключение..." : "Отключить"}
+            </Button>
+          ) : (
+            <div className="w-56 max-w-full">
+              <TelegramAuthButton
+                disabled={unlinkTelegramMutation.isPending}
+                onClick={() => redirectToTelegramLink("/dashboard")}
+              />
+            </div>
+          )}
+        </div>
+      </div>
 
       <AvatarPickerDialog
         open={avatarDialogOpen}

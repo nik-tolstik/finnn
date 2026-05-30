@@ -13,7 +13,7 @@ export type WorkspaceWithOwner = WorkspaceBase & {
   owner: {
     id: string;
     name: string | null;
-    email: string;
+    email?: string | null;
     image: string | null;
   };
   _count: {
@@ -25,7 +25,7 @@ export type WorkspaceWithMembers = WorkspaceBase & {
   owner: {
     id: string;
     name: string | null;
-    email: string;
+    email?: string | null;
     image: string | null;
   };
   members: {
@@ -33,7 +33,7 @@ export type WorkspaceWithMembers = WorkspaceBase & {
     user: {
       id: string;
       name: string | null;
-      email: string;
+      email?: string | null;
       image: string | null;
     };
   }[];
