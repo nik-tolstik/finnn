@@ -199,3 +199,60 @@ pnpm --filter api check
 ### Blockers / Follow-ups
 
 - Document `pnpm db:ensure-indexes` in operations/development docs during the documentation phase.
+
+## 2026-05-30 19:19 +03 - Codex / Developer
+
+### Scope
+
+- Phase 3 backend auth implementation.
+- Added Telegram OIDC authorization-code flow with PKCE, nonce/state validation, token exchange, and JWKS-backed ID-token validation through an injectable Telegram client.
+- Added HTTP-only temporary Telegram state cookie helpers.
+- Extracted reusable session creation for password and Telegram sign-in.
+- Added Telegram login, link start, callback, and unlink endpoints.
+- Added Telegram identity linking/unlinking with conflict handling and last-sign-in-method protection.
+- Extended session users with Telegram link status.
+- Added e2e coverage for Telegram start, existing linked login, first-time nullable-email login, link success, link conflict, unlink success, unlink blocked, invalid state, and nullable-email sessions.
+
+### Files Changed
+
+- `packages/api/package.json`
+- `packages/api/src/auth/auth.controller.ts`
+- `packages/api/src/auth/auth.dto.ts`
+- `packages/api/src/auth/auth.module.ts`
+- `packages/api/src/auth/auth.service.ts`
+- `packages/api/src/auth/telegram-oidc.client.ts`
+- `packages/api/src/auth/telegram-state-cookie.ts`
+- `packages/api/test/auth.e2e.test.ts`
+- `pnpm-lock.yaml`
+- `docs/plans/telegram-auth/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter api add jose
+pnpm --filter api test test/auth.e2e.test.ts
+pnpm --filter api typecheck
+pnpm --filter api check
+pnpm --filter api check:fix
+```
+
+### Results
+
+- `pnpm --filter api test test/auth.e2e.test.ts`: first run failed due to DTO class order; passed after moving `TelegramAuthStatusDto` before `AuthUserDto`. Final result: 21 tests passed.
+- `pnpm --filter api typecheck`: passed.
+- `pnpm --filter api check`: first run reported formatting/import ordering; passed after `pnpm --filter api check:fix`.
+
+### Decisions
+
+- Added `jose` for production-grade JWT/JWKS validation.
+- Kept Telegram network/token validation in `TelegramOidcClient` so e2e tests can override it without calling Telegram.
+- Stored PKCE verifier/nonce in a signed HTTP-only temporary cookie while sending only the random `state` value through Telegram.
+- Redirected callback results to the configured `WEB_APP_URL` with relative `returnTo` paths sanitized to same-origin web routes.
+
+### Subagent Contributions
+
+- Backend explorer guidance shaped the session extraction, identity conflict, unlink protection, and invalid-state test coverage.
+
+### Blockers / Follow-ups
+
+- Workspace invite acceptance still needs explicit no-email and email-verification safety updates in Phase 4.

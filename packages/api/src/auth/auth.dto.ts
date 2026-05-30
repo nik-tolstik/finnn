@@ -42,6 +42,20 @@ export class UpdateUserDto {
   image!: string | null;
 }
 
+export class TelegramAuthStatusDto {
+  @ApiProperty({ example: true, type: Boolean })
+  linked!: boolean;
+
+  @ApiPropertyOptional({ example: "finn_user", nullable: true, type: String })
+  username!: string | null;
+
+  @ApiPropertyOptional({ example: "Finn User", nullable: true, type: String })
+  displayName!: string | null;
+
+  @ApiPropertyOptional({ example: "https://t.me/i/userpic/320/example.jpg", nullable: true, type: String })
+  photoUrl!: string | null;
+}
+
 export class AuthUserDto {
   @ApiProperty({ example: "665f5d865ef5a20c0d2f1111", type: String })
   id!: string;
@@ -54,6 +68,9 @@ export class AuthUserDto {
 
   @ApiPropertyOptional({ example: "avatar-01", nullable: true, type: String })
   image!: string | null;
+
+  @ApiProperty({ type: TelegramAuthStatusDto })
+  telegram!: TelegramAuthStatusDto;
 }
 
 export class SuccessResponseDto {

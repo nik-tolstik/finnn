@@ -6,15 +6,27 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import { AuthModule } from "../src/auth/auth.module";
 import { AUTH_COOKIE_NAME, hashSessionToken } from "../src/auth/session-cookie";
+import { TelegramOidcClient } from "../src/auth/telegram-oidc.client";
+import { TELEGRAM_STATE_COOKIE_NAME } from "../src/auth/telegram-state-cookie";
 import { EmailService } from "../src/email/email.service";
 import { configureApp } from "../src/main";
 import { PrismaService } from "../src/prisma/prisma.service";
 
 type MockPrisma = {
+  $transaction: ReturnType<typeof vi.fn>;
   user: {
+    findFirst: ReturnType<typeof vi.fn>;
     findUnique: ReturnType<typeof vi.fn>;
+    findUniqueOrThrow: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
+  };
+  authIdentity: {
+    create: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+    findUnique: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    upsert: ReturnType<typeof vi.fn>;
   };
   pendingRegistration: {
     findUnique: ReturnType<typeof vi.fn>;
@@ -30,11 +42,21 @@ type MockPrisma = {
 };
 
 function createPrismaMock(): MockPrisma {
-  return {
+  const prisma = {
+    $transaction: vi.fn(async (callback) => callback(prisma)),
     user: {
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+    },
+    authIdentity: {
+      create: vi.fn(),
+      delete: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      upsert: vi.fn(),
     },
     pendingRegistration: {
       findUnique: vi.fn(),
@@ -48,6 +70,35 @@ function createPrismaMock(): MockPrisma {
       count: vi.fn(),
     },
   };
+  return prisma;
+}
+
+const unlinkedTelegram = {
+  linked: false,
+  username: null,
+  displayName: null,
+  photoUrl: null,
+};
+
+const linkedTelegram = {
+  linked: true,
+  username: "ada",
+  displayName: "Ada",
+  photoUrl: "https://t.me/i/userpic/320/ada.jpg",
+};
+
+function getSetCookieValues(response: request.Response): string[] {
+  const value = response.headers["set-cookie"];
+  return Array.isArray(value) ? value : [value].filter(Boolean);
+}
+
+function getCookiePair(setCookie: string, name: string): string {
+  const cookie = setCookie
+    .split(";")
+    .find((part) => part.trim().startsWith(`${name}=`))
+    ?.trim();
+  if (!cookie) throw new Error(`Missing ${name} cookie`);
+  return cookie;
 }
 
 describe("Auth API", () => {
@@ -55,6 +106,10 @@ describe("Auth API", () => {
   let prisma: MockPrisma;
   const emailService = {
     sendVerificationEmail: vi.fn(),
+  };
+  const telegramOidcClient = {
+    exchangeCodeForClaims: vi.fn(),
+    getAuthorizationUrl: vi.fn(),
   };
 
   beforeAll(async () => {
@@ -67,6 +122,8 @@ describe("Auth API", () => {
       .useValue(prisma)
       .overrideProvider(EmailService)
       .useValue(emailService)
+      .overrideProvider(TelegramOidcClient)
+      .useValue(telegramOidcClient)
       .compile();
 
     app = configureApp(moduleRef.createNestApplication(), {
@@ -78,11 +135,29 @@ describe("Auth API", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.TELEGRAM_AUTH_STATE_SECRET = "test-telegram-state-secret";
+    process.env.WEB_APP_URL = "http://localhost:3000";
     prisma.user.findUnique.mockResolvedValue(null);
+    prisma.user.findFirst.mockResolvedValue(null);
+    prisma.user.findUniqueOrThrow.mockRejectedValue(new Error("User not found"));
+    prisma.authIdentity.findUnique.mockResolvedValue(null);
+    prisma.authIdentity.create.mockResolvedValue({ id: "identity-1" });
+    prisma.authIdentity.update.mockResolvedValue({ id: "identity-1" });
+    prisma.authIdentity.upsert.mockResolvedValue({ id: "identity-1" });
+    prisma.authIdentity.delete.mockResolvedValue({ id: "identity-1" });
     prisma.pendingRegistration.findUnique.mockResolvedValue(null);
     prisma.authSession.deleteMany.mockResolvedValue({ count: 0 });
     prisma.authSession.count.mockResolvedValue(0);
     emailService.sendVerificationEmail.mockResolvedValue({ success: true });
+    telegramOidcClient.getAuthorizationUrl.mockImplementation(
+      ({ state }) => `https://oauth.telegram.org/auth?state=${state}`
+    );
+    telegramOidcClient.exchangeCodeForClaims.mockResolvedValue({
+      sub: "telegram-1",
+      name: "Ada",
+      preferred_username: "ada",
+      picture: "https://t.me/i/userpic/320/ada.jpg",
+    });
   });
 
   afterAll(async () => {
@@ -114,7 +189,7 @@ describe("Auth API", () => {
   });
 
   it("rejects an existing user during registration", async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    prisma.user.findFirst.mockResolvedValue({
       id: "user-1",
       email: "ada@example.com",
       name: "Ada",
@@ -181,7 +256,7 @@ describe("Auth API", () => {
       token: "token",
       expiresAt: new Date(Date.now() + 1000),
     });
-    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.user.findFirst.mockResolvedValue(null);
     prisma.user.create.mockResolvedValue({ id: "user-1" });
 
     await request(app.getHttpServer())
@@ -201,7 +276,7 @@ describe("Auth API", () => {
   });
 
   it("rejects unverified login when a pending registration still exists", async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    prisma.user.findFirst.mockResolvedValue({
       id: "user-1",
       email: "ada@example.com",
       name: "Ada",
@@ -221,13 +296,14 @@ describe("Auth API", () => {
   });
 
   it("issues an HTTP-only session cookie on successful login", async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    prisma.user.findFirst.mockResolvedValue({
       id: "user-1",
       email: "ada@example.com",
       name: "Ada",
       image: null,
       password: await bcrypt.hash("secret123", 10),
       emailVerified: new Date(),
+      authIdentities: [],
     });
 
     const response = await request(app.getHttpServer())
@@ -240,6 +316,7 @@ describe("Auth API", () => {
       email: "ada@example.com",
       name: "Ada",
       image: null,
+      telegram: unlinkedTelegram,
     });
     expect(response.headers["set-cookie"][0]).toContain(`${AUTH_COOKIE_NAME}=`);
     expect(response.headers["set-cookie"][0]).toContain("HttpOnly");
@@ -254,13 +331,14 @@ describe("Auth API", () => {
   it("keeps local SameSite=None cookies browser-acceptable by falling back to Lax without Secure", async () => {
     process.env.API_COOKIE_SAME_SITE = "none";
     process.env.API_COOKIE_SECURE = "false";
-    prisma.user.findUnique.mockResolvedValue({
+    prisma.user.findFirst.mockResolvedValue({
       id: "user-1",
       email: "ada@example.com",
       name: "Ada",
       image: null,
       password: await bcrypt.hash("secret123", 10),
       emailVerified: new Date(),
+      authIdentities: [],
     });
 
     const response = await request(app.getHttpServer())
@@ -282,6 +360,7 @@ describe("Auth API", () => {
       email: "ada@example.com",
       name: "Ada",
       image: null,
+      authIdentities: [],
     });
 
     await request(app.getHttpServer())
@@ -295,6 +374,7 @@ describe("Auth API", () => {
           email: "ada@example.com",
           name: "Ada",
           image: null,
+          telegram: unlinkedTelegram,
         },
       });
 
@@ -319,6 +399,7 @@ describe("Auth API", () => {
       email: "ada@example.com",
       name: "Ada",
       image: null,
+      authIdentities: [],
     });
 
     await request(app.getHttpServer())
@@ -332,6 +413,7 @@ describe("Auth API", () => {
           email: "ada@example.com",
           name: "Ada",
           image: null,
+          telegram: unlinkedTelegram,
         },
       });
 
@@ -356,6 +438,7 @@ describe("Auth API", () => {
       email: "ada@example.com",
       name: "Ada",
       image: null,
+      authIdentities: [],
     });
 
     await request(app.getHttpServer())
@@ -369,6 +452,291 @@ describe("Auth API", () => {
           email: "ada@example.com",
           name: "Ada",
           image: null,
+          telegram: unlinkedTelegram,
+        },
+      });
+  });
+
+  it("starts Telegram authentication with a temporary state cookie", async () => {
+    const response = await request(app.getHttpServer()).get("/auth/telegram/start?returnTo=/dashboard").expect(302);
+
+    expect(response.headers.location).toContain("https://oauth.telegram.org/auth?state=");
+    expect(getSetCookieValues(response)[0]).toContain(`${TELEGRAM_STATE_COOKIE_NAME}=`);
+    expect(getSetCookieValues(response)[0]).toContain("HttpOnly");
+  });
+
+  it("signs in with an existing linked Telegram identity", async () => {
+    const startResponse = await request(app.getHttpServer())
+      .get("/auth/telegram/start?returnTo=/dashboard")
+      .expect(302);
+    const state = new URL(startResponse.headers.location).searchParams.get("state");
+    const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], TELEGRAM_STATE_COOKIE_NAME);
+
+    prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [
+        {
+          provider: "telegram",
+          username: "ada",
+          displayName: "Ada",
+          photoUrl: "https://t.me/i/userpic/320/ada.jpg",
+        },
+      ],
+    });
+
+    const response = await request(app.getHttpServer())
+      .get(`/auth/telegram/callback?code=telegram-code&state=${state}`)
+      .set("Cookie", stateCookie)
+      .expect(302);
+
+    expect(response.headers.location).toBe("http://localhost:3000/dashboard");
+    expect(prisma.authIdentity.update).toHaveBeenCalledWith({
+      where: {
+        provider_providerUserId: {
+          provider: "telegram",
+          providerUserId: "telegram-1",
+        },
+      },
+      data: {
+        username: "ada",
+        displayName: "Ada",
+        photoUrl: "https://t.me/i/userpic/320/ada.jpg",
+      },
+    });
+    expect(prisma.authSession.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: "user-1", revokedAt: null }),
+    });
+    expect(getSetCookieValues(response).join("; ")).toContain(`${AUTH_COOKIE_NAME}=`);
+  });
+
+  it("creates a nullable-email user on first Telegram login", async () => {
+    const startResponse = await request(app.getHttpServer()).get("/auth/telegram/start").expect(302);
+    const state = new URL(startResponse.headers.location).searchParams.get("state");
+    const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], TELEGRAM_STATE_COOKIE_NAME);
+    prisma.user.create.mockResolvedValue({ id: "user-telegram" });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-telegram",
+      email: null,
+      name: "Ada",
+      image: "https://t.me/i/userpic/320/ada.jpg",
+      authIdentities: [
+        {
+          provider: "telegram",
+          username: "ada",
+          displayName: "Ada",
+          photoUrl: "https://t.me/i/userpic/320/ada.jpg",
+        },
+      ],
+    });
+
+    await request(app.getHttpServer())
+      .get(`/auth/telegram/callback?code=telegram-code&state=${state}`)
+      .set("Cookie", stateCookie)
+      .expect(302);
+
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: {
+        email: null,
+        name: "Ada",
+        image: "https://t.me/i/userpic/320/ada.jpg",
+      },
+      select: { id: true },
+    });
+    expect(prisma.authIdentity.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        provider: "telegram",
+        providerUserId: "telegram-1",
+      }),
+    });
+    expect(prisma.authSession.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: "user-telegram" }),
+    });
+  });
+
+  it("links Telegram for the authenticated user", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [],
+    });
+    const startResponse = await request(app.getHttpServer())
+      .get("/auth/telegram/link/start?returnTo=/dashboard")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(302);
+    const state = new URL(startResponse.headers.location).searchParams.get("state");
+    const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], TELEGRAM_STATE_COOKIE_NAME);
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [
+        {
+          provider: "telegram",
+          username: "ada",
+          displayName: "Ada",
+          photoUrl: "https://t.me/i/userpic/320/ada.jpg",
+        },
+      ],
+    });
+
+    await request(app.getHttpServer())
+      .get(`/auth/telegram/callback?code=telegram-code&state=${state}`)
+      .set("Cookie", stateCookie)
+      .expect(302);
+
+    expect(prisma.authIdentity.upsert).toHaveBeenCalledWith({
+      where: {
+        provider_providerUserId: {
+          provider: "telegram",
+          providerUserId: "telegram-1",
+        },
+      },
+      update: {
+        username: "ada",
+        displayName: "Ada",
+        photoUrl: "https://t.me/i/userpic/320/ada.jpg",
+      },
+      create: expect.objectContaining({
+        provider: "telegram",
+        providerUserId: "telegram-1",
+      }),
+    });
+    expect(prisma.authSession.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects linking a Telegram identity already linked to another user", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [],
+    });
+    const startResponse = await request(app.getHttpServer())
+      .get("/auth/telegram/link/start")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(302);
+    const state = new URL(startResponse.headers.location).searchParams.get("state");
+    const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], TELEGRAM_STATE_COOKIE_NAME);
+    prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-2" });
+
+    const response = await request(app.getHttpServer())
+      .get(`/auth/telegram/callback?code=telegram-code&state=${state}`)
+      .set("Cookie", stateCookie)
+      .expect(409);
+
+    expect(response.body.message).toBe("Этот Telegram аккаунт уже подключен к другому пользователю");
+  });
+
+  it("unlinks Telegram when another sign-in method remains", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        name: "Ada",
+        image: null,
+        authIdentities: [{ provider: "telegram", username: "ada", displayName: "Ada", photoUrl: null }],
+      })
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        password: "hash",
+        emailVerified: new Date(),
+        authIdentities: [{ id: "identity-1", provider: "telegram" }],
+      });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .delete("/auth/telegram/link")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(prisma.authIdentity.delete).toHaveBeenCalledWith({ where: { id: "identity-1" } });
+    expect(response.body.user.telegram).toEqual(unlinkedTelegram);
+  });
+
+  it("blocks Telegram unlink when it would remove the last sign-in method", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: null,
+        name: "Ada",
+        image: null,
+        authIdentities: [{ provider: "telegram", username: "ada", displayName: "Ada", photoUrl: null }],
+      })
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: null,
+        password: null,
+        emailVerified: null,
+        authIdentities: [{ id: "identity-1", provider: "telegram" }],
+      });
+
+    const response = await request(app.getHttpServer())
+      .delete("/auth/telegram/link")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(400);
+
+    expect(response.body.message).toContain("Нельзя отключить Telegram");
+    expect(prisma.authIdentity.delete).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid Telegram state before token exchange", async () => {
+    const response = await request(app.getHttpServer())
+      .get("/auth/telegram/callback?code=telegram-code&state=bad-state")
+      .set("Cookie", `${TELEGRAM_STATE_COOKIE_NAME}=invalid`)
+      .expect(401);
+
+    expect(response.body.message).toBe("Telegram authentication state is invalid");
+    expect(telegramOidcClient.exchangeCodeForClaims).not.toHaveBeenCalled();
+  });
+
+  it("returns nullable-email users from valid sessions", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-telegram" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-telegram",
+      email: null,
+      name: "Ada",
+      image: null,
+      authIdentities: [
+        {
+          provider: "telegram",
+          username: "ada",
+          displayName: "Ada",
+          photoUrl: "https://t.me/i/userpic/320/ada.jpg",
+        },
+      ],
+    });
+
+    await request(app.getHttpServer())
+      .get("/auth/session")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200)
+      .expect({
+        authenticated: true,
+        user: {
+          id: "user-telegram",
+          email: null,
+          name: "Ada",
+          image: null,
+          telegram: linkedTelegram,
         },
       });
   });
