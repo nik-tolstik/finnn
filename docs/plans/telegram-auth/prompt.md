@@ -1,5 +1,3 @@
-# Orchestrator Prompt
-
 Use this prompt to start the full Telegram authentication implementation with an AI orchestration workflow.
 
 ```text
