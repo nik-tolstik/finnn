@@ -637,6 +637,30 @@ describe("Auth API", () => {
     });
   });
 
+  it("relays Telegram callback parameters to the local callback during development", async () => {
+    const response = await request(app.getHttpServer())
+      .get(
+        "/auth/telegram/callback?redirectTo=http%3A%2F%2Flocalhost%3A4000%2Fauth%2Ftelegram%2Fcallback&code=telegram-code&state=telegram-state"
+      )
+      .expect(302);
+
+    expect(response.headers.location).toBe(
+      "http://localhost:4000/auth/telegram/callback?code=telegram-code&state=telegram-state"
+    );
+    expect(telegramOidcClient.exchangeCodeForClaims).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsafe Telegram callback relay targets", async () => {
+    const response = await request(app.getHttpServer())
+      .get(
+        "/auth/telegram/callback?redirectTo=https%3A%2F%2Fexample.com%2Fauth%2Ftelegram%2Fcallback&code=telegram-code&state=telegram-state"
+      )
+      .expect(400);
+
+    expect(response.body.message).toBe("Telegram callback relay target is not allowed");
+    expect(telegramOidcClient.exchangeCodeForClaims).not.toHaveBeenCalled();
+  });
+
   it("links Telegram for the authenticated user", async () => {
     prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
     prisma.user.findUnique.mockResolvedValue({

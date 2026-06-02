@@ -91,7 +91,6 @@ Frontend production variables stay with the web deployment:
 
 ```env
 NEXT_PUBLIC_API_URL="https://production-api-url"
-NEXT_PUBLIC_APP_URL="https://production-app-url"
 ```
 
 After deployment, verify:
@@ -118,7 +117,6 @@ Operational requirements:
 - Set the same `CRON_SECRET` in the API environment and in any scheduler that invokes the route.
 - Confirm `DATABASE_URL` points to a MongoDB deployment that supports Prisma's transaction requirements.
 - Keep `NEXT_PUBLIC_API_URL` in the web deployment aligned with the deployed API URL.
-- Keep `NEXT_PUBLIC_APP_URL` aligned with the deployed web URL for client-facing absolute URLs.
 
 Railway setup:
 

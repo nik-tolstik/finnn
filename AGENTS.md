@@ -72,7 +72,7 @@ Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishi
 - Run `pnpm db:generate` after schema changes.
 - Run `pnpm db:push` to apply schema/index changes to MongoDB.
 - `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`, SMTP variables, and `CRON_SECRET`.
-- `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_APP_URL`.
+- `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL`.
 - SMTP variables are required for registration verification and workspace invite email delivery.
 - Backend scheduling should call the API endpoint `/cron/update-exchange-rates` with `Authorization: Bearer <CRON_SECRET>`.
 

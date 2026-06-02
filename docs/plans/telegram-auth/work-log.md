@@ -530,3 +530,56 @@ pnpm build
 ### Blockers / Follow-ups
 
 - None.
+
+## 2026-05-30 21:05 +03 - Codex / Developer
+
+### Scope
+
+- Added a minimal ngrok local testing setup for Telegram authentication.
+- Kept normal localhost development unchanged.
+- Added a development-only Telegram callback relay from the ngrok API callback back to the local API callback.
+- Removed the unused `NEXT_PUBLIC_APP_URL` environment variable from docs and examples.
+- Documented the manual ngrok workflow.
+
+### Files Changed
+
+- `AGENTS.md`
+- `README.md`
+- `packages/api/.env.example`
+- `packages/api/src/auth/auth.controller.ts`
+- `packages/api/test/auth.e2e.test.ts`
+- `packages/web/.env.example`
+- `docs/development.md`
+- `docs/operations.md`
+- `docs/plans/telegram-auth/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm api:generate
+pnpm --filter api test test/auth.e2e.test.ts
+pnpm typecheck
+pnpm check
+```
+
+### Results
+
+- `pnpm api:generate`: passed.
+- `pnpm --filter api test test/auth.e2e.test.ts`: passed, 25 tests.
+- `pnpm typecheck`: passed.
+- `pnpm check`: passed.
+
+### Decisions
+
+- Use one ngrok URL for the API callback only, then relay back to `localhost:4000` before validating state and creating the session.
+- Keep cookies local (`SameSite=Lax`, `Secure=false`) for development instead of relying on cross-host cookies.
+- Limit `redirectTo` to non-production local callback URLs to avoid an open redirect.
+- Avoid separate dev runner scripts and Next.js rewrites; developers can run `pnpm dev` and `ngrok http 4000` manually.
+
+### Subagent Contributions
+
+- None in this phase.
+
+### Blockers / Follow-ups
+
+- Run the manual ngrok flow for an end-to-end browser check with the user's ngrok domain.

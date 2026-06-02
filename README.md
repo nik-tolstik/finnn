@@ -66,7 +66,6 @@ SMTP_FROM="Finnn <your-email@example.com>"
 
 ```env
 NEXT_PUBLIC_API_URL="http://localhost:4000"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
 API-секреты можно сгенерировать так:

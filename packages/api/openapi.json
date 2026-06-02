@@ -256,6 +256,14 @@
         "operationId": "completeTelegramAuth",
         "parameters": [
           {
+            "name": "redirectTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "state",
             "required": false,
             "in": "query",

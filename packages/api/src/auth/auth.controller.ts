@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -62,6 +63,45 @@ import {
 function getWebRedirectUrl(returnTo: string): string {
   const baseUrl = process.env.WEB_APP_URL?.trim() || "http://localhost:3000";
   return new URL(returnTo, baseUrl).toString();
+}
+
+function getTelegramCallbackRelayUrl(input: {
+  redirectTo: string | undefined;
+  code: string | undefined;
+  state: string | undefined;
+  error: string | undefined;
+}): string | null {
+  if (!input.redirectTo) return null;
+  if (process.env.NODE_ENV === "production") {
+    throw new BadRequestException("Telegram callback relay is disabled");
+  }
+
+  let redirectUrl: URL;
+  try {
+    redirectUrl = new URL(input.redirectTo);
+  } catch {
+    throw new BadRequestException("Telegram callback relay target is invalid");
+  }
+
+  const allowedHosts = new Set(["localhost", "127.0.0.1"]);
+  const allowedPort = process.env.PORT?.trim() || "4000";
+  if (
+    redirectUrl.protocol !== "http:" ||
+    !allowedHosts.has(redirectUrl.hostname) ||
+    redirectUrl.port !== allowedPort ||
+    redirectUrl.pathname !== "/auth/telegram/callback" ||
+    redirectUrl.search ||
+    redirectUrl.hash
+  ) {
+    throw new BadRequestException("Telegram callback relay target is not allowed");
+  }
+
+  const query = new URLSearchParams();
+  if (input.code) query.set("code", input.code);
+  if (input.state) query.set("state", input.state);
+  if (input.error) query.set("error", input.error);
+  redirectUrl.search = query.toString();
+  return redirectUrl.toString();
 }
 
 @Controller("auth")
@@ -144,6 +184,7 @@ export class AuthController {
   @ApiOperation({ operationId: "completeTelegramAuth", summary: "Complete Telegram OIDC authentication" })
   @ApiQuery({ name: "code", required: false, type: String })
   @ApiQuery({ name: "state", required: false, type: String })
+  @ApiQuery({ name: "redirectTo", required: false, type: String })
   @ApiBadRequestResponse({ type: ApiErrorDto })
   @ApiConflictResponse({ type: ApiErrorDto })
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
@@ -151,9 +192,16 @@ export class AuthController {
     @Query("code") code: string | undefined,
     @Query("state") state: string | undefined,
     @Query("error") error: string | undefined,
+    @Query("redirectTo") redirectTo: string | undefined,
     @Req() request: Request,
     @Res() response: Response
   ) {
+    const relayUrl = getTelegramCallbackRelayUrl({ redirectTo, code, state, error });
+    if (relayUrl) {
+      response.redirect(relayUrl);
+      return;
+    }
+
     response.setHeader("Set-Cookie", createClearTelegramStateCookie());
 
     if (error || !code || !state) {
