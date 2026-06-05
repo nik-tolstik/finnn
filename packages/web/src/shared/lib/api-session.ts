@@ -4,7 +4,7 @@ import { cache } from "react";
 import type { AuthUserDto, SessionResponseDto } from "@/shared/api/generated/model";
 import { getApiBaseUrl } from "@/shared/api/http-client";
 
-export const AUTH_COOKIE_NAME = "finnn_session";
+const AUTH_COOKIE_NAME = "finnn_session";
 
 export interface Session {
   user: AuthUserDto;

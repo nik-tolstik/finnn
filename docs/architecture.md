@@ -119,6 +119,11 @@ Authentication is owned by `packages/api/src/auth`:
 
 `packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `packages/web/src/shared/lib/api-session.ts`, which forwards the API session cookie to the backend session endpoint.
 
+Protected app pages (`/dashboard`, `/analytics`, and `/debts`) use a CSR-first shell. The client `DashboardAuthGate`
+confirms the real API session through `GET /auth/session`, shows a global loading screen while the check is pending,
+and redirects unauthenticated users to `/login`. API auth guards remain the security boundary for private data and
+workspace access.
+
 Telegram redirects are navigated in the browser with explicit API URLs because the API endpoints intentionally issue
 cross-site redirects. Telegram identities are stored in `AuthIdentity`; the returned session user includes nullable
 email plus Telegram link status for UI display and settings.
@@ -133,7 +138,9 @@ Workspace authorization is handled in the API by `WorkspaceAccessGuard` and `Wor
 
 TanStack Query keys are centralized in `packages/web/src/shared/lib/query-keys.ts`.
 
-Server pages prefetch data and dehydrate it. Client components consume the same keys to avoid duplicate loading and keep cache behavior predictable.
+Protected app data is loaded through TanStack Query in client components. Cached data should render immediately while
+stale data refetches in the background; avoid adding server-side page data dependencies to protected app routes unless a
+feature explicitly needs SSR again.
 
 Optimistic updates are centralized in `packages/web/src/shared/lib/optimistic-workspace-updates.ts`. Use these helpers when changing account, category, debt, transaction, workspace, or user references in client cache.
 

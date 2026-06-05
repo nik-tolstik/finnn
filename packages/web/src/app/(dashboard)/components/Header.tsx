@@ -64,6 +64,7 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-2 ml-4">
             <Link
               href={`${accountsPath}${basePath}`}
+              prefetch
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 isAccountsActive
@@ -76,6 +77,7 @@ export function Header() {
             </Link>
             <Link
               href={`${analyticsPath}${basePath}`}
+              prefetch
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 isAnalyticsActive
@@ -88,6 +90,7 @@ export function Header() {
             </Link>
             <Link
               href={`${debtsPath}${basePath}`}
+              prefetch
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 isDebtsActive

@@ -1,20 +1,11 @@
-"use client";
+import { Suspense } from "react";
 
-import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
-import { useWorkspaceRoute } from "@/modules/workspace/useWorkspaceRoute";
-
-import { DebtsContent } from "./components/DebtsContent";
+import { DebtsPageClient } from "./components/DebtsPageClient";
 
 export default function DebtsPage() {
-  const { workspaceId, isInitialLoading, shouldShowCreateWorkspacePrompt } = useWorkspaceRoute();
-
-  if (shouldShowCreateWorkspacePrompt) {
-    return <CreateWorkspacePrompt />;
-  }
-
-  if (isInitialLoading || !workspaceId) {
-    return null;
-  }
-
-  return <DebtsContent workspaceId={workspaceId} />;
+  return (
+    <Suspense fallback={null}>
+      <DebtsPageClient />
+    </Suspense>
+  );
 }

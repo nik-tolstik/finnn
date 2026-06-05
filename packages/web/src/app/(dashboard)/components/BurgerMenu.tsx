@@ -75,6 +75,7 @@ export function BurgerMenu() {
             <nav className="flex-1 p-4 space-y-1">
               <Link
                 href={`${accountsPath}${basePath}`}
+                prefetch
                 onClick={() => setOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
@@ -86,6 +87,7 @@ export function BurgerMenu() {
               </Link>
               <Link
                 href={`${analyticsPath}${basePath}`}
+                prefetch
                 onClick={() => setOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
@@ -97,6 +99,7 @@ export function BurgerMenu() {
               </Link>
               <Link
                 href={`${debtsPath}${basePath}`}
+                prefetch
                 onClick={() => setOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
