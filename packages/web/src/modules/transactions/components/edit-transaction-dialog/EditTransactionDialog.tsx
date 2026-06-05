@@ -359,7 +359,21 @@ export function EditTransactionDialog({
               <Controller
                 control={control}
                 name="date"
-                render={({ field }) => <DateTimePicker date={field.value} onSelect={field.onChange} />}
+                render={({ field }) => (
+                  <DateTimePicker
+                    date={field.value}
+                    onSelect={field.onChange}
+                    showRelativeDatePresets
+                    disabled={(date) => {
+                      if (!selectedAccount?.createdAt) return false;
+                      const accountCreatedDate = new Date(selectedAccount.createdAt);
+                      accountCreatedDate.setHours(0, 0, 0, 0);
+                      const checkDate = new Date(date);
+                      checkDate.setHours(0, 0, 0, 0);
+                      return checkDate < accountCreatedDate;
+                    }}
+                  />
+                )}
               />
               {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
             </div>

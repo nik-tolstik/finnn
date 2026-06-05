@@ -1,40 +1,22 @@
-import { redirect } from "next/navigation";
+"use client";
 
 import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
-import { getWorkspaces } from "@/modules/workspace/workspace.api";
-import {
-  buildWorkspaceRedirectQueryString,
-  getFirstSearchParamValue,
-  type WorkspacePageSearchParams,
-} from "@/modules/workspace/workspace-search-params";
-import { getCachedServerSession, getServerApiRequestOptions } from "@/shared/lib/api-session";
+import { useWorkspaceRoute } from "@/modules/workspace/useWorkspaceRoute";
+import { useSession } from "@/shared/lib/api-session-client";
 
 import { DashboardContent } from "./components/DashboardContent";
 
-interface DashboardPageProps {
-  searchParams: Promise<WorkspacePageSearchParams>;
-}
+export default function DashboardPage() {
+  const { data: session } = useSession();
+  const { workspaceId, isInitialLoading, shouldShowCreateWorkspacePrompt } = useWorkspaceRoute();
 
-export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const requestOptions = await getServerApiRequestOptions();
-  const [session, workspacesResult] = await Promise.all([getCachedServerSession(), getWorkspaces(requestOptions)]);
-
-  if (workspacesResult.error || !workspacesResult.data || workspacesResult.data.length === 0) {
+  if (shouldShowCreateWorkspacePrompt) {
     return <CreateWorkspacePrompt />;
   }
 
-  const resolvedSearchParams = await searchParams;
-  const requestedWorkspaceId = getFirstSearchParamValue(resolvedSearchParams.workspaceId);
-  const workspaceId =
-    requestedWorkspaceId && workspacesResult.data.some((w) => w.id === requestedWorkspaceId)
-      ? requestedWorkspaceId
-      : workspacesResult.data[0].id;
-
-  if (!requestedWorkspaceId || !workspacesResult.data.some((w) => w.id === requestedWorkspaceId)) {
-    redirect(`/dashboard?${buildWorkspaceRedirectQueryString(resolvedSearchParams, workspaceId)}`);
+  if (isInitialLoading || !workspaceId) {
+    return null;
   }
 
-  const currentUserId = session?.user?.id;
-
-  return <DashboardContent initialCurrentUserId={currentUserId} workspaceId={workspaceId} />;
+  return <DashboardContent initialCurrentUserId={session?.user.id} workspaceId={workspaceId} />;
 }
