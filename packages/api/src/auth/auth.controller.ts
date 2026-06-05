@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -65,37 +64,24 @@ function getWebRedirectUrl(returnTo: string): string {
   return new URL(returnTo, baseUrl).toString();
 }
 
-function getTelegramCallbackRelayUrl(input: {
-  redirectTo: string | undefined;
-  code: string | undefined;
-  state: string | undefined;
-  error: string | undefined;
-}): string | null {
-  if (!input.redirectTo) return null;
-  if (process.env.NODE_ENV === "production") {
-    throw new BadRequestException("Telegram callback relay is disabled");
-  }
+function isLocalhost(hostname: string | undefined): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
+}
 
-  let redirectUrl: URL;
-  try {
-    redirectUrl = new URL(input.redirectTo);
-  } catch {
-    throw new BadRequestException("Telegram callback relay target is invalid");
+function getTelegramCallbackRelayUrl(
+  request: Request,
+  input: {
+    code: string | undefined;
+    state: string | undefined;
+    error: string | undefined;
   }
+): string | null {
+  if (process.env.NODE_ENV === "production" || isLocalhost(request.hostname)) return null;
 
-  const allowedHosts = new Set(["localhost", "127.0.0.1"]);
-  const allowedPort = process.env.PORT?.trim() || "4000";
-  if (
-    redirectUrl.protocol !== "http:" ||
-    !allowedHosts.has(redirectUrl.hostname) ||
-    redirectUrl.port !== allowedPort ||
-    redirectUrl.pathname !== "/auth/telegram/callback" ||
-    redirectUrl.search ||
-    redirectUrl.hash
-  ) {
-    throw new BadRequestException("Telegram callback relay target is not allowed");
-  }
+  const webUrl = new URL(process.env.WEB_APP_URL?.trim() || "http://localhost:3000");
+  if (!isLocalhost(webUrl.hostname)) return null;
 
+  const redirectUrl = new URL(`http://localhost:${process.env.PORT?.trim() || "4000"}/auth/telegram/callback`);
   const query = new URLSearchParams();
   if (input.code) query.set("code", input.code);
   if (input.state) query.set("state", input.state);
@@ -184,7 +170,6 @@ export class AuthController {
   @ApiOperation({ operationId: "completeTelegramAuth", summary: "Complete Telegram OIDC authentication" })
   @ApiQuery({ name: "code", required: false, type: String })
   @ApiQuery({ name: "state", required: false, type: String })
-  @ApiQuery({ name: "redirectTo", required: false, type: String })
   @ApiBadRequestResponse({ type: ApiErrorDto })
   @ApiConflictResponse({ type: ApiErrorDto })
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
@@ -192,11 +177,10 @@ export class AuthController {
     @Query("code") code: string | undefined,
     @Query("state") state: string | undefined,
     @Query("error") error: string | undefined,
-    @Query("redirectTo") redirectTo: string | undefined,
     @Req() request: Request,
     @Res() response: Response
   ) {
-    const relayUrl = getTelegramCallbackRelayUrl({ redirectTo, code, state, error });
+    const relayUrl = getTelegramCallbackRelayUrl(request, { code, state, error });
     if (relayUrl) {
       response.redirect(relayUrl);
       return;

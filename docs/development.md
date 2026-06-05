@@ -59,7 +59,7 @@ Required for Telegram login/linking:
 WEB_APP_URL="http://localhost:3000"
 TELEGRAM_CLIENT_ID="bot-or-client-id-from-botfather"
 TELEGRAM_CLIENT_SECRET="secret-from-botfather"
-TELEGRAM_REDIRECT_URI="https://your-stable-domain.ngrok-free.dev/auth/telegram/callback?redirectTo=http%3A%2F%2Flocalhost%3A4000%2Fauth%2Ftelegram%2Fcallback"
+TELEGRAM_REDIRECT_URI="https://your-stable-domain.ngrok-free.dev/auth/telegram/callback"
 TELEGRAM_AUTH_STATE_SECRET="paste-generated-secret-here"
 TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
 ```
@@ -77,7 +77,7 @@ Required in `packages/web/.env` for local web operation:
 NEXT_PUBLIC_API_URL="http://localhost:4000"
 ```
 
-Telegram does not accept `localhost` redirect URIs. For local Telegram testing, expose the API through ngrok and use the callback relay query shown above. Telegram redirects to ngrok, and the API immediately relays the callback parameters back to the local API callback, where the local state and session cookies are available.
+Telegram does not accept `localhost` redirect URIs. For local Telegram testing, expose the API through ngrok. Telegram redirects to the ngrok callback, and the API immediately relays non-local development callbacks back to the local API callback, where the local state and session cookies are available.
 
 Use ngrok only for the API:
 
@@ -94,7 +94,7 @@ WEB_APP_URL="http://localhost:3000"
 API_ALLOWED_ORIGINS="http://localhost:3000,http://127.0.0.1:3000"
 API_COOKIE_SAME_SITE="Lax"
 API_COOKIE_SECURE="false"
-TELEGRAM_REDIRECT_URI="https://your-stable-domain.ngrok-free.dev/auth/telegram/callback?redirectTo=http%3A%2F%2Flocalhost%3A4000%2Fauth%2Ftelegram%2Fcallback"
+TELEGRAM_REDIRECT_URI="https://your-stable-domain.ngrok-free.dev/auth/telegram/callback"
 
 # packages/web/.env
 NEXT_PUBLIC_API_URL="http://localhost:4000"
@@ -103,7 +103,7 @@ NEXT_PUBLIC_API_URL="http://localhost:4000"
 Register the same callback URI in BotFather:
 
 ```text
-https://your-stable-domain.ngrok-free.dev/auth/telegram/callback?redirectTo=http%3A%2F%2Flocalhost%3A4000%2Fauth%2Ftelegram%2Fcallback
+https://your-stable-domain.ngrok-free.dev/auth/telegram/callback
 ```
 
 Generate API secrets with:

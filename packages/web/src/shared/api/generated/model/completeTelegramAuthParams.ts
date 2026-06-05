@@ -7,7 +7,6 @@
  */
 
 export type CompleteTelegramAuthParams = {
-  redirectTo?: string;
   state?: string;
   code?: string;
 };

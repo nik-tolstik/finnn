@@ -565,7 +565,7 @@ pnpm check
 ### Results
 
 - `pnpm api:generate`: passed.
-- `pnpm --filter api test test/auth.e2e.test.ts`: passed, 25 tests.
+- `pnpm --filter api test test/auth.e2e.test.ts`: passed, 24 tests.
 - `pnpm typecheck`: passed.
 - `pnpm check`: passed.
 
@@ -573,7 +573,7 @@ pnpm check
 
 - Use one ngrok URL for the API callback only, then relay back to `localhost:4000` before validating state and creating the session.
 - Keep cookies local (`SameSite=Lax`, `Secure=false`) for development instead of relying on cross-host cookies.
-- Limit `redirectTo` to non-production local callback URLs to avoid an open redirect.
+- Avoid passing local URLs through Telegram; the backend relays non-local development callbacks based on the request host.
 - Avoid separate dev runner scripts and Next.js rewrites; developers can run `pnpm dev` and `ngrok http 4000` manually.
 
 ### Subagent Contributions
