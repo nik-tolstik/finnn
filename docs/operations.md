@@ -1,5 +1,33 @@
 # Operations
 
+## Deployment Domains
+
+Frontend deployments are hosted on Vercel:
+
+| Environment | URL |
+| --- | --- |
+| PROD | `https://finnn.xyz` |
+| DEV | `https://dev.finnn.xyz` |
+
+Backend API deployments are hosted on Railway:
+
+| Environment | URL |
+| --- | --- |
+| PROD | `https://api.finnn.xyz` |
+| DEV | `https://api-dev.finnn.xyz` |
+
+Keep environment variables aligned with the matching frontend/API pair:
+
+| Environment | `WEB_APP_URL` / `API_ALLOWED_ORIGINS` | `NEXT_PUBLIC_API_URL` | `TELEGRAM_REDIRECT_URI` |
+| --- | --- | --- | --- |
+| PROD | `https://finnn.xyz` | `https://api.finnn.xyz` | `https://api.finnn.xyz/auth/telegram/callback` |
+| DEV | `https://dev.finnn.xyz` | `https://api-dev.finnn.xyz` | `https://api-dev.finnn.xyz/auth/telegram/callback` |
+
+Telegram authentication uses two separate bots:
+
+- PROD bot: use only for `https://finnn.xyz` and `https://api.finnn.xyz`.
+- DEV bot: use for `https://dev.finnn.xyz`, `https://api-dev.finnn.xyz`, and localhost/ngrok testing.
+
 ## Production Environment
 
 Required variables:

@@ -233,6 +233,34 @@ describe("debt.api", () => {
     );
   });
 
+  it("normalizes close debt money fields before sending them to the API", async () => {
+    closeApiDebtMock.mockResolvedValue({ debt: createDebtDto({ status: DebtStatus.CLOSED, remainingAmount: "0" }) });
+
+    const { closeDebt } = await import("./debt.api");
+
+    await closeDebt(
+      "debt-1",
+      {
+        amount: "75,25",
+        paymentAmount: "75,25",
+        toAmount: "",
+        accountId: "account-1",
+        useAccount: true,
+      },
+      requestOptions
+    );
+
+    expect(closeApiDebtMock).toHaveBeenCalledWith(
+      "debt-1",
+      expect.objectContaining({
+        amount: "75.25",
+        paymentAmount: "75.25",
+        toAmount: undefined,
+      }),
+      requestOptions
+    );
+  });
+
   it("wraps edit-data and debt transaction responses", async () => {
     getApiDebtEditDataMock.mockResolvedValue({
       debt: {

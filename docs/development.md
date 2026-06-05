@@ -67,6 +67,7 @@ TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
 BotFather setup:
 
 - Create or select a bot in BotFather.
+- Use the DEV Telegram bot for localhost and ngrok testing. The PROD bot is reserved for `https://finnn.xyz`.
 - Open Bot Settings > Web Login.
 - Register the ngrok callback URI used for local Telegram testing.
 - Copy the client ID and client secret into `packages/api/.env`.

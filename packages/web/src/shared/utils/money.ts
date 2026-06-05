@@ -41,6 +41,19 @@ export function compareMoney(a: MoneyInput, b: MoneyInput): number {
   return 0;
 }
 
+export function normalizeMoneyString(amount: string): string {
+  return amount.trim().replace(/,/g, ".");
+}
+
+export function normalizeOptionalMoneyString(amount?: string | null): string | undefined {
+  if (amount === undefined || amount === null) {
+    return undefined;
+  }
+
+  const normalizedAmount = normalizeMoneyString(amount);
+  return normalizedAmount || undefined;
+}
+
 export function getCurrencySymbol(currency: string): string {
   const currencySymbols: Record<string, string> = {
     USD: "$",

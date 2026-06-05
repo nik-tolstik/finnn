@@ -23,6 +23,7 @@ function NumberInput({ className, onChange, ...props }: NumberInputProps) {
 
   return (
     <input
+      {...props}
       type="text"
       inputMode="decimal"
       data-slot="input"
@@ -33,7 +34,6 @@ function NumberInput({ className, onChange, ...props }: NumberInputProps) {
         className
       )}
       onChange={handleChange}
-      {...props}
     />
   );
 }

@@ -73,6 +73,9 @@ Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishi
 - Run `pnpm db:push` to apply schema/index changes to MongoDB.
 - `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`, SMTP variables, and `CRON_SECRET`.
 - `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL`.
+- Vercel web domains: PROD `https://finnn.xyz`, DEV `https://dev.finnn.xyz`.
+- Railway API domains: PROD `https://api.finnn.xyz`, DEV `https://api-dev.finnn.xyz`.
+- Telegram uses two bots: one PROD bot for production domains and one DEV bot for DEV plus localhost/ngrok testing.
 - SMTP variables are required for registration verification and workspace invite email delivery.
 - Backend scheduling should call the API endpoint `/cron/update-exchange-rates` with `Authorization: Bearer <CRON_SECRET>`.
 

@@ -185,7 +185,6 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
   const { data, isLoading } = useQuery({
     queryKey: debtKeys.list(workspaceId),
     queryFn: () => getDebts(workspaceId),
-    staleTime: 5000,
   });
 
   const debts = (data?.data || []).filter((d) => d.status === DebtStatus.OPEN);

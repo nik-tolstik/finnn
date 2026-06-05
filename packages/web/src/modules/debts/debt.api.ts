@@ -29,6 +29,7 @@ import type {
   UpdateDebtInput,
   UpdateDebtTransactionInput,
 } from "@/shared/lib/validations/debt";
+import { normalizeMoneyString, normalizeOptionalMoneyString } from "@/shared/utils/money";
 
 import type { DebtStatus, DebtType } from "./debt.constants";
 import type { DebtTransactionWithRelations, DebtWithRelations } from "./debt.types";
@@ -117,7 +118,7 @@ function toCreateDebtDto(input: CreateDebtInput): CreateDebtDto {
   return {
     type: input.type as CreateDebtDto["type"],
     personName: input.personName,
-    amount: input.amount,
+    amount: normalizeMoneyString(input.amount),
     date: input.date.toISOString(),
     useAccount: input.useAccount,
     accountId: input.accountId,
@@ -127,9 +128,9 @@ function toCreateDebtDto(input: CreateDebtInput): CreateDebtDto {
 
 function toCloseDebtDto(input: CloseDebtInput): CloseDebtDto {
   return {
-    amount: input.amount,
-    toAmount: input.toAmount,
-    paymentAmount: input.paymentAmount,
+    amount: normalizeMoneyString(input.amount),
+    toAmount: normalizeOptionalMoneyString(input.toAmount),
+    paymentAmount: normalizeOptionalMoneyString(input.paymentAmount),
     categoryId: input.categoryId,
     closeEarly: input.closeEarly,
     accountId: input.accountId,
@@ -139,7 +140,7 @@ function toCloseDebtDto(input: CloseDebtInput): CloseDebtDto {
 
 function toAddToDebtDto(input: AddToDebtInput): AddToDebtDto {
   return {
-    amount: input.amount,
+    amount: normalizeMoneyString(input.amount),
     useAccount: input.useAccount,
   };
 }
@@ -147,15 +148,15 @@ function toAddToDebtDto(input: AddToDebtInput): AddToDebtDto {
 function toUpdateDebtDto(input: UpdateDebtInput): UpdateDebtDto {
   return {
     personName: input.personName,
-    amount: input.amount,
+    amount: normalizeMoneyString(input.amount),
     date: input.date.toISOString(),
   };
 }
 
 function toUpdateDebtTransactionDto(input: UpdateDebtTransactionInput): UpdateDebtEntryTransactionDto {
   return {
-    amount: input.amount,
-    toAmount: input.toAmount,
+    amount: normalizeMoneyString(input.amount),
+    toAmount: normalizeOptionalMoneyString(input.toAmount),
     accountId: input.accountId,
     date: input.date.toISOString(),
   };
