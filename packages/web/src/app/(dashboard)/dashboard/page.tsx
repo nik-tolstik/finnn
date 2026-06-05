@@ -1,22 +1,11 @@
-"use client";
+import { Suspense } from "react";
 
-import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
-import { useWorkspaceRoute } from "@/modules/workspace/useWorkspaceRoute";
-import { useSession } from "@/shared/lib/api-session-client";
-
-import { DashboardContent } from "./components/DashboardContent";
+import { DashboardPageClient } from "./components/DashboardPageClient";
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
-  const { workspaceId, isInitialLoading, shouldShowCreateWorkspacePrompt } = useWorkspaceRoute();
-
-  if (shouldShowCreateWorkspacePrompt) {
-    return <CreateWorkspacePrompt />;
-  }
-
-  if (isInitialLoading || !workspaceId) {
-    return null;
-  }
-
-  return <DashboardContent initialCurrentUserId={session?.user.id} workspaceId={workspaceId} />;
+  return (
+    <Suspense fallback={null}>
+      <DashboardPageClient />
+    </Suspense>
+  );
 }
