@@ -27,9 +27,13 @@ import { apiClient } from "../../http-client";
 import type {
   ApiErrorDto,
   AuthUserResponseDto,
+  CompleteTelegramAuthParams,
   LoginDto,
   RegisterDto,
+  RequestEmailVerificationDto,
   SessionResponseDto,
+  StartTelegramAuthParams,
+  StartTelegramLinkParams,
   SuccessResponseDto,
   UpdateUserDto,
   VerifyEmailResponseDto,
@@ -335,6 +339,258 @@ export function useLogin<TData = Awaited<ReturnType<typeof login>>, TError = Err
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export const getStartTelegramAuthUrl = (params?: StartTelegramAuthParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/auth/telegram/start?${stringifiedParams}` : `/auth/telegram/start`;
+};
+
+/**
+ * @summary Start Telegram OIDC authentication
+ */
+export const startTelegramAuth = async (params?: StartTelegramAuthParams, options?: RequestInit): Promise<unknown> => {
+  return apiClient<unknown>(getStartTelegramAuthUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getStartTelegramAuthMutationOptions = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startTelegramAuth>>,
+    TError,
+    { params?: StartTelegramAuthParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startTelegramAuth>>,
+  TError,
+  { params?: StartTelegramAuthParams },
+  TContext
+> => {
+  const mutationKey = ["startTelegramAuth"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startTelegramAuth>>,
+    { params?: StartTelegramAuthParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return startTelegramAuth(params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartTelegramAuthMutationResult = NonNullable<Awaited<ReturnType<typeof startTelegramAuth>>>;
+
+export type StartTelegramAuthMutationError = ErrorType<ApiErrorDto>;
+
+/**
+ * @summary Start Telegram OIDC authentication
+ */
+export const useStartTelegramAuth = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startTelegramAuth>>,
+      TError,
+      { params?: StartTelegramAuthParams },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof startTelegramAuth>>,
+  TError,
+  { params?: StartTelegramAuthParams },
+  TContext
+> => {
+  return useMutation(getStartTelegramAuthMutationOptions(options), queryClient);
+};
+export const getStartTelegramLinkUrl = (params?: StartTelegramLinkParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/auth/telegram/link/start?${stringifiedParams}` : `/auth/telegram/link/start`;
+};
+
+/**
+ * @summary Start Telegram account linking
+ */
+export const startTelegramLink = async (params?: StartTelegramLinkParams, options?: RequestInit): Promise<unknown> => {
+  return apiClient<unknown>(getStartTelegramLinkUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getStartTelegramLinkMutationOptions = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startTelegramLink>>,
+    TError,
+    { params?: StartTelegramLinkParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startTelegramLink>>,
+  TError,
+  { params?: StartTelegramLinkParams },
+  TContext
+> => {
+  const mutationKey = ["startTelegramLink"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startTelegramLink>>,
+    { params?: StartTelegramLinkParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return startTelegramLink(params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartTelegramLinkMutationResult = NonNullable<Awaited<ReturnType<typeof startTelegramLink>>>;
+
+export type StartTelegramLinkMutationError = ErrorType<ApiErrorDto>;
+
+/**
+ * @summary Start Telegram account linking
+ */
+export const useStartTelegramLink = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startTelegramLink>>,
+      TError,
+      { params?: StartTelegramLinkParams },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof startTelegramLink>>,
+  TError,
+  { params?: StartTelegramLinkParams },
+  TContext
+> => {
+  return useMutation(getStartTelegramLinkMutationOptions(options), queryClient);
+};
+export const getCompleteTelegramAuthUrl = (params?: CompleteTelegramAuthParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/auth/telegram/callback?${stringifiedParams}` : `/auth/telegram/callback`;
+};
+
+/**
+ * @summary Complete Telegram OIDC authentication
+ */
+export const completeTelegramAuth = async (
+  params?: CompleteTelegramAuthParams,
+  options?: RequestInit
+): Promise<unknown> => {
+  return apiClient<unknown>(getCompleteTelegramAuthUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getCompleteTelegramAuthMutationOptions = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeTelegramAuth>>,
+    TError,
+    { params?: CompleteTelegramAuthParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeTelegramAuth>>,
+  TError,
+  { params?: CompleteTelegramAuthParams },
+  TContext
+> => {
+  const mutationKey = ["completeTelegramAuth"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeTelegramAuth>>,
+    { params?: CompleteTelegramAuthParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return completeTelegramAuth(params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteTelegramAuthMutationResult = NonNullable<Awaited<ReturnType<typeof completeTelegramAuth>>>;
+
+export type CompleteTelegramAuthMutationError = ErrorType<ApiErrorDto>;
+
+/**
+ * @summary Complete Telegram OIDC authentication
+ */
+export const useCompleteTelegramAuth = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeTelegramAuth>>,
+      TError,
+      { params?: CompleteTelegramAuthParams },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeTelegramAuth>>,
+  TError,
+  { params?: CompleteTelegramAuthParams },
+  TContext
+> => {
+  return useMutation(getCompleteTelegramAuthMutationOptions(options), queryClient);
+};
 export const getLogoutUrl = () => {
   return `/auth/logout`;
 };
@@ -574,6 +830,230 @@ export function useUpdateUser<TData = Awaited<ReturnType<typeof updateUser>>, TE
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getUpdateUserQueryOptions(updateUserDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getRequestEmailVerificationUrl = () => {
+  return `/auth/email`;
+};
+
+/**
+ * @summary Request verification for current user email
+ */
+export const requestEmailVerification = async (
+  requestEmailVerificationDto: RequestEmailVerificationDto,
+  options?: RequestInit
+): Promise<SuccessResponseDto> => {
+  return apiClient<SuccessResponseDto>(getRequestEmailVerificationUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(requestEmailVerificationDto),
+  });
+};
+
+export const getRequestEmailVerificationQueryKey = (
+  requestEmailVerificationDto?: BodyType<RequestEmailVerificationDto>
+) => {
+  return ["POST", `/auth/email`, requestEmailVerificationDto] as const;
+};
+
+export const getRequestEmailVerificationQueryOptions = <
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRequestEmailVerificationQueryKey(requestEmailVerificationDto);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof requestEmailVerification>>> = ({ signal }) =>
+    requestEmailVerification(requestEmailVerificationDto, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof requestEmailVerification>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RequestEmailVerificationQueryResult = NonNullable<Awaited<ReturnType<typeof requestEmailVerification>>>;
+export type RequestEmailVerificationQueryError = ErrorType<ApiErrorDto>;
+
+export function useRequestEmailVerification<
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof requestEmailVerification>>,
+          TError,
+          Awaited<ReturnType<typeof requestEmailVerification>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRequestEmailVerification<
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof requestEmailVerification>>,
+          TError,
+          Awaited<ReturnType<typeof requestEmailVerification>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRequestEmailVerification<
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Request verification for current user email
+ */
+
+export function useRequestEmailVerification<
+  TData = Awaited<ReturnType<typeof requestEmailVerification>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  requestEmailVerificationDto: BodyType<RequestEmailVerificationDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getRequestEmailVerificationQueryOptions(requestEmailVerificationDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getUnlinkTelegramUrl = () => {
+  return `/auth/telegram/link`;
+};
+
+/**
+ * @summary Unlink Telegram from the current user
+ */
+export const unlinkTelegram = async (options?: RequestInit): Promise<AuthUserResponseDto> => {
+  return apiClient<AuthUserResponseDto>(getUnlinkTelegramUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getUnlinkTelegramQueryKey = () => {
+  return ["DELETE", `/auth/telegram/link`] as const;
+};
+
+export const getUnlinkTelegramQueryOptions = <
+  TData = Awaited<ReturnType<typeof unlinkTelegram>>,
+  TError = ErrorType<ApiErrorDto>,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkTelegram>>, TError, TData>>;
+  request?: SecondParameter<typeof apiClient>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getUnlinkTelegramQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof unlinkTelegram>>> = ({ signal }) =>
+    unlinkTelegram({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof unlinkTelegram>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UnlinkTelegramQueryResult = NonNullable<Awaited<ReturnType<typeof unlinkTelegram>>>;
+export type UnlinkTelegramQueryError = ErrorType<ApiErrorDto>;
+
+export function useUnlinkTelegram<TData = Awaited<ReturnType<typeof unlinkTelegram>>, TError = ErrorType<ApiErrorDto>>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkTelegram>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof unlinkTelegram>>,
+          TError,
+          Awaited<ReturnType<typeof unlinkTelegram>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUnlinkTelegram<TData = Awaited<ReturnType<typeof unlinkTelegram>>, TError = ErrorType<ApiErrorDto>>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkTelegram>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof unlinkTelegram>>,
+          TError,
+          Awaited<ReturnType<typeof unlinkTelegram>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUnlinkTelegram<TData = Awaited<ReturnType<typeof unlinkTelegram>>, TError = ErrorType<ApiErrorDto>>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkTelegram>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Unlink Telegram from the current user
+ */
+
+export function useUnlinkTelegram<TData = Awaited<ReturnType<typeof unlinkTelegram>>, TError = ErrorType<ApiErrorDto>>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkTelegram>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getUnlinkTelegramQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

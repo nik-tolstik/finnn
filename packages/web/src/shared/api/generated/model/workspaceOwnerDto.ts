@@ -10,7 +10,8 @@ export interface WorkspaceOwnerDto {
   id: string;
   /** @nullable */
   name: string | null;
-  email: string;
+  /** @nullable */
+  email?: string | null;
   /** @nullable */
   image?: string | null;
 }

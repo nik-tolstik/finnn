@@ -6,12 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AccountOwnerDto {
-  id: string;
+export interface TelegramAuthStatusDto {
+  linked: boolean;
   /** @nullable */
-  name: string | null;
+  username?: string | null;
   /** @nullable */
-  email?: string | null;
+  displayName?: string | null;
   /** @nullable */
-  image?: string | null;
+  photoUrl?: string | null;
 }

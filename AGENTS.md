@@ -11,6 +11,7 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 
 ## Required Workflow
 
+- Use `pnpm` as the package manager. Do not use `npm` or `yarn` unless the repository explicitly requires them.
 - Use Context7 for library and framework documentation when it is relevant.
 - Use subagents for parallel code analysis, implementation, or verification when they can reduce risk or latency.
 - Do not revert user changes unless the user explicitly requests it.
@@ -49,7 +50,7 @@ Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishi
 - `packages/api/prisma/schema.prisma` is the source of truth for database collections, relations, indexes, and enums.
 - `packages/api/scripts` contains seed, MongoDB import/export, and OpenAPI generation scripts.
 - `docs` contains human and AI-facing project documentation.
-- `docs` contains human and AI-facing project documentation.
+- `docs/plans` contains feature implementation plans and required work logs for multi-agent tasks.
 
 ## Implementation Rules
 
@@ -71,12 +72,13 @@ Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishi
 - Run `pnpm db:generate` after schema changes.
 - Run `pnpm db:push` to apply schema/index changes to MongoDB.
 - `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`, SMTP variables, and `CRON_SECRET`.
-- `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_APP_URL`.
+- `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL`.
 - SMTP variables are required for registration verification and workspace invite email delivery.
 - Backend scheduling should call the API endpoint `/cron/update-exchange-rates` with `Authorization: Bearer <CRON_SECRET>`.
 
 ## Documentation Expectations
 
 - Update `AGENTS.md` and `docs/` when changing architecture, setup, data model, workflows, deployment, or agent-facing conventions.
+- When implementing from `docs/plans/<feature>`, follow the plan and keep its work log current.
 - Keep README concise and link to detailed docs instead of duplicating large sections.
 - Prefer concrete file paths, commands, invariants, and failure modes over generic descriptions.

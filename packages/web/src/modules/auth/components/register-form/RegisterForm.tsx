@@ -16,6 +16,8 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
 import { registerFormSchema } from "../../auth.validations";
+import { redirectToTelegramAuth } from "../../telegram-auth-url";
+import { TelegramAuthButton } from "../telegram-auth-button";
 
 type RegisterFormInput = z.infer<typeof registerFormSchema>;
 
@@ -139,6 +141,10 @@ export function RegisterForm() {
             {isLoading ? "Создание аккаунта..." : "Создать аккаунт"}
           </Button>
         </form>
+
+        <div className="mt-3">
+          <TelegramAuthButton disabled={isLoading} onClick={() => redirectToTelegramAuth("/dashboard")} />
+        </div>
 
         <div className="mt-4 space-y-2">
           <div className="text-center text-sm">

@@ -16,6 +16,7 @@ cp packages/web/.env.example packages/web/.env
 docker compose up -d
 pnpm db:generate
 pnpm db:push
+pnpm db:ensure-indexes
 pnpm dev
 ```
 
@@ -52,11 +53,57 @@ SMTP_PASSWORD="paste-smtp-password-here"
 SMTP_FROM="Finnn <your-email@example.com>"
 ```
 
+Required for Telegram login/linking:
+
+```env
+WEB_APP_URL="http://localhost:3000"
+TELEGRAM_CLIENT_ID="bot-or-client-id-from-botfather"
+TELEGRAM_CLIENT_SECRET="secret-from-botfather"
+TELEGRAM_REDIRECT_URI="https://your-stable-domain.ngrok-free.dev/auth/telegram/callback"
+TELEGRAM_AUTH_STATE_SECRET="paste-generated-secret-here"
+TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
+```
+
+BotFather setup:
+
+- Create or select a bot in BotFather.
+- Open Bot Settings > Web Login.
+- Register the ngrok callback URI used for local Telegram testing.
+- Copy the client ID and client secret into `packages/api/.env`.
+
 Required in `packages/web/.env` for local web operation:
 
 ```env
 NEXT_PUBLIC_API_URL="http://localhost:4000"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+Telegram does not accept `localhost` redirect URIs. For local Telegram testing, expose the API through ngrok. Telegram redirects to the ngrok callback, and the API immediately relays non-local development callbacks back to the local API callback, where the local state and session cookies are available.
+
+Use ngrok only for the API:
+
+```bash
+pnpm dev
+ngrok http 4000 --url https://your-stable-domain.ngrok-free.dev
+```
+
+Use these values while testing through ngrok:
+
+```env
+# packages/api/.env
+WEB_APP_URL="http://localhost:3000"
+API_ALLOWED_ORIGINS="http://localhost:3000,http://127.0.0.1:3000"
+API_COOKIE_SAME_SITE="Lax"
+API_COOKIE_SECURE="false"
+TELEGRAM_REDIRECT_URI="https://your-stable-domain.ngrok-free.dev/auth/telegram/callback"
+
+# packages/web/.env
+NEXT_PUBLIC_API_URL="http://localhost:4000"
+```
+
+Register the same callback URI in BotFather:
+
+```text
+https://your-stable-domain.ngrok-free.dev/auth/telegram/callback
 ```
 
 Generate API secrets with:
@@ -83,13 +130,15 @@ Database scripts:
 ```bash
 pnpm db:generate  # Generate Prisma Client
 pnpm db:push      # Apply schema and indexes to MongoDB
+pnpm db:ensure-indexes # Ensure partial unique email index for optional email users
 pnpm db:seed      # Seed sample data
 pnpm db:export    # Export MongoDB data
 pnpm db:import <backup-dir> --drop --db=<database-name> # Import MongoDB data
 ```
 
 Root database commands delegate to `packages/api`. The source files are `packages/api/scripts/db-seed.ts`,
-`packages/api/scripts/mongo-export.ts`, and `packages/api/scripts/mongo-import.ts`.
+`packages/api/scripts/mongo-export.ts`, `packages/api/scripts/mongo-import.ts`, and
+`packages/api/scripts/ensure-indexes.ts`.
 
 ## Prisma Workflow
 
@@ -107,6 +156,8 @@ For this project:
 - Edit `packages/api/prisma/schema.prisma` for models, indexes, enums, and relations.
 - Run `pnpm db:generate` after schema changes.
 - Run `pnpm db:push` to apply collection and index changes to MongoDB.
+- Run `pnpm db:ensure-indexes` after user/email schema changes. It replaces non-partial `users.email` indexes
+  with `users_email_unique_partial`, allowing multiple users without email while keeping string emails unique.
 - Keep MongoDB ObjectId fields in the existing pattern: `String @id @default(auto()) @map("_id") @db.ObjectId`.
 - Prefer string money amounts over floats or numbers in persisted financial fields.
 

@@ -2,7 +2,7 @@ import type { Request } from "express";
 
 export type AuthenticatedUser = {
   id: string;
-  email: string;
+  email: string | null;
   name: string | null;
   image: string | null;
 };

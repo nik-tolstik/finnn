@@ -22,8 +22,8 @@ class AccountOwnerDto {
   @ApiProperty({ example: "Ada", nullable: true, type: String })
   name!: string | null;
 
-  @ApiProperty({ example: "ada@example.com", type: String })
-  email!: string;
+  @ApiPropertyOptional({ example: "ada@example.com", nullable: true, type: String })
+  email!: string | null;
 
   @ApiPropertyOptional({ example: "avatar-01", nullable: true, type: String })
   image!: string | null;

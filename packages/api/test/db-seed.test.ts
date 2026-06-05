@@ -27,7 +27,9 @@ type MockPrisma = {
     deleteMany: ReturnType<typeof vi.fn>;
   };
   user: {
-    upsert: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    findFirst: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
   };
   workspace: {
     upsert: ReturnType<typeof vi.fn>;
@@ -78,7 +80,9 @@ function createPrismaMock(): MockPrisma {
       deleteMany: vi.fn(async () => ({ count: 0 })),
     },
     user: {
-      upsert: vi.fn(async () => ({ id: "user-1" })),
+      create: vi.fn(async () => ({ id: "user-1" })),
+      findFirst: vi.fn(async () => null),
+      update: vi.fn(async ({ data, where }) => ({ id: where.id, ...data })),
     },
     workspace: {
       upsert: vi.fn(async () => ({ id: "workspace-1" })),
@@ -98,9 +102,12 @@ describe("database seed script", () => {
       now: new Date("2026-05-26T12:00:00.000Z"),
     });
 
-    expect(prisma.user.upsert).toHaveBeenCalledWith(
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: { email: ADMIN_EMAIL },
+    });
+    expect(prisma.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        create: expect.objectContaining({
+        data: expect.objectContaining({
           email: ADMIN_EMAIL,
           emailVerified: new Date("2026-05-26T12:00:00.000Z"),
           password: "hashed-password",

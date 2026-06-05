@@ -3,7 +3,7 @@ import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 export type TransactionUser = {
   id: string;
   name: string | null;
-  email: string;
+  email?: string | null;
   image: string | null;
 };
 
