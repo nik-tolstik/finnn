@@ -4,6 +4,7 @@ import {
   ApiBody,
   ApiCookieAuth,
   ApiCreatedResponse,
+  ApiExtraModels,
   ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -25,7 +26,7 @@ import {
   CloseDebtDto,
   CreateDebtDto,
   DebtEditDataResponseDto,
-  type DebtListQueryDto,
+  DebtListQueryDto,
   DebtListResponseDto,
   DebtResponseDto,
   DebtTransactionResponseDto,
@@ -36,6 +37,7 @@ import { DebtsService } from "./debts.service";
 
 @Controller()
 @ApiTags("Debts")
+@ApiExtraModels(DebtListQueryDto)
 @UseGuards(AuthGuard)
 @ApiCookieAuth(AUTH_COOKIE_NAME)
 export class DebtsController {
