@@ -25,7 +25,12 @@ export function CombinedTransactionItem({
 }: CombinedTransactionItemProps) {
   if (item.kind === "debtTransaction") {
     return (
-      <DebtTransactionItem debtTransaction={item.data} workspaceName={workspaceName} onClick={onDebtTransactionClick} />
+      <DebtTransactionItem
+        debtTransaction={item.data}
+        workspaceName={workspaceName}
+        WorkspaceIcon={WorkspaceIcon}
+        onClick={onDebtTransactionClick}
+      />
     );
   }
 

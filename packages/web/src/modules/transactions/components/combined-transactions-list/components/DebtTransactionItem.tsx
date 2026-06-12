@@ -1,4 +1,5 @@
-import { DebtTransactionType, DebtType } from "@/modules/debts/debt.constants";
+import type { LucideIcon } from "lucide-react";
+
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { getAccountIcon } from "@/shared/utils/account-icons";
@@ -6,14 +7,21 @@ import { getAccountIcon } from "@/shared/utils/account-icons";
 import { getTransactionDescriptionSegments } from "../../../utils/transactionDescription";
 import { TransactionDescriptionLine } from "../../transaction-description-line/TransactionDescriptionLine";
 import { getDebtTransactionAmountDisplay } from "../utils/transactionAmountDisplay";
+import { TransactionActorAvatar } from "./TransactionActorAvatar";
 
 interface DebtTransactionItemProps {
   debtTransaction: DebtTransactionWithRelations;
   workspaceName: string;
+  WorkspaceIcon: LucideIcon;
   onClick: (debtTransaction: DebtTransactionWithRelations) => void;
 }
 
-export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }: DebtTransactionItemProps) {
+export function DebtTransactionItem({
+  debtTransaction,
+  workspaceName,
+  WorkspaceIcon,
+  onClick,
+}: DebtTransactionItemProps) {
   const { segments } = getTransactionDescriptionSegments(
     {
       kind: "debtTransaction",
@@ -21,23 +29,18 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
     },
     workspaceName
   );
-  const isAccountOwnerActor =
-    (debtTransaction.debt.type === DebtType.LENT && debtTransaction.type !== DebtTransactionType.CLOSED) ||
-    (debtTransaction.debt.type === DebtType.BORROWED && debtTransaction.type === DebtTransactionType.CLOSED);
   const amount = getDebtTransactionAmountDisplay(debtTransaction);
   const DebtAccountIcon = debtTransaction.account ? getAccountIcon(debtTransaction.account.icon) : null;
-  const actorAvatar =
-    isAccountOwnerActor && debtTransaction.account?.owner ? (
-      <UserDisplay
-        name={debtTransaction.account.owner.name}
-        email={debtTransaction.account.owner.email}
-        image={debtTransaction.account.owner.image}
-        showName
-        size="sm"
-      />
-    ) : (
-      <UserDisplay name={debtTransaction.debt.personName} showName size="sm" />
-    );
+  const actorAvatar = debtTransaction.account ? (
+    <TransactionActorAvatar
+      account={debtTransaction.account}
+      WorkspaceIcon={WorkspaceIcon}
+      showName
+      workspaceName={workspaceName}
+    />
+  ) : (
+    <UserDisplay name={debtTransaction.debt.personName} showName size="sm" />
+  );
 
   return (
     <TransactionDescriptionLine

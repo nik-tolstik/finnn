@@ -1,9 +1,9 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 
 import type { Account } from "@/modules/accounts/account.types";
+import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
@@ -15,16 +15,8 @@ import { getVisibleAccounts, resolveViewerUserId } from "../../account-visibilit
 import { AccountActionsDialog } from "../account-actions-dialog/AccountActionsDialog";
 import { AccountsCardsSkeleton } from "../accounts-cards-skeleton/AccountsCardsSkeleton";
 import { ArchiveAccountDialog } from "../archive-account-dialog/ArchiveAccountDialog";
-
-const AccountsCardsReorderView = dynamic(() =>
-  import("./AccountsCardsReorderView").then((mod) => mod.AccountsCardsReorderView)
-);
-const CreateTransactionDialog = dynamic(() =>
-  import("@/modules/transactions/components/create-transaction-dialog").then((mod) => mod.CreateTransactionDialog)
-);
-const EditAccountDialog = dynamic(() =>
-  import("../edit-account-dialog/EditAccountDialog").then((mod) => mod.EditAccountDialog)
-);
+import { EditAccountDialog } from "../edit-account-dialog/EditAccountDialog";
+import { AccountsCardsReorderView } from "./AccountsCardsReorderView";
 
 type AccountWithOwner = Account & {
   owner?: {
