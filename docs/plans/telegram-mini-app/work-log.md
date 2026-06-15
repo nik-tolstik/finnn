@@ -277,3 +277,57 @@ git diff --stat
 
 - Phase 4 should inspect and complete the existing dirty Telegram Mini App frontend bootstrap files without discarding
   them.
+
+## 2026-06-15 17:07 +03 - Codex / Orchestrator + Frontend Developer
+
+### Scope
+
+- Completed Phases 4, 5, and 6 frontend Telegram Mini App bootstrap and protected-route integration.
+- Added a global Telegram Mini App bootstrap provider under `ApiSessionProvider`.
+- Detects `window.Telegram.WebApp`, calls `ready()` and `expand()`, reads only raw `initData`, and posts it through the
+  generated `createTelegramMiniAppSession` client.
+- Refreshes the existing API session after successful Mini App authentication.
+- Updates `DashboardAuthGate` so Telegram Mini App authentication can finish before redirecting unauthenticated users to
+  `/login`, while preserving normal browser redirects.
+- Shows a toast error if Mini App authentication fails and then allows the normal login fallback.
+
+### Files Changed
+
+- `packages/web/src/app/providers.tsx`
+- `packages/web/src/app/(dashboard)/components/DashboardAuthGate.tsx`
+- `packages/web/src/modules/telegram-mini/TelegramMiniAppBootstrap.tsx`
+- `packages/web/src/modules/telegram-mini/telegram-mini.api.ts`
+- `packages/web/src/modules/telegram-mini/telegram-mini.types.ts`
+- `packages/web/src/modules/telegram-mini/useTelegramMiniApp.ts`
+- `docs/plans/telegram-mini-app/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter web typecheck
+pnpm --filter web check
+pnpm --filter web test src/shared/lib/api-session.test.ts
+```
+
+### Results
+
+- `pnpm --filter web typecheck`: passed.
+- `pnpm --filter web check`: passed.
+- `pnpm --filter web test src/shared/lib/api-session.test.ts`: passed, 5 tests.
+
+### Decisions
+
+- Keep the Mini App bootstrap global instead of adding a `/mini` shell, preserving existing Finnn routes and UI.
+- Use the existing HTTP-only cookie session and `useSession().update()` refresh path after Mini App session creation.
+- Limit Telegram WebView compatibility calls to `ready()` and `expand()` for the MVP.
+- Avoid Telegram theme, BackButton, MainButton, viewport, or safe-area styling until real client testing shows a need.
+
+### Subagent Contributions
+
+- Zeno / Developer agent created and pushed the Phase 2 backend implementation and Phase 3 generated-client checkpoint.
+
+### Blockers / Follow-ups
+
+- Real Telegram client testing remains blocked until the branch is deployed and PROD/DEV BotFather Mini App URLs are
+  configured.
+- Documentation still needs BotFather Mini App setup, env vars, and local HTTPS tunnel notes.
