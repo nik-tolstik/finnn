@@ -178,6 +178,74 @@
         "tags": ["Auth"]
       }
     },
+    "/auth/telegram-mini/session": {
+      "post": {
+        "operationId": "createTelegramMiniAppSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramMiniAppSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "headers": {
+              "Set-Cookie": {
+                "description": "HTTP-only finnn_session session cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthUserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a session from Telegram Mini App data",
+        "tags": ["Auth"]
+      }
+    },
     "/auth/telegram/start": {
       "get": {
         "operationId": "startTelegramAuth",
@@ -3855,6 +3923,17 @@
         },
         "required": ["user"]
       },
+      "TelegramMiniAppSessionDto": {
+        "type": "object",
+        "properties": {
+          "initData": {
+            "type": "string",
+            "description": "Raw Telegram.WebApp.initData query string received from the Telegram Mini App runtime.",
+            "example": "query_id=AAHdF6IQAAAAAN0XohDhrOrc&user=%7B%22id%22%3A123%7D&auth_date=1710000000&hash=..."
+          }
+        },
+        "required": ["initData"]
+      },
       "SessionResponseDto": {
         "type": "object",
         "properties": {
@@ -4724,6 +4803,25 @@
           }
         },
         "required": ["count"]
+      },
+      "DebtListQueryDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["open", "closed"],
+            "example": "open"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["lent", "borrowed"],
+            "example": "lent"
+          },
+          "personName": {
+            "type": "string",
+            "example": "Grace"
+          }
+        }
       },
       "DebtAccountDto": {
         "type": "object",

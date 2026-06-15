@@ -35,6 +35,7 @@ import type {
   StartTelegramAuthParams,
   StartTelegramLinkParams,
   SuccessResponseDto,
+  TelegramMiniAppSessionDto,
   UpdateUserDto,
   VerifyEmailResponseDto,
 } from "../model";
@@ -331,6 +332,133 @@ export function useLogin<TData = Awaited<ReturnType<typeof login>>, TError = Err
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getLoginQueryOptions(loginDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateTelegramMiniAppSessionUrl = () => {
+  return `/auth/telegram-mini/session`;
+};
+
+/**
+ * @summary Create a session from Telegram Mini App data
+ */
+export const createTelegramMiniAppSession = async (
+  telegramMiniAppSessionDto: TelegramMiniAppSessionDto,
+  options?: RequestInit
+): Promise<AuthUserResponseDto> => {
+  return apiClient<AuthUserResponseDto>(getCreateTelegramMiniAppSessionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(telegramMiniAppSessionDto),
+  });
+};
+
+export const getCreateTelegramMiniAppSessionQueryKey = (
+  telegramMiniAppSessionDto?: BodyType<TelegramMiniAppSessionDto>
+) => {
+  return ["POST", `/auth/telegram-mini/session`, telegramMiniAppSessionDto] as const;
+};
+
+export const getCreateTelegramMiniAppSessionQueryOptions = <
+  TData = Awaited<ReturnType<typeof createTelegramMiniAppSession>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  telegramMiniAppSessionDto: BodyType<TelegramMiniAppSessionDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof createTelegramMiniAppSession>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getCreateTelegramMiniAppSessionQueryKey(telegramMiniAppSessionDto);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof createTelegramMiniAppSession>>> = ({ signal }) =>
+    createTelegramMiniAppSession(telegramMiniAppSessionDto, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof createTelegramMiniAppSession>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type CreateTelegramMiniAppSessionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof createTelegramMiniAppSession>>
+>;
+export type CreateTelegramMiniAppSessionQueryError = ErrorType<ApiErrorDto>;
+
+export function useCreateTelegramMiniAppSession<
+  TData = Awaited<ReturnType<typeof createTelegramMiniAppSession>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  telegramMiniAppSessionDto: BodyType<TelegramMiniAppSessionDto>,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof createTelegramMiniAppSession>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof createTelegramMiniAppSession>>,
+          TError,
+          Awaited<ReturnType<typeof createTelegramMiniAppSession>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useCreateTelegramMiniAppSession<
+  TData = Awaited<ReturnType<typeof createTelegramMiniAppSession>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  telegramMiniAppSessionDto: BodyType<TelegramMiniAppSessionDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof createTelegramMiniAppSession>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof createTelegramMiniAppSession>>,
+          TError,
+          Awaited<ReturnType<typeof createTelegramMiniAppSession>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useCreateTelegramMiniAppSession<
+  TData = Awaited<ReturnType<typeof createTelegramMiniAppSession>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  telegramMiniAppSessionDto: BodyType<TelegramMiniAppSessionDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof createTelegramMiniAppSession>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Create a session from Telegram Mini App data
+ */
+
+export function useCreateTelegramMiniAppSession<
+  TData = Awaited<ReturnType<typeof createTelegramMiniAppSession>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  telegramMiniAppSessionDto: BodyType<TelegramMiniAppSessionDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof createTelegramMiniAppSession>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getCreateTelegramMiniAppSessionQueryOptions(telegramMiniAppSessionDto, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
