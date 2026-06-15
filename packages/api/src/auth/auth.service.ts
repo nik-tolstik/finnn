@@ -221,6 +221,17 @@ function getTelegramProviderUserIdHash(providerUserId: string): string {
   return createHash("sha256").update(providerUserId).digest("hex").slice(0, 12);
 }
 
+function getTelegramOidcIdLikeClaims(claims: TelegramClaims) {
+  return Object.entries(claims)
+    .filter(([key]) => key.toLowerCase().includes("id"))
+    .map(([key, value]) => ({
+      key,
+      type: typeof value,
+      value:
+        typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : null,
+    }));
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -575,6 +586,7 @@ export class AuthService {
       codeVerifier: statePayload.codeVerifier,
       nonce: statePayload.nonce,
     });
+    this.logTelegramOidcClaims(claims, statePayload.mode);
 
     if (statePayload.mode === "link") {
       const user = await this.linkTelegramIdentityForUser(statePayload.userId, claims);
@@ -658,6 +670,19 @@ export class AuthService {
       stateCookieValue: signTelegramState(payload),
       ttlSeconds,
     };
+  }
+
+  private logTelegramOidcClaims(claims: TelegramClaims, mode: TelegramAuthMode): void {
+    this.logger.log({
+      event: "telegram_oidc_claims",
+      claimKeys: Object.keys(claims).sort(),
+      hasPicture: Boolean(getTelegramPhotoUrl(claims)),
+      idLikeClaims: getTelegramOidcIdLikeClaims(claims),
+      mode,
+      providerUserIdHash: getTelegramProviderUserIdHash(claims.sub),
+      providerUserIdLength: claims.sub.length,
+      telegramUsername: getTelegramUsername(claims),
+    });
   }
 
   private logTelegramMiniAppSessionEvent(
