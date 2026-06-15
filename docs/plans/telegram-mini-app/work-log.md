@@ -499,3 +499,60 @@ pnpm --filter web test src/shared/lib/api-session.test.ts
 ### Blockers / Follow-ups
 
 - Real Telegram client testing is still required after deployment.
+
+## 2026-06-15 17:13 +03 - Codex / Verification
+
+### Scope
+
+- Completed Phase 8 automated verification.
+- Re-ran focused backend, frontend, and generated-client checks.
+- Ran the broader repository typecheck, check, test, and production build commands.
+- Recorded manual Telegram client verification as blocked pending deployment and BotFather setup.
+
+### Files Changed
+
+- `docs/plans/telegram-mini-app/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter api test test/auth.e2e.test.ts
+pnpm --filter web test src/shared/lib/api-session.test.ts
+pnpm api:check-generated
+pnpm typecheck
+pnpm check
+pnpm test
+pnpm build
+git status --short
+```
+
+### Results
+
+- `pnpm --filter api test test/auth.e2e.test.ts`: passed, 31 tests.
+- `pnpm --filter web test src/shared/lib/api-session.test.ts`: passed, 5 tests.
+- `pnpm api:check-generated`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm check`: passed.
+- `pnpm test`: passed, API 121 tests and web 89 tests.
+- `pnpm build`: passed for API and web.
+- `git status --short`: clean after build.
+
+### Decisions
+
+- Do not add bearer-token fallback; automated verification and implementation remain aligned with the existing
+  HTTP-only cookie session model.
+- Leave Telegram WebView-specific UI/theme/back-button behavior out of MVP until real client testing proves it is
+  needed.
+
+### Subagent Contributions
+
+- Zeno / Developer agent completed and pushed earlier backend, generated-client, frontend follow-up, and compatibility
+  checkpoints during the orchestration workflow.
+
+### Blockers / Follow-ups
+
+- Manual PROD/DEV Telegram client checks were not run from this local environment because no deployed branch URL,
+  BotFather Mini App configuration, or real Telegram client session is available here.
+- Required remaining manual checks after deployment: first-time Telegram user workspace flow, existing linked Telegram
+  user dashboard flow, normal browser login, Telegram OIDC login/link/unlink, transaction creation inside Telegram, and
+  workspace creation inside Telegram.
