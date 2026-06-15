@@ -278,58 +278,6 @@ git diff --stat
 - Phase 4 should inspect and complete the existing dirty Telegram Mini App frontend bootstrap files without discarding
   them.
 
-## 2026-06-15 17:09 +03 - Codex / Developer
-
-### Scope
-
-- Completed Phase 4 frontend Telegram Mini App bootstrap.
-- Inspected pre-existing dirty frontend bootstrap files and preserved their approach.
-- Added a global `TelegramMiniAppBootstrap` under `ApiSessionProvider`.
-- Added Telegram Mini App runtime types, context/hook state, and API wrapper around the generated
-  `createTelegramMiniAppSession` client.
-- Bootstrap behavior detects `window.Telegram.WebApp`, calls `ready()`/`expand()`, reads only raw `initData`, posts it to
-  the API when unauthenticated, refreshes the existing API session query, and shows a toast on failure.
-- Tightened the bootstrap so an API success without a visible refreshed session becomes a failure state, allowing the
-  existing login fallback instead of an indefinite loading state.
-
-### Files Changed
-
-- `packages/web/src/app/providers.tsx`
-- `packages/web/src/modules/telegram-mini/TelegramMiniAppBootstrap.tsx`
-- `packages/web/src/modules/telegram-mini/telegram-mini.api.ts`
-- `packages/web/src/modules/telegram-mini/telegram-mini.types.ts`
-- `packages/web/src/modules/telegram-mini/useTelegramMiniApp.ts`
-- `docs/plans/telegram-mini-app/work-log.md`
-
-### Commands Run
-
-```bash
-pnpm --filter web typecheck
-pnpm --filter web check
-pnpm --filter web test src/shared/lib/api-session.test.ts
-```
-
-### Results
-
-- `pnpm --filter web typecheck`: passed.
-- `pnpm --filter web check`: passed.
-- `pnpm --filter web test src/shared/lib/api-session.test.ts`: passed, 5 tests.
-
-### Decisions
-
-- Keep Mini App auth bootstrap global rather than adding a `/mini` route.
-- Use a toast for Mini App auth failure while allowing the existing unauthenticated login redirect to remain the fallback.
-- Keep `initDataUnsafe` out of the auth path.
-
-### Subagent Contributions
-
-- None. No dedicated subagent tool is exposed in this session.
-
-### Blockers / Follow-ups
-
-- Phase 5 should checkpoint the protected-route gate change.
-- Phase 6 should checkpoint Telegram script/WebView compatibility behavior.
-
 ## 2026-06-15 17:07 +03 - Codex / Orchestrator + Frontend Developer
 
 ### Scope
@@ -383,6 +331,46 @@ pnpm --filter web test src/shared/lib/api-session.test.ts
 - Real Telegram client testing remains blocked until the branch is deployed and PROD/DEV BotFather Mini App URLs are
   configured.
 - Documentation still needs BotFather Mini App setup, env vars, and local HTTPS tunnel notes.
+
+## 2026-06-15 17:09 +03 - Codex / Developer
+
+### Scope
+
+- Added a frontend follow-up fix after the committed frontend bootstrap checkpoint.
+- Tightened `TelegramMiniAppBootstrap` so an API success without a visible refreshed session becomes a failure state,
+  allowing the existing login fallback instead of an indefinite loading state.
+
+### Files Changed
+
+- `packages/web/src/modules/telegram-mini/TelegramMiniAppBootstrap.tsx`
+- `docs/plans/telegram-mini-app/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter web typecheck
+pnpm --filter web check
+pnpm --filter web test src/shared/lib/api-session.test.ts
+```
+
+### Results
+
+- `pnpm --filter web typecheck`: passed.
+- `pnpm --filter web check`: passed.
+- `pnpm --filter web test src/shared/lib/api-session.test.ts`: passed, 5 tests.
+
+### Decisions
+
+- Treat missing refreshed session after Mini App auth as an auth failure because the protected route gate depends on the
+  regular Finnn session state.
+
+### Subagent Contributions
+
+- None. No dedicated subagent tool is exposed in this session.
+
+### Blockers / Follow-ups
+
+- Real Telegram client cookie/WebView testing remains pending external bot/deployment access.
 
 ## 2026-06-15 17:08 +03 - Codex / Documentation
 
