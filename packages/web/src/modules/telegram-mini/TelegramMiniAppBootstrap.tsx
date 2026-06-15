@@ -76,7 +76,11 @@ export function TelegramMiniAppBootstrap({ children }: { children: ReactNode }) 
 
     createTelegramMiniAppSessionFromInitData(initData)
       .then(async () => {
-        await update();
+        const session = await update();
+        if (!session) {
+          throw new Error("Не удалось подтвердить сессию Telegram");
+        }
+
         if (!cancelled) {
           setState({
             error: null,

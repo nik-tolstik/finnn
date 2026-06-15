@@ -278,6 +278,58 @@ git diff --stat
 - Phase 4 should inspect and complete the existing dirty Telegram Mini App frontend bootstrap files without discarding
   them.
 
+## 2026-06-15 17:09 +03 - Codex / Developer
+
+### Scope
+
+- Completed Phase 4 frontend Telegram Mini App bootstrap.
+- Inspected pre-existing dirty frontend bootstrap files and preserved their approach.
+- Added a global `TelegramMiniAppBootstrap` under `ApiSessionProvider`.
+- Added Telegram Mini App runtime types, context/hook state, and API wrapper around the generated
+  `createTelegramMiniAppSession` client.
+- Bootstrap behavior detects `window.Telegram.WebApp`, calls `ready()`/`expand()`, reads only raw `initData`, posts it to
+  the API when unauthenticated, refreshes the existing API session query, and shows a toast on failure.
+- Tightened the bootstrap so an API success without a visible refreshed session becomes a failure state, allowing the
+  existing login fallback instead of an indefinite loading state.
+
+### Files Changed
+
+- `packages/web/src/app/providers.tsx`
+- `packages/web/src/modules/telegram-mini/TelegramMiniAppBootstrap.tsx`
+- `packages/web/src/modules/telegram-mini/telegram-mini.api.ts`
+- `packages/web/src/modules/telegram-mini/telegram-mini.types.ts`
+- `packages/web/src/modules/telegram-mini/useTelegramMiniApp.ts`
+- `docs/plans/telegram-mini-app/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter web typecheck
+pnpm --filter web check
+pnpm --filter web test src/shared/lib/api-session.test.ts
+```
+
+### Results
+
+- `pnpm --filter web typecheck`: passed.
+- `pnpm --filter web check`: passed.
+- `pnpm --filter web test src/shared/lib/api-session.test.ts`: passed, 5 tests.
+
+### Decisions
+
+- Keep Mini App auth bootstrap global rather than adding a `/mini` route.
+- Use a toast for Mini App auth failure while allowing the existing unauthenticated login redirect to remain the fallback.
+- Keep `initDataUnsafe` out of the auth path.
+
+### Subagent Contributions
+
+- None. No dedicated subagent tool is exposed in this session.
+
+### Blockers / Follow-ups
+
+- Phase 5 should checkpoint the protected-route gate change.
+- Phase 6 should checkpoint Telegram script/WebView compatibility behavior.
+
 ## 2026-06-15 17:07 +03 - Codex / Orchestrator + Frontend Developer
 
 ### Scope
@@ -331,3 +383,49 @@ pnpm --filter web test src/shared/lib/api-session.test.ts
 - Real Telegram client testing remains blocked until the branch is deployed and PROD/DEV BotFather Mini App URLs are
   configured.
 - Documentation still needs BotFather Mini App setup, env vars, and local HTTPS tunnel notes.
+
+## 2026-06-15 17:08 +03 - Codex / Documentation
+
+### Scope
+
+- Completed Phase 7 documentation updates for Telegram Mini App support.
+- Documented Mini App env vars, BotFather URL setup, local HTTPS tunnel testing, architecture integration, and shared
+  Telegram identity behavior.
+- Added release checklist items for Mini App BotFather registration and real Telegram client verification.
+
+### Files Changed
+
+- `packages/api/.env.example`
+- `docs/development.md`
+- `docs/operations.md`
+- `docs/architecture.md`
+- `docs/domain-model.md`
+- `docs/plans/telegram-mini-app/work-log.md`
+
+### Commands Run
+
+```bash
+grep -R "TELEGRAM" -n packages/api/.env.example packages/web/.env.example docs AGENTS.md
+sed -n '1,160p' packages/api/.env.example
+sed -n '80,220p' docs/operations.md
+sed -n '80,220p' docs/architecture.md
+```
+
+### Results
+
+- Documentation was updated.
+- No code checks were required for Markdown-only edits in this phase; full verification remains in Phase 8.
+
+### Decisions
+
+- Do not update `AGENTS.md`; the implementation does not change agent-facing project conventions.
+- Keep the recommended Mini App URLs on existing `/dashboard` routes for PROD and DEV.
+- Document local Mini App testing through a public HTTPS tunnel because Telegram Mini Apps cannot load plain localhost.
+
+### Subagent Contributions
+
+- Zeno / Developer agent created earlier backend and generated-client checkpoints that this documentation now references.
+
+### Blockers / Follow-ups
+
+- Real Telegram client verification remains blocked until a deployable branch and BotFather configuration are available.

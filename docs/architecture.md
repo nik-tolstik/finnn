@@ -110,6 +110,7 @@ Authentication is owned by `packages/api/src/auth`:
 - `POST /auth/login` issues the HTTP-only `finnn_session` cookie.
 - `GET /auth/telegram/start` starts Telegram OIDC login with PKCE.
 - `GET /auth/telegram/callback` validates Telegram state, nonce, and ID token before issuing the same session cookie.
+- `POST /auth/telegram-mini/session` validates Telegram Mini App `initData` and issues the same session cookie.
 - `GET /auth/telegram/link/start` starts Telegram account linking for an authenticated user.
 - `DELETE /auth/telegram/link` unlinks Telegram when another viable sign-in method remains.
 - `POST /auth/logout` clears and invalidates the session.
@@ -123,6 +124,11 @@ Protected app pages (`/dashboard`, `/analytics`, and `/debts`) use a CSR-first s
 confirms the real API session through `GET /auth/session`, shows a global loading screen while the check is pending,
 and redirects unauthenticated users to `/login`. API auth guards remain the security boundary for private data and
 workspace access.
+
+Telegram Mini Apps reuse the same protected routes and UI. `packages/web/src/modules/telegram-mini` runs globally under
+the API session provider, calls `Telegram.WebApp.ready()` and `expand()`, sends only raw `Telegram.WebApp.initData` to
+the API, refreshes the existing session query after success, and lets `DashboardAuthGate` wait while Mini App bootstrap
+is pending.
 
 Telegram redirects are navigated in the browser with explicit API URLs because the API endpoints intentionally issue
 cross-site redirects. Telegram identities are stored in `AuthIdentity`; the returned session user includes nullable

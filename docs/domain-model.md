@@ -34,6 +34,9 @@ External identities are stored in `AuthIdentity`:
 - `providerUserId` is the provider's durable user identifier.
 - `username`, `displayName`, and `photoUrl` are display metadata.
 
+Telegram OIDC login/linking and Telegram Mini App launch authentication both use `provider = "telegram"`, so the same
+Telegram account resolves to the same Finnn user across browser login, account linking, and Mini App launch.
+
 The pair `(provider, providerUserId)` is unique. MongoDB must also keep a partial unique index on `users.email`
 for string email values only, so multiple users without email are valid while duplicate real email addresses are not.
 
