@@ -15,6 +15,10 @@ type NestErrorResponse = {
   error?: string;
 };
 
+function getHeaderValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 function getExceptionResponse(exception: unknown): NestErrorResponse {
   if (exception instanceof HttpException) {
     const response = exception.getResponse();
@@ -26,6 +30,39 @@ function getExceptionResponse(exception: unknown): NestErrorResponse {
   return { message: "Internal server error" };
 }
 
+function logServerException(exception: unknown, request: Request, status: number): void {
+  if (status < 500) return;
+
+  const requestId =
+    getHeaderValue(request.headers["x-request-id"]) ??
+    getHeaderValue(request.headers["x-railway-request-id"]) ??
+    getHeaderValue(request.headers["cf-ray"]);
+  const userAgent = getHeaderValue(request.headers["user-agent"]);
+
+  const context = {
+    method: request.method,
+    path: request.url,
+    requestId,
+    status,
+    userAgent,
+  };
+
+  if (exception instanceof Error) {
+    console.error("Unhandled API exception", {
+      ...context,
+      message: exception.message,
+      name: exception.name,
+      stack: exception.stack,
+    });
+    return;
+  }
+
+  console.error("Unhandled API exception", {
+    ...context,
+    exception,
+  });
+}
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -34,6 +71,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = context.getRequest<Request>();
     const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
     const exceptionResponse = getExceptionResponse(exception);
+
+    logServerException(exception, request, status);
 
     const body: ErrorResponseBody = {
       statusCode: status,
