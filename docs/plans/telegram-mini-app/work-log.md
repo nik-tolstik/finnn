@@ -372,6 +372,48 @@ pnpm --filter web test src/shared/lib/api-session.test.ts
 
 - Real Telegram client cookie/WebView testing remains pending external bot/deployment access.
 
+## 2026-06-15 17:10 +03 - Codex / Developer
+
+### Scope
+
+- Completed the remaining Phase 6 Telegram WebView compatibility checkpoint.
+- Added the official Telegram WebApp script to the root layout with `beforeInteractive` loading so
+  `window.Telegram.WebApp` is available to the client bootstrap.
+- Reconfirmed the already-committed bootstrap keeps compatibility calls limited to `ready()` and `expand()`.
+
+### Files Changed
+
+- `packages/web/src/app/layout.tsx`
+- `docs/plans/telegram-mini-app/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter web typecheck
+pnpm --filter web check
+git status --short --branch
+git diff -- packages/web/src/app/layout.tsx
+```
+
+### Results
+
+- `pnpm --filter web typecheck`: passed.
+- `pnpm --filter web check`: passed.
+
+### Decisions
+
+- Load Telegram's official script globally rather than creating a separate Mini App route shell.
+- Do not add theme, safe-area, BackButton, or MainButton integration until real Telegram client testing shows a need.
+
+### Subagent Contributions
+
+- None. No dedicated subagent tool is exposed in this session.
+
+### Blockers / Follow-ups
+
+- Real iOS, Android, and Desktop Telegram client verification is still pending deployed branch access and bot
+  configuration.
+
 ## 2026-06-15 17:08 +03 - Codex / Documentation
 
 ### Scope
@@ -417,3 +459,43 @@ sed -n '80,220p' docs/architecture.md
 ### Blockers / Follow-ups
 
 - Real Telegram client verification remains blocked until a deployable branch and BotFather configuration are available.
+
+## 2026-06-15 17:10 +03 - Codex / WebView Compatibility
+
+### Scope
+
+- Added the official Telegram WebApp script to the root layout with `beforeInteractive` loading so
+  `window.Telegram.WebApp` is available before the client bootstrap runs.
+- Re-ran focused frontend verification after the layout change.
+
+### Files Changed
+
+- `packages/web/src/app/layout.tsx`
+- `docs/plans/telegram-mini-app/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter web typecheck
+pnpm --filter web check
+pnpm --filter web test src/shared/lib/api-session.test.ts
+```
+
+### Results
+
+- `pnpm --filter web typecheck`: passed.
+- `pnpm --filter web check`: passed.
+- `pnpm --filter web test src/shared/lib/api-session.test.ts`: passed, 5 tests.
+
+### Decisions
+
+- Load Telegram's SDK globally because the MVP uses existing routes as the Mini App entry surface rather than a
+  dedicated `/mini` route.
+
+### Subagent Contributions
+
+- None for this compatibility follow-up.
+
+### Blockers / Follow-ups
+
+- Real Telegram client testing is still required after deployment.
