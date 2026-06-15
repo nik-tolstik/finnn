@@ -208,7 +208,8 @@ describe("Auth API", () => {
       ({ state }) => `https://oauth.telegram.org/auth?state=${state}`
     );
     telegramOidcClient.exchangeCodeForClaims.mockResolvedValue({
-      sub: "telegram-1",
+      sub: "14040056584244839695",
+      id: "455466975",
       name: "Ada",
       preferred_username: "ada",
       picture: "https://t.me/i/userpic/320/ada.jpg",
@@ -622,7 +623,7 @@ describe("Auth API", () => {
       where: {
         provider_providerUserId: {
           provider: "telegram",
-          providerUserId: "telegram-1",
+          providerUserId: "455466975",
         },
       },
       data: {
@@ -673,7 +674,7 @@ describe("Auth API", () => {
     expect(prisma.authIdentity.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         provider: "telegram",
-        providerUserId: "telegram-1",
+        providerUserId: "455466975",
       }),
     });
     expect(prisma.authSession.create).toHaveBeenCalledWith({
@@ -975,7 +976,7 @@ describe("Auth API", () => {
       where: {
         provider_providerUserId: {
           provider: "telegram",
-          providerUserId: "telegram-1",
+          providerUserId: "455466975",
         },
       },
       update: {
@@ -985,7 +986,7 @@ describe("Auth API", () => {
       },
       create: expect.objectContaining({
         provider: "telegram",
-        providerUserId: "telegram-1",
+        providerUserId: "455466975",
       }),
     });
     expect(prisma.authSession.create).not.toHaveBeenCalled();

@@ -217,6 +217,18 @@ function getTelegramPhotoUrl(claims: TelegramClaims): string | null {
   return typeof claims.picture === "string" && claims.picture.trim() ? claims.picture.trim() : null;
 }
 
+function getTelegramProviderUserId(claims: TelegramClaims): string {
+  if (typeof claims.id === "string" && claims.id.trim()) {
+    return claims.id.trim();
+  }
+
+  if (typeof claims.id === "number" && Number.isSafeInteger(claims.id) && claims.id > 0) {
+    return String(claims.id);
+  }
+
+  return claims.sub;
+}
+
 function getTelegramProviderUserIdHash(providerUserId: string): string {
   return createHash("sha256").update(providerUserId).digest("hex").slice(0, 12);
 }
@@ -679,8 +691,10 @@ export class AuthService {
       hasPicture: Boolean(getTelegramPhotoUrl(claims)),
       idLikeClaims: getTelegramOidcIdLikeClaims(claims),
       mode,
-      providerUserIdHash: getTelegramProviderUserIdHash(claims.sub),
-      providerUserIdLength: claims.sub.length,
+      providerUserIdHash: getTelegramProviderUserIdHash(getTelegramProviderUserId(claims)),
+      providerUserIdLength: getTelegramProviderUserId(claims).length,
+      rawSubHash: getTelegramProviderUserIdHash(claims.sub),
+      rawSubLength: claims.sub.length,
       telegramUsername: getTelegramUsername(claims),
     });
   }
@@ -700,7 +714,7 @@ export class AuthService {
       existingUserFound: context.existingUserFound,
       hasPhoto: Boolean(getTelegramPhotoUrl(claims)),
       origin: context.origin,
-      providerUserIdHash: getTelegramProviderUserIdHash(claims.sub),
+      providerUserIdHash: getTelegramProviderUserIdHash(getTelegramProviderUserId(claims)),
       referer: context.referer,
       requestId: context.requestId,
       telegramUsername: getTelegramUsername(claims),
@@ -713,7 +727,7 @@ export class AuthService {
     claims: TelegramClaims,
     options: { miniAppContext?: TelegramMiniAppRequestContext } = {}
   ): Promise<ReturnType<typeof toAuthUser>> {
-    const providerUserId = claims.sub;
+    const providerUserId = getTelegramProviderUserId(claims);
     const existingIdentity = await this.prisma.authIdentity.findUnique({
       where: {
         provider_providerUserId: {
@@ -790,7 +804,7 @@ export class AuthService {
       throw new UnauthorizedException("Telegram link state is invalid");
     }
 
-    const providerUserId = claims.sub;
+    const providerUserId = getTelegramProviderUserId(claims);
     const existingIdentity = await this.prisma.authIdentity.findUnique({
       where: {
         provider_providerUserId: {
@@ -825,11 +839,12 @@ export class AuthService {
   }
 
   private async updateTelegramIdentity(userId: string, claims: TelegramClaims): Promise<void> {
+    const providerUserId = getTelegramProviderUserId(claims);
     await this.prisma.authIdentity.update({
       where: {
         provider_providerUserId: {
           provider: TELEGRAM_PROVIDER,
-          providerUserId: claims.sub,
+          providerUserId,
         },
       },
       data: this.getTelegramIdentityMetadata(claims),
@@ -847,7 +862,7 @@ export class AuthService {
     return {
       user: { connect: { id: userId } },
       provider: TELEGRAM_PROVIDER,
-      providerUserId: claims.sub,
+      providerUserId: getTelegramProviderUserId(claims),
       ...this.getTelegramIdentityMetadata(claims),
     };
   }

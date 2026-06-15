@@ -220,13 +220,14 @@ pnpm test
 When adding indexes, verify they are represented in `packages/api/prisma/schema.prisma` and applied through `pnpm db:push`.
 For MongoDB partial indexes that Prisma cannot express, add or update an explicit script under `packages/api/scripts`.
 
-## Telegram Mini App Identity Repair
+## Telegram Identity Repair
 
-Telegram OIDC `sub` values and Telegram Mini App `initData.user.id` values can differ. If an existing user linked
-Telegram through browser OIDC before opening the Mini App, add the Mini App Telegram id as an additional Telegram
-identity for the same Finnn user.
+Telegram OIDC `sub` values and Telegram Mini App `initData.user.id` values can differ. The API normalizes Telegram OIDC
+claims to `id` when Telegram includes it, because it matches Mini App `initData.user.id`. Older production data may still
+contain identities keyed by the longer OIDC `sub`.
 
-Use the Mini App id from the server logs or from `auth_identities.providerUserId` after a Mini App login attempt:
+Use the normalized Telegram id from the server logs or from `auth_identities.providerUserId` after a Mini App login
+attempt:
 
 ```bash
 pnpm --filter api telegram:link-mini -- --email=user@example.com --providerUserId=455466975

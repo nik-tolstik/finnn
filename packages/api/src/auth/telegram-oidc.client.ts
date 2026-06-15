@@ -8,6 +8,7 @@ const TELEGRAM_JWKS_ENDPOINT = "https://oauth.telegram.org/.well-known/jwks.json
 
 export type TelegramClaims = JWTPayload & {
   sub: string;
+  id?: string | number;
   name?: string;
   preferred_username?: string;
   picture?: string;
