@@ -91,6 +91,10 @@ function getTelegramCallbackRelayUrl(
   return redirectUrl.toString();
 }
 
+function getHeaderValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 @Controller("auth")
 @ApiTags("Auth")
 export class AuthController {
@@ -161,9 +165,18 @@ export class AuthController {
   @ApiServiceUnavailableResponse({ type: ApiErrorDto })
   async createTelegramMiniAppSession(
     @Body() body: TelegramMiniAppSessionDto,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response
   ) {
-    const result = await this.authService.createTelegramMiniAppSession(body);
+    const result = await this.authService.createTelegramMiniAppSession(body, {
+      origin: getHeaderValue(request.headers.origin),
+      referer: getHeaderValue(request.headers.referer),
+      requestId:
+        getHeaderValue(request.headers["x-request-id"]) ??
+        getHeaderValue(request.headers["x-railway-request-id"]) ??
+        getHeaderValue(request.headers["cf-ray"]),
+      userAgent: getHeaderValue(request.headers["user-agent"]),
+    });
     response.setHeader("Set-Cookie", createSessionCookie(result.token));
     return { user: result.user };
   }

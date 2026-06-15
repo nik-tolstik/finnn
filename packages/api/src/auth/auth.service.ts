@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -51,6 +52,13 @@ type TelegramIdentitySummary = {
   username: string | null;
   displayName: string | null;
   photoUrl: string | null;
+};
+
+type TelegramMiniAppRequestContext = {
+  origin?: string;
+  referer?: string;
+  requestId?: string;
+  userAgent?: string;
 };
 
 type AuthUserWithIdentities = Pick<User, "id" | "email" | "name" | "image"> & {
@@ -209,8 +217,14 @@ function getTelegramPhotoUrl(claims: TelegramClaims): string | null {
   return typeof claims.picture === "string" && claims.picture.trim() ? claims.picture.trim() : null;
 }
 
+function getTelegramProviderUserIdHash(providerUserId: string): string {
+  return createHash("sha256").update(providerUserId).digest("hex").slice(0, 12);
+}
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(EmailService) private readonly emailService: EmailService,
@@ -388,11 +402,16 @@ export class AuthService {
   }
 
   async createTelegramMiniAppSession(
-    input: TelegramMiniAppSessionDto
+    input: TelegramMiniAppSessionDto,
+    context: TelegramMiniAppRequestContext = {}
   ): Promise<{ token: string; user: ReturnType<typeof toAuthUser> }> {
     const claims = validateTelegramMiniAppInitData(input.initData);
-    const user = await this.findOrCreateTelegramUser(claims);
+    const user = await this.findOrCreateTelegramUser(claims, { miniAppContext: context });
     const token = await this.createSessionForUser(user.id);
+    this.logTelegramMiniAppSessionEvent("session_created", claims, {
+      ...context,
+      userId: user.id,
+    });
     return { token, user };
   }
 
@@ -641,7 +660,34 @@ export class AuthService {
     };
   }
 
-  private async findOrCreateTelegramUser(claims: TelegramClaims): Promise<ReturnType<typeof toAuthUser>> {
+  private logTelegramMiniAppSessionEvent(
+    event: string,
+    claims: TelegramClaims,
+    context: TelegramMiniAppRequestContext & {
+      existingIdentityUserId?: string | null;
+      existingUserFound?: boolean;
+      userId?: string;
+    }
+  ): void {
+    this.logger.log({
+      event,
+      existingIdentityUserId: context.existingIdentityUserId,
+      existingUserFound: context.existingUserFound,
+      hasPhoto: Boolean(getTelegramPhotoUrl(claims)),
+      origin: context.origin,
+      providerUserIdHash: getTelegramProviderUserIdHash(claims.sub),
+      referer: context.referer,
+      requestId: context.requestId,
+      telegramUsername: getTelegramUsername(claims),
+      userAgent: context.userAgent,
+      userId: context.userId,
+    });
+  }
+
+  private async findOrCreateTelegramUser(
+    claims: TelegramClaims,
+    options: { miniAppContext?: TelegramMiniAppRequestContext } = {}
+  ): Promise<ReturnType<typeof toAuthUser>> {
     const providerUserId = claims.sub;
     const existingIdentity = await this.prisma.authIdentity.findUnique({
       where: {
@@ -659,6 +705,14 @@ export class AuthService {
         select: AUTH_USER_SELECT,
       });
 
+      if (options.miniAppContext) {
+        this.logTelegramMiniAppSessionEvent("identity_found", claims, {
+          ...options.miniAppContext,
+          existingIdentityUserId: existingIdentity.userId,
+          existingUserFound: Boolean(existingUser),
+        });
+      }
+
       if (!existingUser) {
         throw new ConflictException(
           "Telegram аккаунт привязан к несуществующему пользователю. Переподключите Telegram."
@@ -671,6 +725,10 @@ export class AuthService {
         select: AUTH_USER_SELECT,
       });
       return toAuthUser(user);
+    }
+
+    if (options.miniAppContext) {
+      this.logTelegramMiniAppSessionEvent("identity_not_found", claims, options.miniAppContext);
     }
 
     return this.createTelegramUser(claims);
