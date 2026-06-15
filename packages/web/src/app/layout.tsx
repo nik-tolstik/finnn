@@ -1,6 +1,7 @@
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Onest } from "next/font/google";
+import Script from "next/script";
 
 import "./globals.css";
 
@@ -53,6 +54,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className={onest.variable} suppressHydrationWarning>
       <body className="font-sans antialiased">
+        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         <Providers>
           {children}
           <Toaster />

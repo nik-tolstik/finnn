@@ -64,6 +64,13 @@ TELEGRAM_AUTH_STATE_SECRET="paste-generated-secret-here"
 TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
 ```
 
+Required for Telegram Mini App launch authentication:
+
+```env
+TELEGRAM_BOT_TOKEN="bot-token-from-botfather"
+TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
+```
+
 BotFather setup:
 
 - Create or select a bot in BotFather.
@@ -71,6 +78,16 @@ BotFather setup:
 - Open Bot Settings > Web Login.
 - Register the ngrok callback URI used for local Telegram testing.
 - Copy the client ID and client secret into `packages/api/.env`.
+- Open Bot Settings > Mini Apps.
+- Set the DEV Mini App URL to a public HTTPS URL that points at the existing dashboard route, for example
+  `https://your-stable-domain.ngrok-free.app/dashboard` for local testing or `https://dev.finnn.xyz/dashboard` for the
+  shared DEV environment.
+- Copy the bot token into `TELEGRAM_BOT_TOKEN`; the API uses it only to validate `Telegram.WebApp.initData`.
+
+Telegram Mini Apps must load over public HTTPS. For local testing, run the API and web app normally, then expose the web
+app through a stable HTTPS tunnel and point the DEV bot's Mini App URL at the tunnel `/dashboard` route. Keep
+`NEXT_PUBLIC_API_URL` aligned with an API URL that the WebView can reach and keep `API_ALLOWED_ORIGINS` aligned with the
+tunnel origin.
 
 Required in `packages/web/.env` for local web operation:
 

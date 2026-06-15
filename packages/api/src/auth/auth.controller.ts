@@ -39,6 +39,7 @@ import {
   RequestEmailVerificationDto,
   SessionResponseDto,
   SuccessResponseDto,
+  TelegramMiniAppSessionDto,
   UpdateUserDto,
   VerifyEmailResponseDto,
 } from "./auth.dto";
@@ -135,6 +136,34 @@ export class AuthController {
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
   async login(@Body() body: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(body);
+    response.setHeader("Set-Cookie", createSessionCookie(result.token));
+    return { user: result.user };
+  }
+
+  @Post("telegram-mini/session")
+  @HttpCode(200)
+  @ApiOperation({
+    operationId: "createTelegramMiniAppSession",
+    summary: "Create a session from Telegram Mini App data",
+  })
+  @ApiBody({ type: TelegramMiniAppSessionDto })
+  @ApiOkResponse({
+    type: AuthUserResponseDto,
+    headers: {
+      "Set-Cookie": {
+        description: `HTTP-only ${AUTH_COOKIE_NAME} session cookie`,
+        schema: { type: "string" },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async createTelegramMiniAppSession(
+    @Body() body: TelegramMiniAppSessionDto,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const result = await this.authService.createTelegramMiniAppSession(body);
     response.setHeader("Set-Cookie", createSessionCookie(result.token));
     return { user: result.user };
   }

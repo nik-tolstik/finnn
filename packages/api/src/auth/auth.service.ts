@@ -14,8 +14,15 @@ import bcrypt from "bcryptjs";
 import { EmailService } from "@/email/email.service";
 import { PrismaService } from "@/prisma/prisma.service";
 
-import type { LoginDto, RegisterDto, RequestEmailVerificationDto, UpdateUserDto } from "./auth.dto";
+import type {
+  LoginDto,
+  RegisterDto,
+  RequestEmailVerificationDto,
+  TelegramMiniAppSessionDto,
+  UpdateUserDto,
+} from "./auth.dto";
 import { getSessionExpiresAt, hashSessionToken } from "./session-cookie";
+import { validateTelegramMiniAppInitData } from "./telegram-mini-app";
 import { type TelegramClaims, TelegramOidcClient } from "./telegram-oidc.client";
 
 const VERIFICATION_TOKEN_BYTES = 32;
@@ -378,6 +385,15 @@ export class AuthService {
     const token = await this.createSessionForUser(user.id);
 
     return { token, user: toAuthUser(user) };
+  }
+
+  async createTelegramMiniAppSession(
+    input: TelegramMiniAppSessionDto
+  ): Promise<{ token: string; user: ReturnType<typeof toAuthUser> }> {
+    const claims = validateTelegramMiniAppInitData(input.initData);
+    const user = await this.findOrCreateTelegramUser(claims);
+    const token = await this.createSessionForUser(user.id);
+    return { token, user };
   }
 
   async createSessionForUser(userId: string): Promise<string> {

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
+import { TelegramMiniAppBootstrap } from "@/modules/telegram-mini/TelegramMiniAppBootstrap";
 import { ServiceWorkerRegistration } from "@/shared/components/ServiceWorkerRegistration";
 import { ApiSessionProvider } from "@/shared/lib/api-session-client";
 
@@ -45,9 +46,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>
         <ApiSessionProvider>
-          <ThemeClassSync />
-          {children}
-          <ServiceWorkerRegistration />
+          <TelegramMiniAppBootstrap>
+            <ThemeClassSync />
+            {children}
+            <ServiceWorkerRegistration />
+          </TelegramMiniAppBootstrap>
         </ApiSessionProvider>
       </QueryClientProvider>
     </ThemeProvider>

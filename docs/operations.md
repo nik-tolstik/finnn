@@ -18,10 +18,10 @@ Backend API deployments are hosted on Railway:
 
 Keep environment variables aligned with the matching frontend/API pair:
 
-| Environment | `WEB_APP_URL` / `API_ALLOWED_ORIGINS` | `NEXT_PUBLIC_API_URL` | `TELEGRAM_REDIRECT_URI` |
-| --- | --- | --- | --- |
-| PROD | `https://finnn.xyz` | `https://api.finnn.xyz` | `https://api.finnn.xyz/auth/telegram/callback` |
-| DEV | `https://dev.finnn.xyz` | `https://api-dev.finnn.xyz` | `https://api-dev.finnn.xyz/auth/telegram/callback` |
+| Environment | `WEB_APP_URL` / `API_ALLOWED_ORIGINS` | `NEXT_PUBLIC_API_URL` | `TELEGRAM_REDIRECT_URI` | Mini App URL |
+| --- | --- | --- | --- | --- |
+| PROD | `https://finnn.xyz` | `https://api.finnn.xyz` | `https://api.finnn.xyz/auth/telegram/callback` | `https://finnn.xyz/dashboard` |
+| DEV | `https://dev.finnn.xyz` | `https://api-dev.finnn.xyz` | `https://api-dev.finnn.xyz/auth/telegram/callback` | `https://dev.finnn.xyz/dashboard` |
 
 Telegram authentication uses two separate bots:
 
@@ -49,6 +49,8 @@ TELEGRAM_CLIENT_SECRET="telegram-client-secret"
 TELEGRAM_REDIRECT_URI="https://production-api-url/auth/telegram/callback"
 TELEGRAM_AUTH_STATE_SECRET="production-telegram-state-secret"
 TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
+TELEGRAM_BOT_TOKEN="production-bot-token"
+TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
 ```
 
 BotFather setup:
@@ -57,6 +59,9 @@ BotFather setup:
 - Open Bot Settings > Web Login.
 - Register the production web URL and API callback host.
 - Store the issued client ID and secret in the API deployment environment.
+- Open Bot Settings > Mini Apps.
+- Register the production Mini App URL as `https://finnn.xyz/dashboard`.
+- Store the same production bot token in `TELEGRAM_BOT_TOKEN` for API-side Mini App `initData` validation.
 
 Email variables are required when registration verification and workspace invites should send real email:
 
@@ -67,11 +72,6 @@ SMTP_SECURE="false"
 SMTP_USER="smtp-user"
 SMTP_PASSWORD="smtp-password"
 SMTP_FROM="Finnn <no-reply@example.com>"
-TELEGRAM_CLIENT_ID="bot-or-client-id-from-botfather"
-TELEGRAM_CLIENT_SECRET="telegram-client-secret"
-TELEGRAM_REDIRECT_URI="https://production-api-url/auth/telegram/callback"
-TELEGRAM_AUTH_STATE_SECRET="production-telegram-state-secret"
-TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
 ```
 
 ## Build
@@ -113,6 +113,13 @@ SMTP_SECURE="false"
 SMTP_USER="smtp-user"
 SMTP_PASSWORD="smtp-password"
 SMTP_FROM="Finnn <no-reply@example.com>"
+TELEGRAM_CLIENT_ID="bot-or-client-id-from-botfather"
+TELEGRAM_CLIENT_SECRET="telegram-client-secret"
+TELEGRAM_REDIRECT_URI="https://production-api-url/auth/telegram/callback"
+TELEGRAM_AUTH_STATE_SECRET="production-telegram-state-secret"
+TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
+TELEGRAM_BOT_TOKEN="production-bot-token"
+TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
 ```
 
 Frontend production variables stay with the web deployment:
@@ -264,4 +271,6 @@ Also verify:
 - Cron endpoint returns success with a valid secret.
 - API auth cookie variables match the deployed API and web hosts.
 - Telegram redirect URI is registered in BotFather and matches `TELEGRAM_REDIRECT_URI`.
+- Telegram Mini App URL is registered in BotFather and points to the existing `/dashboard` route.
+- Telegram Mini App launch is tested in real Telegram clients for cookie persistence and existing dashboard flows.
 - Email links use the production web URL.
