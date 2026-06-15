@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 
 export class RegisterDto {
   @ApiProperty({ example: "Finn User", maxLength: 100, minLength: 1, type: String })
@@ -46,6 +46,17 @@ export class RequestEmailVerificationDto {
   @ApiProperty({ example: "user@example.com", type: String })
   @IsEmail()
   email!: string;
+}
+
+export class TelegramMiniAppSessionDto {
+  @ApiProperty({
+    description: "Raw Telegram.WebApp.initData query string received from the Telegram Mini App runtime.",
+    example: "query_id=AAHdF6IQAAAAAN0XohDhrOrc&user=%7B%22id%22%3A123%7D&auth_date=1710000000&hash=...",
+    type: String,
+  })
+  @IsString()
+  @IsNotEmpty()
+  initData!: string;
 }
 
 export class TelegramAuthStatusDto {

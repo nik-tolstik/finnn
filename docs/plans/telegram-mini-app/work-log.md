@@ -165,3 +165,64 @@ date '+%Y-%m-%d %H:%M %z %Z'
 
 - Real Telegram client testing remains blocked until deployed URLs and PROD/DEV bot configuration are available.
 - Phase 2 should add backend validation, endpoint, and e2e coverage.
+
+## 2026-06-15 17:05 +03 - Codex / Developer
+
+### Scope
+
+- Completed Phase 2 backend Telegram Mini App authentication.
+- Added `POST /auth/telegram-mini/session` with Swagger metadata and the existing HTTP-only `finnn_session` cookie.
+- Added `TelegramMiniAppSessionDto`.
+- Added server-side Telegram Mini App `initData` validation using raw query-string data, sorted data-check string,
+  HMAC-SHA-256 signature comparison, `auth_date` freshness, and required Telegram user id parsing.
+- Reused existing Telegram identity lookup/create/update logic and `AuthService.createSessionForUser`.
+- Added e2e coverage for missing init data, invalid hash, stale `auth_date`, missing user, existing identity sign-in,
+  first-time nullable-email user creation, and Telegram profile metadata updates.
+
+### Files Changed
+
+- `packages/api/src/auth/auth.controller.ts`
+- `packages/api/src/auth/auth.dto.ts`
+- `packages/api/src/auth/auth.service.ts`
+- `packages/api/src/auth/telegram-mini-app.ts`
+- `packages/api/test/auth.e2e.test.ts`
+- `docs/plans/telegram-mini-app/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter api test test/auth.e2e.test.ts
+pnpm --filter api typecheck
+pnpm --filter api check
+pnpm --filter api exec biome check . --write
+pnpm --filter api test test/auth.e2e.test.ts
+pnpm --filter api typecheck
+pnpm --filter api check
+git status --short --branch
+git diff --stat
+```
+
+### Results
+
+- `pnpm --filter api test test/auth.e2e.test.ts`: passed, 31 tests.
+- `pnpm --filter api typecheck`: passed.
+- Initial `pnpm --filter api check`: failed on formatting/import ordering only.
+- `pnpm --filter api exec biome check . --write`: fixed three API files.
+- Final `pnpm --filter api check`: passed.
+
+### Decisions
+
+- Keep Telegram Mini App identities in the existing `provider = "telegram"` namespace so OIDC login/linking and Mini App
+  login resolve to the same Finnn account.
+- Use `TELEGRAM_BOT_TOKEN` for Mini App `initData` validation and keep OIDC `TELEGRAM_CLIENT_*` variables unchanged.
+- Default `TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS` to 24 hours to match the MVP plan and avoid over-tightening launch UX.
+- Commit generated OpenAPI/Orval artifacts in Phase 3 after explicitly running `pnpm api:generate`.
+
+### Subagent Contributions
+
+- None. No dedicated subagent tool is exposed in this session.
+
+### Blockers / Follow-ups
+
+- Generated API artifacts are expected to be handled in Phase 3.
+- Real Telegram client cookie/WebView testing remains pending external bot/deployment access.

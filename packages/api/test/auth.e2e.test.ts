@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import bcrypt from "bcryptjs";
@@ -111,6 +112,45 @@ function getCookiePair(setCookie: string, name: string): string {
   return cookie;
 }
 
+function createTelegramMiniAppInitData(
+  input: {
+    user?: Record<string, unknown>;
+    authDate?: number;
+    botToken?: string;
+    hash?: string;
+    includeUser?: boolean;
+  } = {}
+): string {
+  const params = new URLSearchParams();
+  params.set("auth_date", String(input.authDate ?? Math.floor(Date.now() / 1000)));
+  params.set("query_id", "test-query-id");
+  if (input.includeUser !== false) {
+    params.set(
+      "user",
+      JSON.stringify(
+        input.user ?? {
+          id: 123456789,
+          first_name: "Ada",
+          last_name: "Lovelace",
+          username: "ada",
+          photo_url: "https://t.me/i/userpic/320/ada.jpg",
+        }
+      )
+    );
+  }
+
+  const dataCheckString = Array.from(params.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+  const secretKey = createHmac("sha256", "WebAppData")
+    .update(input.botToken ?? "test-bot-token")
+    .digest();
+  const hash = createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
+  params.set("hash", input.hash ?? hash);
+  return params.toString();
+}
+
 describe("Auth API", () => {
   let app: INestApplication;
   let prisma: MockPrisma;
@@ -146,6 +186,8 @@ describe("Auth API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.TELEGRAM_AUTH_STATE_SECRET = "test-telegram-state-secret";
+    process.env.TELEGRAM_BOT_TOKEN = "test-bot-token";
+    process.env.TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS = "86400";
     process.env.WEB_APP_URL = "http://localhost:3000";
     prisma.user.findUnique.mockResolvedValue(null);
     prisma.user.findFirst.mockResolvedValue(null);
@@ -634,6 +676,219 @@ describe("Auth API", () => {
     });
     expect(prisma.authSession.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ userId: "user-telegram" }),
+    });
+  });
+
+  it("rejects missing Telegram Mini App initData", async () => {
+    await request(app.getHttpServer()).post("/auth/telegram-mini/session").send({}).expect(400);
+
+    expect(prisma.authSession.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects Telegram Mini App initData with an invalid hash", async () => {
+    const initData = createTelegramMiniAppInitData({
+      user: { id: 123, first_name: "Ada", username: "ada" },
+      hash: "bad-hash",
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/telegram-mini/session")
+      .send({ initData })
+      .expect(401);
+
+    expect(response.body.message).toBe("Telegram Mini App init data hash is invalid");
+    expect(prisma.authSession.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects stale Telegram Mini App initData", async () => {
+    process.env.TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS = "60";
+    const initData = createTelegramMiniAppInitData({
+      user: { id: 123, first_name: "Ada", username: "ada" },
+      authDate: Math.floor(Date.now() / 1000) - 120,
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/telegram-mini/session")
+      .send({ initData })
+      .expect(401);
+
+    expect(response.body.message).toBe("Telegram Mini App init data has expired");
+    expect(prisma.authSession.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects Telegram Mini App initData without a user", async () => {
+    const initData = createTelegramMiniAppInitData({ includeUser: false });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/telegram-mini/session")
+      .send({ initData })
+      .expect(400);
+
+    expect(response.body.message).toBe("Telegram Mini App init data user is required");
+    expect(prisma.authSession.create).not.toHaveBeenCalled();
+  });
+
+  it("creates a session for an existing Telegram Mini App identity", async () => {
+    const initData = createTelegramMiniAppInitData({
+      user: {
+        id: 123,
+        first_name: "Ada",
+        last_name: "Lovelace",
+        username: "ada",
+        photo_url: "https://t.me/i/userpic/320/new-ada.jpg",
+      },
+    });
+    prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: "https://t.me/i/userpic/320/new-ada.jpg",
+      authIdentities: [
+        {
+          provider: "telegram",
+          username: "ada",
+          displayName: "Ada Lovelace",
+          photoUrl: "https://t.me/i/userpic/320/new-ada.jpg",
+        },
+      ],
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/telegram-mini/session")
+      .send({ initData })
+      .expect(200);
+
+    expect(response.body.user).toEqual({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: "https://t.me/i/userpic/320/new-ada.jpg",
+      telegram: {
+        linked: true,
+        username: "ada",
+        displayName: "Ada Lovelace",
+        photoUrl: "https://t.me/i/userpic/320/new-ada.jpg",
+      },
+    });
+    expect(prisma.authIdentity.update).toHaveBeenCalledWith({
+      where: {
+        provider_providerUserId: {
+          provider: "telegram",
+          providerUserId: "123",
+        },
+      },
+      data: {
+        username: "ada",
+        displayName: "Ada Lovelace",
+        photoUrl: "https://t.me/i/userpic/320/new-ada.jpg",
+      },
+    });
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { image: "https://t.me/i/userpic/320/new-ada.jpg" },
+    });
+    expect(prisma.authSession.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: "user-1", revokedAt: null }),
+    });
+    expect(getSetCookieValues(response)[0]).toContain(`${AUTH_COOKIE_NAME}=`);
+  });
+
+  it("creates a nullable-email user on first Telegram Mini App session", async () => {
+    const initData = createTelegramMiniAppInitData({
+      user: {
+        id: 456,
+        first_name: "Grace",
+        last_name: "Hopper",
+        username: "grace",
+        photo_url: "https://t.me/i/userpic/320/grace.jpg",
+      },
+    });
+    prisma.user.create.mockResolvedValue({ id: "user-telegram-mini" });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-telegram-mini",
+      email: null,
+      name: "Grace Hopper",
+      image: "https://t.me/i/userpic/320/grace.jpg",
+      authIdentities: [
+        {
+          provider: "telegram",
+          username: "grace",
+          displayName: "Grace Hopper",
+          photoUrl: "https://t.me/i/userpic/320/grace.jpg",
+        },
+      ],
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/telegram-mini/session")
+      .send({ initData })
+      .expect(200);
+
+    expect(response.body.user.email).toBeNull();
+    expect(response.body.user.telegram.linked).toBe(true);
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: {
+        email: null,
+        name: "Grace Hopper",
+        image: "https://t.me/i/userpic/320/grace.jpg",
+      },
+      select: { id: true },
+    });
+    expect(prisma.authIdentity.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        provider: "telegram",
+        providerUserId: "456",
+        username: "grace",
+        displayName: "Grace Hopper",
+        photoUrl: "https://t.me/i/userpic/320/grace.jpg",
+      }),
+    });
+    expect(prisma.authSession.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: "user-telegram-mini" }),
+    });
+  });
+
+  it("updates Telegram Mini App profile metadata for an existing identity", async () => {
+    const initData = createTelegramMiniAppInitData({
+      user: {
+        id: 123,
+        first_name: "Ada",
+        last_name: "Byron",
+        username: "ada_new",
+        photo_url: "https://t.me/i/userpic/320/ada-new.jpg",
+      },
+    });
+    prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: "https://t.me/i/userpic/320/ada-new.jpg",
+      authIdentities: [
+        {
+          provider: "telegram",
+          username: "ada_new",
+          displayName: "Ada Byron",
+          photoUrl: "https://t.me/i/userpic/320/ada-new.jpg",
+        },
+      ],
+    });
+
+    await request(app.getHttpServer()).post("/auth/telegram-mini/session").send({ initData }).expect(200);
+
+    expect(prisma.authIdentity.update).toHaveBeenCalledWith({
+      where: {
+        provider_providerUserId: {
+          provider: "telegram",
+          providerUserId: "123",
+        },
+      },
+      data: {
+        username: "ada_new",
+        displayName: "Ada Byron",
+        photoUrl: "https://t.me/i/userpic/320/ada-new.jpg",
+      },
     });
   });
 
