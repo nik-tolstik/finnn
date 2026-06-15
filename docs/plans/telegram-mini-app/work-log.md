@@ -226,3 +226,54 @@ git diff --stat
 
 - Generated API artifacts are expected to be handled in Phase 3.
 - Real Telegram client cookie/WebView testing remains pending external bot/deployment access.
+
+## 2026-06-15 17:06 +03 - Codex / Developer
+
+### Scope
+
+- Completed Phase 3 OpenAPI and generated web client synchronization.
+- Ran the project generation command instead of hand-editing generated files.
+- Confirmed generated output includes `createTelegramMiniAppSession` and `TelegramMiniAppSessionDto`.
+- Preserved unrelated dirty frontend bootstrap files for the frontend phases.
+
+### Files Changed
+
+- `packages/api/openapi.json`
+- `packages/web/src/shared/api/generated/auth/auth.ts`
+- `packages/web/src/shared/api/generated/model/index.ts`
+- `packages/web/src/shared/api/generated/model/telegramMiniAppSessionDto.ts`
+- `packages/web/src/shared/api/generated/model/debtListQueryDto.ts`
+- `packages/web/src/shared/api/generated/model/debtListQueryDtoStatus.ts`
+- `packages/web/src/shared/api/generated/model/debtListQueryDtoType.ts`
+- `docs/plans/telegram-mini-app/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm api:generate
+pnpm api:check-generated
+git status --short --branch
+git diff --stat
+```
+
+### Results
+
+- `pnpm api:generate`: passed.
+- `pnpm api:check-generated`: passed; it reran generation and exited cleanly.
+- Orval generated the Telegram Mini App session client.
+- Orval also generated debt list query DTO files from the current API spec; these were accepted as generated drift from
+  the source OpenAPI output.
+
+### Decisions
+
+- Commit all generated files produced by `pnpm api:generate`, including the debt query DTOs, so `api:check-generated`
+  remains clean.
+
+### Subagent Contributions
+
+- None. No dedicated subagent tool is exposed in this session.
+
+### Blockers / Follow-ups
+
+- Phase 4 should inspect and complete the existing dirty Telegram Mini App frontend bootstrap files without discarding
+  them.
