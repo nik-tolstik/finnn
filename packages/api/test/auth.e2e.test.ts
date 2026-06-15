@@ -595,7 +595,7 @@ describe("Auth API", () => {
     const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], TELEGRAM_STATE_COOKIE_NAME);
 
     prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-1" });
-    prisma.user.findUniqueOrThrow.mockResolvedValue({
+    const linkedUser = {
       id: "user-1",
       email: "ada@example.com",
       name: "Ada",
@@ -608,7 +608,9 @@ describe("Auth API", () => {
           photoUrl: "https://t.me/i/userpic/320/ada.jpg",
         },
       ],
-    });
+    };
+    prisma.user.findUnique.mockResolvedValue(linkedUser);
+    prisma.user.findUniqueOrThrow.mockResolvedValue(linkedUser);
 
     const response = await request(app.getHttpServer())
       .get(`/auth/telegram/callback?code=telegram-code&state=${state}`)
@@ -739,7 +741,7 @@ describe("Auth API", () => {
       },
     });
     prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-1" });
-    prisma.user.findUniqueOrThrow.mockResolvedValue({
+    const linkedUser = {
       id: "user-1",
       email: "ada@example.com",
       name: "Ada",
@@ -752,7 +754,9 @@ describe("Auth API", () => {
           photoUrl: "https://t.me/i/userpic/320/new-ada.jpg",
         },
       ],
-    });
+    };
+    prisma.user.findUnique.mockResolvedValue(linkedUser);
+    prisma.user.findUniqueOrThrow.mockResolvedValue(linkedUser);
 
     const response = await request(app.getHttpServer())
       .post("/auth/telegram-mini/session")
@@ -792,6 +796,32 @@ describe("Auth API", () => {
       data: expect.objectContaining({ userId: "user-1", revokedAt: null }),
     });
     expect(getSetCookieValues(response)[0]).toContain(`${AUTH_COOKIE_NAME}=`);
+  });
+
+  it("rejects a stale Telegram Mini App identity whose user no longer exists", async () => {
+    const initData = createTelegramMiniAppInitData({
+      user: {
+        id: 123,
+        first_name: "Ada",
+        last_name: "Lovelace",
+        username: "ada",
+        photo_url: "https://t.me/i/userpic/320/ada.jpg",
+      },
+    });
+    prisma.authIdentity.findUnique.mockResolvedValue({ userId: "missing-user" });
+    prisma.user.findUnique.mockResolvedValue(null);
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/telegram-mini/session")
+      .send({ initData })
+      .expect(409);
+
+    expect(response.body.message).toBe(
+      "Telegram аккаунт привязан к несуществующему пользователю. Переподключите Telegram."
+    );
+    expect(prisma.authIdentity.delete).not.toHaveBeenCalled();
+    expect(prisma.user.create).not.toHaveBeenCalled();
+    expect(prisma.authSession.create).not.toHaveBeenCalled();
   });
 
   it("creates a nullable-email user on first Telegram Mini App session", async () => {
@@ -860,7 +890,7 @@ describe("Auth API", () => {
       },
     });
     prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-1" });
-    prisma.user.findUniqueOrThrow.mockResolvedValue({
+    const linkedUser = {
       id: "user-1",
       email: "ada@example.com",
       name: "Ada",
@@ -873,7 +903,9 @@ describe("Auth API", () => {
           photoUrl: "https://t.me/i/userpic/320/ada-new.jpg",
         },
       ],
-    });
+    };
+    prisma.user.findUnique.mockResolvedValue(linkedUser);
+    prisma.user.findUniqueOrThrow.mockResolvedValue(linkedUser);
 
     await request(app.getHttpServer()).post("/auth/telegram-mini/session").send({ initData }).expect(200);
 

@@ -654,6 +654,17 @@ export class AuthService {
     });
 
     if (existingIdentity) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { id: existingIdentity.userId },
+        select: AUTH_USER_SELECT,
+      });
+
+      if (!existingUser) {
+        throw new ConflictException(
+          "Telegram аккаунт привязан к несуществующему пользователю. Переподключите Telegram."
+        );
+      }
+
       await this.updateTelegramIdentity(existingIdentity.userId, claims);
       const user = await this.prisma.user.findUniqueOrThrow({
         where: { id: existingIdentity.userId },
@@ -662,6 +673,10 @@ export class AuthService {
       return toAuthUser(user);
     }
 
+    return this.createTelegramUser(claims);
+  }
+
+  private async createTelegramUser(claims: TelegramClaims): Promise<ReturnType<typeof toAuthUser>> {
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
