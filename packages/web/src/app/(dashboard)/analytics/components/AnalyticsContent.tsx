@@ -2,9 +2,19 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ArrowRightLeft, HandCoins, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import {
+  ArrowRightLeft,
+  CalendarDays,
+  HandCoins,
+  Loader2,
+  PiggyBank,
+  ReceiptText,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import dynamic from "next/dynamic";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import {
@@ -13,6 +23,14 @@ import {
   toAnalyticsOverviewResult,
 } from "@/modules/analytics/analytics.api";
 import type { AnalyticsOverviewResult } from "@/modules/analytics/analytics.types";
+import {
+  ANALYTICS_PERIOD_PRESETS,
+  type AnalyticsPeriodPreset,
+  type AnalyticsTone,
+  applyAnalyticsPeriodPreset,
+  buildAnalyticsOverviewViewModel,
+  getActiveAnalyticsPeriodPreset,
+} from "@/modules/analytics/analytics.view-model";
 import { getCategories } from "@/modules/categories/category.api";
 import {
   TransactionsFilterButton,
@@ -22,10 +40,9 @@ import {
 import { getWorkspaceMembers } from "@/modules/workspace/workspace.api";
 import { getAnalyticsOverview as getApiAnalyticsOverview } from "@/shared/api/generated/analytics/analytics";
 import { accountKeys, analyticsKeys, categoryKeys, workspaceKeys } from "@/shared/lib/query-keys";
-import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Select } from "@/shared/ui/select";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -49,19 +66,6 @@ function formatRangeLabel(startDate: string, endDate: string) {
   return `${start} - ${end}`;
 }
 
-function formatPercentageChange(change: number | null) {
-  if (change === null) {
-    return "Нет базы для сравнения";
-  }
-
-  if (change === 0) {
-    return "Без изменений";
-  }
-
-  const sign = change > 0 ? "+" : "";
-  return `${sign}${change.toFixed(1)}% к прошлому периоду`;
-}
-
 function formatCompactMoney(value: string, currency: string) {
   return formatMoney(value, currency);
 }
@@ -82,44 +86,151 @@ function AnalyticsChartsSkeleton() {
   );
 }
 
-function AnalyticsMetricCard({
+function getToneClassName(tone?: AnalyticsTone) {
+  if (tone === "positive") {
+    return "text-green-600";
+  }
+
+  if (tone === "negative") {
+    return "text-red-600";
+  }
+
+  return "text-muted-foreground";
+}
+
+function SecondaryMetricCard({
   title,
   description,
   value,
-  delta,
   tone,
   icon,
 }: {
   title: string;
   description: string;
   value: string;
-  delta?: string;
-  tone?: "positive" | "negative" | "neutral";
+  tone?: AnalyticsTone;
   icon: ReactNode;
 }) {
   return (
-    <Card className="gap-0">
-      <CardHeader className="flex-row items-start justify-between gap-3">
-        <div className="space-y-1">
-          <CardDescription>{title}</CardDescription>
-          <CardTitle className="text-2xl">{value}</CardTitle>
+    <Card className="gap-0 py-2 md:py-3">
+      <CardHeader className="flex-row items-start justify-between gap-2 px-3 md:gap-3 md:px-6">
+        <div className="min-w-0 space-y-1">
+          <CardDescription className="text-xs md:text-sm">{title}</CardDescription>
+          <CardTitle className={cn("truncate text-base md:text-2xl", tone ? getToneClassName(tone) : undefined)}>
+            {value}
+          </CardTitle>
         </div>
-        <div className="rounded-full border bg-muted/40 p-2 text-muted-foreground">{icon}</div>
+        <div className="hidden rounded-full border bg-muted/40 p-2 text-muted-foreground sm:block">{icon}</div>
+      </CardHeader>
+      <CardContent className="px-3 md:px-6">
+        <p className="line-clamp-2 text-xs text-muted-foreground md:text-sm">{description}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CashFlowOverview({
+  analytics,
+  viewModel,
+}: {
+  analytics: AnalyticsOverviewResult;
+  viewModel: ReturnType<typeof buildAnalyticsOverviewViewModel>;
+}) {
+  return (
+    <Card className="gap-0 overflow-hidden">
+      <CardHeader className="border-b pb-4">
+        <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <CardDescription>Чистый денежный поток</CardDescription>
+            <CardTitle className="text-3xl md:text-4xl">
+              {formatCompactMoney(analytics.summary.netFlow.totalInBaseCurrency, analytics.baseCurrency)}
+            </CardTitle>
+          </div>
+          <div className={cn("text-sm font-medium", getToneClassName(viewModel.netFlowTone))}>
+            {viewModel.netFlowDeltaLabel}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-4 py-4 md:grid-cols-3">
+        <div className="rounded-lg border bg-muted/20 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">Доходы</p>
+            <TrendingUp className="size-4 text-green-600" />
+          </div>
+          <p className="mt-2 text-xl font-semibold">
+            {formatCompactMoney(analytics.summary.income.totalInBaseCurrency, analytics.baseCurrency)}
+          </p>
+          <p className={cn("mt-1 text-xs font-medium", getToneClassName(viewModel.incomeTone))}>
+            {viewModel.incomeDeltaLabel}
+          </p>
+        </div>
+        <div className="rounded-lg border bg-muted/20 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">Расходы</p>
+            <TrendingDown className="size-4 text-red-600" />
+          </div>
+          <p className="mt-2 text-xl font-semibold">
+            {formatCompactMoney(analytics.summary.expense.totalInBaseCurrency, analytics.baseCurrency)}
+          </p>
+          <p className={cn("mt-1 text-xs font-medium", getToneClassName(viewModel.expenseTone))}>
+            {viewModel.expenseDeltaLabel}
+          </p>
+        </div>
+        <div className="rounded-lg border bg-muted/20 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">Норма сбережения</p>
+            <PiggyBank className="size-4 text-muted-foreground" />
+          </div>
+          <p className={cn("mt-2 text-xl font-semibold", getToneClassName(viewModel.savingRateTone))}>
+            {viewModel.savingRateLabel}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Чистый поток от доходов</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LargestMovementsList({ analytics }: { analytics: AnalyticsOverviewResult }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Крупнейшие движения</CardTitle>
+        <CardDescription>Топ-10 по абсолютному денежному эффекту в базовой валюте.</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">{description}</p>
-        {delta ? (
-          <p
-            className={cn(
-              "mt-2 text-sm font-medium",
-              tone === "positive" && "text-green-600",
-              tone === "negative" && "text-red-600",
-              tone !== "positive" && tone !== "negative" && "text-muted-foreground"
-            )}
-          >
-            {delta}
-          </p>
-        ) : null}
+        {analytics.largestMovements.length > 0 ? (
+          <div className="divide-y rounded-lg border">
+            {analytics.largestMovements.map((movement) => (
+              <div
+                key={`${movement.kind}-${movement.id}`}
+                className="grid gap-2 px-3 py-3 text-sm md:grid-cols-[92px_92px_minmax(0,1fr)_minmax(120px,auto)] md:items-center"
+              >
+                <div className="text-muted-foreground">
+                  {format(new Date(`${movement.date}T00:00:00`), "dd.MM.yyyy")}
+                </div>
+                <div>
+                  <span className="inline-flex rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                    {movement.kindLabel}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{movement.primaryLabel}</p>
+                  <p className="truncate text-muted-foreground">{movement.secondaryLabel}</p>
+                </div>
+                <div className="flex items-center justify-between gap-3 md:block md:text-right">
+                  <span className="text-muted-foreground md:hidden">Сумма</span>
+                  <div>
+                    <p className="font-semibold">{movement.amountInBaseCurrency}</p>
+                    <p className="text-xs text-muted-foreground">{movement.originalAmount}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyCardState message="Нет движений для списка крупнейших операций." />
+        )}
       </CardContent>
     </Card>
   );
@@ -168,6 +279,15 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
   });
 
   const analytics = isAnalyticsSuccessResponse(analyticsData) ? analyticsData : null;
+  const viewModel = useMemo(() => (analytics ? buildAnalyticsOverviewViewModel(analytics) : null), [analytics]);
+  const activePeriodPreset = analytics
+    ? getActiveAnalyticsPeriodPreset({
+        dateFrom: analytics.effectiveRange.startDate,
+        dateTo: analytics.effectiveRange.endDate,
+      })
+    : null;
+  const periodStatusLabel =
+    ANALYTICS_PERIOD_PRESETS.find((preset) => preset.value === activePeriodPreset)?.label ?? "Произвольный период";
   const accounts = accountsData?.data || [];
   const categories = categoriesData?.data || [];
   const members = membersData?.data || [];
@@ -182,33 +302,32 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
     resetFilters();
   };
 
+  const handlePeriodPresetChange = (preset: AnalyticsPeriodPreset) => {
+    applyFilters(applyAnalyticsPeriodPreset(appliedFilters, preset));
+  };
+
   const isInitialLoading = isLoading && !analytics;
 
   return (
     <div className="mx-auto w-full max-w-[1440px]">
       <div className="space-y-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold md:text-3xl">Аналитика</h1>
-              <Badge variant="secondary">MVP</Badge>
-            </div>
-            {analytics ? (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">
-                  Период: {formatRangeLabel(analytics.effectiveRange.startDate, analytics.effectiveRange.endDate)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Открытые долги считаются как текущий срез и не зависят от фильтров транзакций.
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Сводка по денежному потоку, переводам и открытым долгам.</p>
-            )}
+            <h1 className="text-2xl font-semibold md:text-3xl">Финансовый обзор</h1>
           </div>
 
           <div className="flex items-center gap-3">
-            {isFetching && analytics ? <span className="text-sm text-muted-foreground">Обновляем…</span> : null}
+            <div className="min-w-0 flex-1 sm:w-48 sm:flex-none">
+              <Select<AnalyticsPeriodPreset>
+                label="Период"
+                placeholder="Период"
+                value={activePeriodPreset ?? undefined}
+                valueLabel={analytics ? periodStatusLabel : undefined}
+                multiple={false}
+                options={ANALYTICS_PERIOD_PRESETS}
+                onChange={handlePeriodPresetChange}
+              />
+            </div>
             <TransactionsFilterButton
               appliedFiltersCount={appliedFiltersCount}
               disabled={isFiltersNavigationPending}
@@ -219,9 +338,15 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
           </div>
         </div>
 
+        {analytics ? (
+          <p className="sr-only">
+            Период: {formatRangeLabel(analytics.effectiveRange.startDate, analytics.effectiveRange.endDate)}
+          </p>
+        ) : null}
+
         {isInitialLoading ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-2 md:gap-4 xl:grid-cols-5">
               {Array.from({ length: 5 }).map((_, index) => (
                 <Card key={index}>
                   <CardContent className="space-y-3 py-4">
@@ -240,142 +365,52 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
               </div>
             </div>
           </div>
-        ) : analytics ? (
+        ) : analytics && viewModel ? (
           <>
+            <CashFlowOverview analytics={analytics} viewModel={viewModel} />
+
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-              <AnalyticsMetricCard
-                title="Доходы"
-                description={`${analytics.summary.income.transactionCount} транзакций`}
-                value={formatCompactMoney(analytics.summary.income.totalInBaseCurrency, analytics.baseCurrency)}
-                delta={formatPercentageChange(analytics.summary.income.percentageChange)}
-                tone={
-                  analytics.summary.income.percentageChange === null
-                    ? "neutral"
-                    : analytics.summary.income.percentageChange >= 0
-                      ? "positive"
-                      : "negative"
-                }
-                icon={<TrendingUp className="size-4" />}
+              <SecondaryMetricCard
+                title="Расходы в день"
+                description={`${analytics.effectiveRange.dayCount} дней в периоде`}
+                value={viewModel.averageExpensePerDayLabel}
+                icon={<ReceiptText className="size-4" />}
               />
-              <AnalyticsMetricCard
-                title="Расходы"
-                description={`${analytics.summary.expense.transactionCount} транзакций`}
-                value={formatCompactMoney(analytics.summary.expense.totalInBaseCurrency, analytics.baseCurrency)}
-                delta={formatPercentageChange(analytics.summary.expense.percentageChange)}
-                tone={
-                  analytics.summary.expense.percentageChange === null
-                    ? "neutral"
-                    : analytics.summary.expense.percentageChange <= 0
-                      ? "positive"
-                      : "negative"
-                }
-                icon={<TrendingDown className="size-4" />}
+              <SecondaryMetricCard
+                title="Доходы в день"
+                description={`${analytics.summary.income.transactionCount} доходных операций`}
+                value={viewModel.averageIncomePerDayLabel}
+                icon={<CalendarDays className="size-4" />}
               />
-              <AnalyticsMetricCard
-                title="Чистый поток"
-                description="Доходы минус расходы"
-                value={formatCompactMoney(analytics.summary.netFlow.totalInBaseCurrency, analytics.baseCurrency)}
-                delta={formatPercentageChange(analytics.summary.netFlow.percentageChange)}
-                tone={
-                  analytics.summary.netFlow.percentageChange === null
-                    ? "neutral"
-                    : analytics.summary.netFlow.percentageChange >= 0
-                      ? "positive"
-                      : "negative"
-                }
-                icon={<Wallet className="size-4" />}
-              />
-              <AnalyticsMetricCard
+              <SecondaryMetricCard
                 title="Объём переводов"
                 description={`${analytics.summary.transferVolume.transactionCount} переводов`}
                 value={formatCompactMoney(analytics.summary.transferVolume.totalInBaseCurrency, analytics.baseCurrency)}
                 icon={<ArrowRightLeft className="size-4" />}
               />
-              <AnalyticsMetricCard
+              <SecondaryMetricCard
                 title="Открытые долги сейчас"
                 description={`${analytics.summary.openDebts.debtCount} активных долгов`}
                 value={formatCompactMoney(analytics.summary.openDebts.totalInBaseCurrency, analytics.baseCurrency)}
                 icon={<HandCoins className="size-4" />}
               />
+              <SecondaryMetricCard
+                title="Топ категория"
+                description={
+                  viewModel.topExpenseCategory
+                    ? `${viewModel.topExpenseCategory.sharePercent.toFixed(1)}% расходов · ${
+                        viewModel.topExpenseCategory.transactionCount
+                      } операций`
+                    : "Нет расходов в периоде"
+                }
+                value={viewModel.topExpenseCategory?.name ?? "Нет данных"}
+                icon={<Wallet className="size-4" />}
+              />
             </div>
 
-            <AnalyticsCharts analytics={analytics} />
+            <AnalyticsCharts analytics={analytics} viewModel={viewModel} />
 
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Разбивка по категориям</CardTitle>
-                  <CardDescription>Полная таблица расходов с долей и количеством операций.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {analytics.expenseCategories.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Категория</TableHead>
-                          <TableHead>Операций</TableHead>
-                          <TableHead>Доля</TableHead>
-                          <TableHead className="text-right">Сумма</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {analytics.expenseCategories.map((category) => (
-                          <TableRow key={category.id}>
-                            <TableCell className="font-medium">{category.name}</TableCell>
-                            <TableCell>{category.transactionCount}</TableCell>
-                            <TableCell>{category.sharePercent.toFixed(1)}%</TableCell>
-                            <TableCell className="text-right">
-                              {formatCompactMoney(category.totalInBaseCurrency, analytics.baseCurrency)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <EmptyCardState message="Нет расходных категорий для выбранного периода." />
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Крупнейшие движения</CardTitle>
-                  <CardDescription>Топ-10 по абсолютному денежному эффекту в базовой валюте.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {analytics.largestMovements.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Дата</TableHead>
-                          <TableHead>Тип</TableHead>
-                          <TableHead>Основное</TableHead>
-                          <TableHead>Детали</TableHead>
-                          <TableHead className="text-right">Исходная сумма</TableHead>
-                          <TableHead className="text-right">В базовой валюте</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {analytics.largestMovements.map((movement) => (
-                          <TableRow key={`${movement.kind}-${movement.id}`}>
-                            <TableCell>{format(new Date(`${movement.date}T00:00:00`), "dd.MM.yyyy")}</TableCell>
-                            <TableCell>{movement.kindLabel}</TableCell>
-                            <TableCell className="font-medium">{movement.primaryLabel}</TableCell>
-                            <TableCell className="max-w-[220px] truncate text-muted-foreground">
-                              {movement.secondaryLabel}
-                            </TableCell>
-                            <TableCell className="text-right">{movement.originalAmount}</TableCell>
-                            <TableCell className="text-right">{movement.amountInBaseCurrency}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <EmptyCardState message="Нет движений для таблицы крупнейших операций." />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            <LargestMovementsList analytics={analytics} />
           </>
         ) : (
           <Card>
@@ -401,6 +436,16 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
         onApply={handleApplyFilters}
         onReset={handleResetFilters}
       />
+
+      {isFetching && analytics ? (
+        <div
+          role="status"
+          className="fixed right-4 bottom-4 z-50 rounded-full border bg-background/95 p-3 text-muted-foreground shadow-lg backdrop-blur"
+        >
+          <Loader2 className="size-5 animate-spin" />
+          <span className="sr-only">Обновление аналитики</span>
+        </div>
+      ) : null}
     </div>
   );
 }
