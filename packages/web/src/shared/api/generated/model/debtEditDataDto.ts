@@ -5,10 +5,15 @@
  * Backend API for Finnn finance tracking
  * OpenAPI spec version: 0.1.0
  */
+import type { DebtAccountWithOwnerDto } from "./debtAccountWithOwnerDto";
 
 export interface DebtEditDataDto {
   personName: string;
   initialAmount: string;
+  /** @nullable */
+  initialToAmount?: string | null;
   initialDate: string;
   currency: string;
+  /** @nullable */
+  account?: DebtAccountWithOwnerDto | null;
 }

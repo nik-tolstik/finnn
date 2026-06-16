@@ -22,6 +22,12 @@ export class CreateDebtDto {
   @Matches(POSITIVE_MONEY_PATTERN, { message: "Сумма должна быть больше 0" })
   amount!: string;
 
+  @ApiPropertyOptional({ example: "31.50", type: String })
+  @IsOptional()
+  @IsString()
+  @Matches(POSITIVE_MONEY_PATTERN, { message: "Сумма должна быть больше 0" })
+  toAmount?: string;
+
   @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
   @Type(() => Date)
   @IsDate()
@@ -36,10 +42,9 @@ export class CreateDebtDto {
   @IsString()
   accountId?: string;
 
-  @ApiPropertyOptional({ example: "BYN", type: String })
-  @IsOptional()
+  @ApiProperty({ example: "BYN", type: String })
   @IsString()
-  currency?: string;
+  currency!: string;
 }
 
 export class CloseDebtDto {
@@ -89,6 +94,17 @@ export class AddToDebtDto {
   @ApiProperty({ example: true, type: Boolean })
   @IsBoolean()
   useAccount!: boolean;
+
+  @ApiPropertyOptional({ example: "31.50", type: String })
+  @IsOptional()
+  @IsString()
+  @Matches(POSITIVE_MONEY_PATTERN, { message: "Сумма должна быть больше 0" })
+  toAmount?: string;
+
+  @ApiPropertyOptional({ example: "665f5d865ef5a20c0d2f1111", type: String })
+  @IsOptional()
+  @IsString()
+  accountId?: string;
 }
 
 export class UpdateDebtDto {
@@ -101,6 +117,12 @@ export class UpdateDebtDto {
   @IsString()
   @Matches(POSITIVE_MONEY_PATTERN, { message: "Сумма должна быть больше 0" })
   amount!: string;
+
+  @ApiPropertyOptional({ example: "31.50", type: String })
+  @IsOptional()
+  @IsString()
+  @Matches(POSITIVE_MONEY_PATTERN, { message: "Сумма должна быть больше 0" })
+  toAmount?: string;
 
   @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
   @Type(() => Date)
@@ -200,9 +222,6 @@ export class DebtDto {
   @ApiProperty({ type: String })
   currency!: string;
 
-  @ApiPropertyOptional({ nullable: true, type: String })
-  accountId!: string | null;
-
   @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
   date!: string;
 
@@ -214,9 +233,6 @@ export class DebtDto {
 
   @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
   updatedAt!: string;
-
-  @ApiPropertyOptional({ nullable: true, type: DebtAccountDto })
-  account!: DebtAccountDto | null;
 }
 
 export class DebtEditDataDto {
@@ -226,11 +242,17 @@ export class DebtEditDataDto {
   @ApiProperty({ type: String })
   initialAmount!: string;
 
+  @ApiPropertyOptional({ nullable: true, type: String })
+  initialToAmount!: string | null;
+
   @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
   initialDate!: string;
 
   @ApiProperty({ type: String })
   currency!: string;
+
+  @ApiPropertyOptional({ nullable: true, type: DebtAccountWithOwnerDto })
+  account!: DebtAccountWithOwnerDto | null;
 }
 
 export class DebtEntryTransactionDebtDto {
@@ -254,9 +276,6 @@ export class DebtEntryTransactionDebtDto {
 
   @ApiProperty({ type: String })
   currency!: string;
-
-  @ApiPropertyOptional({ nullable: true, type: String })
-  accountId!: string | null;
 
   @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
   date!: string;

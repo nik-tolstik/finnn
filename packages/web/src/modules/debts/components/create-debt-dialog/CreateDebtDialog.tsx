@@ -12,6 +12,7 @@ import type { Account } from "@/modules/accounts/account.types";
 import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CURRENCY_OPTIONS, type Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
+import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { useSession } from "@/shared/lib/api-session-client";
 import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
@@ -66,6 +67,11 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
     return getDefaultDebtAccount(accounts, session?.user?.id);
   }, [accounts, session?.user?.id]);
 
+  const form = useForm<CreateDebtInput>({
+    resolver: zodResolver(createDebtSchema),
+    defaultValues: getCreateDebtDefaultValues(),
+  });
+
   const {
     register,
     handleSubmit,
@@ -73,25 +79,35 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
     reset,
     setValue,
     control,
-  } = useForm<CreateDebtInput>({
-    resolver: zodResolver(createDebtSchema),
-    defaultValues: getCreateDebtDefaultValues(),
-  });
+  } = form;
 
   const debtType = useWatch({ control, name: "type" });
   const useAccount = useWatch({ control, name: "useAccount" });
   const accountId = useWatch({ control, name: "accountId" });
   const currency = useWatch({ control, name: "currency" });
   const amount = useWatch({ control, name: "amount" });
+  const toAmount = useWatch({ control, name: "toAmount" });
+  const date = useWatch({ control, name: "date" });
 
   const selectedAccount = useMemo(() => {
     if (!accountId || !accounts.length) return undefined;
     return accounts.find((acc) => acc.id === accountId);
   }, [accountId, accounts]);
 
+  const debtCurrency = (currency || DEFAULT_CURRENCY) as Currency;
+  const currenciesMatch = !selectedAccount || selectedAccount.currency === debtCurrency;
+  const accountAmount = currenciesMatch ? amount : toAmount;
+
+  const { handleAmountChange, handleToAmountChange } = useCurrencyAmountSync({
+    form,
+    fromCurrency: debtCurrency,
+    toCurrency: useAccount ? selectedAccount?.currency : undefined,
+    date,
+  });
+
   const previewAccount = useMemo(() => {
-    return getCreateDebtPreviewAccount({ selectedAccount, useAccount, amount, debtType });
-  }, [selectedAccount, useAccount, amount, debtType]);
+    return getCreateDebtPreviewAccount({ selectedAccount, useAccount, amount, accountAmount, debtType });
+  }, [selectedAccount, useAccount, amount, accountAmount, debtType]);
 
   const prevOpenRef = useRef(open);
 
@@ -109,9 +125,22 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
   }, [open, defaultAccount, accountId, setValue]);
 
   const onSubmit = async (data: CreateDebtInput) => {
+    const selectedAccountIsCrossCurrency =
+      data.useAccount && selectedAccount && selectedAccount.currency !== data.currency;
+
+    if (selectedAccountIsCrossCurrency && !data.toAmount) {
+      toast.error("Укажите сумму в валюте счёта");
+      return;
+    }
+
     const balanceDeltas = new Map<string, string>();
     if (data.useAccount && data.accountId) {
-      addAccountBalanceDelta(balanceDeltas, data.accountId, getDebtInitialAccountBalanceDelta(data.type, data.amount));
+      const accountSideAmount = selectedAccountIsCrossCurrency ? data.toAmount : data.amount;
+      addAccountBalanceDelta(
+        balanceDeltas,
+        data.accountId,
+        getDebtInitialAccountBalanceDelta(data.type, accountSideAmount || data.amount)
+      );
     }
 
     const optimisticDebt = {
@@ -119,24 +148,13 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
       workspaceId,
       type: data.type,
       personName: data.personName,
-      accountId: data.useAccount ? data.accountId || null : null,
       amount: data.amount,
       remainingAmount: data.amount,
-      currency: selectedAccount?.currency ?? data.currency ?? DEFAULT_CURRENCY,
+      currency: data.currency,
       status: "open",
       date: data.date,
       createdAt: new Date(),
       updatedAt: new Date(),
-      account:
-        data.useAccount && selectedAccount
-          ? {
-              id: selectedAccount.id,
-              name: selectedAccount.name,
-              currency: selectedAccount.currency,
-              color: selectedAccount.color,
-              icon: selectedAccount.icon,
-            }
-          : null,
     };
 
     try {
@@ -222,6 +240,23 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
               </Label>
             </div>
 
+            <div className="space-y-2">
+              <Label required>Валюта долга</Label>
+              <Controller
+                control={control}
+                name="currency"
+                render={({ field }) => (
+                  <Select
+                    options={CURRENCY_OPTIONS}
+                    value={(field.value || DEFAULT_CURRENCY) as Currency}
+                    onChange={(value) => field.onChange(value)}
+                    multiple={false}
+                  />
+                )}
+              />
+              {errors.currency && <p className="text-sm text-destructive">{errors.currency.message}</p>}
+            </div>
+
             {useAccount ? (
               <div className="space-y-2">
                 <Label required>{debtType === DebtType.LENT ? "С какого счёта" : "На какой счёт"} </Label>
@@ -243,38 +278,49 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
                 )}
                 {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
               </div>
-            ) : (
-              <div className="space-y-2">
-                <Label required>Валюта</Label>
-                <Controller
-                  control={control}
-                  name="currency"
-                  render={({ field }) => (
-                    <Select
-                      options={CURRENCY_OPTIONS}
-                      value={(field.value || DEFAULT_CURRENCY) as Currency}
-                      onChange={(value) => field.onChange(value)}
-                      multiple={false}
-                    />
-                  )}
-                />
-              </div>
-            )}
+            ) : null}
 
             <div className="space-y-2">
               <Label htmlFor="amount" required>
-                Сумма
+                Сумма долга
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                  {getCurrencySymbol(
-                    useAccount ? selectedAccount?.currency || DEFAULT_CURRENCY : currency || DEFAULT_CURRENCY
-                  )}
+                  {getCurrencySymbol(debtCurrency)}
                 </span>
-                <NumberInput id="amount" placeholder="0.00" className="pl-9" {...register("amount")} />
+                <NumberInput
+                  id="amount"
+                  placeholder="0.00"
+                  className="pl-9"
+                  {...register("amount", {
+                    onChange: (event) => handleAmountChange(event.target.value),
+                  })}
+                />
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
+
+            {useAccount && selectedAccount && !currenciesMatch ? (
+              <div className="space-y-2">
+                <Label htmlFor="toAmount" required>
+                  {debtType === DebtType.LENT ? "Сумма списания" : "Сумма зачисления"} ({selectedAccount.currency})
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                    {getCurrencySymbol(selectedAccount.currency)}
+                  </span>
+                  <NumberInput
+                    id="toAmount"
+                    placeholder="0.00"
+                    className="pl-9"
+                    {...register("toAmount", {
+                      onChange: (event) => handleToAmountChange(event.target.value),
+                    })}
+                  />
+                </div>
+                {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
+              </div>
+            ) : null}
 
             <div className="space-y-2">
               <Label>Дата</Label>

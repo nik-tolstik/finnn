@@ -142,7 +142,6 @@ model Account {
   paymentTransactions PaymentTransaction[]
   outgoingTransfers TransferTransaction[] @relation("TransferFromAccount")
   incomingTransfers TransferTransaction[] @relation("TransferToAccount")
-  debts            Debt[]
   debtTransactions DebtTransaction[]
 
   @@index([workspaceId, archived])
@@ -270,14 +269,12 @@ model Debt {
   amount          String
   remainingAmount String
   currency        String
-  accountId       String?  @db.ObjectId
   date            DateTime @default(now())
   status          String   @default("open")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   workspace    Workspace         @relation(fields: [workspaceId], references: [id])
-  account      Account?          @relation(fields: [accountId], references: [id])
   transactions DebtTransaction[]
 
   @@index([workspaceId, status])

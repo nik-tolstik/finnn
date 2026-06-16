@@ -70,14 +70,11 @@ export function getPreviewDebtTransactionAccount<TAccount extends { id: string; 
   }
 
   const nextAmount = amount || debtTransaction.amount;
-  const nextToAmount =
-    debtTransaction.type === DebtTransactionType.CLOSED ? (currenciesMatch ? null : toAmount || null) : null;
+  const nextToAmount = selectedAccount && !currenciesMatch ? toAmount || null : null;
 
   if (
     compareMoney(nextAmount || "0", "0") <= 0 ||
-    (debtTransaction.type === DebtTransactionType.CLOSED &&
-      !currenciesMatch &&
-      (!nextToAmount || compareMoney(nextToAmount, "0") <= 0))
+    (selectedAccount && !currenciesMatch && (!nextToAmount || compareMoney(nextToAmount, "0") <= 0))
   ) {
     return selectedAccount;
   }

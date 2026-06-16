@@ -38,18 +38,10 @@ function createDebtDto(overrides: Record<string, unknown> = {}) {
     amount: "100",
     remainingAmount: "75",
     currency: "USD",
-    accountId: "account-1",
     date: "2026-04-01T00:00:00.000Z",
     status: DebtStatus.OPEN,
     createdAt: "2026-04-01T00:00:00.000Z",
     updatedAt: "2026-04-02T00:00:00.000Z",
-    account: {
-      id: "account-1",
-      name: "Cash",
-      currency: "USD",
-      color: null,
-      icon: "Wallet",
-    },
     ...overrides,
   };
 }
@@ -73,7 +65,6 @@ function createDebtTransactionDto(overrides: Record<string, unknown> = {}) {
       amount: "100",
       remainingAmount: "75",
       currency: "USD",
-      accountId: "account-1",
       date: "2026-04-01T00:00:00.000Z",
       status: DebtStatus.OPEN,
       createdAt: "2026-04-01T00:00:00.000Z",
@@ -104,7 +95,7 @@ describe("debt.api", () => {
 
   it("maps debt lists to the UI-facing Date shape and forwards filters", async () => {
     listApiDebtsMock.mockResolvedValue({
-      data: [createDebtDto({ accountId: null, account: null })],
+      data: [createDebtDto()],
       total: 1,
     });
 
@@ -132,8 +123,6 @@ describe("debt.api", () => {
       data: [
         expect.objectContaining({
           id: "debt-1",
-          accountId: null,
-          account: null,
           date: new Date("2026-04-01T00:00:00.000Z"),
           updatedAt: new Date("2026-04-02T00:00:00.000Z"),
         }),
@@ -155,9 +144,11 @@ describe("debt.api", () => {
           type: DebtType.LENT,
           personName: "Alex",
           amount: "100",
+          toAmount: "31,50",
           date: new Date("2026-04-04T12:00:00.000Z"),
           useAccount: true,
           accountId: "account-1",
+          currency: "BYN",
         },
         requestOptions
       )
@@ -170,6 +161,7 @@ describe("debt.api", () => {
         {
           personName: "Mira",
           amount: "125",
+          toAmount: "39,50",
           date: new Date("2026-04-05T12:00:00.000Z"),
         },
         requestOptions
@@ -184,12 +176,14 @@ describe("debt.api", () => {
         date: "2026-04-04T12:00:00.000Z",
         useAccount: true,
         accountId: "account-1",
+        currency: "BYN",
+        toAmount: "31.50",
       }),
       requestOptions
     );
     expect(updateApiDebtMock).toHaveBeenCalledWith(
       "debt-1",
-      expect.objectContaining({ date: "2026-04-05T12:00:00.000Z" }),
+      expect.objectContaining({ date: "2026-04-05T12:00:00.000Z", toAmount: "39.50" }),
       requestOptions
     );
   });
@@ -201,7 +195,9 @@ describe("debt.api", () => {
 
     const { addToDebt, closeDebt, deleteDebt } = await import("./debt.api");
 
-    await expect(addToDebt("debt-1", { amount: "20", useAccount: false }, requestOptions)).resolves.toEqual({
+    await expect(
+      addToDebt("debt-1", { amount: "20", toAmount: "65", useAccount: true, accountId: "account-1" }, requestOptions)
+    ).resolves.toEqual({
       data: expect.objectContaining({ amount: "120" }),
     });
     await expect(
@@ -221,7 +217,11 @@ describe("debt.api", () => {
     });
     await expect(deleteDebt("debt-1", requestOptions)).resolves.toEqual({ success: true });
 
-    expect(addToApiDebtMock).toHaveBeenCalledWith("debt-1", { amount: "20", useAccount: false }, requestOptions);
+    expect(addToApiDebtMock).toHaveBeenCalledWith(
+      "debt-1",
+      { amount: "20", toAmount: "65", useAccount: true, accountId: "account-1" },
+      requestOptions
+    );
     expect(closeApiDebtMock).toHaveBeenCalledWith(
       "debt-1",
       expect.objectContaining({
@@ -266,8 +266,10 @@ describe("debt.api", () => {
       debt: {
         personName: "Alex",
         initialAmount: "100",
+        initialToAmount: null,
         initialDate: "2026-04-01T00:00:00.000Z",
         currency: "USD",
+        account: null,
       },
     });
     updateApiDebtTransactionMock.mockResolvedValue({
@@ -281,8 +283,10 @@ describe("debt.api", () => {
       data: {
         personName: "Alex",
         initialAmount: "100",
+        initialToAmount: null,
         initialDate: "2026-04-01T00:00:00.000Z",
         currency: "USD",
+        account: null,
       },
     });
     await expect(

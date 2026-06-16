@@ -40,6 +40,8 @@ export function EditDebtTransactionDialog({
     previewAccount,
     currenciesMatch,
     currentAccountUnavailable,
+    handleAmountChange,
+    handleToAmountChange,
   } = useEditDebtTransactionDialog({
     debtTransaction,
     workspaceId,
@@ -71,6 +73,8 @@ export function EditDebtTransactionDialog({
                 selectedAccount={selectedAccount}
                 currenciesMatch={currenciesMatch}
                 debtAmountLabel={debtAmountLabel}
+                onAmountChange={handleAmountChange}
+                onToAmountChange={handleToAmountChange}
               />
               <EditDebtTransactionDateField />
             </form>

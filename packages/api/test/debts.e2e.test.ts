@@ -251,7 +251,6 @@ describe("Debts API", () => {
     expect(response.body.data[0]).toMatchObject({
       id: "debt-1",
       amount: "100",
-      account: { id: "account-1", name: "Main card" },
       date: "2026-05-20T12:00:00.000Z",
     });
     expect(prisma.debt.findMany).toHaveBeenCalledWith(
@@ -269,6 +268,7 @@ describe("Debts API", () => {
 
   it("creates account-backed debts and records the initial debt transaction", async () => {
     mockAuthenticatedSession(prisma);
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ balance: "100", currency: "USD" }));
 
     const response = await request(app.getHttpServer())
       .post("/workspaces/workspace-1/debts")
@@ -277,6 +277,8 @@ describe("Debts API", () => {
         type: "lent",
         personName: "Grace",
         amount: "40",
+        toAmount: "12",
+        currency: "BYN",
         date: "2026-05-26T12:00:00.000Z",
         useAccount: true,
         accountId: "account-1",
@@ -285,17 +287,17 @@ describe("Debts API", () => {
 
     expect(response.body.debt.amount).toBe("40");
     expect(prisma.account.update).toHaveBeenCalledWith({
-      data: { balance: "60" },
+      data: { balance: "88" },
       where: { id: "account-1" },
     });
     expect(prisma.debtTransaction.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ amount: "40", type: "created" }),
+        data: expect.objectContaining({ amount: "40", toAmount: "12", type: "created" }),
       })
     );
   });
 
-  it("rejects debt creation without an account or currency", async () => {
+  it("rejects debt creation without the required debt currency", async () => {
     mockAuthenticatedSession(prisma);
 
     const response = await request(app.getHttpServer())
@@ -310,7 +312,7 @@ describe("Debts API", () => {
       })
       .expect(400);
 
-    expect(response.body.message).toBe("Выберите счёт или валюту");
+    expect(response.body.message).toContain("currency must be a string");
     expect(prisma.debt.create).not.toHaveBeenCalled();
   });
 
@@ -363,14 +365,14 @@ describe("Debts API", () => {
     expect(prisma.debtTransaction.create).not.toHaveBeenCalled();
   });
 
-  it("adds to open debts and applies linked account balance deltas", async () => {
+  it("adds to open debts and applies selected account balance deltas", async () => {
     mockAuthenticatedSession(prisma);
     prisma.debt.update.mockResolvedValue(createDebtRecord({ amount: "120", remainingAmount: "110" }));
 
     const response = await request(app.getHttpServer())
       .post("/debts/debt-1/add")
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
-      .send({ amount: "20", useAccount: true })
+      .send({ amount: "20", useAccount: true, accountId: "account-1" })
       .expect(200);
 
     expect(response.body.debt.amount).toBe("120");
@@ -383,6 +385,63 @@ describe("Debts API", () => {
         data: expect.objectContaining({ amount: "20", type: "added" }),
       })
     );
+  });
+
+  it("adds to open debts without an account", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.debt.update.mockResolvedValue(createDebtRecord({ amount: "120", remainingAmount: "110" }));
+
+    const response = await request(app.getHttpServer())
+      .post("/debts/debt-1/add")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ amount: "20", useAccount: false })
+      .expect(200);
+
+    expect(response.body.debt.amount).toBe("120");
+    expect(prisma.account.update).not.toHaveBeenCalled();
+    expect(prisma.debtTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ accountId: null, amount: "20", type: "added" }),
+      })
+    );
+  });
+
+  it("adds to a debt with a cross-currency account-side amount", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ currency: "USD" }));
+    prisma.debt.update.mockResolvedValue(createDebtRecord({ amount: "120", remainingAmount: "110" }));
+
+    const response = await request(app.getHttpServer())
+      .post("/debts/debt-1/add")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ amount: "20", toAmount: "6", useAccount: true, accountId: "account-1" })
+      .expect(200);
+
+    expect(response.body.debt.amount).toBe("120");
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "94" },
+      where: { id: "account-1" },
+    });
+    expect(prisma.debtTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ amount: "20", toAmount: "6", type: "added" }),
+      })
+    );
+  });
+
+  it("rejects adding to a debt with a cross-currency account without an account-side amount", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ currency: "USD" }));
+
+    const response = await request(app.getHttpServer())
+      .post("/debts/debt-1/add")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ amount: "20", useAccount: true, accountId: "account-1" })
+      .expect(400);
+
+    expect(response.body.message).toBe("Укажите сумму в валюте счёта");
+    expect(prisma.account.update).not.toHaveBeenCalled();
+    expect(prisma.debtTransaction.create).not.toHaveBeenCalled();
   });
 
   it("returns edit data from the created transaction and falls back to debt fields", async () => {

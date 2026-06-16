@@ -13,7 +13,6 @@ import type {
   AddToDebtDto,
   CloseDebtDto,
   CreateDebtDto,
-  DebtAccountDto,
   DebtAccountWithOwnerDto,
   DebtDto,
   DebtEntryTransactionDto,
@@ -45,20 +44,6 @@ function toDate(value: string) {
   return new Date(value);
 }
 
-function toUiDebtAccount(account?: DebtAccountDto | null) {
-  if (!account) {
-    return null;
-  }
-
-  return {
-    id: account.id,
-    name: account.name,
-    currency: account.currency,
-    color: account.color ?? null,
-    icon: account.icon ?? null,
-  };
-}
-
 function toUiDebtAccountWithOwner(account?: DebtAccountWithOwnerDto | null) {
   if (!account) {
     return null;
@@ -88,11 +73,9 @@ function toUiDebtAccountWithOwner(account?: DebtAccountWithOwnerDto | null) {
 function toUiDebt(debt: DebtDto): DebtWithRelations {
   return {
     ...debt,
-    accountId: debt.accountId ?? null,
     date: toDate(debt.date),
     createdAt: toDate(debt.createdAt),
     updatedAt: toDate(debt.updatedAt),
-    account: toUiDebtAccount(debt.account),
   };
 }
 
@@ -105,7 +88,6 @@ function toUiDebtTransaction(transaction: DebtEntryTransactionDto): DebtTransact
     createdAt: toDate(transaction.createdAt),
     debt: {
       ...transaction.debt,
-      accountId: transaction.debt.accountId ?? null,
       date: toDate(transaction.debt.date),
       createdAt: toDate(transaction.debt.createdAt),
       updatedAt: toDate(transaction.debt.updatedAt),
@@ -119,6 +101,7 @@ function toCreateDebtDto(input: CreateDebtInput): CreateDebtDto {
     type: input.type as CreateDebtDto["type"],
     personName: input.personName,
     amount: normalizeMoneyString(input.amount),
+    toAmount: normalizeOptionalMoneyString(input.toAmount),
     date: input.date.toISOString(),
     useAccount: input.useAccount,
     accountId: input.accountId,
@@ -141,7 +124,9 @@ function toCloseDebtDto(input: CloseDebtInput): CloseDebtDto {
 function toAddToDebtDto(input: AddToDebtInput): AddToDebtDto {
   return {
     amount: normalizeMoneyString(input.amount),
+    toAmount: normalizeOptionalMoneyString(input.toAmount),
     useAccount: input.useAccount,
+    accountId: input.accountId,
   };
 }
 
@@ -149,6 +134,7 @@ function toUpdateDebtDto(input: UpdateDebtInput): UpdateDebtDto {
   return {
     personName: input.personName,
     amount: normalizeMoneyString(input.amount),
+    toAmount: normalizeOptionalMoneyString(input.toAmount),
     date: input.date.toISOString(),
   };
 }

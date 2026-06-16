@@ -16,6 +16,8 @@ interface EditDebtTransactionAmountFieldsProps {
   selectedAccount?: EditDebtTransactionDialogAccount;
   currenciesMatch: boolean;
   debtAmountLabel: string;
+  onAmountChange: (value: string) => void;
+  onToAmountChange: (value: string) => void;
 }
 
 export function EditDebtTransactionAmountFields({
@@ -23,27 +25,43 @@ export function EditDebtTransactionAmountFields({
   selectedAccount,
   currenciesMatch,
   debtAmountLabel,
+  onAmountChange,
+  onToAmountChange,
 }: EditDebtTransactionAmountFieldsProps) {
   const {
     register,
     formState: { errors },
   } = useFormContext<UpdateDebtTransactionInput>();
 
-  const showToAmountField =
-    debtTransaction.type === DebtTransactionType.CLOSED && !currenciesMatch && Boolean(selectedAccount);
+  const showToAmountField = !currenciesMatch && Boolean(selectedAccount);
+  const accountAmountLabel =
+    debtTransaction.type === DebtTransactionType.CLOSED
+      ? debtTransaction.debt.type === "lent"
+        ? "Сумма зачисления"
+        : "Сумма списания"
+      : debtTransaction.debt.type === "lent"
+        ? "Сумма списания"
+        : "Сумма зачисления";
 
   return (
     <>
       {showToAmountField ? (
         <div className="space-y-2">
           <Label htmlFor="toAmount" required>
-            Сумма отправления ({selectedAccount?.currency})
+            {accountAmountLabel} ({selectedAccount?.currency})
           </Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-sm font-medium text-muted-foreground">
               {selectedAccount ? getCurrencySymbol(selectedAccount.currency) : ""}
             </span>
-            <NumberInput id="toAmount" placeholder="0.00" className="pl-9" {...register("toAmount")} />
+            <NumberInput
+              id="toAmount"
+              placeholder="0.00"
+              className="pl-9"
+              {...register("toAmount", {
+                onChange: (event) => onToAmountChange(event.target.value),
+              })}
+            />
           </div>
           {errors.toAmount ? <p className="text-sm text-destructive">{errors.toAmount.message}</p> : null}
         </div>
@@ -57,7 +75,14 @@ export function EditDebtTransactionAmountFields({
           <span className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-sm font-medium text-muted-foreground">
             {getCurrencySymbol(debtTransaction.debt.currency)}
           </span>
-          <NumberInput id="amount" placeholder="0.00" className="pl-9" {...register("amount")} />
+          <NumberInput
+            id="amount"
+            placeholder="0.00"
+            className="pl-9"
+            {...register("amount", {
+              onChange: (event) => onAmountChange(event.target.value),
+            })}
+          />
         </div>
         {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
       </div>

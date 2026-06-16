@@ -16,8 +16,6 @@ export interface DebtEntryTransactionDebtDto {
   amount: string;
   remainingAmount: string;
   currency: string;
-  /** @nullable */
-  accountId?: string | null;
   date: string;
   status: DebtEntryTransactionDebtDtoStatus;
   createdAt: string;

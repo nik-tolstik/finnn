@@ -950,29 +950,6 @@ export function updateAccountBalancesInCache(
           return { items: didChange ? next : transactions };
         })
       );
-      continue;
-    }
-
-    if (queryDomain === "debts") {
-      context.queryClient.setQueryData(queryKey, (data: unknown) =>
-        mapQueryListData<DebtWithRelations>(data, (debts) => {
-          let didChange = false;
-          const next = debts.map((debt) => {
-            const nextAccount = debt.account ? applyDeltaToAccount(debt.account, balanceDeltaById) : debt.account;
-            if (nextAccount === debt.account) {
-              return debt;
-            }
-
-            didChange = true;
-            return {
-              ...debt,
-              account: nextAccount,
-            };
-          });
-
-          return { items: didChange ? next : debts };
-        })
-      );
     }
   }
 }
@@ -1026,28 +1003,6 @@ export function updateAccountsInCache(context: WorkspaceOptimisticContext, updat
         });
 
         return { items: didChange ? next : transactions };
-      })
-    );
-  }
-
-  for (const { queryKey } of getSnapshotsForDomains(context, ["debts"])) {
-    context.queryClient.setQueryData(queryKey, (data: unknown) =>
-      mapQueryListData<DebtWithRelations>(data, (debts) => {
-        let didChange = false;
-        const next = debts.map((debt) => {
-          const nextAccount = debt.account ? patchAccount(debt.account, patchById) : debt.account;
-          if (nextAccount === debt.account) {
-            return debt;
-          }
-
-          didChange = true;
-          return {
-            ...debt,
-            account: nextAccount,
-          };
-        });
-
-        return { items: didChange ? next : debts };
       })
     );
   }

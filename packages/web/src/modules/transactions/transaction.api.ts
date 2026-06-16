@@ -100,7 +100,6 @@ function toUiDebtTransaction(transaction: DebtTransactionDto): DebtTransactionWi
     createdAt: toDate(transaction.createdAt),
     debt: {
       ...transaction.debt,
-      accountId: transaction.debt.accountId ?? null,
       date: toDate(transaction.debt.date),
       createdAt: toDate(transaction.debt.createdAt),
       updatedAt: toDate(transaction.debt.updatedAt),

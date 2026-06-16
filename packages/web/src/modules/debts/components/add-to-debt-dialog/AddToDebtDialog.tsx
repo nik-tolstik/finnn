@@ -3,11 +3,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
+import type { Account } from "@/modules/accounts/account.types";
+import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
+import { useDialogState } from "@/shared/hooks/useDialogState";
 import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
 import {
   runOptimisticWorkspaceMutation,
@@ -17,6 +21,7 @@ import {
 import { accountKeys } from "@/shared/lib/query-keys";
 import { type AddToDebtInput, addToDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
@@ -36,54 +41,83 @@ interface AddToDebtDialogProps {
 
 export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: AddToDebtDialogProps) {
   const queryClient = useQueryClient();
+  const selectAccountDialog = useDialogState();
 
   const { data: accountsData } = useQuery({
     queryKey: accountKeys.list(workspaceId),
     queryFn: () => getAccounts(workspaceId),
-    enabled: open && !!debt.accountId,
+    enabled: open,
     staleTime: 5000,
   });
 
-  const fullAccount = debt.accountId ? accountsData?.data?.find((acc) => acc.id === debt.accountId) : undefined;
+  const accounts = useMemo(() => accountsData?.data || [], [accountsData?.data]);
+
+  const form = useForm<AddToDebtInput>({
+    resolver: zodResolver(addToDebtSchema),
+    defaultValues: {
+      amount: "",
+      toAmount: "",
+      useAccount: false,
+      accountId: "",
+    },
+  });
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    setValue,
     control,
-  } = useForm<AddToDebtInput>({
-    resolver: zodResolver(addToDebtSchema),
-    defaultValues: {
-      amount: "",
-      useAccount: !!debt.accountId,
-    },
-  });
+  } = form;
 
   const amount = useWatch({ control, name: "amount" });
+  const toAmount = useWatch({ control, name: "toAmount" });
+  const useAccount = useWatch({ control, name: "useAccount" });
+  const accountId = useWatch({ control, name: "accountId" });
+  const rateDate = useMemo(() => new Date(), []);
+
+  const selectedAccount = useMemo(() => {
+    if (!accountId) {
+      return undefined;
+    }
+
+    return accounts.find((account) => account.id === accountId);
+  }, [accountId, accounts]);
+
+  const currenciesMatch = !selectedAccount || selectedAccount.currency === debt.currency;
+  const accountAmount = currenciesMatch ? amount : toAmount;
+
+  const { handleAmountChange, handleToAmountChange } = useCurrencyAmountSync({
+    form,
+    fromCurrency: debt.currency,
+    toCurrency: useAccount ? selectedAccount?.currency : undefined,
+    date: rateDate,
+  });
 
   const previewAccount = useMemo(() => {
-    if (!fullAccount || !amount) {
-      return fullAccount;
+    if (!selectedAccount || !accountAmount) {
+      return selectedAccount;
     }
-    const amountNum = parseFloat(amount);
-    if (Number.isNaN(amountNum)) return fullAccount;
 
-    let newBalance = fullAccount.balance;
+    const amountNum = parseFloat(accountAmount);
+    if (Number.isNaN(amountNum)) return selectedAccount;
+
+    let newBalance = selectedAccount.balance;
     if (debt.type === DebtType.LENT) {
-      if (parseFloat(fullAccount.balance) < parseFloat(amount)) {
-        return fullAccount;
+      if (parseFloat(selectedAccount.balance) < parseFloat(accountAmount)) {
+        return selectedAccount;
       }
-      newBalance = subtractMoney(fullAccount.balance, amount);
+      newBalance = subtractMoney(selectedAccount.balance, accountAmount);
     } else {
-      newBalance = addMoney(fullAccount.balance, amount);
+      newBalance = addMoney(selectedAccount.balance, accountAmount);
     }
 
     return {
-      ...fullAccount,
+      ...selectedAccount,
       balance: newBalance,
     };
-  }, [fullAccount, amount, debt.type]);
+  }, [selectedAccount, accountAmount, debt.type]);
 
   const prevOpenRef = useRef(open);
 
@@ -91,20 +125,41 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     if (open && !prevOpenRef.current) {
       reset({
         amount: "",
-        useAccount: !!debt.accountId,
+        toAmount: "",
+        useAccount: false,
+        accountId: "",
       });
     }
     prevOpenRef.current = open;
-  }, [open, reset, debt.accountId]);
+  }, [open, reset]);
 
   const onSubmit = async (data: AddToDebtInput) => {
     const submitData: AddToDebtInput = {
       ...data,
-      useAccount: !!debt.accountId,
+      accountId: data.useAccount ? data.accountId : undefined,
+      toAmount: data.useAccount ? data.toAmount : undefined,
     };
+
+    if (submitData.useAccount && !submitData.accountId) {
+      toast.error("Выберите счёт");
+      return;
+    }
+
+    if (submitData.useAccount && selectedAccount?.currency !== debt.currency && !submitData.toAmount) {
+      toast.error("Укажите сумму в валюте счёта");
+      return;
+    }
+
     const balanceDeltas = new Map<string, string>();
-    if (submitData.useAccount) {
-      addAccountBalanceDelta(balanceDeltas, debt.accountId, getDebtInitialAccountBalanceDelta(debt.type, data.amount));
+    if (submitData.useAccount && submitData.accountId) {
+      addAccountBalanceDelta(
+        balanceDeltas,
+        submitData.accountId,
+        getDebtInitialAccountBalanceDelta(
+          debt.type,
+          selectedAccount?.currency !== debt.currency ? data.toAmount || data.amount : data.amount
+        )
+      );
     }
 
     try {
@@ -138,6 +193,10 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     }
   };
 
+  const handleAccountSelect = (account: Account) => {
+    setValue("accountId", account.id, { shouldValidate: true, shouldDirty: true });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow onCloseComplete={onCloseComplete}>
@@ -164,17 +223,77 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                   {getCurrencySymbol(debt.currency)}
                 </span>
-                <NumberInput id="addAmount" placeholder="0.00" className="pl-9" {...register("amount")} />
+                <NumberInput
+                  id="addAmount"
+                  placeholder="0.00"
+                  className="pl-9"
+                  {...register("amount", {
+                    onChange: (event) => handleAmountChange(event.target.value),
+                  })}
+                />
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
 
-            {debt.accountId && previewAccount && (
-              <div className="space-y-2">
-                <Label>{debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}</Label>
-                <AccountCard account={previewAccount} showOwner={false} />
-              </div>
-            )}
+            <div className="flex items-center space-x-2">
+              <Controller
+                control={control}
+                name="useAccount"
+                render={({ field }) => (
+                  <Checkbox id="addUseAccount" checked={field.value} onCheckedChange={field.onChange} />
+                )}
+              />
+              <Label htmlFor="addUseAccount" className="cursor-pointer">
+                Использовать счёт
+              </Label>
+            </div>
+
+            {useAccount ? (
+              <>
+                <div className="space-y-2">
+                  <Label required>{debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}</Label>
+                  {previewAccount && accountId ? (
+                    <AccountCard
+                      account={previewAccount}
+                      onClick={() => selectAccountDialog.openDialog(null)}
+                      showOwner={false}
+                    />
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => selectAccountDialog.openDialog(null)}
+                    >
+                      Выбрать счёт
+                    </Button>
+                  )}
+                  {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
+                </div>
+
+                {selectedAccount && !currenciesMatch ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="addToAmount" required>
+                      {debt.type === DebtType.LENT ? "Сумма списания" : "Сумма зачисления"} ({selectedAccount.currency})
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                        {getCurrencySymbol(selectedAccount.currency)}
+                      </span>
+                      <NumberInput
+                        id="addToAmount"
+                        placeholder="0.00"
+                        className="pl-9"
+                        {...register("toAmount", {
+                          onChange: (event) => handleToAmountChange(event.target.value),
+                        })}
+                      />
+                    </div>
+                    {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
+                  </div>
+                ) : null}
+              </>
+            ) : null}
           </form>
         </DialogContent>
 
@@ -187,6 +306,16 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
           </Button>
         </DialogFooter>
       </DialogWindow>
+
+      {selectAccountDialog.mounted && (
+        <SelectAccountDialog
+          workspaceId={workspaceId}
+          open={selectAccountDialog.open}
+          onOpenChange={selectAccountDialog.closeDialog}
+          onCloseComplete={selectAccountDialog.unmountDialog}
+          onSelect={handleAccountSelect}
+        />
+      )}
     </Dialog>
   );
 }

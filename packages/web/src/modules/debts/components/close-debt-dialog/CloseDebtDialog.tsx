@@ -12,6 +12,7 @@ import { SelectAccountDialog } from "@/modules/accounts/components/select-accoun
 import { getCategories } from "@/modules/categories/category.api";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
+import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {
   addAccountBalanceDelta,
@@ -75,6 +76,11 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   const accounts = useMemo(() => accountsData?.data || [], [accountsData?.data]);
   const categories = useMemo(() => categoriesData?.data || [], [categoriesData?.data]);
 
+  const form = useForm<CloseDebtInput>({
+    resolver: zodResolver(closeDebtSchema),
+    defaultValues: getCloseDebtDefaultValues(debt),
+  });
+
   const {
     register,
     handleSubmit,
@@ -82,10 +88,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     reset,
     setValue,
     control,
-  } = useForm<CloseDebtInput>({
-    resolver: zodResolver(closeDebtSchema),
-    defaultValues: getCloseDebtDefaultValues(debt),
-  });
+  } = form;
 
   const amount = useWatch({ control, name: "amount" });
   const paymentAmount = useWatch({ control, name: "paymentAmount" });
@@ -98,11 +101,19 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     if (!accountId || !accounts.length) return undefined;
     return accounts.find((acc) => acc.id === accountId);
   }, [accountId, accounts]);
+  const rateDate = useMemo(() => new Date(), []);
 
   const currenciesMatch = useMemo(() => {
     if (!selectedAccount) return true;
     return selectedAccount.currency === debt.currency;
   }, [selectedAccount, debt.currency]);
+
+  const { handleAmountChange, handleToAmountChange } = useCurrencyAmountSync({
+    form,
+    fromCurrency: debt.currency,
+    toCurrency: selectedAccount?.currency,
+    date: rateDate,
+  });
 
   const previewAccount = useMemo(() => {
     return getCloseDebtPreviewAccount({
@@ -167,7 +178,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       reset(getCloseDebtDefaultValues(debt));
     }
     prevOpenRef.current = open;
-  }, [open, reset, debt.remainingAmount, debt.accountId, debt]);
+  }, [open, reset, debt.remainingAmount, debt]);
 
   useEffect(() => {
     if (!currenciesMatch || !paymentAmount) {
@@ -268,6 +279,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       setValue("paymentAmount", "");
       setValue("closeEarly", false);
       setValue("categoryId", undefined);
+      handleAmountChange(amount || debt.remainingAmount);
     }
   };
 
@@ -276,6 +288,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     setValue("paymentAmount", debt.remainingAmount);
     setValue("closeEarly", false);
     setValue("categoryId", undefined);
+    handleAmountChange(debt.remainingAmount);
   };
 
   const handleCategorySelect = (option: ComboboxOption) => {
@@ -339,6 +352,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                       className="pl-9"
                       {...register("toAmount", {
                         required: !currenciesMatch ? "Сумма отправления обязательна" : false,
+                        onChange: (event) => handleToAmountChange(event.target.value),
                       })}
                     />
                   </div>
@@ -353,7 +367,14 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                       {getCurrencySymbol(debt.currency)}
                     </span>
-                    <NumberInput id="amount" placeholder="0.00" className="pl-9 pr-16" {...register("amount")} />
+                    <NumberInput
+                      id="amount"
+                      placeholder="0.00"
+                      className="pl-9 pr-16"
+                      {...register("amount", {
+                        onChange: (event) => handleAmountChange(event.target.value),
+                      })}
+                    />
                     <Button
                       type="button"
                       variant="ghost"

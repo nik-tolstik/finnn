@@ -6,18 +6,10 @@ export interface DebtWithRelations {
   amount: string;
   remainingAmount: string;
   currency: string;
-  accountId: string | null;
   date: Date;
   status: string;
   createdAt: Date;
   updatedAt: Date;
-  account: {
-    id: string;
-    name: string;
-    currency: string;
-    color: string | null;
-    icon: string | null;
-  } | null;
 }
 
 export interface DebtTransactionWithRelations {
@@ -38,7 +30,6 @@ export interface DebtTransactionWithRelations {
     amount: string;
     remainingAmount: string;
     currency: string;
-    accountId: string | null;
     date: Date;
     status: string;
     createdAt: Date;

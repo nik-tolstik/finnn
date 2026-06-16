@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
 import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
 import {
   runOptimisticWorkspaceMutation,
@@ -39,15 +40,6 @@ interface EditDebtDialogProps {
 export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: EditDebtDialogProps) {
   const queryClient = useQueryClient();
 
-  const { data: accountsData } = useQuery({
-    queryKey: accountKeys.list(workspaceId),
-    queryFn: () => getAccounts(workspaceId),
-    enabled: open && !!debt.accountId,
-    staleTime: 5000,
-  });
-
-  const fullAccount = debt.accountId ? accountsData?.data?.find((acc) => acc.id === debt.accountId) : undefined;
-
   const {
     data: editData,
     isLoading: isLoadingAmount,
@@ -65,36 +57,67 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
     retry: false,
   });
 
+  const initialAccountId = editData?.account?.id;
+
+  const { data: accountsData } = useQuery({
+    queryKey: accountKeys.list(workspaceId),
+    queryFn: () => getAccounts(workspaceId),
+    enabled: open && !!initialAccountId,
+    staleTime: 5000,
+  });
+
+  const fullAccount = initialAccountId ? accountsData?.data?.find((acc) => acc.id === initialAccountId) : undefined;
+
+  const form = useForm<UpdateDebtInput>({
+    resolver: zodResolver(updateDebtSchema),
+    defaultValues: {
+      personName: debt.personName,
+      amount: "",
+      toAmount: "",
+      date: new Date(debt.date),
+    },
+  });
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
     control,
-  } = useForm<UpdateDebtInput>({
-    resolver: zodResolver(updateDebtSchema),
-    defaultValues: {
-      personName: debt.personName,
-      amount: "",
-      date: new Date(debt.date),
-    },
-  });
+  } = form;
 
   useEffect(() => {
     if (open && debt?.id) {
       reset({
         personName: debt.personName,
         amount: editData?.initialAmount ?? "",
+        toAmount: editData?.initialToAmount ?? "",
         date: editData?.initialDate ? new Date(editData.initialDate) : new Date(debt.date),
       });
     }
   }, [open, debt?.id, debt.personName, debt.date, editData, reset]);
 
   const onSubmit = async (data: UpdateDebtInput) => {
+    if (fullAccount && fullAccount.currency !== currency && !data.toAmount) {
+      toast.error("Укажите сумму в валюте счёта");
+      return;
+    }
+
     const amountDelta = subtractMoney(data.amount, editData?.initialAmount ?? debt.amount);
     const nextRemainingAmount = addMoney(debt.remainingAmount, amountDelta);
+    const previousAccountAmount =
+      fullAccount && fullAccount.currency !== currency
+        ? editData?.initialToAmount || editData?.initialAmount || debt.amount
+        : editData?.initialAmount || debt.amount;
+    const nextAccountAmount =
+      fullAccount && fullAccount.currency !== currency ? data.toAmount || data.amount : data.amount;
+    const accountAmountDelta = subtractMoney(nextAccountAmount, previousAccountAmount);
     const balanceDeltas = new Map<string, string>();
-    addAccountBalanceDelta(balanceDeltas, debt.accountId, getDebtInitialAccountBalanceDelta(debt.type, amountDelta));
+    addAccountBalanceDelta(
+      balanceDeltas,
+      initialAccountId,
+      getDebtInitialAccountBalanceDelta(debt.type, accountAmountDelta)
+    );
 
     try {
       const result = await runOptimisticWorkspaceMutation({
@@ -131,20 +154,42 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
 
   const currency = editData?.currency ?? debt.currency;
   const amount = useWatch({ control, name: "amount" });
+  const toAmount = useWatch({ control, name: "toAmount" });
+  const date = useWatch({ control, name: "date" });
   const initialAmount = editData?.initialAmount ?? "";
+  const currenciesMatch = !fullAccount || fullAccount.currency === currency;
+
+  const { handleAmountChange, handleToAmountChange } = useCurrencyAmountSync({
+    form,
+    fromCurrency: currency,
+    toCurrency: fullAccount?.currency,
+    date,
+  });
 
   const previewAccount = useMemo(() => {
-    if (!fullAccount || !debt.accountId) return fullAccount;
+    if (!fullAccount || !initialAccountId) return fullAccount;
     if (!amount || !initialAmount) return fullAccount;
-    const amountNum = parseFloat(amount);
-    const initialNum = parseFloat(initialAmount);
+    const previousAccountAmount = currenciesMatch ? initialAmount : editData?.initialToAmount || initialAmount;
+    const nextAccountAmount = currenciesMatch ? amount : toAmount;
+    if (!nextAccountAmount) return fullAccount;
+    const amountNum = parseFloat(nextAccountAmount);
+    const initialNum = parseFloat(previousAccountAmount);
     if (Number.isNaN(amountNum) || Number.isNaN(initialNum)) return fullAccount;
-    const delta = subtractMoney(amount, initialAmount);
+    const delta = subtractMoney(nextAccountAmount, previousAccountAmount);
     if (delta === "0") return fullAccount;
     const newBalance =
       debt.type === DebtType.LENT ? subtractMoney(fullAccount.balance, delta) : addMoney(fullAccount.balance, delta);
     return { ...fullAccount, balance: newBalance };
-  }, [fullAccount, debt.accountId, debt.type, amount, initialAmount]);
+  }, [
+    fullAccount,
+    initialAccountId,
+    amount,
+    initialAmount,
+    currenciesMatch,
+    editData?.initialToAmount,
+    toAmount,
+    debt.type,
+  ]);
 
   useEffect(() => {
     if (isEditDataError && editDataError?.message) {
@@ -160,13 +205,15 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {debt.account && (
+            {initialAccountId && (
               <div className="space-y-2">
                 <Label>Счёт</Label>
                 {previewAccount ? (
                   <AccountCard account={previewAccount} showOwner={false} />
                 ) : (
-                  <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">{debt.account.name}</div>
+                  <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">
+                    {editData?.account?.name || "Счёт недоступен"}
+                  </div>
                 )}
               </div>
             )}
@@ -195,12 +242,37 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
                   id="amount"
                   placeholder="0.00"
                   className="pl-9"
-                  {...register("amount")}
+                  {...register("amount", {
+                    onChange: (event) => handleAmountChange(event.target.value),
+                  })}
                   disabled={isLoadingAmount && !isEditDataError}
                 />
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
+
+            {fullAccount && !currenciesMatch ? (
+              <div className="space-y-2">
+                <Label htmlFor="toAmount" required>
+                  {debt.type === DebtType.LENT ? "Сумма списания" : "Сумма зачисления"} ({fullAccount.currency})
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                    {getCurrencySymbol(fullAccount.currency)}
+                  </span>
+                  <NumberInput
+                    id="toAmount"
+                    placeholder="0.00"
+                    className="pl-9"
+                    {...register("toAmount", {
+                      onChange: (event) => handleToAmountChange(event.target.value),
+                    })}
+                    disabled={isLoadingAmount && !isEditDataError}
+                  />
+                </div>
+                {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
+              </div>
+            ) : null}
 
             <div className="space-y-2">
               <Label>Дата</Label>

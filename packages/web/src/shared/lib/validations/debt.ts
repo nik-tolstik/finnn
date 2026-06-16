@@ -16,20 +16,31 @@ export const createDebtSchema = z
         },
         { message: "Сумма должна быть больше 0" }
       ),
+    toAmount: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val) return true;
+          const num = parseFloat(val);
+          return !Number.isNaN(num) && num > 0;
+        },
+        { message: "Сумма должна быть больше 0" }
+      ),
     date: z.date(),
     useAccount: z.boolean(),
     accountId: z.string().optional(),
-    currency: z.string().optional(),
+    currency: z.string().min(1, "Выберите валюту"),
   })
   .refine(
     (data) => {
       if (data.useAccount) {
         return !!data.accountId;
       }
-      return !!data.currency;
+      return true;
     },
     {
-      message: "Выберите счёт или валюту",
+      message: "Выберите счёт",
       path: ["accountId"],
     }
   );
@@ -97,7 +108,19 @@ export const addToDebtSchema = z.object({
       },
       { message: "Сумма должна быть больше 0" }
     ),
+  toAmount: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const num = parseFloat(val);
+        return !Number.isNaN(num) && num > 0;
+      },
+      { message: "Сумма должна быть больше 0" }
+    ),
   useAccount: z.boolean(),
+  accountId: z.string().optional(),
 });
 
 export const updateDebtSchema = z.object({
@@ -107,6 +130,17 @@ export const updateDebtSchema = z.object({
     .min(1, "Сумма обязательна")
     .refine(
       (val) => {
+        const num = parseFloat(val);
+        return !Number.isNaN(num) && num > 0;
+      },
+      { message: "Сумма должна быть больше 0" }
+    ),
+  toAmount: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
         const num = parseFloat(val);
         return !Number.isNaN(num) && num > 0;
       },

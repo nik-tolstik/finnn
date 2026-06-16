@@ -5,7 +5,6 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { User } from "lucide-react";
 
-import { AccountChip } from "@/shared/components/AccountChip";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { debtKeys } from "@/shared/lib/query-keys";
@@ -36,14 +35,6 @@ function DebtTypeBadge({ debt }: { debt: DebtWithRelations }) {
   return <div className="text-sm">{label}</div>;
 }
 
-function DebtAccountChip({ debt }: { debt: DebtWithRelations }) {
-  if (!debt.account) {
-    return <span className="text-sm text-muted-foreground">Без счёта</span>;
-  }
-
-  return <AccountChip account={debt.account} />;
-}
-
 function DebtsTableSkeleton() {
   return (
     <div className="overflow-hidden rounded-xl bg-card shadow-sm">
@@ -55,9 +46,6 @@ function DebtsTableSkeleton() {
             </TableHead>
             <TableHead className="h-10 px-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Контрагент
-            </TableHead>
-            <TableHead className="h-10 px-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Счёт
             </TableHead>
             <TableHead className="h-10 px-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Дата
@@ -81,9 +69,6 @@ function DebtsTableSkeleton() {
                   <Skeleton className="size-7 rounded-full" />
                   <Skeleton className="h-4 w-32" />
                 </div>
-              </TableCell>
-              <TableCell className="px-4 py-3">
-                <Skeleton className="h-7 w-36 rounded-md" />
               </TableCell>
               <TableCell className="px-4 py-3">
                 <Skeleton className="ml-auto h-4 w-20" />
@@ -121,9 +106,6 @@ function DebtsTable({
               Контрагент
             </TableHead>
             <TableHead className="h-10 px-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Счёт
-            </TableHead>
-            <TableHead className="h-10 px-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Дата
             </TableHead>
             <TableHead className="h-10 px-4 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -150,9 +132,6 @@ function DebtsTable({
                     <User className={cn("size-3.5", "text-foreground")} />
                     <div className="truncate text-sm">{debt.personName}</div>
                   </div>
-                </TableCell>
-                <TableCell className="px-4 py-3">
-                  <DebtAccountChip debt={debt} />
                 </TableCell>
                 <TableCell className="px-4 py-3 text-sm text-muted-foreground">
                   {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}

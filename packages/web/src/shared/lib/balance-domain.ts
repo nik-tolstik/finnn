@@ -54,9 +54,7 @@ export function getDebtInitialAccountBalanceDelta(debtType: string, amount: Mone
 }
 
 export function getDebtTransactionAccountAmount(transaction: DebtBalanceTransaction): MoneyAmount {
-  return transaction.type === DEBT_CLOSED_TRANSACTION
-    ? asMoneyAmount(transaction.toAmount || transaction.amount)
-    : asMoneyAmount(transaction.amount);
+  return asMoneyAmount(transaction.toAmount || transaction.amount);
 }
 
 export function getDebtTransactionBalanceDelta(debtType: string, transaction: DebtBalanceTransaction): MoneyAmount {

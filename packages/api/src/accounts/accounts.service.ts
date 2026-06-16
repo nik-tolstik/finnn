@@ -26,7 +26,6 @@ const ARCHIVED_ACCOUNT_INCLUDE = {
       paymentTransactions: true,
       outgoingTransfers: true,
       incomingTransfers: true,
-      debts: true,
       debtTransactions: true,
     },
   },
@@ -41,14 +40,12 @@ type ArchivedAccountWithCounts = AccountWithOwner & {
     paymentTransactions: number;
     outgoingTransfers: number;
     incomingTransfers: number;
-    debts: number;
     debtTransactions: number;
   };
 };
 
 type AccountDependencyCounts = {
   transactions: number;
-  debts: number;
   debtTransactions: number;
 };
 
@@ -79,7 +76,6 @@ function getArchivedAccountDependencyCounts(account: ArchivedAccountWithCounts):
   return {
     transactions:
       account._count.paymentTransactions + account._count.outgoingTransfers + account._count.incomingTransfers,
-    debts: account._count.debts,
     debtTransactions: account._count.debtTransactions,
   };
 }
@@ -95,7 +91,6 @@ function formatAccountDependencyBreakdown(counts: AccountDependencyCounts) {
   const parts: string[] = [];
 
   if (counts.transactions > 0) parts.push(`транзакции (${counts.transactions})`);
-  if (counts.debts > 0) parts.push(`долги (${counts.debts})`);
   if (counts.debtTransactions > 0) parts.push(`долговые операции (${counts.debtTransactions})`);
 
   return parts.join(", ");
@@ -149,17 +144,15 @@ export class AccountsService {
   }
 
   private async getAccountDependencyCounts(accountId: string): Promise<AccountDependencyCounts> {
-    const [paymentTransactions, outgoingTransfers, incomingTransfers, debts, debtTransactions] = await Promise.all([
+    const [paymentTransactions, outgoingTransfers, incomingTransfers, debtTransactions] = await Promise.all([
       this.prisma.paymentTransaction.count({ where: { accountId } }),
       this.prisma.transferTransaction.count({ where: { fromAccountId: accountId } }),
       this.prisma.transferTransaction.count({ where: { toAccountId: accountId } }),
-      this.prisma.debt.count({ where: { accountId } }),
       this.prisma.debtTransaction.count({ where: { accountId } }),
     ]);
 
     return {
       transactions: paymentTransactions + outgoingTransfers + incomingTransfers,
-      debts,
       debtTransactions,
     };
   }

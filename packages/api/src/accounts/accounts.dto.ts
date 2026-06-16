@@ -179,9 +179,6 @@ export class AccountDependencyCountsDto {
   @ApiProperty({ example: 3, type: Number })
   transactions!: number;
 
-  @ApiProperty({ example: 1, type: Number })
-  debts!: number;
-
   @ApiProperty({ example: 2, type: Number })
   debtTransactions!: number;
 }

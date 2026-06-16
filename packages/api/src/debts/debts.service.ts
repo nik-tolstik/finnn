@@ -46,22 +46,8 @@ const DEBT_TRANSACTION_ACCOUNT_SELECT = {
   },
 } satisfies Prisma.AccountSelect;
 
-const DEBT_LIST_INCLUDE = {
-  account: {
-    select: DEBT_ACCOUNT_SELECT,
-  },
-} satisfies Prisma.DebtInclude;
-
-const ACCESSIBLE_DEBT_INCLUDE = {
-  account: true,
-} satisfies Prisma.DebtInclude;
-
 const ACCESSIBLE_DEBT_TRANSACTION_INCLUDE = {
-  debt: {
-    include: {
-      account: true,
-    },
-  },
+  debt: true,
   account: {
     select: DEBT_TRANSACTION_ACCOUNT_SELECT,
   },
@@ -73,10 +59,9 @@ type DebtTransactionAccount = DebtListAccount & {
   ownerId: string | null;
   owner: Pick<User, "id" | "name" | "email" | "image"> | null;
 };
-type DebtWithListAccount = Debt & { account?: DebtListAccount | null };
-type AccessibleDebt = Debt & { account: Account | null };
+type AccessibleDebt = Debt;
 type AccessibleDebtTransaction = DebtTransaction & {
-  debt: Debt & { account: Account | null };
+  debt: Debt;
   account: DebtTransactionAccount | null;
 };
 type DebtTransactionBalanceEffect = Pick<DebtTransaction, "accountId" | "type" | "amount" | "toAmount">;
@@ -108,7 +93,7 @@ function getDebtInitialAccountBalanceDelta(debtType: string, amount: string): st
 function getDebtTransactionAccountAmount(
   transaction: Pick<DebtTransactionBalanceEffect, "type" | "amount" | "toAmount">
 ) {
-  return transaction.type === DEBT_TRANSACTION_CLOSED ? transaction.toAmount || transaction.amount : transaction.amount;
+  return transaction.toAmount || transaction.amount;
 }
 
 function getDebtTransactionBalanceDelta(debtType: string, transaction: DebtTransactionBalanceEffect): string {
@@ -184,7 +169,19 @@ function getCategoryTypeFromPaymentType(paymentType: string) {
   return paymentType === PAYMENT_INCOME ? PAYMENT_INCOME : PAYMENT_EXPENSE;
 }
 
-function toDebtDto(debt: DebtWithListAccount) {
+function getDebtTransactionToAmount(account: Account, debtCurrency: string, inputToAmount?: string): string | null {
+  if (account.currency === debtCurrency) {
+    return null;
+  }
+
+  if (!inputToAmount) {
+    throw new BadRequestException("Укажите сумму в валюте счёта");
+  }
+
+  return inputToAmount;
+}
+
+function toDebtDto(debt: Debt) {
   return {
     id: debt.id,
     workspaceId: debt.workspaceId,
@@ -193,12 +190,10 @@ function toDebtDto(debt: DebtWithListAccount) {
     amount: debt.amount,
     remainingAmount: debt.remainingAmount,
     currency: debt.currency,
-    accountId: debt.accountId,
     date: toIsoString(debt.date),
     status: debt.status,
     createdAt: toIsoString(debt.createdAt),
     updatedAt: toIsoString(debt.updatedAt),
-    account: debt.account ?? null,
   };
 }
 
@@ -211,7 +206,6 @@ function toDebtTransactionDebtDto(debt: Debt) {
     amount: debt.amount,
     remainingAmount: debt.remainingAmount,
     currency: debt.currency,
-    accountId: debt.accountId,
     date: toIsoString(debt.date),
     status: debt.status,
     createdAt: toIsoString(debt.createdAt),
@@ -319,7 +313,6 @@ export class DebtsService {
   ): Promise<AccessibleDebt> {
     const debt = await tx.debt.findUnique({
       where: { id: debtId },
-      include: ACCESSIBLE_DEBT_INCLUDE,
     });
 
     if (!debt) {
@@ -327,7 +320,7 @@ export class DebtsService {
     }
 
     await this.assertWorkspaceAccessWithClient(tx, debt.workspaceId, currentUser);
-    return debt as AccessibleDebt;
+    return debt;
   }
 
   private async getAccessibleDebtTransactionOrThrow(
@@ -346,29 +339,6 @@ export class DebtsService {
 
     await this.assertWorkspaceAccessWithClient(tx, debtTransaction.workspaceId, currentUser);
     return debtTransaction as AccessibleDebtTransaction;
-  }
-
-  private async applyInitialAmountDeltaToAccount(tx: PrismaTx, debt: AccessibleDebt, amountDelta: string) {
-    if (!debt.accountId || compareMoney(amountDelta, "0") === 0) {
-      return;
-    }
-
-    const account = await tx.account.findUnique({
-      where: { id: debt.accountId },
-    });
-
-    if (!account) {
-      return;
-    }
-
-    const balanceDelta = getDebtInitialAccountBalanceDelta(debt.type, amountDelta);
-    const nextBalance = addMoney(account.balance, balanceDelta);
-    assertNonNegativeBalance(nextBalance, `Недостаточно средств на счёте (${account.balance})`);
-
-    await tx.account.update({
-      where: { id: debt.accountId },
-      data: { balance: nextBalance },
-    });
   }
 
   private async applyAccountBalanceDeltas(
@@ -451,37 +421,40 @@ export class DebtsService {
     const [debts, total] = await Promise.all([
       this.prisma.debt.findMany({
         where,
-        include: DEBT_LIST_INCLUDE,
         orderBy: [{ status: "asc" }, { date: "desc" }],
       }),
       this.prisma.debt.count({ where }),
     ]);
 
-    return { data: debts.map((debt) => toDebtDto(debt as DebtWithListAccount)), total };
+    return { data: debts.map(toDebtDto), total };
   }
 
   async createDebt(workspaceId: string, input: CreateDebtDto, currentUser: AuthenticatedUser) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
 
-    if (input.useAccount && !input.accountId) {
-      throw new BadRequestException("Выберите счёт или валюту");
+    if (!input.currency) {
+      throw new BadRequestException("Выберите валюту долга");
     }
 
-    if (!input.useAccount && !input.currency) {
-      throw new BadRequestException("Выберите счёт или валюту");
+    if (input.useAccount && !input.accountId) {
+      throw new BadRequestException("Выберите счёт");
     }
 
     const debt = await this.prisma.$transaction(async (tx) => {
-      let currency = input.currency || "BYN";
+      const currency = input.currency;
       let accountId: string | null = null;
+      let toAmount: string | null = null;
 
       if (input.useAccount && input.accountId) {
         const account = await this.getWorkspaceAccountOrThrow(tx, workspaceId, input.accountId);
 
-        currency = account.currency;
         accountId = account.id;
+        toAmount = getDebtTransactionToAmount(account, currency, input.toAmount);
 
-        const nextBalance = addMoney(account.balance, getDebtInitialAccountBalanceDelta(input.type, input.amount));
+        const nextBalance = addMoney(
+          account.balance,
+          getDebtInitialAccountBalanceDelta(input.type, toAmount || input.amount)
+        );
         assertNonNegativeBalance(nextBalance, `Сумма не может превышать баланс счёта (${account.balance})`);
 
         await tx.account.update({
@@ -498,11 +471,9 @@ export class DebtsService {
           amount: input.amount,
           remainingAmount: input.amount,
           currency,
-          accountId,
           date: input.date,
           status: DEBT_OPEN,
         },
-        include: DEBT_LIST_INCLUDE,
       });
 
       await tx.debtTransaction.create({
@@ -512,11 +483,12 @@ export class DebtsService {
           accountId,
           type: DEBT_TRANSACTION_CREATED,
           amount: input.amount,
+          toAmount,
           date: input.date,
         },
       });
 
-      return createdDebt as DebtWithListAccount;
+      return createdDebt;
     });
 
     return { debt: toDebtDto(debt) };
@@ -538,14 +510,21 @@ export class DebtsService {
         debtId,
         type: DEBT_TRANSACTION_CREATED,
       },
+      include: {
+        account: {
+          select: DEBT_TRANSACTION_ACCOUNT_SELECT,
+        },
+      },
     });
 
     return {
       debt: {
         personName: debt.personName,
         initialAmount: createdTransaction?.amount || debt.amount,
+        initialToAmount: createdTransaction?.toAmount ?? null,
         initialDate: toIsoString(createdTransaction?.date || debt.date),
         currency: debt.currency,
+        account: createdTransaction?.account ?? null,
       },
     };
   }
@@ -581,7 +560,26 @@ export class DebtsService {
         );
       }
 
-      await this.applyInitialAmountDeltaToAccount(tx, existingDebt, amountDelta);
+      const initialTransactionAccount = initialTransaction?.accountId
+        ? await this.getWorkspaceAccountOrThrow(tx, existingDebt.workspaceId, initialTransaction.accountId)
+        : null;
+      const nextInitialToAmount = initialTransactionAccount
+        ? getDebtTransactionToAmount(initialTransactionAccount, existingDebt.currency, input.toAmount)
+        : null;
+
+      await this.reconcileDebtTransactionBalanceEffect(
+        tx,
+        existingDebt,
+        initialTransaction,
+        initialTransaction
+          ? {
+              accountId: initialTransaction.accountId,
+              type: initialTransaction.type,
+              amount: input.amount,
+              toAmount: nextInitialToAmount,
+            }
+          : null
+      );
 
       const nextDebt = await tx.debt.update({
         where: { id: debtId },
@@ -592,7 +590,6 @@ export class DebtsService {
           remainingAmount: newRemaining,
           status: getDebtStatusFromRemainingAmount(newRemaining),
         },
-        include: DEBT_LIST_INCLUDE,
       });
 
       if (initialTransaction) {
@@ -600,6 +597,7 @@ export class DebtsService {
           where: { id: initialTransaction.id },
           data: {
             amount: input.amount,
+            toAmount: nextInitialToAmount,
             date: input.date,
           },
         });
@@ -608,15 +606,16 @@ export class DebtsService {
           data: {
             workspaceId: existingDebt.workspaceId,
             debtId,
-            accountId: existingDebt.accountId,
+            accountId: null,
             type: DEBT_TRANSACTION_CREATED,
             amount: input.amount,
+            toAmount: null,
             date: input.date,
           },
         });
       }
 
-      return nextDebt as DebtWithListAccount;
+      return nextDebt;
     });
 
     return { debt: toDebtDto(debt) };
@@ -630,16 +629,26 @@ export class DebtsService {
         throw new BadRequestException("Нельзя добавить к закрытому долгу");
       }
 
-      if (input.useAccount && existingDebt.accountId && existingDebt.account) {
-        const account = await this.getWorkspaceAccountOrThrow(tx, existingDebt.workspaceId, existingDebt.accountId);
+      if (input.useAccount && !input.accountId) {
+        throw new BadRequestException("Выберите счёт");
+      }
+
+      let accountId: string | null = null;
+      let toAmount: string | null = null;
+
+      if (input.useAccount && input.accountId) {
+        const account = await this.getWorkspaceAccountOrThrow(tx, existingDebt.workspaceId, input.accountId);
+
+        accountId = account.id;
+        toAmount = getDebtTransactionToAmount(account, existingDebt.currency, input.toAmount);
         const nextBalance = addMoney(
           account.balance,
-          getDebtInitialAccountBalanceDelta(existingDebt.type, input.amount)
+          getDebtInitialAccountBalanceDelta(existingDebt.type, toAmount || input.amount)
         );
         assertNonNegativeBalance(nextBalance, `Сумма не может превышать баланс счёта (${account.balance})`);
 
         await tx.account.update({
-          where: { id: existingDebt.accountId },
+          where: { id: account.id },
           data: { balance: nextBalance },
         });
       }
@@ -650,21 +659,21 @@ export class DebtsService {
           amount: addMoney(existingDebt.amount, input.amount),
           remainingAmount: addMoney(existingDebt.remainingAmount, input.amount),
         },
-        include: DEBT_LIST_INCLUDE,
       });
 
       await tx.debtTransaction.create({
         data: {
           workspaceId: existingDebt.workspaceId,
           debtId: existingDebt.id,
-          accountId: input.useAccount && existingDebt.accountId ? existingDebt.accountId : null,
+          accountId,
           type: DEBT_TRANSACTION_ADDED,
           amount: input.amount,
+          toAmount,
           date: new Date(),
         },
       });
 
-      return nextDebt as DebtWithListAccount;
+      return nextDebt;
     });
 
     return { debt: toDebtDto(debt) };
@@ -786,7 +795,6 @@ export class DebtsService {
           remainingAmount: newRemainingAmount,
           status: isClosed ? DEBT_CLOSED : DEBT_OPEN,
         },
-        include: DEBT_LIST_INCLUDE,
       });
 
       await tx.debtTransaction.create({
@@ -801,7 +809,7 @@ export class DebtsService {
         },
       });
 
-      return nextDebt as DebtWithListAccount;
+      return nextDebt;
     });
 
     return { debt: toDebtDto(debt) };
@@ -885,27 +893,31 @@ export class DebtsService {
       let nextTransactionAccountId = existingTransaction.accountId;
       let nextTransactionToAmount: string | null = existingTransaction.toAmount;
 
-      if (existingTransaction.type === DEBT_TRANSACTION_CLOSED) {
+      if (existingTransaction.type === DEBT_TRANSACTION_ADDED) {
+        if (input.accountId) {
+          const nextAccount = await this.getWorkspaceAccountOrThrow(tx, debt.workspaceId, input.accountId);
+
+          nextTransactionAccountId = nextAccount.id;
+          nextTransactionToAmount = getDebtTransactionToAmount(nextAccount, debt.currency, input.toAmount);
+        } else {
+          nextTransactionAccountId = null;
+          nextTransactionToAmount = null;
+        }
+      } else if (existingTransaction.type === DEBT_TRANSACTION_CLOSED) {
         if (!input.accountId) {
           throw new BadRequestException("Выберите счёт");
         }
 
         const nextAccount = await this.getWorkspaceAccountOrThrow(tx, debt.workspaceId, input.accountId);
-        const currenciesMatch = nextAccount.currency === debt.currency;
-
-        if (!currenciesMatch && !input.toAmount) {
-          throw new BadRequestException("Укажите сумму отправления");
-        }
-
         nextTransactionAccountId = nextAccount.id;
-        nextTransactionToAmount = currenciesMatch ? null : input.toAmount || null;
+        nextTransactionToAmount = getDebtTransactionToAmount(nextAccount, debt.currency, input.toAmount);
       }
 
       await this.reconcileDebtTransactionBalanceEffect(
         tx,
         debt,
         existingTransaction,
-        existingTransaction.type === DEBT_TRANSACTION_CLOSED
+        existingTransaction.type === DEBT_TRANSACTION_CLOSED || existingTransaction.type === DEBT_TRANSACTION_ADDED
           ? {
               accountId: nextTransactionAccountId,
               type: existingTransaction.type,

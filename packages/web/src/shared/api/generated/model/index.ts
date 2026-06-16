@@ -57,7 +57,6 @@ export * from "./createPaymentTransactionDto";
 export * from "./createPaymentTransactionDtoType";
 export * from "./createTransferTransactionDto";
 export * from "./createWorkspaceDto";
-export * from "./debtAccountDto";
 export * from "./debtAccountWithOwnerDto";
 export * from "./debtAccountWithOwnerDtoOwner";
 export * from "./debtCombinedTransactionDto";

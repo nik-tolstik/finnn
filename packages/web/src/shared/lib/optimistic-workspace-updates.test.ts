@@ -58,13 +58,12 @@ function makeAccount(id: string, balance: string): AccountWithBalance {
   } as AccountWithBalance;
 }
 
-function makeDebt(id: string, accountId: string, balance = "0"): DebtWithRelations {
+function makeDebt(id: string): DebtWithRelations {
   return {
     id,
     workspaceId: WORKSPACE_ID,
     type: "lent",
     personName: "Alex",
-    accountId,
     amount: "100",
     remainingAmount: "80",
     currency: "USD",
@@ -72,14 +71,6 @@ function makeDebt(id: string, accountId: string, balance = "0"): DebtWithRelatio
     date: new Date("2024-01-01"),
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
-    account: {
-      id: accountId,
-      name: `Account ${accountId}`,
-      currency: "USD",
-      color: "#000000",
-      icon: "Wallet",
-      balance,
-    },
   } as DebtWithRelations;
 }
 
@@ -228,7 +219,7 @@ function seedClient(queryClient: QueryClient) {
   });
 
   queryClient.setQueryData(debtKeys.list(WORKSPACE_ID), {
-    data: [makeDebt("debt-1", "acc-1")],
+    data: [makeDebt("debt-1")],
     total: 1,
   });
 
@@ -260,7 +251,7 @@ describe("optimistic workspace updates", () => {
     expect(restored?.data?.[1]).toEqual(expect.objectContaining({ id: "acc-2", balance: "20" }));
   });
 
-  it("updates account balances inside account, transaction, and debt caches", async () => {
+  it("updates account balances inside account and transaction caches", async () => {
     const queryClient = new QueryClient();
     const transactionList = [
       makePaymentTransaction("tx-1", "2024-02-01T00:00:00.000Z", "acc-1", "10"),
@@ -275,7 +266,7 @@ describe("optimistic workspace updates", () => {
       total: 2,
     });
     queryClient.setQueryData(debtKeys.list(WORKSPACE_ID), {
-      data: [makeDebt("debt-1", "acc-2", "20")],
+      data: [makeDebt("debt-1")],
       total: 1,
     });
 
@@ -295,12 +286,6 @@ describe("optimistic workspace updates", () => {
         data: CombinedTransaction[];
       }
     ).data;
-    const updatedDebts = (
-      queryClient.getQueryData(debtKeys.list(WORKSPACE_ID)) as {
-        data: DebtWithRelations[];
-      }
-    ).data;
-
     expect(accounts[0]).toEqual(expect.objectContaining({ id: "acc-1", balance: "15" }));
     expect(accounts[1]).toEqual(expect.objectContaining({ id: "acc-2", balance: "15" }));
     const paymentTransaction = updatedTransactions[0];
@@ -316,8 +301,6 @@ describe("optimistic workspace updates", () => {
       expect((transferTransaction.data.fromAccount as { balance?: string }).balance).toBe("15");
       expect((transferTransaction.data.toAccount as { balance?: string }).balance).toBe("15");
     }
-
-    expect(updatedDebts?.[0]?.account).toMatchObject({ id: "acc-2", balance: "15" });
   });
 
   it("removes and inserts transactions with preserved sorting and totals", async () => {
@@ -361,8 +344,8 @@ describe("optimistic workspace updates", () => {
   it("removes and inserts debts with preserved sorting and totals", async () => {
     const queryClient = new QueryClient();
     const context = createWorkspaceOptimisticContext(queryClient, WORKSPACE_ID, ["debts"]);
-    const oldDebt = { ...makeDebt("debt-old", "acc-1"), date: new Date("2024-01-01") };
-    const midDebt = { ...makeDebt("debt-mid", "acc-2"), date: new Date("2024-02-01") };
+    const oldDebt = { ...makeDebt("debt-old"), date: new Date("2024-01-01") };
+    const midDebt = { ...makeDebt("debt-mid"), date: new Date("2024-02-01") };
 
     queryClient.setQueryData(debtKeys.list(WORKSPACE_ID), {
       data: [oldDebt, midDebt],
@@ -382,7 +365,7 @@ describe("optimistic workspace updates", () => {
       total: 1,
     });
 
-    insertDebtsInCache(context, [{ ...makeDebt("debt-new", "acc-1"), date: new Date("2024-03-01") }]);
+    insertDebtsInCache(context, [{ ...makeDebt("debt-new"), date: new Date("2024-03-01") }]);
 
     const afterInsert = queryClient.getQueryData(debtKeys.list(WORKSPACE_ID)) as {
       data: DebtWithRelations[];

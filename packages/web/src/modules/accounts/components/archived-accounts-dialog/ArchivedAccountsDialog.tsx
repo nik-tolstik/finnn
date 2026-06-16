@@ -29,7 +29,6 @@ type ArchivedAccount = Account & {
   } | null;
   _count: {
     transactions: number;
-    debts: number;
     debtTransactions: number;
   };
 };
@@ -39,10 +38,6 @@ function getDeleteDisabledReason(account: ArchivedAccount) {
 
   if (account._count.transactions > 0) {
     parts.push(`транзакции (${account._count.transactions})`);
-  }
-
-  if (account._count.debts > 0) {
-    parts.push(`долги (${account._count.debts})`);
   }
 
   if (account._count.debtTransactions > 0) {

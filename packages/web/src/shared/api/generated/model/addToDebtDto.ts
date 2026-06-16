@@ -9,4 +9,6 @@
 export interface AddToDebtDto {
   amount: string;
   useAccount: boolean;
+  toAmount?: string;
+  accountId?: string;
 }

@@ -374,9 +374,6 @@ export class DebtTransactionDebtDto {
   @ApiProperty({ type: String })
   currency!: string;
 
-  @ApiPropertyOptional({ nullable: true, type: String })
-  accountId!: string | null;
-
   @ApiProperty({ format: "date-time", type: String })
   date!: string;
 

@@ -12,8 +12,9 @@ export interface CreateDebtDto {
   /** @minLength 1 */
   personName: string;
   amount: string;
+  toAmount?: string;
   date: string;
   useAccount: boolean;
   accountId?: string;
-  currency?: string;
+  currency: string;
 }

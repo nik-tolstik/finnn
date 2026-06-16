@@ -255,7 +255,6 @@ describe("Accounts API", () => {
           paymentTransactions: 1,
           outgoingTransfers: 2,
           incomingTransfers: 3,
-          debts: 4,
           debtTransactions: 5,
         },
       }),
@@ -268,7 +267,6 @@ describe("Accounts API", () => {
 
     expect(response.body.accounts[0]._count).toEqual({
       transactions: 6,
-      debts: 4,
       debtTransactions: 5,
     });
   });
@@ -333,7 +331,6 @@ describe("Accounts API", () => {
     prisma.account.findUnique.mockResolvedValue(createAccountRecord({ archived: true }));
     prisma.paymentTransaction.count.mockResolvedValue(1);
     prisma.transferTransaction.count.mockResolvedValueOnce(2).mockResolvedValueOnce(3);
-    prisma.debt.count.mockResolvedValue(4);
     prisma.debtTransaction.count.mockResolvedValue(5);
 
     const response = await request(app.getHttpServer())
@@ -342,7 +339,6 @@ describe("Accounts API", () => {
       .expect(400);
 
     expect(response.body.message).toContain("транзакции (6)");
-    expect(response.body.message).toContain("долги (4)");
     expect(response.body.message).toContain("долговые операции (5)");
     expect(prisma.account.delete).not.toHaveBeenCalled();
   });

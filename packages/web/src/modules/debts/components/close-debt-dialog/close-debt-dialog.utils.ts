@@ -14,16 +14,14 @@ import { compareMoney, subtractMoney } from "@/shared/utils/money";
 import { DebtTransactionType, DebtType } from "../../debt.constants";
 import type { DebtWithRelations } from "../../debt.types";
 
-export function getCloseDebtDefaultValues(
-  debt: Pick<DebtWithRelations, "remainingAmount" | "accountId">
-): CloseDebtInput {
+export function getCloseDebtDefaultValues(debt: Pick<DebtWithRelations, "remainingAmount">): CloseDebtInput {
   return {
     amount: debt.remainingAmount,
     paymentAmount: debt.remainingAmount,
     toAmount: "",
     categoryId: undefined,
     closeEarly: false,
-    accountId: debt.accountId || "",
+    accountId: "",
     useAccount: true,
   };
 }

@@ -4472,16 +4472,12 @@
             "type": "number",
             "example": 3
           },
-          "debts": {
-            "type": "number",
-            "example": 1
-          },
           "debtTransactions": {
             "type": "number",
             "example": 2
           }
         },
-        "required": ["transactions", "debts", "debtTransactions"]
+        "required": ["transactions", "debtTransactions"]
       },
       "ArchivedAccountDto": {
         "type": "object",
@@ -4823,29 +4819,6 @@
           }
         }
       },
-      "DebtAccountDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "color": {
-            "type": "string",
-            "nullable": true
-          },
-          "icon": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": ["id", "name", "currency"]
-      },
       "DebtDto": {
         "type": "object",
         "properties": {
@@ -4871,10 +4844,6 @@
           "currency": {
             "type": "string"
           },
-          "accountId": {
-            "type": "string",
-            "nullable": true
-          },
           "date": {
             "type": "string",
             "example": "2026-05-25T12:00:00.000Z",
@@ -4893,15 +4862,6 @@
             "type": "string",
             "example": "2026-05-25T12:00:00.000Z",
             "format": "date-time"
-          },
-          "account": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DebtAccountDto"
-              }
-            ]
           }
         },
         "required": [
@@ -4951,6 +4911,10 @@
             "type": "string",
             "example": "100"
           },
+          "toAmount": {
+            "type": "string",
+            "example": "31.50"
+          },
           "date": {
             "type": "string",
             "example": "2026-05-25T12:00:00.000Z",
@@ -4969,7 +4933,7 @@
             "example": "BYN"
           }
         },
-        "required": ["type", "personName", "amount", "date", "useAccount"]
+        "required": ["type", "personName", "amount", "date", "useAccount", "currency"]
       },
       "DebtResponseDto": {
         "type": "object",
@@ -4980,6 +4944,37 @@
         },
         "required": ["debt"]
       },
+      "DebtAccountWithOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "owner": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": ["id", "name", "currency"]
+      },
       "DebtEditDataDto": {
         "type": "object",
         "properties": {
@@ -4989,6 +4984,10 @@
           "initialAmount": {
             "type": "string"
           },
+          "initialToAmount": {
+            "type": "string",
+            "nullable": true
+          },
           "initialDate": {
             "type": "string",
             "example": "2026-05-25T12:00:00.000Z",
@@ -4996,6 +4995,15 @@
           },
           "currency": {
             "type": "string"
+          },
+          "account": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DebtAccountWithOwnerDto"
+              }
+            ]
           }
         },
         "required": ["personName", "initialAmount", "initialDate", "currency"]
@@ -5021,6 +5029,10 @@
             "type": "string",
             "example": "120"
           },
+          "toAmount": {
+            "type": "string",
+            "example": "31.50"
+          },
           "date": {
             "type": "string",
             "example": "2026-05-25T12:00:00.000Z",
@@ -5039,6 +5051,14 @@
           "useAccount": {
             "type": "boolean",
             "example": true
+          },
+          "toAmount": {
+            "type": "string",
+            "example": "31.50"
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
           }
         },
         "required": ["amount", "useAccount"]
@@ -5125,10 +5145,6 @@
           "currency": {
             "type": "string"
           },
-          "accountId": {
-            "type": "string",
-            "nullable": true
-          },
           "date": {
             "type": "string",
             "example": "2026-05-25T12:00:00.000Z",
@@ -5162,37 +5178,6 @@
           "createdAt",
           "updatedAt"
         ]
-      },
-      "DebtAccountWithOwnerDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "color": {
-            "type": "string",
-            "nullable": true
-          },
-          "icon": {
-            "type": "string",
-            "nullable": true
-          },
-          "ownerId": {
-            "type": "string",
-            "nullable": true
-          },
-          "owner": {
-            "type": "object",
-            "nullable": true
-          }
-        },
-        "required": ["id", "name", "currency"]
       },
       "DebtEntryTransactionDto": {
         "type": "object",
@@ -5562,10 +5547,6 @@
           },
           "currency": {
             "type": "string"
-          },
-          "accountId": {
-            "type": "string",
-            "nullable": true
           },
           "date": {
             "type": "string",

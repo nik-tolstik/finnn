@@ -10,6 +10,7 @@ export function getCreateDebtDefaultValues(): CreateDebtInput {
     type: DebtType.LENT,
     personName: "",
     amount: "",
+    toAmount: "",
     date: new Date(),
     useAccount: true,
     accountId: "",
@@ -32,24 +33,27 @@ export function getCreateDebtPreviewAccount<TAccount extends Pick<Account, "bala
   selectedAccount,
   useAccount,
   amount,
+  accountAmount,
   debtType,
 }: {
   selectedAccount?: TAccount;
   useAccount?: boolean;
   amount?: string;
+  accountAmount?: string;
   debtType: string;
 }) {
-  if (!selectedAccount || !useAccount || !amount) {
+  const balanceAmount = accountAmount || amount;
+  if (!selectedAccount || !useAccount || !balanceAmount) {
     return selectedAccount;
   }
 
-  const amountNum = parseFloat(amount);
+  const amountNum = parseFloat(balanceAmount);
   if (Number.isNaN(amountNum)) {
     return selectedAccount;
   }
 
   return {
     ...selectedAccount,
-    balance: applyBalanceDelta(selectedAccount.balance, getDebtInitialAccountBalanceDelta(debtType, amount)),
+    balance: applyBalanceDelta(selectedAccount.balance, getDebtInitialAccountBalanceDelta(debtType, balanceAmount)),
   };
 }

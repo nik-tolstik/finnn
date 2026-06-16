@@ -84,7 +84,6 @@ const DEBT_TRANSACTION_INCLUDE = {
       amount: true,
       remainingAmount: true,
       currency: true,
-      accountId: true,
       date: true,
       status: true,
       createdAt: true,
@@ -120,7 +119,6 @@ type DebtTransactionWithRelations = DebtTransaction & {
     | "amount"
     | "remainingAmount"
     | "currency"
-    | "accountId"
     | "date"
     | "status"
     | "createdAt"

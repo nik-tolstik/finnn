@@ -23,6 +23,7 @@
     "db:generate": "pnpm --filter api db:generate",
     "db:push": "pnpm --filter api db:push",
     "db:ensure-indexes": "pnpm --filter api db:ensure-indexes",
+    "db:unset-debt-account-ids": "pnpm --filter api db:unset-debt-account-ids",
     "db:seed": "pnpm --filter api db:seed",
     "db:export": "pnpm --filter api db:export",
     "db:import": "pnpm --filter api db:import"

@@ -10,5 +10,6 @@ export interface UpdateDebtDto {
   /** @minLength 1 */
   personName: string;
   amount: string;
+  toAmount?: string;
   date: string;
 }

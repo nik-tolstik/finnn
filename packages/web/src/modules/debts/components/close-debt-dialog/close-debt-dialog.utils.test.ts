@@ -12,13 +12,13 @@ import {
 
 describe("close debt dialog utils", () => {
   it("builds default form values from a debt", () => {
-    expect(getCloseDebtDefaultValues({ remainingAmount: "90", accountId: "account-1" })).toEqual({
+    expect(getCloseDebtDefaultValues({ remainingAmount: "90" })).toEqual({
       amount: "90",
       paymentAmount: "90",
       toAmount: "",
       categoryId: undefined,
       closeEarly: false,
-      accountId: "account-1",
+      accountId: "",
       useAccount: true,
     });
   });

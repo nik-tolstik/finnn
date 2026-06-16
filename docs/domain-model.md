@@ -14,7 +14,7 @@ Main models:
 - `Category` - income or expense classification.
 - `PaymentTransaction` - income or expense transaction for one account.
 - `TransferTransaction` - transfer between two accounts with source and destination amounts.
-- `Debt` - open or closed debt with person, type, amount, remaining amount, currency, and optional linked account.
+- `Debt` - open or closed debt with person, type, amount, remaining amount, and currency.
 - `DebtTransaction` - operation applied to a debt, optionally linked to an account.
 - `WorkspaceInvite` - tokenized invite to a workspace.
 - `PendingRegistration` - pre-verification registration state.
@@ -133,8 +133,10 @@ Debt types are defined in `packages/web/src/modules/debts/debt.constants.ts` for
 
 - The debt amount.
 - The remaining amount.
-- The linked account balance.
+- The linked debt transaction account balance.
 - Related payment-category records when closing or settling.
+
+Debts are not linked to a specific account. Account usage is recorded on individual debt transactions so a debt can be created, increased, and closed through different accounts or without account movement. `DebtTransaction.amount` is always denominated in the debt currency. `DebtTransaction.toAmount` is the account-side amount when the selected account currency differs from the debt currency, and account balance deltas use `toAmount` when it is present.
 
 Debt mutation logic is intentionally centralized in `packages/api/src/debts/debts.service.ts` because several operations need coordinated account and debt updates.
 

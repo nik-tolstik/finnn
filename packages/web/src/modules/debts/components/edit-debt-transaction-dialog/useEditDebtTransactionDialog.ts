@@ -7,6 +7,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
+import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
 import {
   addAccountBalanceDelta,
   getDebtTransactionBalanceDelta,
@@ -70,6 +71,7 @@ export function useEditDebtTransactionDialog({
   const amount = useWatch({ control: form.control, name: "amount" });
   const toAmount = useWatch({ control: form.control, name: "toAmount" });
   const accountId = useWatch({ control: form.control, name: "accountId" });
+  const date = useWatch({ control: form.control, name: "date" });
 
   const selectedAccount = useMemo(() => {
     if (!accountId) {
@@ -82,6 +84,13 @@ export function useEditDebtTransactionDialog({
   const isClosedTransaction = debtTransaction.type === DebtTransactionType.CLOSED;
   const isAddedTransaction = debtTransaction.type === DebtTransactionType.ADDED;
   const currenciesMatch = !selectedAccount || selectedAccount.currency === debtTransaction.debt.currency;
+
+  const { handleAmountChange, handleToAmountChange } = useCurrencyAmountSync({
+    form,
+    fromCurrency: debtTransaction.debt.currency,
+    toCurrency: selectedAccount?.currency,
+    date,
+  });
 
   const previewAccount = useMemo(
     () =>
@@ -103,10 +112,17 @@ export function useEditDebtTransactionDialog({
       }
 
       if (!currenciesMatch && !data.toAmount) {
-        toast.error("Укажите сумму отправления");
+        toast.error("Укажите сумму в валюте счёта");
         return;
       }
     }
+
+    if (isAddedTransaction && data.accountId && selectedAccount && !currenciesMatch && !data.toAmount) {
+      toast.error("Укажите сумму в валюте счёта");
+      return;
+    }
+
+    const nextToAmount = data.accountId && !currenciesMatch ? data.toAmount || null : null;
 
     const balanceDeltas = new Map<string, string>();
     addAccountBalanceDelta(
@@ -120,7 +136,7 @@ export function useEditDebtTransactionDialog({
       getDebtTransactionBalanceDelta(debtTransaction.debt.type, {
         type: debtTransaction.type,
         amount: data.amount,
-        toAmount: data.toAmount || null,
+        toAmount: nextToAmount,
       })
     );
 
@@ -178,6 +194,10 @@ export function useEditDebtTransactionDialog({
     currenciesMatch,
     isClosedTransaction,
     isAddedTransaction,
-    currentAccountUnavailable: Boolean(isClosedTransaction && accountId && !selectedAccount && debtTransaction.account),
+    handleAmountChange,
+    handleToAmountChange,
+    currentAccountUnavailable: Boolean(
+      (isClosedTransaction || isAddedTransaction) && accountId && !selectedAccount && debtTransaction.account
+    ),
   };
 }

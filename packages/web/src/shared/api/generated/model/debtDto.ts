@@ -5,7 +5,6 @@
  * Backend API for Finnn finance tracking
  * OpenAPI spec version: 0.1.0
  */
-import type { DebtAccountDto } from "./debtAccountDto";
 import type { DebtDtoStatus } from "./debtDtoStatus";
 import type { DebtDtoType } from "./debtDtoType";
 
@@ -17,12 +16,8 @@ export interface DebtDto {
   amount: string;
   remainingAmount: string;
   currency: string;
-  /** @nullable */
-  accountId?: string | null;
   date: string;
   status: DebtDtoStatus;
   createdAt: string;
   updatedAt: string;
-  /** @nullable */
-  account?: DebtAccountDto | null;
 }

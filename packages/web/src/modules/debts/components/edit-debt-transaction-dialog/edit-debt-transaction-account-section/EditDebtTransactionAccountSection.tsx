@@ -3,9 +3,8 @@
 import { Controller, useFormContext } from "react-hook-form";
 
 import { AccountSelector } from "@/shared/components/AccountSelector";
-import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import type { UpdateDebtTransactionInput } from "@/shared/lib/validations/debt";
-import { Label } from "@/shared/ui/label";
+import { Button } from "@/shared/ui/button";
 
 import { DebtTransactionType, DebtType } from "../../../debt.constants";
 import type { DebtTransactionWithRelations } from "../../../debt.types";
@@ -28,14 +27,34 @@ export function EditDebtTransactionAccountSection({
 }: EditDebtTransactionAccountSectionProps) {
   const { control, formState } = useFormContext<UpdateDebtTransactionInput>();
 
-  if (debtTransaction.type === DebtTransactionType.ADDED && debtTransaction.accountId) {
+  if (debtTransaction.type === DebtTransactionType.ADDED) {
     return (
       <div className="space-y-2">
-        <Label>Счёт</Label>
-        {previewAccount ? (
-          <AccountCard account={previewAccount} showOwner={false} />
-        ) : debtTransaction.account ? (
-          <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">{debtTransaction.account.name}</div>
+        <Controller
+          control={control}
+          name="accountId"
+          render={({ field }) => (
+            <>
+              <AccountSelector
+                workspaceId={workspaceId}
+                account={previewAccount || selectedAccount || null}
+                onSelect={(account) => field.onChange(account.id)}
+                label={debtTransaction.debt.type === DebtType.LENT ? "Счёт для списания" : "Счёт для зачисления"}
+                error={formState.errors.accountId?.message}
+              />
+              {field.value ? (
+                <Button type="button" variant="ghost" size="sm" onClick={() => field.onChange("")}>
+                  Без счёта
+                </Button>
+              ) : null}
+            </>
+          )}
+        />
+        {currentAccountUnavailable ? (
+          <p className="text-sm text-muted-foreground">
+            Текущий счёт "{debtTransaction.account?.name}" недоступен для выбора. Выберите другой счёт или очистите
+            поле.
+          </p>
         ) : null}
       </div>
     );

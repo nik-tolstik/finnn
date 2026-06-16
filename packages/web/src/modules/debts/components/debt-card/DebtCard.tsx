@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ArrowDownLeft, ArrowUpRight, User } from "lucide-react";
 
-import { AccountChip } from "@/shared/components/AccountChip";
 import { AnimatedListItem } from "@/shared/ui/animated-list";
 import { Card } from "@/shared/ui/card";
 import { cn } from "@/shared/utils/cn";
@@ -32,7 +31,6 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 flex-wrap">
               <div className="text-xs font-medium">{isLent ? "Кредит" : "Дебет"}</div>
-              {debt.account && <AccountChip account={debt.account} />}
             </div>
             <span className="text-xs text-muted-foreground">
               {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}

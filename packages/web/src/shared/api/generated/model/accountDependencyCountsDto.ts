@@ -8,6 +8,5 @@
 
 export interface AccountDependencyCountsDto {
   transactions: number;
-  debts: number;
   debtTransactions: number;
 }
