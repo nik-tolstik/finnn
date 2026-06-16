@@ -65,7 +65,7 @@ function WorkspaceCapitalChartCard({ viewModel }: AnalyticsChartsProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Капитал workspace</CardTitle>
+        <CardTitle className="text-xl">Капитал</CardTitle>
       </CardHeader>
       <CardContent>
         {viewModel.capitalTimeSeries.length > 0 ? (
