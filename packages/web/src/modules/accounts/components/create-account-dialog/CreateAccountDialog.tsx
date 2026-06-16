@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
+import { Building2, Wallet } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -36,23 +36,8 @@ import { cn } from "@/shared/utils/cn";
 
 import { createAccount } from "../../account.api";
 
-const WORKSPACE_ICONS: Record<string, LucideIcon> = {
-  Building2,
-  Wallet,
-  HandCoins,
-  CreditCard,
-  Landmark,
-} as const;
-
 const DEFAULT_ACCOUNT_COLOR = "#3b82f6";
 const ColorPicker = dynamic(() => import("@/shared/ui/color-picker").then((mod) => mod.ColorPicker));
-
-function getWorkspaceIcon(iconName?: string | null): LucideIcon {
-  if (iconName && iconName in WORKSPACE_ICONS) {
-    return WORKSPACE_ICONS[iconName];
-  }
-  return Building2;
-}
 
 interface CreateAccountDialogProps {
   workspaceId: string;
@@ -109,12 +94,6 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
 
   const workspaceName = useMemo(() => {
     return workspaceData && "data" in workspaceData && workspaceData.data ? workspaceData.data.name : "";
-  }, [workspaceData]);
-
-  const workspaceIcon = useMemo(() => {
-    return workspaceData && "data" in workspaceData && workspaceData.data
-      ? getWorkspaceIcon(workspaceData.data.icon)
-      : Building2;
   }, [workspaceData]);
 
   const members = useMemo(() => {
@@ -308,10 +287,9 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                       multiple={false}
                       renderOption={({ option }) => {
                         if (option.value === sharedValue) {
-                          const WorkspaceIcon = workspaceIcon;
                           return (
                             <div className="flex items-center gap-2">
-                              <WorkspaceIcon className="h-5 w-5 text-muted-foreground" />
+                              <Building2 className="h-5 w-5 text-muted-foreground" />
                               <span className="font-normal">{option.label}</span>
                             </div>
                           );

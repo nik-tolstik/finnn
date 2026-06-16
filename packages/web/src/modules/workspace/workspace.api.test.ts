@@ -26,7 +26,6 @@ function createWorkspaceDto(overrides: Record<string, unknown> = {}) {
     id: "workspace-1",
     name: "Family",
     slug: "family",
-    icon: null,
     baseCurrency: "BYN",
     ownerId: "user-1",
     membersCount: 2,
@@ -47,7 +46,7 @@ describe("workspace.api", () => {
 
   it("maps listWorkspaces response to the existing ActionResult workspace list shape", async () => {
     listApiWorkspacesMock.mockResolvedValue({
-      workspaces: [createWorkspaceDto({ icon: "Wallet" })],
+      workspaces: [createWorkspaceDto()],
     });
 
     const { getWorkspaces } = await import("./workspace.api");
@@ -60,7 +59,6 @@ describe("workspace.api", () => {
           id: "workspace-1",
           name: "Family",
           slug: "family",
-          icon: "Wallet",
           baseCurrency: "BYN",
           ownerId: "user-1",
           owner: {
@@ -79,7 +77,7 @@ describe("workspace.api", () => {
 
   it("maps summary and members responses to existing data payloads", async () => {
     getApiWorkspaceSummaryMock.mockResolvedValue({
-      workspace: createWorkspaceDto({ icon: "Wallet" }),
+      workspace: createWorkspaceDto(),
     });
     getApiWorkspaceMembersMock.mockResolvedValue({
       members: [
@@ -99,7 +97,6 @@ describe("workspace.api", () => {
       data: {
         id: "workspace-1",
         name: "Family",
-        icon: "Wallet",
         baseCurrency: "BYN",
         ownerId: "user-1",
       },
@@ -139,7 +136,6 @@ describe("workspace.api", () => {
       data: {
         id: "workspace-1",
         name: "Updated",
-        icon: null,
         baseCurrency: "BYN",
         ownerId: "user-1",
       },

@@ -112,7 +112,6 @@ function SheetContent({ className, children, side = "right", style, ...props }: 
   const setFloatingRef = React.useCallback(
     (node: HTMLDivElement | null) => {
       refs.setFloating(node);
-      setPortalRoot(node);
     },
     [refs]
   );
@@ -152,6 +151,11 @@ function SheetContent({ className, children, side = "right", style, ...props }: 
             }}
           >
             <OverlayPortalRootProvider root={portalRoot}>{children}</OverlayPortalRootProvider>
+            <div
+              ref={setPortalRoot}
+              data-slot="sheet-overlay-portal-root"
+              className="pointer-events-none absolute inset-0 z-50"
+            />
             <button
               type="button"
               data-slot="sheet-close"

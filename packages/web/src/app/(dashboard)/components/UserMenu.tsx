@@ -1,12 +1,12 @@
 "use client";
 
-import { ChevronDown, LogOut, Settings } from "lucide-react";
+import { ChevronDown, Settings } from "lucide-react";
 import { useState } from "react";
 
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { signOut, useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session-client";
 import { Popover } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
@@ -27,11 +27,6 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
   const resolvedTelegramName = session?.user?.telegram.username
     ? `@${session.user.telegram.username}`
     : session?.user?.telegram.displayName;
-
-  const handleLogout = async () => {
-    setOpen(false);
-    await signOut({ callbackUrl: "/login" });
-  };
 
   if (!resolvedName && !resolvedEmail && !resolvedTelegramName) {
     return null;
@@ -80,16 +75,6 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
             >
               <Settings className="h-4 w-4 text-muted-foreground" />
               <span>Настройки</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className={cn(
-                "w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-              )}
-            >
-              <LogOut className="h-4 w-4 text-muted-foreground" />
-              <span>Log Out</span>
             </button>
           </div>
         </div>

@@ -48,6 +48,14 @@ const ACCOUNT_WITH_OWNER_SELECT = {
   },
 } satisfies Prisma.AccountSelect;
 
+const CAPITAL_ACCOUNT_SELECT = {
+  id: true,
+  balance: true,
+  currency: true,
+  ownerId: true,
+  createdAt: true,
+} satisfies Prisma.AccountSelect;
+
 const CATEGORY_SELECT = {
   id: true,
   name: true,
@@ -99,6 +107,7 @@ type TransactionUser = Pick<User, "id" | "name" | "email" | "image">;
 type TransactionAccount = Pick<Account, "id" | "name" | "currency" | "color" | "icon" | "ownerId"> & {
   owner: TransactionUser | null;
 };
+type CapitalAccount = Pick<Account, "id" | "balance" | "currency" | "ownerId" | "createdAt">;
 type TransactionCategory = Pick<Category, "id" | "name">;
 type PaymentTransactionWithRelations = PaymentTransaction & {
   account: TransactionAccount;
@@ -138,7 +147,7 @@ type AnalyticsDateRange = {
   dayCount: number;
   isImplicit: boolean;
 };
-type AnalyticsExpenseCategory = {
+type AnalyticsCategoryTotal = {
   id: string;
   name: string;
   totalInBaseCurrency: string;
@@ -163,6 +172,11 @@ type AnalyticsLargestMovement = {
 };
 type ConvertedMovement = AnalyticsLargestMovement & {
   sortAmountInBaseCurrency: string;
+};
+type CapitalBalanceDelta = {
+  accountId: string;
+  date: Date;
+  delta: string;
 };
 
 function startOfDay(date: Date) {
@@ -298,6 +312,23 @@ function buildCurrentRangeWhere(workspaceId: string, range: AnalyticsDateRange) 
       lte: range.end,
     },
   };
+}
+
+function buildCapitalAccountWhere(workspaceId: string, filters: AnalyticsOverviewQueryDto): Prisma.AccountWhereInput {
+  const where: Prisma.AccountWhereInput = {
+    workspaceId,
+    archived: false,
+  };
+
+  if (filters.accountIds?.length) {
+    where.id = { in: filters.accountIds };
+  }
+
+  if (filters.userIds?.length) {
+    where.ownerId = { in: filters.userIds };
+  }
+
+  return where;
 }
 
 function toCurrencyEnum(currency: string) {
@@ -500,6 +531,41 @@ function convertAmountWithRates(
   return new Big(amount).times(rate).toString();
 }
 
+function addMoney(a: string, b: string): string {
+  return new Big(a).plus(b).toString();
+}
+
+function subtractMoney(a: string, b: string): string {
+  return new Big(a).minus(b).toString();
+}
+
+function getPaymentTransactionBalanceDelta(type: string, amount: string) {
+  return type === PAYMENT_INCOME ? amount : subtractMoney("0", amount);
+}
+
+function getTransferTransactionBalanceDeltas(amount: string, toAmount: string) {
+  return {
+    fromDelta: subtractMoney("0", amount),
+    toDelta: toAmount,
+  };
+}
+
+function getDebtTransactionAccountAmount(
+  transaction: Pick<DebtTransactionWithRelations, "type" | "amount" | "toAmount">
+) {
+  return transaction.toAmount || transaction.amount;
+}
+
+function getDebtTransactionBalanceDelta(debtType: string, transaction: DebtTransactionWithRelations) {
+  const accountAmount = getDebtTransactionAccountAmount(transaction);
+
+  if (transaction.type === DEBT_TRANSACTION_CLOSED) {
+    return debtType === DEBT_LENT ? accountAmount : subtractMoney("0", accountAmount);
+  }
+
+  return debtType === DEBT_LENT ? subtractMoney("0", accountAmount) : accountAmount;
+}
+
 function getDebtTransactionCashImpact(transaction: DebtTransactionWithRelations) {
   const amount =
     transaction.type === DEBT_TRANSACTION_CLOSED ? transaction.toAmount || transaction.amount : transaction.amount;
@@ -592,6 +658,138 @@ function sortMovementsByAbsoluteImpact(left: ConvertedMovement, right: Converted
   return new Big(right.sortAmountInBaseCurrency).abs().cmp(new Big(left.sortAmountInBaseCurrency).abs());
 }
 
+function buildCapitalRateRequests(
+  dates: Date[],
+  accounts: CapitalAccount[],
+  baseCurrency: string
+): ExchangeRateRequest[] {
+  return dates.flatMap((date) => {
+    const dayEnd = endOfDay(date);
+
+    return accounts
+      .filter((account) => account.createdAt.getTime() <= dayEnd.getTime())
+      .map((account) => ({
+        date: dayEnd,
+        fromCurrency: toCurrencyEnum(account.currency),
+        toCurrency: toCurrencyEnum(baseCurrency),
+      }));
+  });
+}
+
+function buildCapitalBalanceDeltas(
+  accountIds: Set<string>,
+  paymentTransactions: PaymentTransactionWithRelations[],
+  transferTransactions: TransferTransactionWithRelations[],
+  debtTransactions: DebtTransactionWithRelations[]
+) {
+  const deltas: CapitalBalanceDelta[] = [];
+
+  for (const transaction of paymentTransactions) {
+    if (!accountIds.has(transaction.accountId)) {
+      continue;
+    }
+
+    deltas.push({
+      accountId: transaction.accountId,
+      date: transaction.date,
+      delta: getPaymentTransactionBalanceDelta(transaction.type, transaction.amount),
+    });
+  }
+
+  for (const transaction of transferTransactions) {
+    const transferDeltas = getTransferTransactionBalanceDeltas(transaction.amount, transaction.toAmount);
+
+    if (accountIds.has(transaction.fromAccountId)) {
+      deltas.push({
+        accountId: transaction.fromAccountId,
+        date: transaction.date,
+        delta: transferDeltas.fromDelta,
+      });
+    }
+
+    if (accountIds.has(transaction.toAccountId)) {
+      deltas.push({
+        accountId: transaction.toAccountId,
+        date: transaction.date,
+        delta: transferDeltas.toDelta,
+      });
+    }
+  }
+
+  for (const transaction of debtTransactions) {
+    if (!transaction.accountId || !accountIds.has(transaction.accountId)) {
+      continue;
+    }
+
+    deltas.push({
+      accountId: transaction.accountId,
+      date: transaction.date,
+      delta: getDebtTransactionBalanceDelta(transaction.debt.type, transaction),
+    });
+  }
+
+  return deltas.sort((left, right) => right.date.getTime() - left.date.getTime());
+}
+
+function buildCapitalTimeSeries({
+  accounts,
+  baseCurrency,
+  dates,
+  debtTransactions,
+  paymentTransactions,
+  rates,
+  transferTransactions,
+}: {
+  accounts: CapitalAccount[];
+  baseCurrency: string;
+  dates: Date[];
+  debtTransactions: DebtTransactionWithRelations[];
+  paymentTransactions: PaymentTransactionWithRelations[];
+  rates: Map<string, number>;
+  transferTransactions: TransferTransactionWithRelations[];
+}) {
+  const accountIds = new Set(accounts.map((account) => account.id));
+  const balancesByAccount = new Map(accounts.map((account) => [account.id, account.balance]));
+  const deltas = buildCapitalBalanceDeltas(accountIds, paymentTransactions, transferTransactions, debtTransactions);
+  const points: Array<{ date: string; totalInBaseCurrency: string }> = [];
+  let deltaIndex = 0;
+
+  for (const date of [...dates].reverse()) {
+    const dayEnd = endOfDay(date);
+
+    while (deltaIndex < deltas.length && deltas[deltaIndex].date.getTime() > dayEnd.getTime()) {
+      const delta = deltas[deltaIndex];
+      const currentBalance = balancesByAccount.get(delta.accountId) ?? "0";
+      balancesByAccount.set(delta.accountId, subtractMoney(currentBalance, delta.delta));
+      deltaIndex += 1;
+    }
+
+    const totalInBaseCurrency = accounts.reduce((total, account) => {
+      if (account.createdAt.getTime() > dayEnd.getTime()) {
+        return total;
+      }
+
+      const balance = balancesByAccount.get(account.id) ?? "0";
+      const convertedBalance = convertAmountWithRates(
+        balance,
+        toCurrencyEnum(account.currency),
+        toCurrencyEnum(baseCurrency),
+        dayEnd,
+        rates
+      );
+
+      return addMoney(total, convertedBalance);
+    }, "0");
+
+    points.push({
+      date: toDateString(date) ?? "",
+      totalInBaseCurrency,
+    });
+  }
+
+  return points.reverse();
+}
+
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -621,6 +819,7 @@ export class AnalyticsService {
       currentDebtTransactions,
       previousPaymentTransactions,
       openDebts,
+      capitalAccounts,
     ] = await Promise.all([
       this.prisma.paymentTransaction.findMany({
         where: buildCurrentRangeWhere(workspaceId, effectiveRange),
@@ -666,7 +865,55 @@ export class AnalyticsService {
         },
         orderBy: [{ date: "desc" }, { personName: "asc" }],
       }),
+      this.prisma.account.findMany({
+        where: buildCapitalAccountWhere(workspaceId, filters),
+        select: CAPITAL_ACCOUNT_SELECT,
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      }),
     ]);
+    const rangeDates = buildInclusiveDateRangeDates(effectiveRange);
+    const capitalAccountIds = capitalAccounts.map((account) => account.id);
+    const [capitalPaymentTransactions, capitalTransferTransactions, capitalDebtTransactions] =
+      capitalAccountIds.length > 0
+        ? await Promise.all([
+            this.prisma.paymentTransaction.findMany({
+              where: {
+                workspaceId,
+                accountId: { in: capitalAccountIds },
+                date: { gt: effectiveRange.start },
+              },
+              include: PAYMENT_TRANSACTION_INCLUDE,
+              orderBy: { date: "desc" },
+            }),
+            this.prisma.transferTransaction.findMany({
+              where: {
+                workspaceId,
+                date: { gt: effectiveRange.start },
+                OR: [{ fromAccountId: { in: capitalAccountIds } }, { toAccountId: { in: capitalAccountIds } }],
+              },
+              include: TRANSFER_TRANSACTION_INCLUDE,
+              orderBy: { date: "desc" },
+            }),
+            this.prisma.debtTransaction.findMany({
+              where: {
+                workspaceId,
+                accountId: { in: capitalAccountIds },
+                date: { gt: effectiveRange.start },
+                debt: {
+                  is: {
+                    workspaceId,
+                  },
+                },
+              },
+              include: DEBT_TRANSACTION_INCLUDE,
+              orderBy: { date: "desc" },
+            }),
+          ])
+        : [
+            [] as PaymentTransactionWithRelations[],
+            [] as TransferTransactionWithRelations[],
+            [] as DebtTransactionWithRelations[],
+          ];
 
     const currentCombined: CombinedTransaction[] = [
       ...currentPaymentTransactions.map((transaction) => ({
@@ -732,11 +979,12 @@ export class AnalyticsService {
         fromCurrency: toCurrencyEnum(debt.currency),
         toCurrency: toCurrencyEnum(baseCurrency),
       })),
+      ...buildCapitalRateRequests(rangeDates, capitalAccounts, baseCurrency),
     ];
     const rates = await this.loadExchangeRates(rateRequests);
 
     const timeSeries = new Map(
-      buildInclusiveDateRangeDates(effectiveRange).map((date) => {
+      rangeDates.map((date) => {
         const key = toDateString(date) ?? "";
 
         return [
@@ -749,6 +997,15 @@ export class AnalyticsService {
         ];
       })
     );
+    const capitalTimeSeries = buildCapitalTimeSeries({
+      accounts: capitalAccounts,
+      baseCurrency,
+      dates: rangeDates,
+      debtTransactions: capitalDebtTransactions as DebtTransactionWithRelations[],
+      paymentTransactions: capitalPaymentTransactions as PaymentTransactionWithRelations[],
+      rates,
+      transferTransactions: capitalTransferTransactions as TransferTransactionWithRelations[],
+    });
 
     let incomeTotal = "0";
     let expenseTotal = "0";
@@ -760,7 +1017,8 @@ export class AnalyticsService {
     let incomeCount = 0;
     let expenseCount = 0;
 
-    const expenseCategories = new Map<string, AnalyticsExpenseCategory>();
+    const incomeCategories = new Map<string, AnalyticsCategoryTotal>();
+    const expenseCategories = new Map<string, AnalyticsCategoryTotal>();
     const debtsByPerson = new Map<string, AnalyticsDebtByPerson>();
     const movementRows: ConvertedMovement[] = [];
 
@@ -784,6 +1042,23 @@ export class AnalyticsService {
           dayBucket.incomeTotalInBaseCurrency = new Big(dayBucket.incomeTotalInBaseCurrency)
             .plus(amountInBaseCurrency)
             .toString();
+        }
+
+        const categoryKey = transaction.category?.id ?? "uncategorized";
+        const existingCategory = incomeCategories.get(categoryKey);
+
+        if (existingCategory) {
+          existingCategory.totalInBaseCurrency = new Big(existingCategory.totalInBaseCurrency)
+            .plus(amountInBaseCurrency)
+            .toString();
+          existingCategory.transactionCount += 1;
+        } else {
+          incomeCategories.set(categoryKey, {
+            id: categoryKey,
+            name: transaction.category?.name ?? "Без категории",
+            totalInBaseCurrency: amountInBaseCurrency,
+            transactionCount: 1,
+          });
         }
       } else {
         expenseTotal = new Big(expenseTotal).plus(amountInBaseCurrency).toString();
@@ -903,6 +1178,15 @@ export class AnalyticsService {
     const netFlowTotal = new Big(incomeTotal).minus(expenseTotal).toString();
     const previousNetFlowTotal = new Big(previousIncomeTotal).minus(previousExpenseTotal).toString();
 
+    const incomeCategoryRows = Array.from(incomeCategories.values())
+      .sort((left, right) => new Big(right.totalInBaseCurrency).cmp(new Big(left.totalInBaseCurrency)))
+      .map((category) => ({
+        ...category,
+        sharePercent: new Big(incomeTotal).eq(0)
+          ? 0
+          : Number(new Big(category.totalInBaseCurrency).div(incomeTotal).times(100).toFixed(1)),
+      }));
+
     const expenseCategoryRows = Array.from(expenseCategories.values())
       .sort((left, right) => new Big(right.totalInBaseCurrency).cmp(new Big(left.totalInBaseCurrency)))
       .map((category) => ({
@@ -967,6 +1251,8 @@ export class AnalyticsService {
         netFlowPreviousTotalInBaseCurrency: previousNetFlowTotal,
       },
       timeSeries: Array.from(timeSeries.values()),
+      capitalTimeSeries,
+      incomeCategories: incomeCategoryRows,
       expenseCategories: expenseCategoryRows,
       debtsByPerson: debtRows,
       largestMovements,

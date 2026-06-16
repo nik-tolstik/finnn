@@ -11,8 +11,6 @@ export interface WorkspaceSummaryDto {
   id: string;
   name: string;
   slug: string;
-  /** @nullable */
-  icon?: string | null;
   baseCurrency: string;
   ownerId: string;
   membersCount: number;

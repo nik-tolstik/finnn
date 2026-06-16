@@ -1,13 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { getWorkspaceSummary } from "@/modules/workspace/workspace.api";
-import { getTodayExchangeRates } from "@/shared/api/generated/currency/currency";
-import { Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
-import { exchangeRateKeys, workspaceKeys } from "@/shared/lib/query-keys";
+import { DashboardExchangeRatesList, useDashboardExchangeRates } from "./dashboard-exchange-rates";
 
 export function ExchangeRatesTicker() {
   const searchParams = useSearchParams();
@@ -22,33 +18,11 @@ export function ExchangeRatesTicker() {
     setWorkspaceId(searchParams.get("workspaceId") || undefined);
   }, [searchParams]);
 
-  const { data: workspaceData } = useQuery({
-    queryKey: workspaceKeys.summary(workspaceId ?? "pending"),
-    queryFn: () => (workspaceId ? getWorkspaceSummary(workspaceId) : null),
-    enabled: !!workspaceId,
-    staleTime: 5000,
-  });
-
-  const baseCurrency =
-    workspaceData && "data" in workspaceData && workspaceData.data
-      ? (workspaceData.data.baseCurrency as Currency) || DEFAULT_CURRENCY
-      : DEFAULT_CURRENCY;
-
-  const { data: ratesData, isLoading } = useQuery({
-    queryKey: exchangeRateKeys.today(),
-    queryFn: () => getTodayExchangeRates(),
-    staleTime: 3600000,
-    refetchInterval: false,
-    retry: 1,
-    retryDelay: 5000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    gcTime: 86400000,
-  });
+  const { isLoading, rates, shouldRender } = useDashboardExchangeRates(workspaceId);
 
   if (!isMounted || isLoading) {
     return (
-      <div className="h-8 bg-muted/50 border-b overflow-hidden">
+      <div className="h-8 overflow-hidden border-b bg-muted/50 md:hidden">
         <div className="flex items-center h-full px-4 sm:px-8">
           <div className="h-4 w-24 bg-muted rounded animate-pulse" />
         </div>
@@ -56,37 +30,15 @@ export function ExchangeRatesTicker() {
     );
   }
 
-  if (baseCurrency !== Currency.BYN) {
+  if (!shouldRender) {
     return null;
   }
-
-  const rates = ratesData?.data ?? {};
-  const usdRate = rates[Currency.USD];
-  const eurRate = rates[Currency.EUR];
-
-  if (!usdRate && !eurRate) {
-    return null;
-  }
-
-  const ratesList = [
-    usdRate && { currency: Currency.USD, rate: usdRate },
-    eurRate && { currency: Currency.EUR, rate: eurRate },
-  ].filter(Boolean) as Array<{ currency: Currency; rate: number }>;
-
-  if (ratesList.length === 0) {
-    return null;
-  }
-
-  const content = ratesList.map(({ currency, rate }) => (
-    <div key={currency} className="flex items-center gap-1.5 whitespace-nowrap">
-      <span className="text-muted-foreground">{currency}/BYN</span>
-      <span className="font-medium">{rate.toFixed(2)}</span>
-    </div>
-  ));
 
   return (
-    <div className="h-8 bg-muted/50 border-b">
-      <div className="flex items-center h-full px-4 sm:px-8 gap-6 text-xs">{content}</div>
+    <div className="h-8 border-b bg-muted/50 md:hidden">
+      <div className="flex h-full items-center px-4 sm:px-8">
+        <DashboardExchangeRatesList rates={rates} />
+      </div>
     </div>
   );
 }

@@ -2,7 +2,6 @@ interface WorkspaceBase {
   id: string;
   name: string;
   slug: string;
-  icon: string | null;
   baseCurrency: string;
   ownerId: string;
   createdAt: Date;
@@ -42,7 +41,6 @@ export type WorkspaceWithMembers = WorkspaceBase & {
 export interface WorkspaceSummary {
   id: string;
   name: string;
-  icon: string | null;
   baseCurrency: string;
   ownerId: string;
 }

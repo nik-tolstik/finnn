@@ -2,9 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
 import { useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -15,19 +14,9 @@ import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { cn } from "@/shared/utils/cn";
-
-const WORKSPACE_ICONS: Record<string, LucideIcon> = {
-  Building2,
-  Wallet,
-  HandCoins,
-  CreditCard,
-  Landmark,
-} as const;
 
 const workspaceSettingsSchema = z.object({
   name: z.string().min(1, "Название обязательно").max(100),
-  icon: z.string().optional().nullable(),
 });
 
 type WorkspaceSettingsInput = z.infer<typeof workspaceSettingsSchema>;
@@ -53,15 +42,12 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    setValue,
-    control,
     reset,
     formState: { isDirty },
   } = useForm<WorkspaceSettingsInput>({
     resolver: zodResolver(workspaceSettingsSchema),
     defaultValues: {
       name: workspace?.name || "",
-      icon: workspace?.icon || null,
     },
   });
 
@@ -69,12 +55,9 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
     if (workspace) {
       reset({
         name: workspace.name,
-        icon: workspace.icon || null,
       });
     }
   }, [workspace, reset]);
-
-  const selectedIcon = useWatch({ control, name: "icon" });
 
   const updateMutation = useMutation({
     mutationFn: async (data: WorkspaceSettingsInput) => {
@@ -86,7 +69,6 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
           updateWorkspaceCaches(context, {
             id: workspaceId,
             ...data,
-            icon: data.icon || null,
           }),
         mutation: () => updateWorkspace(workspaceId, data),
       });
@@ -100,7 +82,6 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
       if (result.data && workspace) {
         reset({
           name: result.data.name,
-          icon: result.data.icon || null,
         });
       }
     },
@@ -117,7 +98,6 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
     if (workspace) {
       reset({
         name: workspace.name,
-        icon: workspace.icon || null,
       });
     }
   };
@@ -140,32 +120,6 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
           aria-invalid={errors.name ? "true" : "false"}
         />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-      </div>
-
-      <div className="space-y-2">
-        <Label>Иконка</Label>
-        <div className="flex gap-2">
-          {Object.entries(WORKSPACE_ICONS).map(([name, Icon]) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() =>
-                setValue("icon", selectedIcon === name ? null : name, {
-                  shouldDirty: true,
-                })
-              }
-              disabled={!isOwner}
-              className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-all",
-                selectedIcon === name ? "border-primary bg-primary/10" : "border-border hover:border-primary/50",
-                !isOwner && "opacity-50 cursor-not-allowed"
-              )}
-              title={name}
-            >
-              <Icon className="h-5 w-5" />
-            </button>
-          ))}
-        </div>
       </div>
 
       {!isOwner && <p className="text-sm text-muted-foreground">Только владелец может изменять настройки workspace</p>}

@@ -87,7 +87,6 @@ model Workspace {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   slug         String   @unique
-  icon         String?
   baseCurrency String   @default("BYN")
   ownerId      String   @db.ObjectId
   createdAt    DateTime @default(now())

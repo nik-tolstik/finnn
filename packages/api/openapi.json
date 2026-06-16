@@ -4068,11 +4068,6 @@
             "type": "string",
             "example": "personal-budget"
           },
-          "icon": {
-            "type": "string",
-            "example": "wallet",
-            "nullable": true
-          },
           "baseCurrency": {
             "type": "string",
             "example": "BYN"
@@ -4120,11 +4115,6 @@
           "slug": {
             "type": "string",
             "example": "personal-budget"
-          },
-          "icon": {
-            "type": "string",
-            "example": "wallet",
-            "nullable": true
           },
           "baseCurrency": {
             "type": "string",
@@ -4191,11 +4181,6 @@
             "example": "family-budget",
             "maxLength": 50,
             "minLength": 1
-          },
-          "icon": {
-            "type": "string",
-            "example": "wallet",
-            "nullable": true
           }
         }
       },
@@ -6019,6 +6004,19 @@
         },
         "required": ["date", "incomeTotalInBaseCurrency", "expenseTotalInBaseCurrency"]
       },
+      "AnalyticsCapitalTimeSeriesPointDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "totalInBaseCurrency": {
+            "type": "string"
+          }
+        },
+        "required": ["date", "totalInBaseCurrency"]
+      },
       "AnalyticsExpenseCategoryDto": {
         "type": "object",
         "properties": {
@@ -6130,6 +6128,18 @@
               "$ref": "#/components/schemas/AnalyticsTimeSeriesPointDto"
             }
           },
+          "capitalTimeSeries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsCapitalTimeSeriesPointDto"
+            }
+          },
+          "incomeCategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsExpenseCategoryDto"
+            }
+          },
           "expenseCategories": {
             "type": "array",
             "items": {
@@ -6155,6 +6165,8 @@
           "summary",
           "comparison",
           "timeSeries",
+          "capitalTimeSeries",
+          "incomeCategories",
           "expenseCategories",
           "debtsByPerson",
           "largestMovements"

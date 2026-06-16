@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 
 import type { PaymentTransactionWithRelations, TransferTransactionWithRelations } from "../../../transaction.types";
@@ -11,7 +9,6 @@ import { TransferTransactionItem } from "./TransferTransactionItem";
 interface CombinedTransactionItemProps {
   item: PreparedCombinedTransaction;
   workspaceName: string;
-  WorkspaceIcon: LucideIcon;
   onTransactionClick: (transaction: ActionableCombinedTransaction) => void;
   onDebtTransactionClick: (debtTransaction: DebtTransactionWithRelations) => void;
 }
@@ -19,18 +16,12 @@ interface CombinedTransactionItemProps {
 export function CombinedTransactionItem({
   item,
   workspaceName,
-  WorkspaceIcon,
   onTransactionClick,
   onDebtTransactionClick,
 }: CombinedTransactionItemProps) {
   if (item.kind === "debtTransaction") {
     return (
-      <DebtTransactionItem
-        debtTransaction={item.data}
-        workspaceName={workspaceName}
-        WorkspaceIcon={WorkspaceIcon}
-        onClick={onDebtTransactionClick}
-      />
+      <DebtTransactionItem debtTransaction={item.data} workspaceName={workspaceName} onClick={onDebtTransactionClick} />
     );
   }
 
@@ -38,8 +29,6 @@ export function CombinedTransactionItem({
     return (
       <TransferTransactionItem
         transaction={item.data}
-        workspaceName={workspaceName}
-        WorkspaceIcon={WorkspaceIcon}
         onClick={(transaction: TransferTransactionWithRelations) => {
           onTransactionClick({
             kind: "transferTransaction",
@@ -54,7 +43,6 @@ export function CombinedTransactionItem({
     <RegularTransactionItem
       transaction={item.data}
       workspaceName={workspaceName}
-      WorkspaceIcon={WorkspaceIcon}
       onClick={(transaction: PaymentTransactionWithRelations) => {
         onTransactionClick({
           kind: "paymentTransaction",

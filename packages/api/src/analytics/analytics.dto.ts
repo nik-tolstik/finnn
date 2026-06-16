@@ -172,6 +172,14 @@ export class AnalyticsTimeSeriesPointDto {
   expenseTotalInBaseCurrency!: string;
 }
 
+export class AnalyticsCapitalTimeSeriesPointDto {
+  @ApiProperty({ example: "2026-05-01", type: String })
+  date!: string;
+
+  @ApiProperty({ type: String })
+  totalInBaseCurrency!: string;
+}
+
 export class AnalyticsExpenseCategoryDto {
   @ApiProperty({ type: String })
   id!: string;
@@ -247,6 +255,12 @@ export class AnalyticsOverviewResponseDto {
 
   @ApiProperty({ type: [AnalyticsTimeSeriesPointDto] })
   timeSeries!: AnalyticsTimeSeriesPointDto[];
+
+  @ApiProperty({ type: [AnalyticsCapitalTimeSeriesPointDto] })
+  capitalTimeSeries!: AnalyticsCapitalTimeSeriesPointDto[];
+
+  @ApiProperty({ type: [AnalyticsExpenseCategoryDto] })
+  incomeCategories!: AnalyticsExpenseCategoryDto[];
 
   @ApiProperty({ type: [AnalyticsExpenseCategoryDto] })
   expenseCategories!: AnalyticsExpenseCategoryDto[];

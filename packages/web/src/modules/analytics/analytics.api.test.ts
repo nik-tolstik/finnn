@@ -56,6 +56,21 @@ function createAnalyticsOverviewDto(
         expenseTotalInBaseCurrency: "120",
       },
     ],
+    capitalTimeSeries: [
+      {
+        date: "2026-04-01",
+        totalInBaseCurrency: "500",
+      },
+    ],
+    incomeCategories: [
+      {
+        id: "category-income",
+        name: "Salary",
+        totalInBaseCurrency: "300",
+        transactionCount: 2,
+        sharePercent: 100,
+      },
+    ],
     expenseCategories: [
       {
         id: "category-1",
@@ -132,6 +147,8 @@ describe("analytics API helpers", () => {
           netFlow: expect.objectContaining({ percentageChange: null }),
         }),
         timeSeries: [expect.objectContaining({ date: "2026-04-01" })],
+        capitalTimeSeries: [expect.objectContaining({ totalInBaseCurrency: "500" })],
+        incomeCategories: [expect.objectContaining({ id: "category-income" })],
         expenseCategories: [expect.objectContaining({ id: "category-1" })],
         debtsByPerson: [expect.objectContaining({ personName: "Alex" })],
         largestMovements: [expect.objectContaining({ kind: "paymentTransaction" })],

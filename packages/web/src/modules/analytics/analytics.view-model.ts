@@ -30,6 +30,12 @@ export interface AnalyticsTimeSeriesViewPoint {
   cumulativeNetFlow: number;
 }
 
+export interface AnalyticsCapitalTimeSeriesViewPoint {
+  date: string;
+  total: number;
+  totalLabel: string;
+}
+
 export interface AnalyticsCategoryViewRow {
   id: string;
   name: string;
@@ -64,6 +70,8 @@ export interface AnalyticsOverviewViewModel {
   netFlowDeltaLabel: string;
   topExpenseCategory: AnalyticsCategoryViewRow | null;
   timeSeries: AnalyticsTimeSeriesViewPoint[];
+  capitalTimeSeries: AnalyticsCapitalTimeSeriesViewPoint[];
+  incomeCategoryRows: AnalyticsCategoryViewRow[];
   categoryRows: AnalyticsCategoryViewRow[];
   debtRows: AnalyticsDebtViewRow[];
 }
@@ -161,6 +169,33 @@ export function getActiveAnalyticsPeriodPreset(
   return preset?.value ?? null;
 }
 
+export function selectAnalyticsCapitalTicks(
+  points: Pick<AnalyticsCapitalTimeSeriesViewPoint, "date">[],
+  maxTicks: number
+) {
+  if (points.length === 0) {
+    return [];
+  }
+
+  const normalizedMaxTicks = Math.max(2, Math.floor(maxTicks));
+
+  if (points.length <= normalizedMaxTicks) {
+    return points.map((point) => point.date);
+  }
+
+  const lastIndex = points.length - 1;
+  const middleTickCount = normalizedMaxTicks - 2;
+  const indexes = new Set([0, lastIndex]);
+
+  for (let index = 1; index <= middleTickCount; index += 1) {
+    indexes.add(Math.round((index * lastIndex) / (middleTickCount + 1)));
+  }
+
+  return Array.from(indexes)
+    .sort((left, right) => left - right)
+    .map((index) => points[index].date);
+}
+
 export function buildAnalyticsOverviewViewModel(analytics: AnalyticsOverviewResult): AnalyticsOverviewViewModel {
   const dayCount = Math.max(analytics.effectiveRange.dayCount, 1);
   const incomeTotal = toBig(analytics.summary.income.totalInBaseCurrency);
@@ -168,6 +203,16 @@ export function buildAnalyticsOverviewViewModel(analytics: AnalyticsOverviewResu
   const netFlowTotal = toBig(analytics.summary.netFlow.totalInBaseCurrency);
   const savingRatePercent = incomeTotal.eq(0) ? null : Number(netFlowTotal.div(incomeTotal).times(100).toFixed(1));
   let cumulativeNetFlow = new Big(0);
+
+  const incomeCategoryRows = analytics.incomeCategories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    total: category.totalInBaseCurrency,
+    totalLabel: formatMoney(category.totalInBaseCurrency, analytics.baseCurrency),
+    transactionCount: category.transactionCount,
+    sharePercent: category.sharePercent,
+    barWidthPercent: Math.max(4, Math.min(100, category.sharePercent)),
+  }));
 
   const categoryRows = analytics.expenseCategories.map((category) => ({
     id: category.id,
@@ -209,6 +254,12 @@ export function buildAnalyticsOverviewViewModel(analytics: AnalyticsOverviewResu
         cumulativeNetFlow: Number(cumulativeNetFlow.toString()),
       };
     }),
+    capitalTimeSeries: analytics.capitalTimeSeries.map((point) => ({
+      date: point.date,
+      total: toNumber(point.totalInBaseCurrency),
+      totalLabel: formatMoney(point.totalInBaseCurrency, analytics.baseCurrency),
+    })),
+    incomeCategoryRows,
     categoryRows,
     debtRows: analytics.debtsByPerson.map((debt) => {
       const netExposure = toBig(debt.netExposureInBaseCurrency);

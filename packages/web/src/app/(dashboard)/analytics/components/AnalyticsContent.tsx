@@ -408,7 +408,7 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
               />
             </div>
 
-            <AnalyticsCharts analytics={analytics} viewModel={viewModel} />
+            <AnalyticsCharts viewModel={viewModel} />
 
             <LargestMovementsList analytics={analytics} />
           </>

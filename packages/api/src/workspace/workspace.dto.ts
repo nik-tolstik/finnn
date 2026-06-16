@@ -32,10 +32,6 @@ export class UpdateWorkspaceDto {
   @Matches(/^[a-z0-9-]+$/)
   slug?: string;
 
-  @ApiPropertyOptional({ example: "wallet", nullable: true, type: String })
-  @IsOptional()
-  @IsString()
-  icon?: string | null;
 }
 
 export class WorkspaceOwnerDto {
@@ -78,9 +74,6 @@ export class WorkspaceSummaryDto {
 
   @ApiProperty({ example: "personal-budget", type: String })
   slug!: string;
-
-  @ApiPropertyOptional({ example: "wallet", nullable: true, type: String })
-  icon!: string | null;
 
   @ApiProperty({ example: "BYN", type: String })
   baseCurrency!: string;

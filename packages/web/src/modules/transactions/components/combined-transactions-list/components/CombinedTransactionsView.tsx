@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { Button } from "@/shared/ui/button";
 
@@ -27,7 +25,6 @@ function getTransactionKey(item: PreparedCombinedTransaction) {
 interface CombinedTransactionsViewProps {
   groups: PreparedCombinedTransactionGroup[];
   workspaceName: string;
-  WorkspaceIcon: LucideIcon;
   showLoadMore?: boolean;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
@@ -38,7 +35,6 @@ interface CombinedTransactionsViewProps {
 export function CombinedTransactionsView({
   groups,
   workspaceName,
-  WorkspaceIcon,
   showLoadMore,
   onLoadMore,
   isLoadingMore,
@@ -60,7 +56,6 @@ export function CombinedTransactionsView({
                 key={getTransactionKey(item)}
                 item={item}
                 workspaceName={workspaceName}
-                WorkspaceIcon={WorkspaceIcon}
                 onTransactionClick={onTransactionClick}
                 onDebtTransactionClick={onDebtTransactionClick}
               />

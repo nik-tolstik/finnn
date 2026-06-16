@@ -126,7 +126,6 @@ function DialogWindow({
   const setFloatingRef = React.useCallback(
     (node: HTMLDivElement | null) => {
       refs.setFloating(node);
-      setPortalRoot(node);
     },
     [refs]
   );
@@ -169,6 +168,11 @@ function DialogWindow({
             }}
           >
             <OverlayPortalRootProvider root={portalRoot}>{children}</OverlayPortalRootProvider>
+            <div
+              ref={setPortalRoot}
+              data-slot="dialog-overlay-portal-root"
+              className="pointer-events-none absolute inset-0 z-50"
+            />
             {showCloseButton && (
               <button
                 type="button"
