@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Grip, HandCoins, LogOut, Settings, Wallet } from "lucide-react";
+import { Grip, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -8,10 +8,12 @@ import { useState } from "react";
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { signOut, useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";
+
+import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
 
 export function BurgerMenu() {
   const { data: session } = useSession();
@@ -22,19 +24,6 @@ export function BurgerMenu() {
   const workspaceId = searchParams.get("workspaceId") || undefined;
 
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
-
-  const accountsPath = "/dashboard";
-  const analyticsPath = "/analytics";
-  const debtsPath = "/debts";
-
-  const isAccountsActive = pathname === accountsPath;
-  const isAnalyticsActive = pathname === analyticsPath;
-  const isDebtsActive = pathname === debtsPath;
-
-  const handleLogout = async () => {
-    setOpen(false);
-    await signOut({ callbackUrl: "/login" });
-  };
 
   const telegramName = session?.user?.telegram.username
     ? `@${session.user.telegram.username}`
@@ -73,42 +62,26 @@ export function BurgerMenu() {
             </div>
 
             <nav className="flex-1 p-4 space-y-1">
-              <Link
-                href={`${accountsPath}${basePath}`}
-                prefetch
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                  isAccountsActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
-                )}
-              >
-                <Wallet className="h-5 w-5" />
-                <span>Счета</span>
-              </Link>
-              <Link
-                href={`${analyticsPath}${basePath}`}
-                prefetch
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                  isAnalyticsActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
-                )}
-              >
-                <BarChart3 className="h-5 w-5" />
-                <span>Аналитика</span>
-              </Link>
-              <Link
-                href={`${debtsPath}${basePath}`}
-                prefetch
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                  isDebtsActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
-                )}
-              >
-                <HandCoins className="h-5 w-5" />
-                <span>Долги</span>
-              </Link>
+              {DASHBOARD_NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+
+                return (
+                  <Link
+                    href={`${item.href}${basePath}`}
+                    key={item.href}
+                    prefetch
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                      isActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
             </nav>
 
             <div className="mt-auto border-t p-4 space-y-1">
@@ -124,16 +97,6 @@ export function BurgerMenu() {
               >
                 <Settings className="h-5 w-5 text-muted-foreground" />
                 <span>Настройки</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className={cn(
-                  "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-3"
-                )}
-              >
-                <LogOut className="h-5 w-5 text-muted-foreground" />
-                <span>Выйти</span>
               </button>
             </div>
           </div>

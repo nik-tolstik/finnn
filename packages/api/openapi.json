@@ -4068,11 +4068,6 @@
             "type": "string",
             "example": "personal-budget"
           },
-          "icon": {
-            "type": "string",
-            "example": "wallet",
-            "nullable": true
-          },
           "baseCurrency": {
             "type": "string",
             "example": "BYN"
@@ -4120,11 +4115,6 @@
           "slug": {
             "type": "string",
             "example": "personal-budget"
-          },
-          "icon": {
-            "type": "string",
-            "example": "wallet",
-            "nullable": true
           },
           "baseCurrency": {
             "type": "string",
@@ -4191,11 +4181,6 @@
             "example": "family-budget",
             "maxLength": 50,
             "minLength": 1
-          },
-          "icon": {
-            "type": "string",
-            "example": "wallet",
-            "nullable": true
           }
         }
       },

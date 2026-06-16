@@ -107,7 +107,6 @@ function createWorkspaceRecord(overrides: Record<string, unknown> = {}) {
     id: "workspace-1",
     name: "Shared budget",
     slug: "shared-budget",
-    icon: "wallet",
     baseCurrency: "BYN",
     ownerId: currentUser.id,
     createdAt: new Date("2026-05-25T00:00:00.000Z"),
@@ -247,7 +246,6 @@ describe("Workspace API", () => {
           id: "workspace-1",
           name: "Shared budget",
           slug: "shared-budget",
-          icon: "wallet",
           baseCurrency: "BYN",
           ownerId: "user-1",
           membersCount: 2,
@@ -315,26 +313,23 @@ describe("Workspace API", () => {
       if (where.slug === "updated-budget") return null;
       return createWorkspaceRecord();
     });
-    prisma.workspace.update.mockResolvedValue(
-      createWorkspaceRecord({ icon: null, name: "Updated budget", slug: "updated-budget" })
-    );
+    prisma.workspace.update.mockResolvedValue(createWorkspaceRecord({ name: "Updated budget", slug: "updated-budget" }));
 
     const response = await request(app.getHttpServer())
       .patch("/workspaces/workspace-1")
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
-      .send({ name: "Updated budget", slug: "updated-budget", icon: null })
+      .send({ name: "Updated budget", slug: "updated-budget" })
       .expect(200);
 
     expect(response.body.workspace).toMatchObject({
       id: "workspace-1",
       name: "Updated budget",
       slug: "updated-budget",
-      icon: null,
     });
     expect(prisma.workspace.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: "workspace-1" },
-        data: { name: "Updated budget", slug: "updated-budget", icon: null },
+        data: { name: "Updated budget", slug: "updated-budget" },
       })
     );
   });

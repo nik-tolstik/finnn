@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { getAccountIcon } from "@/shared/utils/account-icons";
@@ -12,16 +10,10 @@ import { TransactionActorAvatar } from "./TransactionActorAvatar";
 interface DebtTransactionItemProps {
   debtTransaction: DebtTransactionWithRelations;
   workspaceName: string;
-  WorkspaceIcon: LucideIcon;
   onClick: (debtTransaction: DebtTransactionWithRelations) => void;
 }
 
-export function DebtTransactionItem({
-  debtTransaction,
-  workspaceName,
-  WorkspaceIcon,
-  onClick,
-}: DebtTransactionItemProps) {
+export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }: DebtTransactionItemProps) {
   const { segments } = getTransactionDescriptionSegments(
     {
       kind: "debtTransaction",
@@ -32,12 +24,7 @@ export function DebtTransactionItem({
   const amount = getDebtTransactionAmountDisplay(debtTransaction);
   const DebtAccountIcon = debtTransaction.account ? getAccountIcon(debtTransaction.account.icon) : null;
   const actorAvatar = debtTransaction.account ? (
-    <TransactionActorAvatar
-      account={debtTransaction.account}
-      WorkspaceIcon={WorkspaceIcon}
-      showName
-      workspaceName={workspaceName}
-    />
+    <TransactionActorAvatar account={debtTransaction.account} showName workspaceName={workspaceName} />
   ) : (
     <UserDisplay name={debtTransaction.debt.personName} showName size="sm" />
   );

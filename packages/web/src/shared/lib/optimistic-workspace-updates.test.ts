@@ -78,7 +78,6 @@ function makeWorkspaceSummary(id: string, name = `Workspace ${id}`, ownerId = "o
   return {
     id,
     name,
-    icon: null,
     baseCurrency: "USD",
     ownerId,
   };
@@ -93,7 +92,6 @@ function makeWorkspaceWithOwner(
   return {
     id,
     name,
-    icon: null,
     slug: `workspace-${id}`,
     ownerId,
     baseCurrency: "USD",

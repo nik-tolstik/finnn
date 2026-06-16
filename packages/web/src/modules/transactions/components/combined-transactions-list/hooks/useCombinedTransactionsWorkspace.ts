@@ -3,8 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getWorkspaceSummary } from "@/modules/workspace/workspace.api";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 
-import { getWorkspaceIcon } from "../utils/workspace-icons";
-
 interface UseCombinedTransactionsWorkspaceParams {
   workspaceId: string;
 }
@@ -20,6 +18,5 @@ export function useCombinedTransactionsWorkspace({ workspaceId }: UseCombinedTra
 
   return {
     workspaceName: workspace?.name ?? "",
-    WorkspaceIcon: getWorkspaceIcon(workspace?.icon),
   };
 }

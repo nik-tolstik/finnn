@@ -166,7 +166,6 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
               </Badge>
               <Tooltip
                 content={<p>{showAllAccounts ? "Показать только ваши счета" : "Показать все счета"}</p>}
-                delayDuration={200}
                 disableHoverableContent
                 contentClassName="hidden md:block"
               >

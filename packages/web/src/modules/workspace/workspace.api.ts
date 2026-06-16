@@ -19,7 +19,6 @@ function toWorkspaceWithOwner(workspace: WorkspaceSummaryDto): WorkspaceWithOwne
     id: workspace.id,
     name: workspace.name,
     slug: workspace.slug,
-    icon: workspace.icon ?? null,
     baseCurrency: workspace.baseCurrency,
     ownerId: workspace.ownerId,
     createdAt: now,
@@ -40,7 +39,6 @@ function toWorkspaceSummary(workspace: WorkspaceSummaryDto): WorkspaceSummary {
   return {
     id: workspace.id,
     name: workspace.name,
-    icon: workspace.icon ?? null,
     baseCurrency: workspace.baseCurrency,
     ownerId: workspace.ownerId,
   };

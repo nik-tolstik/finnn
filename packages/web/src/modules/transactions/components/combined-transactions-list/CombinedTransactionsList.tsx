@@ -15,7 +15,7 @@ export function CombinedTransactionsList({
   isLoadingMore,
 }: CombinedTransactionsListProps) {
   const groups = useGroupedCombinedTransactions(transactions);
-  const { workspaceName, WorkspaceIcon } = useCombinedTransactionsWorkspace({ workspaceId });
+  const { workspaceName } = useCombinedTransactionsWorkspace({ workspaceId });
   const controller = useCombinedTransactionsController({ workspaceId });
 
   return (
@@ -23,7 +23,6 @@ export function CombinedTransactionsList({
       <CombinedTransactionsView
         groups={groups}
         workspaceName={workspaceName}
-        WorkspaceIcon={WorkspaceIcon}
         showLoadMore={showLoadMore}
         onLoadMore={onLoadMore}
         isLoadingMore={isLoadingMore}

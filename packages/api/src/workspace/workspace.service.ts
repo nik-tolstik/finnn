@@ -92,7 +92,6 @@ function toWorkspaceSummary(workspace: WorkspaceWithSummary) {
     id: workspace.id,
     name: workspace.name,
     slug: workspace.slug,
-    icon: workspace.icon,
     baseCurrency: workspace.baseCurrency,
     ownerId: workspace.ownerId,
     membersCount: workspace._count.members,

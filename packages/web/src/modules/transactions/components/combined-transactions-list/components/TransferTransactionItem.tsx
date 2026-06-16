@@ -1,4 +1,4 @@
-import { ArrowRight, type LucideIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { UserDisplay } from "@/shared/components/UserDisplay";
@@ -12,8 +12,6 @@ import type { TransferTransactionWithRelations } from "../../../transaction.type
 
 interface TransferTransactionItemProps {
   transaction: TransferTransactionWithRelations;
-  workspaceName: string;
-  WorkspaceIcon: LucideIcon;
   onClick: (transaction: TransferTransactionWithRelations) => void;
 }
 

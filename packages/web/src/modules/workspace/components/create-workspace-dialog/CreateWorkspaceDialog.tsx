@@ -62,7 +62,6 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
       id: `tmp-${Math.random().toString(36).slice(2, 11)}`,
       name: data.name,
       slug: data.slug,
-      icon: null,
       baseCurrency: "BYN",
       ownerId: session?.user?.id || "",
       createdAt: now,

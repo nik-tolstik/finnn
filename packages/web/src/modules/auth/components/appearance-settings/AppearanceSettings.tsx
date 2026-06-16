@@ -20,6 +20,7 @@ interface AppearanceSettingsProps {
   description?: string | null;
   className?: string;
   segmentedClassName?: string;
+  showLabels?: boolean;
 }
 
 export function AppearanceSettings({
@@ -27,6 +28,7 @@ export function AppearanceSettings({
   description = "Auto следует системной теме устройства.",
   className,
   segmentedClassName,
+  showLabels = true,
 }: AppearanceSettingsProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -38,7 +40,9 @@ export function AppearanceSettings({
   const selectedTheme: ThemeMode =
     mounted && (theme === "system" || theme === "light" || theme === "dark") ? theme : "system";
 
-  const optionClassName = "px-2";
+  const optionClassName = showLabels ? "px-2" : "px-0";
+  const getOptionLabel = (mode: ThemeMode) =>
+    showLabels ? THEME_LABELS[mode] : <span className="sr-only">{THEME_LABELS[mode]}</span>;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -58,12 +62,12 @@ export function AppearanceSettings({
         options={[
           {
             value: "system",
-            label: THEME_LABELS.system,
+            label: getOptionLabel("system"),
             icon: <Monitor />,
             className: optionClassName,
           },
-          { value: "light", label: THEME_LABELS.light, icon: <Sun />, className: optionClassName },
-          { value: "dark", label: THEME_LABELS.dark, icon: <Moon />, className: optionClassName },
+          { value: "light", label: getOptionLabel("light"), icon: <Sun />, className: optionClassName },
+          { value: "dark", label: getOptionLabel("dark"), icon: <Moon />, className: optionClassName },
         ]}
       />
     </div>

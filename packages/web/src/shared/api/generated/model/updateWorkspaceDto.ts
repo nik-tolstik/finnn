@@ -17,6 +17,4 @@ export interface UpdateWorkspaceDto {
    * @maxLength 50
    */
   slug?: string;
-  /** @nullable */
-  icon?: string | null;
 }

@@ -98,7 +98,7 @@ function Tooltip({
   contentClassName,
   contentStyle,
   defaultOpen = false,
-  delayDuration = 700,
+  delayDuration = 0,
   disabled = false,
   disableHoverableContent = false,
   onOpenChange,

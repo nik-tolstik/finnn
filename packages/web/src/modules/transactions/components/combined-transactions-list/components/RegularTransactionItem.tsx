@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-
 import { getAccountIcon } from "@/shared/utils/account-icons";
 
 import type { PaymentTransactionWithRelations } from "../../../transaction.types";
@@ -11,16 +9,10 @@ import { TransactionActorAvatar } from "./TransactionActorAvatar";
 interface RegularTransactionItemProps {
   transaction: PaymentTransactionWithRelations;
   workspaceName: string;
-  WorkspaceIcon: LucideIcon;
   onClick: (transaction: PaymentTransactionWithRelations) => void;
 }
 
-export function RegularTransactionItem({
-  transaction,
-  workspaceName,
-  WorkspaceIcon,
-  onClick,
-}: RegularTransactionItemProps) {
+export function RegularTransactionItem({ transaction, workspaceName, onClick }: RegularTransactionItemProps) {
   const { segments } = getTransactionDescriptionSegments(
     {
       kind: "paymentTransaction",
@@ -35,14 +27,7 @@ export function RegularTransactionItem({
     <TransactionDescriptionLine
       segments={segments}
       footer={{
-        icon: (
-          <TransactionActorAvatar
-            account={transaction.account}
-            WorkspaceIcon={WorkspaceIcon}
-            showName
-            workspaceName={workspaceName}
-          />
-        ),
+        icon: <TransactionActorAvatar account={transaction.account} showName workspaceName={workspaceName} />,
         chips: [
           {
             color: transaction.account.color,
