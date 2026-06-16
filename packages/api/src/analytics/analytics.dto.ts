@@ -249,6 +249,9 @@ export class AnalyticsOverviewResponseDto {
   timeSeries!: AnalyticsTimeSeriesPointDto[];
 
   @ApiProperty({ type: [AnalyticsExpenseCategoryDto] })
+  incomeCategories!: AnalyticsExpenseCategoryDto[];
+
+  @ApiProperty({ type: [AnalyticsExpenseCategoryDto] })
   expenseCategories!: AnalyticsExpenseCategoryDto[];
 
   @ApiProperty({ type: [AnalyticsDebtByPersonDto] })

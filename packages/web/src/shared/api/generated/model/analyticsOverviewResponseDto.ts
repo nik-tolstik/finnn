@@ -19,6 +19,7 @@ export interface AnalyticsOverviewResponseDto {
   summary: AnalyticsSummaryDto;
   comparison: AnalyticsComparisonDto;
   timeSeries: AnalyticsTimeSeriesPointDto[];
+  incomeCategories: AnalyticsExpenseCategoryDto[];
   expenseCategories: AnalyticsExpenseCategoryDto[];
   debtsByPerson: AnalyticsDebtByPersonDto[];
   largestMovements: AnalyticsLargestMovementDto[];

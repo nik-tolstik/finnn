@@ -384,6 +384,11 @@ describe("Analytics API", () => {
         expenseTotalInBaseCurrency: "0",
       },
     ]);
+    expect(response.body.incomeCategories[0]).toMatchObject({
+      id: "category-income",
+      totalInBaseCurrency: "300",
+      sharePercent: 100,
+    });
     expect(response.body.expenseCategories[0]).toMatchObject({
       id: "category-food",
       totalInBaseCurrency: "200",

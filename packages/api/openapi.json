@@ -6130,6 +6130,12 @@
               "$ref": "#/components/schemas/AnalyticsTimeSeriesPointDto"
             }
           },
+          "incomeCategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsExpenseCategoryDto"
+            }
+          },
           "expenseCategories": {
             "type": "array",
             "items": {
@@ -6155,6 +6161,7 @@
           "summary",
           "comparison",
           "timeSeries",
+          "incomeCategories",
           "expenseCategories",
           "debtsByPerson",
           "largestMovements"

@@ -138,7 +138,7 @@ type AnalyticsDateRange = {
   dayCount: number;
   isImplicit: boolean;
 };
-type AnalyticsExpenseCategory = {
+type AnalyticsCategoryTotal = {
   id: string;
   name: string;
   totalInBaseCurrency: string;
@@ -760,7 +760,8 @@ export class AnalyticsService {
     let incomeCount = 0;
     let expenseCount = 0;
 
-    const expenseCategories = new Map<string, AnalyticsExpenseCategory>();
+    const incomeCategories = new Map<string, AnalyticsCategoryTotal>();
+    const expenseCategories = new Map<string, AnalyticsCategoryTotal>();
     const debtsByPerson = new Map<string, AnalyticsDebtByPerson>();
     const movementRows: ConvertedMovement[] = [];
 
@@ -784,6 +785,23 @@ export class AnalyticsService {
           dayBucket.incomeTotalInBaseCurrency = new Big(dayBucket.incomeTotalInBaseCurrency)
             .plus(amountInBaseCurrency)
             .toString();
+        }
+
+        const categoryKey = transaction.category?.id ?? "uncategorized";
+        const existingCategory = incomeCategories.get(categoryKey);
+
+        if (existingCategory) {
+          existingCategory.totalInBaseCurrency = new Big(existingCategory.totalInBaseCurrency)
+            .plus(amountInBaseCurrency)
+            .toString();
+          existingCategory.transactionCount += 1;
+        } else {
+          incomeCategories.set(categoryKey, {
+            id: categoryKey,
+            name: transaction.category?.name ?? "Без категории",
+            totalInBaseCurrency: amountInBaseCurrency,
+            transactionCount: 1,
+          });
         }
       } else {
         expenseTotal = new Big(expenseTotal).plus(amountInBaseCurrency).toString();
@@ -903,6 +921,15 @@ export class AnalyticsService {
     const netFlowTotal = new Big(incomeTotal).minus(expenseTotal).toString();
     const previousNetFlowTotal = new Big(previousIncomeTotal).minus(previousExpenseTotal).toString();
 
+    const incomeCategoryRows = Array.from(incomeCategories.values())
+      .sort((left, right) => new Big(right.totalInBaseCurrency).cmp(new Big(left.totalInBaseCurrency)))
+      .map((category) => ({
+        ...category,
+        sharePercent: new Big(incomeTotal).eq(0)
+          ? 0
+          : Number(new Big(category.totalInBaseCurrency).div(incomeTotal).times(100).toFixed(1)),
+      }));
+
     const expenseCategoryRows = Array.from(expenseCategories.values())
       .sort((left, right) => new Big(right.totalInBaseCurrency).cmp(new Big(left.totalInBaseCurrency)))
       .map((category) => ({
@@ -967,6 +994,7 @@ export class AnalyticsService {
         netFlowPreviousTotalInBaseCurrency: previousNetFlowTotal,
       },
       timeSeries: Array.from(timeSeries.values()),
+      incomeCategories: incomeCategoryRows,
       expenseCategories: expenseCategoryRows,
       debtsByPerson: debtRows,
       largestMovements,

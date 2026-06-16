@@ -22,7 +22,7 @@ export interface AnalyticsTimeSeriesPoint {
   expenseTotalInBaseCurrency: string;
 }
 
-export interface AnalyticsExpenseCategory {
+export interface AnalyticsCategoryTotal {
   id: string;
   name: string;
   totalInBaseCurrency: string;
@@ -82,7 +82,8 @@ export interface AnalyticsOverviewResult {
     netFlowPreviousTotalInBaseCurrency: string;
   };
   timeSeries: AnalyticsTimeSeriesPoint[];
-  expenseCategories: AnalyticsExpenseCategory[];
+  incomeCategories: AnalyticsCategoryTotal[];
+  expenseCategories: AnalyticsCategoryTotal[];
   debtsByPerson: AnalyticsDebtByPerson[];
   largestMovements: AnalyticsLargestMovement[];
 }

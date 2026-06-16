@@ -216,7 +216,7 @@ function Tooltip({
             data-slot="tooltip-content"
             data-state={isOpen ? "open" : "closed"}
             className={cn(
-              "z-50 overflow-hidden rounded-md border bg-card px-3 py-1.5 text-xs text-card-foreground shadow-md outline-hidden",
+              "pointer-events-auto z-50 overflow-hidden rounded-md border bg-card px-3 py-1.5 text-xs text-card-foreground shadow-md outline-hidden",
               contentClassName
             )}
             style={

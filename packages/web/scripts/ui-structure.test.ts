@@ -1,8 +1,10 @@
-import { readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 
 const uiDir = path.resolve(process.cwd(), "src/shared/ui");
+const dialogFile = path.join(uiDir, "dialog/Dialog.tsx");
+const sheetFile = path.join(uiDir, "sheet/Sheet.tsx");
 const componentFolderPattern = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const componentFilePattern = /^[A-Z][A-Za-z0-9]*\.tsx$/;
 
@@ -44,5 +46,18 @@ describe("shared ui structure", () => {
 
       expect(folderFiles, `${folder.name} must export through index.ts`).toContain("index.ts");
     }
+  });
+
+  test("keeps nested floating portals out of overlay flex layout", () => {
+    const dialogSource = readFileSync(dialogFile, "utf8");
+    const sheetSource = readFileSync(sheetFile, "utf8");
+
+    expect(dialogSource).toContain('data-slot="dialog-overlay-portal-root"');
+    expect(dialogSource).toContain("pointer-events-none absolute inset-0 z-50");
+    expect(dialogSource).not.toContain("setPortalRoot(node);");
+
+    expect(sheetSource).toContain('data-slot="sheet-overlay-portal-root"');
+    expect(sheetSource).toContain("pointer-events-none absolute inset-0 z-50");
+    expect(sheetSource).not.toContain("setPortalRoot(node);");
   });
 });

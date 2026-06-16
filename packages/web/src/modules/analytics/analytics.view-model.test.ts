@@ -69,6 +69,15 @@ function createAnalytics(overrides: Partial<AnalyticsOverviewResult> = {}): Anal
         expenseTotalInBaseCurrency: "20",
       },
     ],
+    incomeCategories: [
+      {
+        id: "salary",
+        name: "Зарплата",
+        totalInBaseCurrency: "300",
+        transactionCount: 2,
+        sharePercent: 100,
+      },
+    ],
     expenseCategories: [
       {
         id: "food",
@@ -142,6 +151,11 @@ describe("analytics view model", () => {
   it("exposes top category and average daily metrics", () => {
     const viewModel = buildAnalyticsOverviewViewModel(createAnalytics());
 
+    expect(viewModel.incomeCategoryRows[0]).toMatchObject({
+      id: "salary",
+      sharePercent: 100,
+      transactionCount: 2,
+    });
     expect(viewModel.topExpenseCategory).toMatchObject({
       id: "food",
       sharePercent: 66.7,
