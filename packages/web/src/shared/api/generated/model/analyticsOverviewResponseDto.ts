@@ -5,6 +5,7 @@
  * Backend API for Finnn finance tracking
  * OpenAPI spec version: 0.1.0
  */
+import type { AnalyticsCapitalTimeSeriesPointDto } from "./analyticsCapitalTimeSeriesPointDto";
 import type { AnalyticsComparisonDto } from "./analyticsComparisonDto";
 import type { AnalyticsDebtByPersonDto } from "./analyticsDebtByPersonDto";
 import type { AnalyticsEffectiveRangeDto } from "./analyticsEffectiveRangeDto";
@@ -19,6 +20,7 @@ export interface AnalyticsOverviewResponseDto {
   summary: AnalyticsSummaryDto;
   comparison: AnalyticsComparisonDto;
   timeSeries: AnalyticsTimeSeriesPointDto[];
+  capitalTimeSeries: AnalyticsCapitalTimeSeriesPointDto[];
   incomeCategories: AnalyticsExpenseCategoryDto[];
   expenseCategories: AnalyticsExpenseCategoryDto[];
   debtsByPerson: AnalyticsDebtByPersonDto[];

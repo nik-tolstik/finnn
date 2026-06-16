@@ -15,6 +15,7 @@ export * from "./accountOwnerDto";
 export * from "./accountResponseDto";
 export * from "./accountSuccessResponseDto";
 export * from "./addToDebtDto";
+export * from "./analyticsCapitalTimeSeriesPointDto";
 export * from "./analyticsComparisonDto";
 export * from "./analyticsDebtByPersonDto";
 export * from "./analyticsEffectiveRangeDto";

@@ -1,4 +1,19 @@
+"use client";
+
+import { format } from "date-fns";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 import type { AnalyticsOverviewViewModel } from "@/modules/analytics/analytics.view-model";
+import { selectAnalyticsCapitalTicks } from "@/modules/analytics/analytics.view-model";
+import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
 interface AnalyticsChartsProps {
@@ -12,6 +27,94 @@ const CATEGORY_COLORS = {
 
 function EmptyChartState({ message }: { message: string }) {
   return <div className="flex min-h-[240px] items-center justify-center text-sm text-muted-foreground">{message}</div>;
+}
+
+function formatShortDate(date: string) {
+  return format(new Date(`${date}T00:00:00`), "dd.MM");
+}
+
+function formatFullDate(date: string) {
+  return format(new Date(`${date}T00:00:00`), "dd.MM.yyyy");
+}
+
+function CapitalChartTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload?: AnalyticsOverviewViewModel["capitalTimeSeries"][number] }>;
+}) {
+  const point = payload?.[0]?.payload;
+
+  if (!active || !point) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-md border bg-background/95 px-3 py-2 text-sm shadow-lg backdrop-blur">
+      <p className="text-xs text-muted-foreground">{formatFullDate(point.date)}</p>
+      <p className="mt-1 font-medium">{point.totalLabel}</p>
+    </div>
+  );
+}
+
+function WorkspaceCapitalChartCard({ viewModel }: AnalyticsChartsProps) {
+  const { isMobile } = useBreakpoints();
+  const ticks = selectAnalyticsCapitalTicks(viewModel.capitalTimeSeries, isMobile ? 4 : 6);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl">Капитал workspace</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {viewModel.capitalTimeSeries.length > 0 ? (
+          <div className="h-[320px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={viewModel.capitalTimeSeries}
+                margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+                accessibilityLayer
+              >
+                <defs>
+                  <linearGradient id="workspaceCapitalGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  ticks={ticks}
+                  tickFormatter={formatShortDate}
+                  axisLine={false}
+                  tickLine={false}
+                  minTickGap={18}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                  dy={8}
+                />
+                <YAxis domain={["dataMin", "dataMax"]} hide />
+                <RechartsTooltip cursor={{ stroke: "#16a34a", strokeOpacity: 0.2 }} content={<CapitalChartTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  fill="url(#workspaceCapitalGradient)"
+                  fillOpacity={1}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0, fill: "#16a34a" }}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <EmptyChartState message="Нет счетов для выбранных фильтров." />
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 function CategoryBreakdownCard({
@@ -65,19 +168,22 @@ function CategoryBreakdownCard({
 
 export function AnalyticsCharts({ viewModel }: AnalyticsChartsProps) {
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      <CategoryBreakdownCard
-        title="Доходы"
-        rows={viewModel.incomeCategoryRows}
-        colors={CATEGORY_COLORS.income}
-        emptyMessage="Нет доходов для выбранных фильтров."
-      />
-      <CategoryBreakdownCard
-        title="Расходы"
-        rows={viewModel.categoryRows}
-        colors={CATEGORY_COLORS.expense}
-        emptyMessage="Нет расходов для выбранных фильтров."
-      />
+    <div className="space-y-6">
+      <WorkspaceCapitalChartCard viewModel={viewModel} />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <CategoryBreakdownCard
+          title="Доходы"
+          rows={viewModel.incomeCategoryRows}
+          colors={CATEGORY_COLORS.income}
+          emptyMessage="Нет доходов для выбранных фильтров."
+        />
+        <CategoryBreakdownCard
+          title="Расходы"
+          rows={viewModel.categoryRows}
+          colors={CATEGORY_COLORS.expense}
+          emptyMessage="Нет расходов для выбранных фильтров."
+        />
+      </div>
     </div>
   );
 }

@@ -23,6 +23,9 @@ type MockPrisma = {
   workspaceMember: {
     findUnique: ReturnType<typeof vi.fn>;
   };
+  account: {
+    findMany: ReturnType<typeof vi.fn>;
+  };
   paymentTransaction: {
     findMany: ReturnType<typeof vi.fn>;
   };
@@ -54,6 +57,9 @@ function createPrismaMock(): MockPrisma {
     },
     workspaceMember: {
       findUnique: vi.fn(),
+    },
+    account: {
+      findMany: vi.fn(),
     },
     paymentTransaction: {
       findMany: vi.fn(),
@@ -201,6 +207,7 @@ function mockAuthenticatedSession(prisma: MockPrisma) {
 }
 
 function mockEmptyAnalyticsData(prisma: MockPrisma) {
+  prisma.account.findMany.mockResolvedValue([]);
   prisma.paymentTransaction.findMany.mockResolvedValue([]);
   prisma.transferTransaction.findMany.mockResolvedValue([]);
   prisma.debtTransaction.findMany.mockResolvedValue([]);
@@ -453,6 +460,112 @@ describe("Analytics API", () => {
       dayCount: 5,
       isImplicit: false,
     });
+  });
+
+  it("reconstructs daily workspace capital from current balances and account deltas", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findMany.mockResolvedValue([
+      createAccountRecord({
+        id: "account-byn",
+        balance: "110",
+        currency: Currency.BYN,
+        createdAt: new Date("2026-03-01T00:00:00.000Z"),
+      }),
+      createAccountRecord({
+        id: "account-usd",
+        balance: "8",
+        currency: Currency.USD,
+        createdAt: new Date("2026-04-02T00:00:00.000Z"),
+      }),
+    ]);
+    prisma.paymentTransaction.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        createPaymentTransactionRecord({
+          id: "income-capital",
+          accountId: "account-byn",
+          amount: "20",
+          type: "income",
+          date: new Date("2026-04-03T00:00:00.000Z"),
+          account: createAccountRecord({
+            id: "account-byn",
+            currency: Currency.BYN,
+          }),
+        }),
+        createPaymentTransactionRecord({
+          id: "expense-capital",
+          accountId: "account-byn",
+          amount: "10",
+          type: "expense",
+          date: new Date("2026-04-02T00:00:00.000Z"),
+          account: createAccountRecord({
+            id: "account-byn",
+            currency: Currency.BYN,
+          }),
+        }),
+      ]);
+    prisma.transferTransaction.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      createTransferTransactionRecord({
+        id: "transfer-capital",
+        fromAccountId: "account-byn",
+        toAccountId: "account-usd",
+        amount: "30",
+        toAmount: "5",
+        date: new Date("2026-04-03T00:00:00.000Z"),
+        fromAccount: createAccountRecord({
+          id: "account-byn",
+          currency: Currency.BYN,
+        }),
+        toAccount: createAccountRecord({
+          id: "account-usd",
+          currency: Currency.USD,
+        }),
+      }),
+    ]);
+    prisma.debtTransaction.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    exchangeRateService.preloadExchangeRates.mockResolvedValue(
+      new Map([
+        [createRateKey("2026-04-02", Currency.USD, Currency.BYN), 3],
+        [createRateKey("2026-04-03", Currency.USD, Currency.BYN), 3],
+      ])
+    );
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/analytics/overview")
+      .query({
+        accountIds: ["account-byn", "account-usd"],
+        userIds: [currentUser.id],
+        dateFrom: "2026-04-01",
+        dateTo: "2026-04-03",
+      })
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(prisma.account.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          workspaceId: "workspace-1",
+          archived: false,
+          id: { in: ["account-byn", "account-usd"] },
+          ownerId: { in: [currentUser.id] },
+        }),
+      })
+    );
+    expect(response.body.capitalTimeSeries).toEqual([
+      {
+        date: "2026-04-01",
+        totalInBaseCurrency: "130",
+      },
+      {
+        date: "2026-04-02",
+        totalInBaseCurrency: "129",
+      },
+      {
+        date: "2026-04-03",
+        totalInBaseCurrency: "134",
+      },
+    ]);
   });
 
   it("excludes debt transactions when the transaction type filter omits debt but keeps open debt totals", async () => {

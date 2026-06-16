@@ -7,6 +7,7 @@ import {
   getActiveAnalyticsPeriodPreset,
   getAnalyticsPeriodPresetRange,
   getAnalyticsTrendTone,
+  selectAnalyticsCapitalTicks,
 } from "./analytics.view-model";
 
 function createAnalytics(overrides: Partial<AnalyticsOverviewResult> = {}): AnalyticsOverviewResult {
@@ -67,6 +68,20 @@ function createAnalytics(overrides: Partial<AnalyticsOverviewResult> = {}): Anal
         date: "2026-04-03",
         incomeTotalInBaseCurrency: "200",
         expenseTotalInBaseCurrency: "20",
+      },
+    ],
+    capitalTimeSeries: [
+      {
+        date: "2026-04-01",
+        totalInBaseCurrency: "100",
+      },
+      {
+        date: "2026-04-02",
+        totalInBaseCurrency: "92",
+      },
+      {
+        date: "2026-04-03",
+        totalInBaseCurrency: "110",
       },
     ],
     incomeCategories: [
@@ -148,6 +163,28 @@ describe("analytics view model", () => {
     expect(viewModel.timeSeries.map((point) => point.cumulativeNetFlow)).toEqual([80, 0, 180]);
   });
 
+  it("builds formatted capital time series points", () => {
+    const viewModel = buildAnalyticsOverviewViewModel(createAnalytics());
+
+    expect(viewModel.capitalTimeSeries).toEqual([
+      {
+        date: "2026-04-01",
+        total: 100,
+        totalLabel: "100.00 Br",
+      },
+      {
+        date: "2026-04-02",
+        total: 92,
+        totalLabel: "92.00 Br",
+      },
+      {
+        date: "2026-04-03",
+        total: 110,
+        totalLabel: "110.00 Br",
+      },
+    ]);
+  });
+
   it("exposes top category and average daily metrics", () => {
     const viewModel = buildAnalyticsOverviewViewModel(createAnalytics());
 
@@ -172,6 +209,31 @@ describe("analytics view model", () => {
     expect(getAnalyticsTrendTone(10, "down")).toBe("negative");
     expect(getAnalyticsTrendTone(0, "up")).toBe("neutral");
     expect(getAnalyticsTrendTone(null, "up")).toBe("neutral");
+  });
+});
+
+describe("analytics capital chart ticks", () => {
+  const points = Array.from({ length: 10 }, (_, index) => ({
+    date: `2026-04-${String(index + 1).padStart(2, "0")}`,
+    total: index,
+    totalLabel: String(index),
+  }));
+
+  it("keeps all dates when the series fits the max tick count", () => {
+    expect(selectAnalyticsCapitalTicks(points.slice(0, 4), 4)).toEqual([
+      "2026-04-01",
+      "2026-04-02",
+      "2026-04-03",
+      "2026-04-04",
+    ]);
+  });
+
+  it("limits ticks while preserving first and last dates", () => {
+    const ticks = selectAnalyticsCapitalTicks(points, 4);
+
+    expect(ticks).toHaveLength(4);
+    expect(ticks[0]).toBe("2026-04-01");
+    expect(ticks.at(-1)).toBe("2026-04-10");
   });
 });
 
