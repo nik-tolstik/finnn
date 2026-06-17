@@ -103,4 +103,35 @@ export class EmailService {
       return { error: error instanceof Error ? error.message : "Не удалось отправить email" };
     }
   }
+
+  async sendPasswordResetCode(email: string, code: string, name?: string | null): Promise<EmailResult> {
+    try {
+      if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+        return { error: "Email сервис не настроен. Обратитесь к администратору." };
+      }
+
+      const transporter = this.createTransporter();
+
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: email,
+        subject: "Код восстановления пароля Finnn",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Восстановление пароля</h2>
+            <p>${name ? `Здравствуйте, ${name}!` : "Здравствуйте!"}</p>
+            <p>Введите этот код на странице восстановления пароля Finnn:</p>
+            <p style="font-size: 28px; letter-spacing: 6px; font-weight: 700; margin: 24px 0;">${code}</p>
+            <p style="color: #666; font-size: 12px;">
+              Код действует ограниченное время. Если вы не запрашивали восстановление пароля, просто проигнорируйте это письмо.
+            </p>
+          </div>
+        `,
+      });
+
+      return { success: true };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : "Не удалось отправить email" };
+    }
+  }
 }

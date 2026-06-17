@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -16,13 +16,16 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
 import { registerFormSchema } from "../../auth.validations";
+import { redirectToGoogleAuth } from "../../google-auth-url";
 import { redirectToTelegramAuth } from "../../telegram-auth-url";
+import { GoogleAuthButton } from "../google-auth-button";
 import { TelegramAuthButton } from "../telegram-auth-button";
 
 type RegisterFormInput = z.infer<typeof registerFormSchema>;
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -35,6 +38,8 @@ export function RegisterForm() {
     resolver: zodResolver(registerFormSchema),
   });
 
+  const inviteToken = searchParams.get("inviteToken");
+
   const onSubmit = async (data: RegisterFormInput) => {
     setIsLoading(true);
     try {
@@ -42,7 +47,7 @@ export function RegisterForm() {
       await registerUser(registerData);
 
       toast.success("Аккаунт создан! Письмо с подтверждением отправлено на ваш email.");
-      router.push("/login");
+      router.push(inviteToken ? `/login?inviteToken=${encodeURIComponent(inviteToken)}` : "/login");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Что-то пошло не так");
     } finally {
@@ -142,14 +147,24 @@ export function RegisterForm() {
           </Button>
         </form>
 
-        <div className="mt-3">
-          <TelegramAuthButton disabled={isLoading} onClick={() => redirectToTelegramAuth("/dashboard")} />
+        <div className="mt-3 grid gap-2">
+          <GoogleAuthButton
+            disabled={isLoading}
+            onClick={() => redirectToGoogleAuth(inviteToken ? `/invite/${inviteToken}` : "/dashboard")}
+          />
+          <TelegramAuthButton
+            disabled={isLoading}
+            onClick={() => redirectToTelegramAuth(inviteToken ? `/invite/${inviteToken}` : "/dashboard")}
+          />
         </div>
 
         <div className="mt-4 space-y-2">
           <div className="text-center text-sm">
             <span className="text-muted-foreground">Уже есть аккаунт? </span>
-            <Link href="/login" className="text-primary hover:underline">
+            <Link
+              href={inviteToken ? `/login?inviteToken=${encodeURIComponent(inviteToken)}` : "/login"}
+              className="text-primary hover:underline"
+            >
               Войти
             </Link>
           </div>

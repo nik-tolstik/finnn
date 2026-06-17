@@ -5,6 +5,7 @@ type ErrorResponseBody = {
   statusCode: number;
   message: string | string[];
   error: string;
+  code?: string;
   path: string;
   timestamp: string;
 };
@@ -13,6 +14,7 @@ type NestErrorResponse = {
   statusCode?: number;
   message?: string | string[];
   error?: string;
+  code?: string;
 };
 
 function getHeaderValue(value: string | string[] | undefined): string | undefined {
@@ -78,6 +80,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       statusCode: status,
       message: exceptionResponse.message ?? "Internal server error",
       error: exceptionResponse.error ?? HttpStatus[status] ?? "Error",
+      code: exceptionResponse.code,
       path: request.url,
       timestamp: new Date().toISOString(),
     };

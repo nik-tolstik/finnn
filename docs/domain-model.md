@@ -7,7 +7,7 @@ The Prisma schema in `packages/api/prisma/schema.prisma` is the source of truth.
 Main models:
 
 - `User` - authenticated user with optional email, optional password, verified email state, display avatar URL, and optional uploaded avatar storage key.
-- `AuthIdentity` - external sign-in identity linked to a user, currently used for Telegram.
+- `AuthIdentity` - external sign-in identity linked to a user, currently used for Telegram and Google.
 - `Workspace` - shared financial space with owner, members, accounts, categories, transactions, transfers, debts, and invites.
 - `WorkspaceMember` - user membership and role inside a workspace.
 - `Account` - balance container with currency, owner, archive state, display metadata, and order.
@@ -19,6 +19,7 @@ Main models:
 - `WorkspaceInvite` - tokenized invite to a workspace.
 - `PendingRegistration` - pre-verification registration state.
 - `PendingEmailVerification` - verification state for an existing user adding or changing email.
+- `PasswordResetCode` - hashed short-lived email code for password reset.
 - `ExchangeRate` - persisted daily currency rate.
 
 ## Identity And Email
@@ -36,6 +37,15 @@ External identities are stored in `AuthIdentity`:
 
 Telegram OIDC login/linking and Telegram Mini App launch authentication both use `provider = "telegram"`, so the same
 Telegram account resolves to the same Finnn user across browser login, account linking, and Mini App launch.
+
+Google login/linking uses `provider = "google"` and Google `sub` as `providerUserId`. A first Google login can auto-link
+to an existing Finnn user only when Google returns `email_verified = true` and the local Finnn email is already verified.
+New Google users created from verified Google email start with `User.emailVerified` set. Users who enter through a
+provider without a verified local email can sign in only to complete email verification before using financial features.
+
+`PasswordResetCode` stores only a bcrypt hash of the six-digit code. Password reset requests return the same success
+shape whether or not an email exists, and confirmation updates `User.password`, deletes the code, and revokes active
+sessions.
 
 `User.image` is the display avatar field used by API DTOs and the web UI. It can be `null` for the generated initial
 avatar, a bundled preset path under `/avatars/`, a Telegram photo URL, or the stable uploaded-avatar path

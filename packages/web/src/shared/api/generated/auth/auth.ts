@@ -27,11 +27,16 @@ import { apiClient } from "../../http-client";
 import type {
   ApiErrorDto,
   AuthUserResponseDto,
+  CompleteGoogleAuthParams,
   CompleteTelegramAuthParams,
   LoginDto,
+  PasswordResetConfirmDto,
+  PasswordResetRequestDto,
   RegisterDto,
   RequestEmailVerificationDto,
   SessionResponseDto,
+  StartGoogleAuthParams,
+  StartGoogleLinkParams,
   StartTelegramAuthParams,
   StartTelegramLinkParams,
   SuccessResponseDto,
@@ -468,6 +473,258 @@ export function useCreateTelegramMiniAppSession<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export const getStartGoogleAuthUrl = (params?: StartGoogleAuthParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/auth/google/start?${stringifiedParams}` : `/auth/google/start`;
+};
+
+/**
+ * @summary Start Google OIDC authentication
+ */
+export const startGoogleAuth = async (params?: StartGoogleAuthParams, options?: RequestInit): Promise<unknown> => {
+  return apiClient<unknown>(getStartGoogleAuthUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getStartGoogleAuthMutationOptions = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startGoogleAuth>>,
+    TError,
+    { params?: StartGoogleAuthParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startGoogleAuth>>,
+  TError,
+  { params?: StartGoogleAuthParams },
+  TContext
+> => {
+  const mutationKey = ["startGoogleAuth"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startGoogleAuth>>,
+    { params?: StartGoogleAuthParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return startGoogleAuth(params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartGoogleAuthMutationResult = NonNullable<Awaited<ReturnType<typeof startGoogleAuth>>>;
+
+export type StartGoogleAuthMutationError = ErrorType<ApiErrorDto>;
+
+/**
+ * @summary Start Google OIDC authentication
+ */
+export const useStartGoogleAuth = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startGoogleAuth>>,
+      TError,
+      { params?: StartGoogleAuthParams },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof startGoogleAuth>>,
+  TError,
+  { params?: StartGoogleAuthParams },
+  TContext
+> => {
+  return useMutation(getStartGoogleAuthMutationOptions(options), queryClient);
+};
+export const getStartGoogleLinkUrl = (params?: StartGoogleLinkParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/auth/google/link/start?${stringifiedParams}` : `/auth/google/link/start`;
+};
+
+/**
+ * @summary Start Google account linking
+ */
+export const startGoogleLink = async (params?: StartGoogleLinkParams, options?: RequestInit): Promise<unknown> => {
+  return apiClient<unknown>(getStartGoogleLinkUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getStartGoogleLinkMutationOptions = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startGoogleLink>>,
+    TError,
+    { params?: StartGoogleLinkParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startGoogleLink>>,
+  TError,
+  { params?: StartGoogleLinkParams },
+  TContext
+> => {
+  const mutationKey = ["startGoogleLink"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startGoogleLink>>,
+    { params?: StartGoogleLinkParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return startGoogleLink(params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartGoogleLinkMutationResult = NonNullable<Awaited<ReturnType<typeof startGoogleLink>>>;
+
+export type StartGoogleLinkMutationError = ErrorType<ApiErrorDto>;
+
+/**
+ * @summary Start Google account linking
+ */
+export const useStartGoogleLink = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startGoogleLink>>,
+      TError,
+      { params?: StartGoogleLinkParams },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof startGoogleLink>>,
+  TError,
+  { params?: StartGoogleLinkParams },
+  TContext
+> => {
+  return useMutation(getStartGoogleLinkMutationOptions(options), queryClient);
+};
+export const getCompleteGoogleAuthUrl = (params?: CompleteGoogleAuthParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/auth/google/callback?${stringifiedParams}` : `/auth/google/callback`;
+};
+
+/**
+ * @summary Complete Google OIDC authentication
+ */
+export const completeGoogleAuth = async (
+  params?: CompleteGoogleAuthParams,
+  options?: RequestInit
+): Promise<unknown> => {
+  return apiClient<unknown>(getCompleteGoogleAuthUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getCompleteGoogleAuthMutationOptions = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeGoogleAuth>>,
+    TError,
+    { params?: CompleteGoogleAuthParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeGoogleAuth>>,
+  TError,
+  { params?: CompleteGoogleAuthParams },
+  TContext
+> => {
+  const mutationKey = ["completeGoogleAuth"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeGoogleAuth>>,
+    { params?: CompleteGoogleAuthParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return completeGoogleAuth(params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteGoogleAuthMutationResult = NonNullable<Awaited<ReturnType<typeof completeGoogleAuth>>>;
+
+export type CompleteGoogleAuthMutationError = ErrorType<ApiErrorDto>;
+
+/**
+ * @summary Complete Google OIDC authentication
+ */
+export const useCompleteGoogleAuth = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeGoogleAuth>>,
+      TError,
+      { params?: CompleteGoogleAuthParams },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeGoogleAuth>>,
+  TError,
+  { params?: CompleteGoogleAuthParams },
+  TContext
+> => {
+  return useMutation(getCompleteGoogleAuthMutationOptions(options), queryClient);
+};
 export const getStartTelegramAuthUrl = (params?: StartTelegramAuthParams) => {
   const normalizedParams = new URLSearchParams();
 
@@ -1381,6 +1638,252 @@ export function useRequestEmailVerification<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export const getRequestPasswordResetUrl = () => {
+  return `/auth/password-reset/request`;
+};
+
+/**
+ * @summary Request a password reset code
+ */
+export const requestPasswordReset = async (
+  passwordResetRequestDto: PasswordResetRequestDto,
+  options?: RequestInit
+): Promise<SuccessResponseDto> => {
+  return apiClient<SuccessResponseDto>(getRequestPasswordResetUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(passwordResetRequestDto),
+  });
+};
+
+export const getRequestPasswordResetQueryKey = (passwordResetRequestDto?: BodyType<PasswordResetRequestDto>) => {
+  return ["POST", `/auth/password-reset/request`, passwordResetRequestDto] as const;
+};
+
+export const getRequestPasswordResetQueryOptions = <
+  TData = Awaited<ReturnType<typeof requestPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetRequestDto: BodyType<PasswordResetRequestDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRequestPasswordResetQueryKey(passwordResetRequestDto);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof requestPasswordReset>>> = ({ signal }) =>
+    requestPasswordReset(passwordResetRequestDto, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof requestPasswordReset>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RequestPasswordResetQueryResult = NonNullable<Awaited<ReturnType<typeof requestPasswordReset>>>;
+export type RequestPasswordResetQueryError = ErrorType<ApiErrorDto>;
+
+export function useRequestPasswordReset<
+  TData = Awaited<ReturnType<typeof requestPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetRequestDto: BodyType<PasswordResetRequestDto>,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof requestPasswordReset>>,
+          TError,
+          Awaited<ReturnType<typeof requestPasswordReset>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRequestPasswordReset<
+  TData = Awaited<ReturnType<typeof requestPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetRequestDto: BodyType<PasswordResetRequestDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof requestPasswordReset>>,
+          TError,
+          Awaited<ReturnType<typeof requestPasswordReset>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRequestPasswordReset<
+  TData = Awaited<ReturnType<typeof requestPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetRequestDto: BodyType<PasswordResetRequestDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Request a password reset code
+ */
+
+export function useRequestPasswordReset<
+  TData = Awaited<ReturnType<typeof requestPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetRequestDto: BodyType<PasswordResetRequestDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getRequestPasswordResetQueryOptions(passwordResetRequestDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getConfirmPasswordResetUrl = () => {
+  return `/auth/password-reset/confirm`;
+};
+
+/**
+ * @summary Confirm a password reset code
+ */
+export const confirmPasswordReset = async (
+  passwordResetConfirmDto: PasswordResetConfirmDto,
+  options?: RequestInit
+): Promise<SuccessResponseDto> => {
+  return apiClient<SuccessResponseDto>(getConfirmPasswordResetUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(passwordResetConfirmDto),
+  });
+};
+
+export const getConfirmPasswordResetQueryKey = (passwordResetConfirmDto?: BodyType<PasswordResetConfirmDto>) => {
+  return ["POST", `/auth/password-reset/confirm`, passwordResetConfirmDto] as const;
+};
+
+export const getConfirmPasswordResetQueryOptions = <
+  TData = Awaited<ReturnType<typeof confirmPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetConfirmDto: BodyType<PasswordResetConfirmDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof confirmPasswordReset>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getConfirmPasswordResetQueryKey(passwordResetConfirmDto);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof confirmPasswordReset>>> = ({ signal }) =>
+    confirmPasswordReset(passwordResetConfirmDto, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof confirmPasswordReset>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ConfirmPasswordResetQueryResult = NonNullable<Awaited<ReturnType<typeof confirmPasswordReset>>>;
+export type ConfirmPasswordResetQueryError = ErrorType<ApiErrorDto>;
+
+export function useConfirmPasswordReset<
+  TData = Awaited<ReturnType<typeof confirmPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetConfirmDto: BodyType<PasswordResetConfirmDto>,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof confirmPasswordReset>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof confirmPasswordReset>>,
+          TError,
+          Awaited<ReturnType<typeof confirmPasswordReset>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useConfirmPasswordReset<
+  TData = Awaited<ReturnType<typeof confirmPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetConfirmDto: BodyType<PasswordResetConfirmDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof confirmPasswordReset>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof confirmPasswordReset>>,
+          TError,
+          Awaited<ReturnType<typeof confirmPasswordReset>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useConfirmPasswordReset<
+  TData = Awaited<ReturnType<typeof confirmPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetConfirmDto: BodyType<PasswordResetConfirmDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof confirmPasswordReset>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Confirm a password reset code
+ */
+
+export function useConfirmPasswordReset<
+  TData = Awaited<ReturnType<typeof confirmPasswordReset>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  passwordResetConfirmDto: BodyType<PasswordResetConfirmDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof confirmPasswordReset>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getConfirmPasswordResetQueryOptions(passwordResetConfirmDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export const getUnlinkTelegramUrl = () => {
   return `/auth/telegram/link`;
 };
@@ -1472,6 +1975,105 @@ export function useUnlinkTelegram<TData = Awaited<ReturnType<typeof unlinkTelegr
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getUnlinkTelegramQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getUnlinkGoogleUrl = () => {
+  return `/auth/google/link`;
+};
+
+/**
+ * @summary Unlink Google from the current user
+ */
+export const unlinkGoogle = async (options?: RequestInit): Promise<AuthUserResponseDto> => {
+  return apiClient<AuthUserResponseDto>(getUnlinkGoogleUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getUnlinkGoogleQueryKey = () => {
+  return ["DELETE", `/auth/google/link`] as const;
+};
+
+export const getUnlinkGoogleQueryOptions = <
+  TData = Awaited<ReturnType<typeof unlinkGoogle>>,
+  TError = ErrorType<ApiErrorDto>,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkGoogle>>, TError, TData>>;
+  request?: SecondParameter<typeof apiClient>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getUnlinkGoogleQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof unlinkGoogle>>> = ({ signal }) =>
+    unlinkGoogle({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof unlinkGoogle>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UnlinkGoogleQueryResult = NonNullable<Awaited<ReturnType<typeof unlinkGoogle>>>;
+export type UnlinkGoogleQueryError = ErrorType<ApiErrorDto>;
+
+export function useUnlinkGoogle<TData = Awaited<ReturnType<typeof unlinkGoogle>>, TError = ErrorType<ApiErrorDto>>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkGoogle>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof unlinkGoogle>>,
+          TError,
+          Awaited<ReturnType<typeof unlinkGoogle>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUnlinkGoogle<TData = Awaited<ReturnType<typeof unlinkGoogle>>, TError = ErrorType<ApiErrorDto>>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkGoogle>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof unlinkGoogle>>,
+          TError,
+          Awaited<ReturnType<typeof unlinkGoogle>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUnlinkGoogle<TData = Awaited<ReturnType<typeof unlinkGoogle>>, TError = ErrorType<ApiErrorDto>>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkGoogle>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Unlink Google from the current user
+ */
+
+export function useUnlinkGoogle<TData = Awaited<ReturnType<typeof unlinkGoogle>>, TError = ErrorType<ApiErrorDto>>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof unlinkGoogle>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getUnlinkGoogleQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

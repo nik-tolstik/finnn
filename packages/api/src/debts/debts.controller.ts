@@ -18,6 +18,7 @@ import {
 import { AuthGuard } from "@/auth/auth.guard";
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { CurrentUser } from "@/auth/current-user.decorator";
+import { EmailVerifiedGuard } from "@/auth/email-verified.guard";
 import { AUTH_COOKIE_NAME } from "@/auth/session-cookie";
 import { ApiErrorDto } from "@/common/api-error.dto";
 
@@ -38,7 +39,7 @@ import { DebtsService } from "./debts.service";
 @Controller()
 @ApiTags("Debts")
 @ApiExtraModels(DebtListQueryDto)
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EmailVerifiedGuard)
 @ApiCookieAuth(AUTH_COOKIE_NAME)
 export class DebtsController {
   constructor(@Inject(DebtsService) private readonly debtsService: DebtsService) {}

@@ -108,6 +108,10 @@ Authentication is owned by `packages/api/src/auth`:
 - `POST /auth/register` starts email-verified registration.
 - `POST /auth/verify-email/:token` verifies pending registrations.
 - `POST /auth/login` issues the HTTP-only `finnn_session` cookie.
+- `GET /auth/google/start` starts Google OIDC login with PKCE.
+- `GET /auth/google/callback` validates Google state, nonce, and ID token before issuing the same session cookie.
+- `GET /auth/google/link/start` starts Google account linking for an authenticated user.
+- `DELETE /auth/google/link` unlinks Google when another viable sign-in method remains.
 - `GET /auth/telegram/start` starts Telegram OIDC login with PKCE.
 - `GET /auth/telegram/callback` validates Telegram state, nonce, and ID token before issuing the same session cookie.
 - `POST /auth/telegram-mini/session` validates Telegram Mini App `initData` and issues the same session cookie.
@@ -117,13 +121,17 @@ Authentication is owned by `packages/api/src/auth`:
 - `GET /auth/session` returns the current API session.
 - `PATCH /auth/user` updates user settings.
 - `POST /auth/email` sends a verification email for a signed-in user adding or changing email.
+- `POST /auth/password-reset/request` sends a short-lived reset code when the requested email belongs to a verified user.
+- `POST /auth/password-reset/confirm` validates the reset code, updates the password, and revokes active sessions.
 
 `packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `packages/web/src/shared/lib/api-session.ts`, which forwards the API session cookie to the backend session endpoint.
 
 Protected app pages (`/dashboard`, `/analytics`, and `/debts`) use a CSR-first shell. The client `DashboardAuthGate`
 confirms the real API session through `GET /auth/session`, shows a global loading screen while the check is pending,
-and redirects unauthenticated users to `/login`. API auth guards remain the security boundary for private data and
-workspace access.
+redirects unauthenticated users to `/login`, and redirects authenticated users without verified email to
+`/email-required`. API auth guards remain the security boundary for private data and workspace access. Workspace,
+account, category, transaction, debt, analytics, and invite-acceptance endpoints run `EmailVerifiedGuard` after
+`AuthGuard` and return `EMAIL_VERIFICATION_REQUIRED` when the service precondition is not met.
 
 Telegram Mini Apps reuse the same protected routes and UI. `packages/web/src/modules/telegram-mini` runs globally under
 the API session provider, calls `Telegram.WebApp.ready()` and `expand()`, sends only raw `Telegram.WebApp.initData` to
@@ -133,6 +141,10 @@ is pending.
 Telegram redirects are navigated in the browser with explicit API URLs because the API endpoints intentionally issue
 cross-site redirects. Telegram identities are stored in `AuthIdentity`; the returned session user includes nullable
 email plus Telegram link status for UI display and settings.
+
+Google uses the same backend-owned redirect model. Existing verified email/password users are auto-linked only when
+Google returns a verified email that matches the already verified Finnn email. Google access and refresh tokens are not
+stored.
 
 Workspace authorization is handled in the API by `WorkspaceAccessGuard` and `WorkspaceRoles`:
 

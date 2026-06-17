@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class ApiErrorDto {
   @ApiProperty({ example: 400, type: Number })
@@ -9,6 +9,9 @@ export class ApiErrorDto {
 
   @ApiProperty({ example: "Bad Request", type: String })
   error!: string;
+
+  @ApiPropertyOptional({ example: "EMAIL_VERIFICATION_REQUIRED", type: String })
+  code?: string;
 
   @ApiProperty({ example: "/auth/register", type: String })
   path!: string;

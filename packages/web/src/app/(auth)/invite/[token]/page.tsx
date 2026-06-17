@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { acceptWorkspaceInvite, getWorkspaceInvite } from "@/shared/api/generated/workspace-invites/workspace-invites";
-import { useSession } from "@/shared/lib/api-session-client";
+import { isEmailVerificationRequiredError } from "@/shared/api/http-client";
+import { userRequiresEmailVerification, useSession } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
@@ -48,8 +49,8 @@ export default function InvitePage() {
   useEffect(() => {
     const acceptInviteIfLoggedIn = async () => {
       if (status === "authenticated" && session?.user && inviteData) {
-        if (!session.user.email) {
-          setError("Добавьте email в настройках аккаунта, чтобы принять приглашение по email");
+        if (!session.user.email || userRequiresEmailVerification(session.user)) {
+          router.replace(`/email-required?returnTo=${encodeURIComponent(`/invite/${token}`)}`);
           return;
         }
 
@@ -68,6 +69,11 @@ export default function InvitePage() {
           toast.success("Приглашение принято");
           router.push("/dashboard");
         } catch (error) {
+          if (isEmailVerificationRequiredError(error)) {
+            router.replace(`/email-required?returnTo=${encodeURIComponent(`/invite/${token}`)}`);
+            return;
+          }
+
           const message = error instanceof Error ? error.message : "Не удалось принять приглашение";
           toast.error(message);
           setError(message);

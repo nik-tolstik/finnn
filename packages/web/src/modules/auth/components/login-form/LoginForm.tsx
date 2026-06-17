@@ -11,14 +11,16 @@ import { toast } from "sonner";
 
 import { getSession, login } from "@/shared/api/generated/auth/auth";
 import { acceptWorkspaceInvite } from "@/shared/api/generated/workspace-invites/workspace-invites";
-import { apiSessionQueryKey } from "@/shared/lib/api-session-client";
+import { apiSessionQueryKey, userRequiresEmailVerification } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
 import { type LoginInput, loginSchema } from "../../auth.validations";
+import { redirectToGoogleAuth } from "../../google-auth-url";
 import { redirectToTelegramAuth } from "../../telegram-auth-url";
+import { GoogleAuthButton } from "../google-auth-button";
 import { TelegramAuthButton } from "../telegram-auth-button";
 
 export function LoginForm() {
@@ -39,13 +41,17 @@ export function LoginForm() {
 
   const inviteToken = searchParams.get("inviteToken");
   const telegramError = searchParams.get("telegramError");
+  const googleError = searchParams.get("googleError");
   const isLoading = isSubmitting || isPending;
 
   useEffect(() => {
     if (telegramError) {
       toast.error("Не удалось войти через Telegram");
     }
-  }, [telegramError]);
+    if (googleError) {
+      toast.error("Не удалось войти через Google");
+    }
+  }, [googleError, telegramError]);
 
   const onSubmit = async (data: LoginInput) => {
     setIsSubmitting(true);
@@ -63,6 +69,15 @@ export function LoginForm() {
 
       if (!sessionResponse.authenticated || !sessionResponse.user) {
         throw new Error("Сессия не была создана. Проверьте адрес web/API и настройки cookie.");
+      }
+
+      if (userRequiresEmailVerification(sessionResponse.user)) {
+        const returnTo = inviteToken ? `/invite/${inviteToken}` : "/dashboard";
+        startTransition(() => {
+          router.replace(`/email-required?returnTo=${encodeURIComponent(returnTo)}`);
+          router.refresh();
+        });
+        return;
       }
 
       if (inviteToken) {
@@ -128,12 +143,22 @@ export function LoginForm() {
             {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
           </div>
 
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+              Забыли пароль?
+            </Link>
+          </div>
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Вход..." : "Войти"}
           </Button>
         </form>
 
-        <div className="mt-3">
+        <div className="mt-3 grid gap-2">
+          <GoogleAuthButton
+            disabled={isLoading}
+            onClick={() => redirectToGoogleAuth(inviteToken ? `/invite/${inviteToken}` : "/dashboard")}
+          />
           <TelegramAuthButton
             disabled={isLoading}
             onClick={() => redirectToTelegramAuth(inviteToken ? `/invite/${inviteToken}` : "/dashboard")}
@@ -142,7 +167,10 @@ export function LoginForm() {
 
         <div className="mt-4 text-center text-sm">
           <span className="text-muted-foreground">Нет аккаунта? </span>
-          <Link href="/register" className="text-primary hover:underline">
+          <Link
+            href={inviteToken ? `/register?inviteToken=${encodeURIComponent(inviteToken)}` : "/register"}
+            className="text-primary hover:underline"
+          >
             Зарегистрироваться
           </Link>
         </div>

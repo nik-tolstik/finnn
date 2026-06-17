@@ -32,6 +32,7 @@ model User {
   authSessions    AuthSession[]
   authIdentities   AuthIdentity[]
   pendingEmailVerifications PendingEmailVerification[]
+  passwordResetCodes PasswordResetCode[]
 
   @@map("users")
 }
@@ -68,6 +69,23 @@ model PendingEmailVerification {
   @@index([email])
   @@index([expiresAt])
   @@map("pending_email_verifications")
+}
+
+model PasswordResetCode {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("password_reset_codes")
 }
 
 model AuthSession {

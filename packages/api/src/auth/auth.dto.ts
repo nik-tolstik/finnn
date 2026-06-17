@@ -29,6 +29,29 @@ export class LoginDto {
   password!: string;
 }
 
+export class PasswordResetRequestDto {
+  @ApiProperty({ example: "user@example.com", type: String })
+  @IsEmail()
+  email!: string;
+}
+
+export class PasswordResetConfirmDto {
+  @ApiProperty({ example: "user@example.com", type: String })
+  @IsEmail()
+  email!: string;
+
+  @ApiProperty({ example: "123456", maxLength: 6, minLength: 6, type: String })
+  @IsString()
+  @MinLength(6)
+  @MaxLength(6)
+  code!: string;
+
+  @ApiProperty({ example: "correct-horse-battery", minLength: 6, type: String })
+  @IsString()
+  @MinLength(6)
+  password!: string;
+}
+
 export class UpdateUserDto {
   @ApiProperty({ example: "Finn User", maxLength: 100, minLength: 1, type: String })
   @IsString()
@@ -78,6 +101,20 @@ export class TelegramAuthStatusDto {
   photoUrl!: string | null;
 }
 
+export class GoogleAuthStatusDto {
+  @ApiProperty({ example: true, type: Boolean })
+  linked!: boolean;
+
+  @ApiPropertyOptional({ example: "user@example.com", nullable: true, type: String })
+  email!: string | null;
+
+  @ApiPropertyOptional({ example: "Finn User", nullable: true, type: String })
+  displayName!: string | null;
+
+  @ApiPropertyOptional({ example: "https://lh3.googleusercontent.com/a/example", nullable: true, type: String })
+  photoUrl!: string | null;
+}
+
 export class AuthUserDto {
   @ApiProperty({ example: "665f5d865ef5a20c0d2f1111", type: String })
   id!: string;
@@ -91,8 +128,14 @@ export class AuthUserDto {
   @ApiPropertyOptional({ example: "avatar-01", nullable: true, type: String })
   image!: string | null;
 
+  @ApiPropertyOptional({ example: "2026-05-25T12:00:00.000Z", format: "date-time", nullable: true, type: String })
+  emailVerified!: string | null;
+
   @ApiProperty({ type: TelegramAuthStatusDto })
   telegram!: TelegramAuthStatusDto;
+
+  @ApiProperty({ type: GoogleAuthStatusDto })
+  google!: GoogleAuthStatusDto;
 }
 
 export class SuccessResponseDto {

@@ -6,6 +6,8 @@ import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthModule } from "../src/auth/auth.module";
+import { GoogleOidcClient } from "../src/auth/google-oidc.client";
+import { GOOGLE_STATE_COOKIE_NAME } from "../src/auth/google-state-cookie";
 import { AUTH_COOKIE_NAME, hashSessionToken } from "../src/auth/session-cookie";
 import { TelegramOidcClient } from "../src/auth/telegram-oidc.client";
 import { TELEGRAM_STATE_COOKIE_NAME } from "../src/auth/telegram-state-cookie";
@@ -41,11 +43,18 @@ type MockPrisma = {
     upsert: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
   };
+  passwordResetCode: {
+    findUnique: ReturnType<typeof vi.fn>;
+    upsert: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+  };
   authSession: {
     create: ReturnType<typeof vi.fn>;
     deleteMany: ReturnType<typeof vi.fn>;
     findFirst: ReturnType<typeof vi.fn>;
     count: ReturnType<typeof vi.fn>;
+    updateMany: ReturnType<typeof vi.fn>;
   };
 };
 
@@ -77,11 +86,18 @@ function createPrismaMock(): MockPrisma {
       upsert: vi.fn(),
       delete: vi.fn(),
     },
+    passwordResetCode: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
     authSession: {
       create: vi.fn(),
       deleteMany: vi.fn(),
       findFirst: vi.fn(),
       count: vi.fn(),
+      updateMany: vi.fn(),
     },
   };
   return prisma;
@@ -90,6 +106,13 @@ function createPrismaMock(): MockPrisma {
 const unlinkedTelegram = {
   linked: false,
   username: null,
+  displayName: null,
+  photoUrl: null,
+};
+
+const unlinkedGoogle = {
+  linked: false,
+  email: null,
   displayName: null,
   photoUrl: null,
 };
@@ -158,7 +181,12 @@ describe("Auth API", () => {
   let app: INestApplication;
   let prisma: MockPrisma;
   const emailService = {
+    sendPasswordResetCode: vi.fn(),
     sendVerificationEmail: vi.fn(),
+  };
+  const googleOidcClient = {
+    exchangeCodeForClaims: vi.fn(),
+    getAuthorizationUrl: vi.fn(),
   };
   const telegramOidcClient = {
     exchangeCodeForClaims: vi.fn(),
@@ -182,6 +210,8 @@ describe("Auth API", () => {
       .useValue(prisma)
       .overrideProvider(EmailService)
       .useValue(emailService)
+      .overrideProvider(GoogleOidcClient)
+      .useValue(googleOidcClient)
       .overrideProvider(TelegramOidcClient)
       .useValue(telegramOidcClient)
       .overrideProvider(AvatarStorageService)
@@ -214,9 +244,25 @@ describe("Auth API", () => {
     prisma.pendingEmailVerification.findUnique.mockResolvedValue(null);
     prisma.pendingEmailVerification.upsert.mockResolvedValue({ id: "pending-email-1" });
     prisma.pendingEmailVerification.delete.mockResolvedValue({ id: "pending-email-1" });
+    prisma.passwordResetCode.findUnique.mockResolvedValue(null);
+    prisma.passwordResetCode.upsert.mockResolvedValue({ id: "password-reset-1" });
+    prisma.passwordResetCode.update.mockResolvedValue({ id: "password-reset-1" });
+    prisma.passwordResetCode.delete.mockResolvedValue({ id: "password-reset-1" });
     prisma.authSession.deleteMany.mockResolvedValue({ count: 0 });
     prisma.authSession.count.mockResolvedValue(0);
+    prisma.authSession.updateMany.mockResolvedValue({ count: 0 });
+    emailService.sendPasswordResetCode.mockResolvedValue({ success: true });
     emailService.sendVerificationEmail.mockResolvedValue({ success: true });
+    googleOidcClient.getAuthorizationUrl.mockImplementation(
+      ({ state }) => `https://accounts.google.com/o/oauth2/v2/auth?state=${state}`
+    );
+    googleOidcClient.exchangeCodeForClaims.mockResolvedValue({
+      sub: "google-sub-1",
+      email: "ada@example.com",
+      email_verified: true,
+      name: "Ada",
+      picture: "https://lh3.googleusercontent.com/a/ada",
+    });
     telegramOidcClient.getAuthorizationUrl.mockImplementation(
       ({ state }) => `https://oauth.telegram.org/auth?state=${state}`
     );
@@ -414,6 +460,108 @@ describe("Auth API", () => {
     expect(prisma.pendingEmailVerification.delete).toHaveBeenCalledWith({ where: { id: "pending-email-1" } });
   });
 
+  it("requests a password reset without disclosing unknown emails", async () => {
+    prisma.user.findFirst.mockResolvedValue(null);
+
+    await request(app.getHttpServer())
+      .post("/auth/password-reset/request")
+      .send({ email: "missing@example.com" })
+      .expect(200)
+      .expect({ success: true });
+
+    expect(prisma.passwordResetCode.upsert).not.toHaveBeenCalled();
+    expect(emailService.sendPasswordResetCode).not.toHaveBeenCalled();
+  });
+
+  it("sends a password reset code for a verified email user", async () => {
+    prisma.user.findFirst.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+    });
+
+    await request(app.getHttpServer())
+      .post("/auth/password-reset/request")
+      .send({ email: "ada@example.com" })
+      .expect(200)
+      .expect({ success: true });
+
+    expect(prisma.passwordResetCode.upsert).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+      update: expect.objectContaining({
+        email: "ada@example.com",
+        attempts: 0,
+      }),
+      create: expect.objectContaining({
+        userId: "user-1",
+        email: "ada@example.com",
+      }),
+    });
+    const code = emailService.sendPasswordResetCode.mock.calls[0][1];
+    expect(code).toMatch(/^\d{6}$/);
+    expect(emailService.sendPasswordResetCode).toHaveBeenCalledWith("ada@example.com", code, "Ada");
+  });
+
+  it("confirms a password reset code, updates the password, and revokes sessions", async () => {
+    const codeHash = await bcrypt.hash("123456", 10);
+    prisma.user.findFirst.mockResolvedValue({ id: "user-1" });
+    prisma.passwordResetCode.findUnique.mockResolvedValue({
+      id: "reset-1",
+      userId: "user-1",
+      email: "ada@example.com",
+      codeHash,
+      attempts: 0,
+      expiresAt: new Date(Date.now() + 1000),
+      createdAt: new Date(),
+    });
+
+    await request(app.getHttpServer())
+      .post("/auth/password-reset/confirm")
+      .send({ email: "ada@example.com", code: "123456", password: "new-secret" })
+      .expect(200)
+      .expect({ success: true });
+
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { password: expect.any(String) },
+    });
+    const passwordHash = prisma.user.update.mock.calls[0][0].data.password;
+    await expect(bcrypt.compare("new-secret", passwordHash)).resolves.toBe(true);
+    expect(prisma.passwordResetCode.delete).toHaveBeenCalledWith({ where: { id: "reset-1" } });
+    expect(prisma.authSession.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
+      },
+      data: { revokedAt: expect.any(Date) },
+    });
+  });
+
+  it("increments password reset attempts for an invalid code", async () => {
+    const codeHash = await bcrypt.hash("123456", 10);
+    prisma.user.findFirst.mockResolvedValue({ id: "user-1" });
+    prisma.passwordResetCode.findUnique.mockResolvedValue({
+      id: "reset-1",
+      userId: "user-1",
+      email: "ada@example.com",
+      codeHash,
+      attempts: 0,
+      expiresAt: new Date(Date.now() + 1000),
+      createdAt: new Date(),
+    });
+
+    await request(app.getHttpServer())
+      .post("/auth/password-reset/confirm")
+      .send({ email: "ada@example.com", code: "654321", password: "new-secret" })
+      .expect(400);
+
+    expect(prisma.passwordResetCode.update).toHaveBeenCalledWith({
+      where: { id: "reset-1" },
+      data: { attempts: { increment: 1 } },
+    });
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
   it("rejects unverified login when a pending registration still exists", async () => {
     prisma.user.findFirst.mockResolvedValue({
       id: "user-1",
@@ -455,7 +603,9 @@ describe("Auth API", () => {
       email: "ada@example.com",
       name: "Ada",
       image: null,
+      emailVerified: expect.any(String),
       telegram: unlinkedTelegram,
+      google: unlinkedGoogle,
     });
     expect(response.headers["set-cookie"][0]).toContain(`${AUTH_COOKIE_NAME}=`);
     expect(response.headers["set-cookie"][0]).toContain("HttpOnly");
@@ -513,7 +663,9 @@ describe("Auth API", () => {
           email: "ada@example.com",
           name: "Ada",
           image: null,
+          emailVerified: null,
           telegram: unlinkedTelegram,
+          google: unlinkedGoogle,
         },
       });
 
@@ -552,7 +704,9 @@ describe("Auth API", () => {
           email: "ada@example.com",
           name: "Ada",
           image: null,
+          emailVerified: null,
           telegram: unlinkedTelegram,
+          google: unlinkedGoogle,
         },
       });
 
@@ -591,7 +745,9 @@ describe("Auth API", () => {
           email: "ada@example.com",
           name: "Ada",
           image: null,
+          emailVerified: null,
           telegram: unlinkedTelegram,
+          google: unlinkedGoogle,
         },
       });
   });
@@ -602,6 +758,165 @@ describe("Auth API", () => {
     expect(response.headers.location).toContain("https://oauth.telegram.org/auth?state=");
     expect(getSetCookieValues(response)[0]).toContain(`${TELEGRAM_STATE_COOKIE_NAME}=`);
     expect(getSetCookieValues(response)[0]).toContain("HttpOnly");
+  });
+
+  it("starts Google authentication with a temporary state cookie", async () => {
+    process.env.GOOGLE_AUTH_STATE_SECRET = "test-google-state-secret";
+
+    const response = await request(app.getHttpServer()).get("/auth/google/start?returnTo=/dashboard").expect(302);
+
+    expect(response.headers.location).toContain("https://accounts.google.com/o/oauth2/v2/auth?state=");
+    expect(getSetCookieValues(response)[0]).toContain(`${GOOGLE_STATE_COOKIE_NAME}=`);
+    expect(getSetCookieValues(response)[0]).toContain("HttpOnly");
+  });
+
+  it("signs in with an existing linked Google identity", async () => {
+    process.env.GOOGLE_AUTH_STATE_SECRET = "test-google-state-secret";
+    const startResponse = await request(app.getHttpServer()).get("/auth/google/start?returnTo=/dashboard").expect(302);
+    const state = new URL(startResponse.headers.location).searchParams.get("state");
+    const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], GOOGLE_STATE_COOKIE_NAME);
+
+    prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      emailVerified: new Date("2026-05-25T00:00:00.000Z"),
+      authIdentities: [
+        {
+          provider: "google",
+          username: "ada@example.com",
+          displayName: "Ada",
+          photoUrl: "https://lh3.googleusercontent.com/a/ada",
+        },
+      ],
+    });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      emailVerified: new Date("2026-05-25T00:00:00.000Z"),
+      authIdentities: [
+        {
+          provider: "google",
+          username: "ada@example.com",
+          displayName: "Ada",
+          photoUrl: "https://lh3.googleusercontent.com/a/ada",
+        },
+      ],
+    });
+
+    const response = await request(app.getHttpServer())
+      .get(`/auth/google/callback?code=code&state=${state}`)
+      .set("Cookie", stateCookie)
+      .expect(302);
+
+    expect(response.headers.location).toBe("http://localhost:3000/dashboard");
+    expect(getSetCookieValues(response).some((cookie) => cookie.includes(`${AUTH_COOKIE_NAME}=`))).toBe(true);
+    expect(googleOidcClient.exchangeCodeForClaims).toHaveBeenCalledWith({
+      code: "code",
+      codeVerifier: expect.any(String),
+      nonce: expect.any(String),
+    });
+    expect(prisma.authIdentity.update).toHaveBeenCalledWith({
+      where: {
+        provider_providerUserId: {
+          provider: "google",
+          providerUserId: "google-sub-1",
+        },
+      },
+      data: {
+        username: "ada@example.com",
+        displayName: "Ada",
+        photoUrl: "https://lh3.googleusercontent.com/a/ada",
+      },
+    });
+    expect(prisma.authSession.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: "user-1" }),
+    });
+  });
+
+  it("auto-links Google to an existing verified email user", async () => {
+    process.env.GOOGLE_AUTH_STATE_SECRET = "test-google-state-secret";
+    const startResponse = await request(app.getHttpServer()).get("/auth/google/start?returnTo=/dashboard").expect(302);
+    const state = new URL(startResponse.headers.location).searchParams.get("state");
+    const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], GOOGLE_STATE_COOKIE_NAME);
+
+    prisma.user.findFirst.mockResolvedValue({ id: "user-1" });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      emailVerified: new Date("2026-05-25T00:00:00.000Z"),
+      authIdentities: [
+        {
+          provider: "google",
+          username: "ada@example.com",
+          displayName: "Ada",
+          photoUrl: "https://lh3.googleusercontent.com/a/ada",
+        },
+      ],
+    });
+
+    await request(app.getHttpServer())
+      .get(`/auth/google/callback?code=code&state=${state}`)
+      .set("Cookie", stateCookie)
+      .expect(302);
+
+    expect(prisma.authIdentity.create).toHaveBeenCalledWith({
+      data: {
+        user: { connect: { id: "user-1" } },
+        provider: "google",
+        providerUserId: "google-sub-1",
+        username: "ada@example.com",
+        displayName: "Ada",
+        photoUrl: "https://lh3.googleusercontent.com/a/ada",
+      },
+    });
+    expect(prisma.user.create).not.toHaveBeenCalled();
+  });
+
+  it("creates a verified user on first Google login when Google email is verified", async () => {
+    process.env.GOOGLE_AUTH_STATE_SECRET = "test-google-state-secret";
+    const startResponse = await request(app.getHttpServer()).get("/auth/google/start?returnTo=/dashboard").expect(302);
+    const state = new URL(startResponse.headers.location).searchParams.get("state");
+    const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], GOOGLE_STATE_COOKIE_NAME);
+
+    prisma.user.findFirst.mockResolvedValue(null);
+    prisma.user.create.mockResolvedValue({ id: "user-google" });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-google",
+      email: "ada@example.com",
+      name: "Ada",
+      image: "https://lh3.googleusercontent.com/a/ada",
+      emailVerified: new Date("2026-05-25T00:00:00.000Z"),
+      authIdentities: [
+        {
+          provider: "google",
+          username: "ada@example.com",
+          displayName: "Ada",
+          photoUrl: "https://lh3.googleusercontent.com/a/ada",
+        },
+      ],
+    });
+
+    await request(app.getHttpServer())
+      .get(`/auth/google/callback?code=code&state=${state}`)
+      .set("Cookie", stateCookie)
+      .expect(302);
+
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: {
+        email: "ada@example.com",
+        emailVerified: expect.any(Date),
+        name: "Ada",
+        image: "https://lh3.googleusercontent.com/a/ada",
+      },
+      select: { id: true },
+    });
   });
 
   it("signs in with an existing linked Telegram identity", async () => {
@@ -785,12 +1100,14 @@ describe("Auth API", () => {
       email: "ada@example.com",
       name: "Ada",
       image: "https://t.me/i/userpic/320/new-ada.jpg",
+      emailVerified: null,
       telegram: {
         linked: true,
         username: "ada",
         displayName: "Ada Lovelace",
         photoUrl: "https://t.me/i/userpic/320/new-ada.jpg",
       },
+      google: unlinkedGoogle,
     });
     expect(prisma.authIdentity.update).toHaveBeenCalledWith({
       where: {
@@ -1033,6 +1350,91 @@ describe("Auth API", () => {
     expect(response.body.message).toBe("Этот Telegram аккаунт уже подключен к другому пользователю");
   });
 
+  it("links Google for the authenticated user", async () => {
+    process.env.GOOGLE_AUTH_STATE_SECRET = "test-google-state-secret";
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      emailVerified: new Date("2026-05-25T00:00:00.000Z"),
+      authIdentities: [],
+    });
+    const startResponse = await request(app.getHttpServer())
+      .get("/auth/google/link/start?returnTo=/dashboard")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(302);
+    const state = new URL(startResponse.headers.location).searchParams.get("state");
+    const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], GOOGLE_STATE_COOKIE_NAME);
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      emailVerified: new Date("2026-05-25T00:00:00.000Z"),
+      authIdentities: [
+        {
+          provider: "google",
+          username: "ada@example.com",
+          displayName: "Ada",
+          photoUrl: "https://lh3.googleusercontent.com/a/ada",
+        },
+      ],
+    });
+
+    await request(app.getHttpServer())
+      .get(`/auth/google/callback?code=google-code&state=${state}`)
+      .set("Cookie", stateCookie)
+      .expect(302);
+
+    expect(prisma.authIdentity.upsert).toHaveBeenCalledWith({
+      where: {
+        provider_providerUserId: {
+          provider: "google",
+          providerUserId: "google-sub-1",
+        },
+      },
+      update: {
+        username: "ada@example.com",
+        displayName: "Ada",
+        photoUrl: "https://lh3.googleusercontent.com/a/ada",
+      },
+      create: expect.objectContaining({
+        provider: "google",
+        providerUserId: "google-sub-1",
+      }),
+    });
+    expect(prisma.authSession.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects linking a Google identity already linked to another user", async () => {
+    process.env.GOOGLE_AUTH_STATE_SECRET = "test-google-state-secret";
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      emailVerified: new Date("2026-05-25T00:00:00.000Z"),
+      authIdentities: [],
+    });
+    const startResponse = await request(app.getHttpServer())
+      .get("/auth/google/link/start")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(302);
+    const state = new URL(startResponse.headers.location).searchParams.get("state");
+    const stateCookie = getCookiePair(getSetCookieValues(startResponse)[0], GOOGLE_STATE_COOKIE_NAME);
+    prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-2" });
+
+    const response = await request(app.getHttpServer())
+      .get(`/auth/google/callback?code=google-code&state=${state}`)
+      .set("Cookie", stateCookie)
+      .expect(409);
+
+    expect(response.body.message).toBe("Этот Google аккаунт уже подключен к другому пользователю");
+  });
+
   it("unlinks Telegram when another sign-in method remains", async () => {
     prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
     prisma.user.findUnique
@@ -1094,6 +1496,70 @@ describe("Auth API", () => {
     expect(prisma.authIdentity.delete).not.toHaveBeenCalled();
   });
 
+  it("unlinks Google when another sign-in method remains", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        name: "Ada",
+        image: null,
+        emailVerified: new Date(),
+        authIdentities: [{ provider: "google", username: "ada@example.com", displayName: "Ada", photoUrl: null }],
+      })
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        password: "hash",
+        emailVerified: new Date(),
+        authIdentities: [{ id: "identity-1", provider: "google" }],
+      });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      emailVerified: new Date(),
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .delete("/auth/google/link")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(prisma.authIdentity.delete).toHaveBeenCalledWith({ where: { id: "identity-1" } });
+    expect(response.body.user.google).toEqual(unlinkedGoogle);
+  });
+
+  it("blocks Google unlink when it would remove the last sign-in method", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: null,
+        name: "Ada",
+        image: null,
+        emailVerified: null,
+        authIdentities: [{ provider: "google", username: "ada@example.com", displayName: "Ada", photoUrl: null }],
+      })
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: null,
+        password: null,
+        emailVerified: null,
+        authIdentities: [{ id: "identity-1", provider: "google" }],
+      });
+
+    const response = await request(app.getHttpServer())
+      .delete("/auth/google/link")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(400);
+
+    expect(response.body.message).toContain("Нельзя отключить Google");
+    expect(prisma.authIdentity.delete).not.toHaveBeenCalled();
+  });
+
   it("rejects an invalid Telegram state before token exchange", async () => {
     const response = await request(app.getHttpServer())
       .get("/auth/telegram/callback?code=telegram-code&state=bad-state")
@@ -1132,7 +1598,9 @@ describe("Auth API", () => {
           email: null,
           name: "Ada",
           image: null,
+          emailVerified: null,
           telegram: linkedTelegram,
+          google: unlinkedGoogle,
         },
       });
   });

@@ -246,6 +246,136 @@
         "tags": ["Auth"]
       }
     },
+    "/auth/google/start": {
+      "get": {
+        "operationId": "startGoogleAuth",
+        "parameters": [
+          {
+            "name": "returnTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Start Google OIDC authentication",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/google/link/start": {
+      "get": {
+        "operationId": "startGoogleLink",
+        "parameters": [
+          {
+            "name": "returnTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Start Google account linking",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/google/callback": {
+      "get": {
+        "operationId": "completeGoogleAuth",
+        "parameters": [
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Complete Google OIDC authentication",
+        "tags": ["Auth"]
+      }
+    },
     "/auth/telegram/start": {
       "get": {
         "operationId": "startTelegramAuth",
@@ -711,6 +841,86 @@
         "tags": ["Auth"]
       }
     },
+    "/auth/password-reset/request": {
+      "post": {
+        "operationId": "requestPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Request a password reset code",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/password-reset/confirm": {
+      "post": {
+        "operationId": "confirmPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetConfirmDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confirm a password reset code",
+        "tags": ["Auth"]
+      }
+    },
     "/auth/telegram/link": {
       "delete": {
         "operationId": "unlinkTelegram",
@@ -753,6 +963,51 @@
           }
         ],
         "summary": "Unlink Telegram from the current user",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/google/link": {
+      "delete": {
+        "operationId": "unlinkGoogle",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthUserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Unlink Google from the current user",
         "tags": ["Auth"]
       }
     },
@@ -3975,6 +4230,10 @@
             "type": "string",
             "example": "Bad Request"
           },
+          "code": {
+            "type": "string",
+            "example": "EMAIL_VERIFICATION_REQUIRED"
+          },
           "path": {
             "type": "string",
             "example": "/auth/register"
@@ -4041,6 +4300,31 @@
         },
         "required": ["linked"]
       },
+      "GoogleAuthStatusDto": {
+        "type": "object",
+        "properties": {
+          "linked": {
+            "type": "boolean",
+            "example": true
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "nullable": true
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Finn User",
+            "nullable": true
+          },
+          "photoUrl": {
+            "type": "string",
+            "example": "https://lh3.googleusercontent.com/a/example",
+            "nullable": true
+          }
+        },
+        "required": ["linked"]
+      },
       "AuthUserDto": {
         "type": "object",
         "properties": {
@@ -4063,11 +4347,20 @@
             "example": "avatar-01",
             "nullable": true
           },
+          "emailVerified": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time",
+            "nullable": true
+          },
           "telegram": {
             "$ref": "#/components/schemas/TelegramAuthStatusDto"
+          },
+          "google": {
+            "$ref": "#/components/schemas/GoogleAuthStatusDto"
           }
         },
-        "required": ["id", "telegram"]
+        "required": ["id", "telegram", "google"]
       },
       "AuthUserResponseDto": {
         "type": "object",
@@ -4144,6 +4437,37 @@
           }
         },
         "required": ["email"]
+      },
+      "PasswordResetRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          }
+        },
+        "required": ["email"]
+      },
+      "PasswordResetConfirmDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "code": {
+            "type": "string",
+            "example": "123456",
+            "maxLength": 6,
+            "minLength": 6
+          },
+          "password": {
+            "type": "string",
+            "example": "correct-horse-battery",
+            "minLength": 6
+          }
+        },
+        "required": ["email", "code", "password"]
       },
       "CreateWorkspaceDto": {
         "type": "object",

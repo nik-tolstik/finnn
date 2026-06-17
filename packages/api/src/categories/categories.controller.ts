@@ -17,6 +17,7 @@ import {
 import { AuthGuard } from "@/auth/auth.guard";
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { CurrentUser } from "@/auth/current-user.decorator";
+import { EmailVerifiedGuard } from "@/auth/email-verified.guard";
 import { AUTH_COOKIE_NAME } from "@/auth/session-cookie";
 import { ApiErrorDto } from "@/common/api-error.dto";
 
@@ -33,7 +34,7 @@ import { CategoriesService } from "./categories.service";
 
 @Controller()
 @ApiTags("Categories")
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EmailVerifiedGuard)
 @ApiCookieAuth(AUTH_COOKIE_NAME)
 export class CategoriesController {
   constructor(@Inject(CategoriesService) private readonly categoriesService: CategoriesService) {}
