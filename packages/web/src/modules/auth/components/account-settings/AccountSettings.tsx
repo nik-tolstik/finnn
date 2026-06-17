@@ -28,6 +28,7 @@ import { redirectToGoogleLink } from "../../google-auth-url";
 import { redirectToTelegramLink } from "../../telegram-auth-url";
 import { AvatarPickerDialog } from "../avatar-picker-dialog/AvatarPickerDialog";
 import { GoogleAuthButton } from "../google-auth-button";
+import { GoogleIcon, TelegramIcon } from "../social-provider-icons";
 import { TelegramAuthButton } from "../telegram-auth-button";
 
 interface AccountSettingsProps {
@@ -285,12 +286,17 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
 
         <div className="space-y-3 border-t pt-5">
           <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-sm font-medium">Google</div>
-              <div className="truncate text-xs text-muted-foreground">
-                {session.user.google.linked
-                  ? session.user.google.email || session.user.google.displayName || "Подключен"
-                  : "Не подключен"}
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border bg-white">
+                <GoogleIcon className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-sm font-medium">Google</div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {session.user.google.linked
+                    ? session.user.google.email || session.user.google.displayName || "Подключен"
+                    : "Не подключен"}
+                </div>
               </div>
             </div>
             {session.user.google.linked ? (
@@ -313,14 +319,19 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-sm font-medium">Telegram</div>
-              <div className="truncate text-xs text-muted-foreground">
-                {session.user.telegram.linked
-                  ? session.user.telegram.username
-                    ? `@${session.user.telegram.username}`
-                    : session.user.telegram.displayName || "Подключен"
-                  : "Не подключен"}
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border bg-[#229ED9]/10">
+                <TelegramIcon className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-sm font-medium">Telegram</div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {session.user.telegram.linked
+                    ? session.user.telegram.username
+                      ? `@${session.user.telegram.username}`
+                      : session.user.telegram.displayName || "Подключен"
+                    : "Не подключен"}
+                </div>
               </div>
             </div>
             {session.user.telegram.linked ? (

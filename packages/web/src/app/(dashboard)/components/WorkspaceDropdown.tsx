@@ -2,7 +2,7 @@
 
 import type { Placement } from "@floating-ui/react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, ArrowLeftRight, Building, Check, LogOut, Plus, Settings } from "lucide-react";
+import { Archive, ArrowLeftRight, Building, Check, Plus, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -11,14 +11,11 @@ import { SettingsDialog } from "@/modules/accounts/components/settings-dialog";
 import { CreateWorkspaceDialog } from "@/modules/workspace/components/create-workspace-dialog";
 import { getWorkspaces } from "@/modules/workspace/workspace.api";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { useSession } from "@/shared/lib/api-session-client";
 import { workspacesKeys } from "@/shared/lib/query-keys";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Popover } from "@/shared/ui/popover";
 import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
-
-import { LeaveWorkspaceDialog } from "./LeaveWorkspaceDialog";
 
 interface WorkspaceDropdownProps {
   currentWorkspaceId?: string;
@@ -38,15 +35,10 @@ export function WorkspaceDropdown({
   variant = "dropdown",
 }: WorkspaceDropdownProps) {
   const router = useRouter();
-  const { data: session } = useSession();
   const [switchOpen, setSwitchOpen] = useState(false);
   const createDialog = useDialogState();
   const settingsDialog = useDialogState<{ workspaceId: string }>();
   const archivedAccountsDialog = useDialogState();
-  const leaveDialog = useDialogState<{
-    workspaceId: string;
-    workspaceName: string;
-  }>();
   const switchCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: workspacesData } = useQuery({
@@ -58,8 +50,6 @@ export function WorkspaceDropdown({
   const workspaces = workspacesData?.data || [];
   const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId);
   const triggerLabel = currentWorkspace?.name || "Выберите workspace";
-
-  const isOwner = currentWorkspace?.owner.id === session?.user?.id;
 
   const handleWorkspaceSelect = (workspaceId: string) => {
     router.push(`/dashboard?workspaceId=${workspaceId}`);
@@ -96,14 +86,6 @@ export function WorkspaceDropdown({
           workspaceId={settingsDialog.data.workspaceId}
           open={settingsDialog.open}
           onOpenChange={settingsDialog.closeDialog}
-        />
-      )}
-      {leaveDialog.mounted && (
-        <LeaveWorkspaceDialog
-          workspaceId={leaveDialog.data.workspaceId}
-          workspaceName={leaveDialog.data.workspaceName}
-          open={leaveDialog.open}
-          onOpenChange={leaveDialog.closeDialog}
         />
       )}
       {archivedAccountsDialog.mounted && currentWorkspaceId && (
@@ -178,23 +160,6 @@ export function WorkspaceDropdown({
               >
                 <Plus className="size-4 text-muted-foreground" />
                 <span>Создать workspace</span>
-              </button>
-            )}
-            {currentWorkspaceId && !isOwner && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (currentWorkspaceId && currentWorkspace) {
-                    leaveDialog.openDialog({
-                      workspaceId: currentWorkspaceId,
-                      workspaceName: currentWorkspace.name,
-                    });
-                  }
-                }}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-              >
-                <LogOut className="size-4" />
-                <span>Покинуть workspace</span>
               </button>
             )}
           </div>
@@ -345,24 +310,6 @@ export function WorkspaceDropdown({
             >
               <Plus className="size-4 text-muted-foreground" />
               <span>Создать workspace</span>
-            </button>
-          )}
-
-          {currentWorkspaceId && !isOwner && (
-            <button
-              type="button"
-              onClick={() => {
-                if (currentWorkspaceId && currentWorkspace) {
-                  leaveDialog.openDialog({
-                    workspaceId: currentWorkspaceId,
-                    workspaceName: currentWorkspace.name,
-                  });
-                }
-              }}
-              className="flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-            >
-              <LogOut className="size-4" />
-              <span>Покинуть workspace</span>
             </button>
           )}
         </section>
