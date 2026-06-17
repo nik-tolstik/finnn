@@ -9,6 +9,7 @@ import { AuthModule } from "../src/auth/auth.module";
 import { AUTH_COOKIE_NAME, hashSessionToken } from "../src/auth/session-cookie";
 import { TelegramOidcClient } from "../src/auth/telegram-oidc.client";
 import { TELEGRAM_STATE_COOKIE_NAME } from "../src/auth/telegram-state-cookie";
+import { AvatarStorageService } from "../src/avatar/avatar-storage.service";
 import { EmailService } from "../src/email/email.service";
 import { configureApp } from "../src/main";
 import { PrismaService } from "../src/prisma/prisma.service";
@@ -21,6 +22,7 @@ type MockPrisma = {
     findUniqueOrThrow: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
+    updateMany: ReturnType<typeof vi.fn>;
   };
   authIdentity: {
     create: ReturnType<typeof vi.fn>;
@@ -56,6 +58,7 @@ function createPrismaMock(): MockPrisma {
       findUniqueOrThrow: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     authIdentity: {
       create: vi.fn(),
@@ -161,6 +164,13 @@ describe("Auth API", () => {
     exchangeCodeForClaims: vi.fn(),
     getAuthorizationUrl: vi.fn(),
   };
+  const avatarStorage = {
+    upload: vi.fn(),
+    delete: vi.fn(),
+    getReadUrl: vi.fn(),
+  };
+
+  const pngAvatar = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
 
   beforeAll(async () => {
     prisma = createPrismaMock();
@@ -174,6 +184,8 @@ describe("Auth API", () => {
       .useValue(emailService)
       .overrideProvider(TelegramOidcClient)
       .useValue(telegramOidcClient)
+      .overrideProvider(AvatarStorageService)
+      .useValue(avatarStorage)
       .compile();
 
     app = configureApp(moduleRef.createNestApplication(), {
@@ -192,6 +204,7 @@ describe("Auth API", () => {
     prisma.user.findUnique.mockResolvedValue(null);
     prisma.user.findFirst.mockResolvedValue(null);
     prisma.user.findUniqueOrThrow.mockRejectedValue(new Error("User not found"));
+    prisma.user.updateMany.mockResolvedValue({ count: 0 });
     prisma.authIdentity.findUnique.mockResolvedValue(null);
     prisma.authIdentity.create.mockResolvedValue({ id: "identity-1" });
     prisma.authIdentity.update.mockResolvedValue({ id: "identity-1" });
@@ -214,6 +227,9 @@ describe("Auth API", () => {
       preferred_username: "ada",
       picture: "https://t.me/i/userpic/320/ada.jpg",
     });
+    avatarStorage.upload.mockResolvedValue("avatars/user-1/new-avatar.png");
+    avatarStorage.delete.mockResolvedValue(undefined);
+    avatarStorage.getReadUrl.mockResolvedValue("https://storage.example.com/presigned-avatar");
   });
 
   afterAll(async () => {
@@ -789,8 +805,8 @@ describe("Auth API", () => {
         photoUrl: "https://t.me/i/userpic/320/new-ada.jpg",
       },
     });
-    expect(prisma.user.update).toHaveBeenCalledWith({
-      where: { id: "user-1" },
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "user-1", image: null },
       data: { image: "https://t.me/i/userpic/320/new-ada.jpg" },
     });
     expect(prisma.authSession.create).toHaveBeenCalledWith({
@@ -1125,5 +1141,398 @@ describe("Auth API", () => {
     await request(app.getHttpServer()).patch("/auth/user").send({ name: "Ada Lovelace", image: null }).expect(401);
 
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("preserves the current avatar when profile update omits image", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: "/avatars/animals/cat-01.svg",
+      authIdentities: [],
+    });
+    prisma.user.update.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada Lovelace",
+      image: "/avatars/animals/cat-01.svg",
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .patch("/auth/user")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ name: "Ada Lovelace" })
+      .expect(200);
+
+    expect(response.body.user.image).toBe("/avatars/animals/cat-01.svg");
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { name: "Ada Lovelace" },
+      select: expect.any(Object),
+    });
+  });
+
+  it("rejects arbitrary avatar values on profile update", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        name: "Ada",
+        image: null,
+        authIdentities: [],
+      })
+      .mockResolvedValueOnce({ avatarStorageKey: null });
+
+    const response = await request(app.getHttpServer())
+      .patch("/auth/user")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ name: "Ada", image: "https://example.com/avatar.png" })
+      .expect(400);
+
+    expect(response.body.message).toBe("Выберите аватар из предложенного списка");
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("clears avatar and deletes an uploaded object through profile update", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        name: "Ada",
+        image: "/auth/users/user-1/avatar",
+        authIdentities: [],
+      })
+      .mockResolvedValueOnce({ avatarStorageKey: "avatars/user-1/old.png" });
+    prisma.user.update.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .patch("/auth/user")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ name: "Ada", image: null })
+      .expect(200);
+
+    expect(response.body.user.image).toBeNull();
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { name: "Ada", image: null, avatarStorageKey: null },
+      select: expect.any(Object),
+    });
+    expect(avatarStorage.delete).toHaveBeenCalledWith("avatars/user-1/old.png");
+  });
+
+  it("requires authentication for avatar upload", async () => {
+    await request(app.getHttpServer())
+      .post("/auth/user/avatar")
+      .attach("file", pngAvatar, { filename: "avatar.png", contentType: "image/png" })
+      .expect(401);
+
+    expect(avatarStorage.upload).not.toHaveBeenCalled();
+  });
+
+  it("uploads a valid avatar and returns the stable API avatar path", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        name: "Ada",
+        image: null,
+        authIdentities: [],
+      })
+      .mockResolvedValueOnce({ id: "user-1", avatarStorageKey: null });
+    prisma.user.update.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: "/auth/users/user-1/avatar",
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/user/avatar")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .attach("file", pngAvatar, { filename: "avatar.png", contentType: "image/png" })
+      .expect(200);
+
+    expect(response.body.user.image).toBe("/auth/users/user-1/avatar");
+    expect(avatarStorage.upload).toHaveBeenCalledWith({
+      userId: "user-1",
+      buffer: pngAvatar,
+      contentType: "image/png",
+    });
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: {
+        image: "/auth/users/user-1/avatar",
+        avatarStorageKey: "avatars/user-1/new-avatar.png",
+      },
+      select: expect.any(Object),
+    });
+  });
+
+  it("rejects missing avatar files", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/user/avatar")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(400);
+
+    expect(response.body.message).toBe("Выберите файл аватара");
+    expect(avatarStorage.upload).not.toHaveBeenCalled();
+  });
+
+  it("rejects empty avatar files", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/user/avatar")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .attach("file", Buffer.alloc(0), { filename: "avatar.png", contentType: "image/png" })
+      .expect(400);
+
+    expect(response.body.message).toBe("Файл аватара пуст");
+    expect(avatarStorage.upload).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid avatar MIME types", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/user/avatar")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .attach("file", Buffer.from("hello"), { filename: "avatar.txt", contentType: "text/plain" })
+      .expect(400);
+
+    expect(response.body.message).toBe("Загрузите PNG, JPEG или WebP изображение");
+    expect(avatarStorage.upload).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized avatar files", async () => {
+    process.env.AVATAR_MAX_BYTES = "4";
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/user/avatar")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .attach("file", pngAvatar, { filename: "avatar.png", contentType: "image/png" })
+      .expect(400);
+
+    expect(response.body.message).toBe("Файл аватара слишком большой");
+    expect(avatarStorage.upload).not.toHaveBeenCalled();
+    delete process.env.AVATAR_MAX_BYTES;
+  });
+
+  it("does not update the user when avatar storage upload fails", async () => {
+    avatarStorage.upload.mockRejectedValue(new Error("S3 unavailable"));
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        name: "Ada",
+        image: null,
+        authIdentities: [],
+      })
+      .mockResolvedValueOnce({ id: "user-1", avatarStorageKey: null });
+
+    await request(app.getHttpServer())
+      .post("/auth/user/avatar")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .attach("file", pngAvatar, { filename: "avatar.png", contentType: "image/png" })
+      .expect(500);
+
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("deletes a newly uploaded avatar when the database update fails", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        name: "Ada",
+        image: null,
+        authIdentities: [],
+      })
+      .mockResolvedValueOnce({ id: "user-1", avatarStorageKey: null });
+    prisma.user.update.mockRejectedValue(new Error("database unavailable"));
+
+    await request(app.getHttpServer())
+      .post("/auth/user/avatar")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .attach("file", pngAvatar, { filename: "avatar.png", contentType: "image/png" })
+      .expect(500);
+
+    expect(avatarStorage.delete).toHaveBeenCalledWith("avatars/user-1/new-avatar.png");
+  });
+
+  it("deletes the replaced uploaded avatar after a successful replacement", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        name: "Ada",
+        image: "/auth/users/user-1/avatar",
+        authIdentities: [],
+      })
+      .mockResolvedValueOnce({ id: "user-1", avatarStorageKey: "avatars/user-1/old.png" });
+    prisma.user.update.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: "/auth/users/user-1/avatar",
+      authIdentities: [],
+    });
+
+    await request(app.getHttpServer())
+      .post("/auth/user/avatar")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .attach("file", pngAvatar, { filename: "avatar.png", contentType: "image/png" })
+      .expect(200);
+
+    expect(avatarStorage.delete).toHaveBeenCalledWith("avatars/user-1/old.png");
+  });
+
+  it("clears the uploaded avatar through the avatar endpoint", async () => {
+    prisma.authSession.findFirst.mockResolvedValue({ userId: "user-1" });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({
+        id: "user-1",
+        email: "ada@example.com",
+        name: "Ada",
+        image: "/auth/users/user-1/avatar",
+        authIdentities: [],
+      })
+      .mockResolvedValueOnce({ avatarStorageKey: "avatars/user-1/old.png" });
+    prisma.user.update.mockResolvedValue({
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: null,
+      authIdentities: [],
+    });
+
+    const response = await request(app.getHttpServer())
+      .delete("/auth/user/avatar")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.user.image).toBeNull();
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { image: null, avatarStorageKey: null },
+      select: expect.any(Object),
+    });
+    expect(avatarStorage.delete).toHaveBeenCalledWith("avatars/user-1/old.png");
+  });
+
+  it("redirects uploaded avatar reads to a short-lived storage URL", async () => {
+    prisma.user.findUnique.mockResolvedValue({ avatarStorageKey: "avatars/user-1/avatar.png" });
+
+    const response = await request(app.getHttpServer()).get("/auth/users/user-1/avatar").expect(302);
+
+    expect(response.headers.location).toBe("https://storage.example.com/presigned-avatar");
+    expect(response.headers["cache-control"]).toBe("no-store, max-age=0");
+    expect(avatarStorage.getReadUrl).toHaveBeenCalledWith("avatars/user-1/avatar.png");
+  });
+
+  it("returns not found for users without uploaded avatars", async () => {
+    prisma.user.findUnique.mockResolvedValue({ avatarStorageKey: null });
+
+    await request(app.getHttpServer()).get("/auth/users/user-1/avatar").expect(404);
+
+    expect(avatarStorage.getReadUrl).not.toHaveBeenCalled();
+  });
+
+  it("does not let Telegram overwrite a preset avatar while still updating identity metadata", async () => {
+    const initData = createTelegramMiniAppInitData({
+      user: {
+        id: 123,
+        first_name: "Ada",
+        username: "ada",
+        photo_url: "https://t.me/i/userpic/320/ada-new.jpg",
+      },
+    });
+    prisma.authIdentity.findUnique.mockResolvedValue({ userId: "user-1" });
+    const linkedUser = {
+      id: "user-1",
+      email: "ada@example.com",
+      name: "Ada",
+      image: "/avatars/animals/cat-01.svg",
+      authIdentities: [
+        {
+          provider: "telegram",
+          username: "ada",
+          displayName: "Ada",
+          photoUrl: "https://t.me/i/userpic/320/ada-new.jpg",
+        },
+      ],
+    };
+    prisma.user.findUnique.mockResolvedValue(linkedUser);
+    prisma.user.findUniqueOrThrow.mockResolvedValue(linkedUser);
+
+    const response = await request(app.getHttpServer())
+      .post("/auth/telegram-mini/session")
+      .send({ initData })
+      .expect(200);
+
+    expect(response.body.user.image).toBe("/avatars/animals/cat-01.svg");
+    expect(prisma.authIdentity.update).toHaveBeenCalledWith({
+      where: {
+        provider_providerUserId: {
+          provider: "telegram",
+          providerUserId: "123",
+        },
+      },
+      data: {
+        username: "ada",
+        displayName: "Ada",
+        photoUrl: "https://t.me/i/userpic/320/ada-new.jpg",
+      },
+    });
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "user-1", image: null },
+      data: { image: "https://t.me/i/userpic/320/ada-new.jpg" },
+    });
   });
 });

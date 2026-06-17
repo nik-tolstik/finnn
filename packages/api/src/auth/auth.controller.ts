@@ -11,15 +11,20 @@ import {
   Query,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import {
   ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
+  ApiConsumes,
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -41,6 +46,7 @@ import {
   SuccessResponseDto,
   TelegramMiniAppSessionDto,
   UpdateUserDto,
+  UploadUserAvatarDto,
   VerifyEmailResponseDto,
 } from "./auth.dto";
 import { AuthGuard } from "./auth.guard";
@@ -281,6 +287,53 @@ export class AuthController {
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
   async updateUser(@CurrentUser() user: AuthenticatedUser, @Body() body: UpdateUserDto) {
     return { user: await this.authService.updateUser(user.id, body) };
+  }
+
+  @Post("user/avatar")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor("file"))
+  @ApiCookieAuth(AUTH_COOKIE_NAME)
+  @ApiOperation({ operationId: "uploadUserAvatar", summary: "Upload current user avatar" })
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({ type: UploadUserAvatarDto })
+  @ApiOkResponse({ type: AuthUserResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  async uploadUserAvatar(@CurrentUser() user: AuthenticatedUser, @UploadedFile() file?: Express.Multer.File) {
+    return { user: await this.authService.uploadUserAvatar(user.id, file) };
+  }
+
+  @Delete("user/avatar")
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(AUTH_COOKIE_NAME)
+  @ApiOperation({ operationId: "deleteUserAvatar", summary: "Clear current user avatar" })
+  @ApiOkResponse({ type: AuthUserResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  async deleteUserAvatar(@CurrentUser() user: AuthenticatedUser) {
+    return { user: await this.authService.deleteUserAvatar(user.id) };
+  }
+
+  @Get("users/:userId/avatar")
+  @ApiOperation({ operationId: "getUserAvatar", summary: "Redirect to the current uploaded user avatar object" })
+  @ApiParam({ name: "userId", type: String })
+  @ApiFoundResponse({
+    description: "Redirects to a short-lived private bucket URL.",
+    headers: {
+      Location: {
+        description: "Short-lived presigned avatar object URL.",
+        schema: { type: "string" },
+      },
+    },
+    schema: { type: "string" },
+  })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async getUserAvatar(@Param("userId") userId: string, @Res() response: Response) {
+    const url = await this.authService.getUserAvatarReadUrl(userId);
+    response.setHeader("Cache-Control", "no-store, max-age=0");
+    response.redirect(url);
   }
 
   @Post("email")

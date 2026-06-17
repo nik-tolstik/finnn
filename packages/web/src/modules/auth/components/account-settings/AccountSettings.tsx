@@ -20,6 +20,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { cn } from "@/shared/utils/cn";
 
+import { deleteCurrentUserAvatar, uploadCurrentUserAvatar } from "../../auth.api";
 import { type UpdateUserInput, updateUserSchema } from "../../auth.validations";
 import { redirectToTelegramLink } from "../../telegram-auth-url";
 import { AvatarPickerDialog } from "../avatar-picker-dialog/AvatarPickerDialog";
@@ -103,6 +104,43 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Не удалось обновить настройки");
+    },
+  });
+
+  const avatarUploadMutation = useMutation({
+    mutationFn: (file: File) => uploadCurrentUserAvatar(file),
+    onSuccess: async (result) => {
+      await updateSession();
+      setValue("image", result.user.image ?? null, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+      reset({
+        name: result.user.name || "",
+        image: result.user.image || null,
+      });
+      toast.success("Аватар обновлен");
+    },
+  });
+
+  const avatarDeleteMutation = useMutation({
+    mutationFn: () => deleteCurrentUserAvatar(),
+    onSuccess: async (result) => {
+      await updateSession();
+      setValue("image", result.user.image ?? null, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+      reset({
+        name: result.user.name || "",
+        image: result.user.image || null,
+      });
+      toast.success("Аватар сброшен");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Не удалось сбросить аватар");
     },
   });
 
@@ -286,13 +324,22 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
         selectedImage={selectedImage}
         previewName={currentName}
         previewEmail={session.user.email}
-        onSelect={(image) => {
+        onSelect={async (image) => {
+          if (image === null) {
+            await avatarDeleteMutation.mutateAsync();
+            return;
+          }
+
           setValue("image", image, {
             shouldDirty: true,
             shouldTouch: true,
             shouldValidate: true,
           });
         }}
+        onUpload={async (file) => {
+          await avatarUploadMutation.mutateAsync(file);
+        }}
+        uploadPending={avatarUploadMutation.isPending || avatarDeleteMutation.isPending}
       />
     </>
   );

@@ -6,7 +6,7 @@ The Prisma schema in `packages/api/prisma/schema.prisma` is the source of truth.
 
 Main models:
 
-- `User` - authenticated user with optional email, optional password, and verified email state.
+- `User` - authenticated user with optional email, optional password, verified email state, display avatar URL, and optional uploaded avatar storage key.
 - `AuthIdentity` - external sign-in identity linked to a user, currently used for Telegram.
 - `Workspace` - shared financial space with owner, members, accounts, categories, transactions, transfers, debts, and invites.
 - `WorkspaceMember` - user membership and role inside a workspace.
@@ -36,6 +36,11 @@ External identities are stored in `AuthIdentity`:
 
 Telegram OIDC login/linking and Telegram Mini App launch authentication both use `provider = "telegram"`, so the same
 Telegram account resolves to the same Finnn user across browser login, account linking, and Mini App launch.
+
+`User.image` is the display avatar field used by API DTOs and the web UI. It can be `null` for the generated initial
+avatar, a bundled preset path under `/avatars/`, a Telegram photo URL, or the stable uploaded-avatar path
+`/auth/users/:userId/avatar`. Uploaded avatar object keys are stored separately in `User.avatarStorageKey` so replacing
+or clearing an uploaded avatar can clean up the old private bucket object.
 
 The pair `(provider, providerUserId)` is unique. MongoDB must also keep a partial unique index on `users.email`
 for string email values only, so multiple users without email are valid while duplicate real email addresses are not.

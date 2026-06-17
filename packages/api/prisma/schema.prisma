@@ -19,6 +19,7 @@ model User {
   email         String?
   name          String?
   image         String?
+  avatarStorageKey String?
   password      String?
   emailVerified DateTime?
   createdAt     DateTime  @default(now())

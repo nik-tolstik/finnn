@@ -39,7 +39,12 @@ export class UpdateUserDto {
   @ApiPropertyOptional({ example: "avatar-01", nullable: true, type: String })
   @IsOptional()
   @IsString()
-  image!: string | null;
+  image?: string | null;
+}
+
+export class UploadUserAvatarDto {
+  @ApiProperty({ format: "binary", type: "string" })
+  file!: unknown;
 }
 
 export class RequestEmailVerificationDto {
