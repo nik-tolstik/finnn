@@ -2,7 +2,7 @@
 
 import type { Placement } from "@floating-ui/react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, ArrowRight, Building, Check, LogOut, Plus, Settings } from "lucide-react";
+import { Archive, ArrowLeftRight, Building, Check, LogOut, Plus, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -39,7 +39,6 @@ export function WorkspaceDropdown({
 }: WorkspaceDropdownProps) {
   const router = useRouter();
   const { data: session } = useSession();
-  const [open, setOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
   const createDialog = useDialogState();
   const settingsDialog = useDialogState<{ workspaceId: string }>();
@@ -64,13 +63,11 @@ export function WorkspaceDropdown({
 
   const handleWorkspaceSelect = (workspaceId: string) => {
     router.push(`/dashboard?workspaceId=${workspaceId}`);
-    setOpen(false);
     setSwitchOpen(false);
     onWorkspaceSelect?.();
   };
 
   const handleCreateWorkspace = () => {
-    setOpen(false);
     setSwitchOpen(false);
     createDialog.openDialog(null);
   };
@@ -124,45 +121,64 @@ export function WorkspaceDropdown({
     return (
       <>
         <section className={cn("space-y-2", className)}>
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Building className="size-4 shrink-0 text-muted-foreground" />
-            <span className="truncate">{triggerLabel}</span>
-          </div>
+          <div className="rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
+            <button
+              type="button"
+              disabled={!currentWorkspaceId}
+              onClick={() => {
+                if (currentWorkspaceId) {
+                  settingsDialog.openDialog({
+                    workspaceId: currentWorkspaceId,
+                  });
+                }
+              }}
+              className="flex w-full items-start gap-3 rounded-md text-left transition-colors enabled:hover:bg-accent enabled:hover:text-accent-foreground disabled:cursor-default"
+            >
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-muted-foreground">
+                <Building className="size-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-medium text-muted-foreground">Workspace</div>
+                <div className="truncate text-sm font-semibold">{triggerLabel}</div>
+              </div>
+              {currentWorkspaceId && (
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground">
+                  <Settings className="size-4" />
+                  <span className="sr-only">Открыть настройки workspace</span>
+                </span>
+              )}
+            </button>
 
-          <div className="space-y-1">
             {currentWorkspaceId && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (currentWorkspaceId) {
-                      settingsDialog.openDialog({
-                        workspaceId: currentWorkspaceId,
-                      });
-                    }
-                  }}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
-                >
-                  <Settings className="size-4 text-muted-foreground" />
-                  <span>Настройки</span>
-                </button>
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setSwitchOpen(true)}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                  className="flex min-w-0 items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
-                  <ArrowRight className="size-4 text-muted-foreground" />
-                  <span>Перейти</span>
+                  <ArrowLeftRight className="size-4" />
+                  <span className="truncate">Сменить</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => archivedAccountsDialog.openDialog(null)}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                  className="flex min-w-0 items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
-                  <Archive className="size-4 text-muted-foreground" />
-                  <span>Архив</span>
+                  <Archive className="size-4" />
+                  <span className="truncate">Архив</span>
                 </button>
-              </>
+              </div>
+            )}
+
+            {!currentWorkspaceId && (
+              <button
+                type="button"
+                onClick={handleCreateWorkspace}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                <Plus className="size-4 text-muted-foreground" />
+                <span>Создать workspace</span>
+              </button>
             )}
             {currentWorkspaceId && !isOwner && (
               <button
@@ -175,10 +191,10 @@ export function WorkspaceDropdown({
                     });
                   }
                 }}
-                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
               >
                 <LogOut className="size-4" />
-                <span>Покинуть</span>
+                <span>Покинуть workspace</span>
               </button>
             )}
           </div>
@@ -187,7 +203,7 @@ export function WorkspaceDropdown({
         <Dialog open={switchOpen} onOpenChange={setSwitchOpen}>
           <DialogWindow mobilePosition="bottom" className="max-h-[82dvh] rounded-t-lg sm:w-100">
             <DialogHeader>
-              <DialogTitle>Перейти в workspace</DialogTitle>
+              <DialogTitle>Выберите workspace</DialogTitle>
             </DialogHeader>
             <DialogContent className="space-y-2">
               {workspaces.map((workspace) => {
@@ -200,11 +216,14 @@ export function WorkspaceDropdown({
                     disabled={selected}
                     onClick={() => handleWorkspaceSelect(workspace.id)}
                     className={cn(
-                      "flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors",
-                      selected ? "bg-accent text-accent-foreground" : "hover:bg-accent hover:text-accent-foreground"
+                      "flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors",
+                      selected
+                        ? "border-primary/30 bg-accent text-accent-foreground"
+                        : "bg-card hover:bg-accent hover:text-accent-foreground"
                     )}
                   >
-                    <span className="truncate">{workspace.name}</span>
+                    <Building className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1 truncate font-medium">{workspace.name}</span>
                     {selected && <Check className="size-4 shrink-0 text-primary" />}
                   </button>
                 );
@@ -213,10 +232,10 @@ export function WorkspaceDropdown({
                 <button
                   type="button"
                   onClick={handleCreateWorkspace}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
                   <Plus className="size-4 text-muted-foreground" />
-                  <span>Создать новый</span>
+                  <span>Создать workspace</span>
                 </button>
               </div>
             </DialogContent>
@@ -228,145 +247,224 @@ export function WorkspaceDropdown({
     );
   }
 
+  if (!collapsed) {
+    return (
+      <>
+        <section className={cn("space-y-2", className)}>
+          <button
+            type="button"
+            disabled={!currentWorkspaceId}
+            onClick={() => {
+              if (currentWorkspaceId) {
+                settingsDialog.openDialog({
+                  workspaceId: currentWorkspaceId,
+                });
+              }
+            }}
+            className="flex w-full items-start gap-3 rounded-lg border bg-card p-3 text-left text-card-foreground shadow-sm transition-colors enabled:hover:bg-accent enabled:hover:text-accent-foreground disabled:cursor-default"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-muted-foreground">
+              <Building className="size-4" />
+            </div>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-medium text-muted-foreground">Workspace</span>
+              <span className="block truncate text-sm font-semibold">{triggerLabel}</span>
+            </span>
+            {currentWorkspaceId && <Settings className="mt-1 size-4 shrink-0 text-muted-foreground" />}
+          </button>
+
+          {currentWorkspaceId ? (
+            <div className="space-y-1">
+              <Popover
+                open={switchOpen}
+                onOpenChange={setSwitchOpen}
+                placement="right-start"
+                offset={8}
+                className="w-64 p-0"
+                onMouseEnter={handleSwitchMouseEnter}
+                onMouseLeave={handleSwitchMouseLeave}
+                trigger={({ ref, ...triggerProps }) => (
+                  <button
+                    ref={ref}
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    {...triggerProps}
+                    onMouseEnter={handleSwitchMouseEnter}
+                    onMouseLeave={handleSwitchMouseLeave}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <ArrowLeftRight className="size-4" />
+                    <span className="truncate">Сменить</span>
+                  </button>
+                )}
+              >
+                <div className="p-2">
+                  <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Workspaces</div>
+                  <div className="space-y-1">
+                    {workspaces
+                      .filter((w) => w.id !== currentWorkspaceId)
+                      .map((workspace) => (
+                        <button
+                          type="button"
+                          key={workspace.id}
+                          onClick={() => handleWorkspaceSelect(workspace.id)}
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent"
+                        >
+                          <span className="truncate">{workspace.name}</span>
+                        </button>
+                      ))}
+                  </div>
+                  <div className="mt-2 border-t pt-2">
+                    <button
+                      type="button"
+                      onClick={handleCreateWorkspace}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent"
+                    >
+                      <Plus className="size-4 text-muted-foreground" />
+                      <span>Создать workspace</span>
+                    </button>
+                  </div>
+                </div>
+              </Popover>
+              <button
+                type="button"
+                onClick={() => archivedAccountsDialog.openDialog(null)}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Archive className="size-4" />
+                <span className="truncate">Архив</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleCreateWorkspace}
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <Plus className="size-4 text-muted-foreground" />
+              <span>Создать workspace</span>
+            </button>
+          )}
+
+          {currentWorkspaceId && !isOwner && (
+            <button
+              type="button"
+              onClick={() => {
+                if (currentWorkspaceId && currentWorkspace) {
+                  leaveDialog.openDialog({
+                    workspaceId: currentWorkspaceId,
+                    workspaceName: currentWorkspace.name,
+                  });
+                }
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+            >
+              <LogOut className="size-4" />
+              <span>Покинуть workspace</span>
+            </button>
+          )}
+        </section>
+        {dialogs}
+      </>
+    );
+  }
+
   return (
     <>
-      <Popover
-        open={open}
-        onOpenChange={(newOpen) => {
-          setOpen(newOpen);
-          if (!newOpen) {
-            setSwitchOpen(false);
-          }
-        }}
-        placement={placement}
-        className="w-64 p-0"
-        trigger={({ ref, ...triggerProps }) => (
-          <Tooltip content={triggerLabel} disabled={!collapsed} side="right">
-            <button
-              ref={ref}
-              type="button"
-              aria-label={collapsed ? `Workspace: ${triggerLabel}` : undefined}
-              className={cn(
-                "cursor-pointer flex items-center gap-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent",
-                collapsed ? "size-10 justify-center px-0 py-0" : "px-3 py-2",
-                className
+      <section className={cn("flex flex-col items-center gap-1", className)}>
+        {currentWorkspaceId ? (
+          <>
+            <Tooltip content={triggerLabel} delayDuration={0} side="right">
+              <button
+                type="button"
+                aria-label={`Workspace: ${triggerLabel}`}
+                onClick={() => {
+                  settingsDialog.openDialog({
+                    workspaceId: currentWorkspaceId,
+                  });
+                }}
+                className="flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Building className="size-5" />
+              </button>
+            </Tooltip>
+            <Popover
+              open={switchOpen}
+              onOpenChange={setSwitchOpen}
+              placement={placement}
+              offset={8}
+              className="w-64 p-0"
+              trigger={({ ref, ...triggerProps }) => (
+                <Tooltip content="Сменить workspace" delayDuration={0} side="right">
+                  <button
+                    ref={ref}
+                    type="button"
+                    aria-label="Сменить workspace"
+                    className="flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    {...triggerProps}
+                    onClick={(event) => {
+                      triggerProps.onClick?.(event);
+                    }}
+                  >
+                    <ArrowLeftRight className="size-5" />
+                  </button>
+                </Tooltip>
               )}
-              {...triggerProps}
             >
-              <Building className="h-4 w-4 shrink-0" />
-              {!collapsed && <span className="max-w-[200px] truncate">{triggerLabel}</span>}
+              <div className="p-2">
+                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Workspaces</div>
+                <div className="space-y-1">
+                  {workspaces
+                    .filter((w) => w.id !== currentWorkspaceId)
+                    .map((workspace) => (
+                      <button
+                        type="button"
+                        key={workspace.id}
+                        onClick={() => handleWorkspaceSelect(workspace.id)}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent"
+                      >
+                        <span className="truncate">{workspace.name}</span>
+                      </button>
+                    ))}
+                </div>
+                <div className="mt-2 border-t pt-2">
+                  <button
+                    type="button"
+                    onClick={handleCreateWorkspace}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent"
+                  >
+                    <Plus className="size-4 text-muted-foreground" />
+                    <span>Создать workspace</span>
+                  </button>
+                </div>
+              </div>
+            </Popover>
+            <Tooltip content="Архив" delayDuration={0} side="right">
+              <button
+                type="button"
+                aria-label="Архив"
+                onClick={() => archivedAccountsDialog.openDialog(null)}
+                className="flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Archive className="size-5" />
+              </button>
+            </Tooltip>
+          </>
+        ) : (
+          <Tooltip content="Создать workspace" delayDuration={0} side="right">
+            <button
+              type="button"
+              aria-label="Создать workspace"
+              onClick={handleCreateWorkspace}
+              className="flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <Plus className="size-5" />
             </button>
           </Tooltip>
         )}
-      >
-        <div className="p-2">
-          <div className="mt-2 space-y-1">
-            {currentWorkspaceId && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    if (currentWorkspaceId) {
-                      settingsDialog.openDialog({
-                        workspaceId: currentWorkspaceId,
-                      });
-                    }
-                  }}
-                  className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  <span>Настройки</span>
-                </button>
-                <Popover
-                  open={switchOpen}
-                  onOpenChange={setSwitchOpen}
-                  placement="right-start"
-                  offset={8}
-                  className="w-64 p-0"
-                  onMouseEnter={handleSwitchMouseEnter}
-                  onMouseLeave={handleSwitchMouseLeave}
-                  trigger={({ ref, ...triggerProps }) => (
-                    <button
-                      ref={ref}
-                      type="button"
-                      className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                      {...triggerProps}
-                      onMouseEnter={handleSwitchMouseEnter}
-                      onMouseLeave={handleSwitchMouseLeave}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                    >
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      <span>Перейти</span>
-                    </button>
-                  )}
-                >
-                  <div className="p-2">
-                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Workspaces</div>
-                    <div className="space-y-1">
-                      {workspaces
-                        .filter((w) => w.id !== currentWorkspaceId)
-                        .map((workspace) => (
-                          <button
-                            type="button"
-                            key={workspace.id}
-                            onClick={() => handleWorkspaceSelect(workspace.id)}
-                            className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                          >
-                            <span className="truncate">{workspace.name}</span>
-                          </button>
-                        ))}
-                    </div>
-                    <div className="mt-2 pt-2 border-t">
-                      <button
-                        type="button"
-                        onClick={handleCreateWorkspace}
-                        className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                      >
-                        <Plus className="h-4 w-4 text-muted-foreground" />
-                        <span>Создать новый</span>
-                      </button>
-                    </div>
-                  </div>
-                </Popover>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    if (currentWorkspaceId) {
-                      archivedAccountsDialog.openDialog(null);
-                    }
-                  }}
-                  className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-                >
-                  <Archive className="h-4 w-4 text-muted-foreground" />
-                  <span>Архив</span>
-                </button>
-              </>
-            )}
-            {currentWorkspaceId && !isOwner && (
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  if (currentWorkspaceId && currentWorkspace) {
-                    leaveDialog.openDialog({
-                      workspaceId: currentWorkspaceId,
-                      workspaceName: currentWorkspace.name,
-                    });
-                  }
-                }}
-                className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2 text-destructive"
-              >
-                <LogOut className="h-4 w-4 text-destructive" />
-                <span>Покинуть</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </Popover>
+      </section>
       {dialogs}
     </>
   );

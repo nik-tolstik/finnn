@@ -37,7 +37,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         <Suspense fallback={null}>
           <Header />
         </Suspense>
-        <main className="flex-1 p-4 pb-28 md:p-8">{children}</main>
+        <main className="flex-1 px-4 pb-20 md:p-8">{children}</main>
         <Suspense fallback={null}>
           <FloatingActionButton />
         </Suspense>
