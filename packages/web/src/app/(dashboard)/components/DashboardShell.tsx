@@ -6,7 +6,6 @@ import { Suspense } from "react";
 import { cn } from "@/shared/utils/cn";
 import { useUIStore } from "@/stores/ui-store";
 
-import { ExchangeRatesTicker } from "./ExchangeRatesTicker";
 import { FloatingActionButton } from "./FloatingActionButton";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
@@ -23,17 +22,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           sidebarOpen ? "md:pl-64" : "md:pl-[72px]"
         )}
       >
-        <Suspense
-          fallback={
-            <div className="h-8 bg-muted/50 border-b">
-              <div className="flex items-center h-full px-4 sm:px-8">
-                <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-              </div>
-            </div>
-          }
-        >
-          <ExchangeRatesTicker />
-        </Suspense>
         <Suspense fallback={null}>
           <Header />
         </Suspense>

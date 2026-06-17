@@ -30,7 +30,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
         <div className="flex flex-col text-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="text-xs font-medium">{isLent ? "Кредит" : "Дебет"}</div>
+              <div className="text-xs font-medium">{isLent ? "Мне должны" : "Я должен"}</div>
             </div>
             <span className="text-xs text-muted-foreground">
               {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}

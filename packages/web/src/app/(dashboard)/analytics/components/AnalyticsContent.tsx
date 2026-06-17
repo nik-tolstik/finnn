@@ -6,6 +6,10 @@ import { Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 
+import {
+  DashboardExchangeRatesCards,
+  useDashboardExchangeRates,
+} from "@/app/(dashboard)/components/dashboard-exchange-rates";
 import { getAccounts } from "@/modules/accounts/account.api";
 import {
   toAnalyticsErrorResult,
@@ -81,6 +85,30 @@ function SecondaryMetricCard({ title, value }: { title: string; value: string })
       </CardHeader>
     </Card>
   );
+}
+
+function MobileExchangeRates({ workspaceId }: { workspaceId: string }) {
+  const { isLoading, rates, shouldRender } = useDashboardExchangeRates(workspaceId);
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-3 gap-2 md:hidden">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div className="rounded-md border bg-background p-3" key={index}>
+            <Skeleton className="mb-3 size-5 rounded-full" />
+            <Skeleton className="mb-2 h-3 w-14" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!shouldRender) {
+    return null;
+  }
+
+  return <DashboardExchangeRatesCards className="md:hidden" rates={rates} />;
 }
 
 export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
@@ -190,6 +218,8 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
             Период: {formatRangeLabel(analytics.effectiveRange.startDate, analytics.effectiveRange.endDate)}
           </p>
         ) : null}
+
+        <MobileExchangeRates workspaceId={workspaceId} />
 
         {isInitialLoading ? (
           <div className="space-y-6">

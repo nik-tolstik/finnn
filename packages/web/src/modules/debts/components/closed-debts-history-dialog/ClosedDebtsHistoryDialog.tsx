@@ -59,11 +59,11 @@ export function ClosedDebtsHistoryDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogWindow onCloseComplete={onCloseComplete} className="max-h-[80vh]">
+        <DialogWindow onCloseComplete={onCloseComplete} className="sm:max-h-[82dvh] sm:w-[560px]">
           <DialogHeader>
             <DialogTitle>История закрытых долгов</DialogTitle>
           </DialogHeader>
-          <DialogContent>
+          <DialogContent className="min-h-0 overflow-y-auto">
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (

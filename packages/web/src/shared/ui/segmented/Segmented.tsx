@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type * as React from "react";
-import { cloneElement, useCallback, useId, useLayoutEffect, useRef, useState } from "react";
+import { cloneElement, isValidElement, useCallback, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/shared/utils/cn";
 
@@ -159,6 +159,10 @@ export function Segmented<TValue extends string | number = string>({
       {options.map((option, index) => {
         const isSelected = option.value === value;
         const isOptionDisabled = disabled || option.disabled;
+        const labelIsVisuallyHidden =
+          isValidElement<{ className?: string }>(option.label) &&
+          typeof option.label.props.className === "string" &&
+          option.label.props.className.split(/\s+/).includes("sr-only");
 
         return (
           <label
@@ -168,15 +172,14 @@ export function Segmented<TValue extends string | number = string>({
             key={String(option.value)}
             data-state={isSelected ? "active" : "inactive"}
             className={cn(
-              "relative inline-flex min-w-0 items-center justify-center gap-2 rounded-lg px-2 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
+              "relative inline-flex min-w-0 items-center justify-center rounded-lg px-2 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
               layout === "fill" ? "min-h-9 flex-1" : "min-h-9 flex-none",
+              option.icon && !labelIsVisuallyHidden && "gap-2",
               isOptionDisabled ? "cursor-default opacity-60" : "cursor-pointer",
+              option.className,
               isSelected
                 ? cn("text-foreground", option.selectedClassName)
-                : cn(
-                    "text-muted-foreground hover:bg-background/55 hover:text-foreground dark:hover:bg-background/10",
-                    option.className
-                  )
+                : "text-muted-foreground hover:bg-background/55 hover:text-foreground dark:hover:bg-background/10"
             )}
           >
             <input
@@ -219,8 +222,13 @@ export function Segmented<TValue extends string | number = string>({
               tabIndex={isOptionDisabled ? -1 : index === activeIndex ? 0 : -1}
               className="sr-only"
             />
-            {option.icon &&
-              cloneElement(option.icon, { className: cn("relative z-10 size-3.5", option.icon.props.className) })}
+            {option.icon ? (
+              <span className="relative z-10 flex size-3.5 shrink-0 items-center justify-center">
+                {cloneElement(option.icon, {
+                  className: cn(option.icon.props.className, "size-full shrink-0"),
+                })}
+              </span>
+            ) : null}
             <span className="relative z-10 min-w-0 truncate">{option.label}</span>
           </label>
         );
