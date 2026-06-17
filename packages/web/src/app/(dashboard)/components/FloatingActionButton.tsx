@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
+import { CreateDebtDialog } from "@/modules/debts/components/create-debt-dialog";
 import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
@@ -30,6 +31,8 @@ export function FloatingActionButton() {
   const workspaceId = searchParams.get("workspaceId") || undefined;
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
   const createTransactionDialog = useDialogState();
+  const createDebtDialog = useDialogState();
+  const isDebtsPage = pathname === "/debts";
   const selectedIndex = DASHBOARD_NAV_ITEMS.findIndex((item) => item.href === pathname);
 
   const updateIndicator = useCallback(() => {
@@ -81,19 +84,26 @@ export function FloatingActionButton() {
   }, [selectedIndex, updateIndicator]);
 
   const handleClick = () => {
-    if (workspaceId) {
-      createTransactionDialog.openDialog(null);
+    if (!workspaceId) {
+      return;
     }
+
+    if (isDebtsPage) {
+      createDebtDialog.openDialog(null);
+      return;
+    }
+
+    createTransactionDialog.openDialog(null);
   };
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),0.5rem)] z-50 flex items-center justify-center md:hidden">
+      <div className="pointer-events-none fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),0.5rem)] z-50 flex items-center justify-start md:hidden">
         <div className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3">
           <nav
             ref={navRef}
             aria-label="Основная мобильная навигация"
-            className="relative isolate grid flex-1 grid-cols-3 gap-1 rounded-full border border-white/40 bg-background/72 p-1 shadow-[0_18px_50px_rgba(15,23,42,0.20)] backdrop-blur-2xl dark:border-white/10 dark:bg-background/70"
+            className="relative isolate grid w-fit grid-cols-[repeat(3,4.5rem)] gap-1 rounded-full border border-white/40 bg-background/72 p-1 shadow-[0_18px_50px_rgba(15,23,42,0.20)] backdrop-blur-2xl dark:border-white/10 dark:bg-background/70"
           >
             {indicatorMetrics.width > 0 ? (
               <motion.span
@@ -139,7 +149,7 @@ export function FloatingActionButton() {
             onClick={handleClick}
             size="icon"
             disabled={!workspaceId}
-            aria-label="Добавить транзакцию"
+            aria-label={isDebtsPage ? "Добавить долг" : "Добавить транзакцию"}
             className="size-14 rounded-full border border-white/40 bg-primary text-primary-foreground shadow-[0_18px_50px_rgba(47,107,255,0.28)] backdrop-blur-2xl hover:bg-primary/90 dark:border-white/10"
           >
             <Plus className="size-6" />
@@ -152,6 +162,14 @@ export function FloatingActionButton() {
           open={createTransactionDialog.open}
           onOpenChange={createTransactionDialog.closeDialog}
           onCloseComplete={createTransactionDialog.unmountDialog}
+        />
+      )}
+      {createDebtDialog.mounted && workspaceId && (
+        <CreateDebtDialog
+          workspaceId={workspaceId}
+          open={createDebtDialog.open}
+          onOpenChange={createDebtDialog.closeDialog}
+          onCloseComplete={createDebtDialog.unmountDialog}
         />
       )}
     </>

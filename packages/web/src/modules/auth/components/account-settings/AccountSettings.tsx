@@ -226,6 +226,38 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
           {errors.image && <p className="text-sm text-destructive">{errors.image.message}</p>}
         </div>
 
+        <div className="space-y-3 border-t pt-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-sm font-medium">Telegram</div>
+              <div className="truncate text-xs text-muted-foreground">
+                {session.user.telegram.linked
+                  ? session.user.telegram.username
+                    ? `@${session.user.telegram.username}`
+                    : session.user.telegram.displayName || "Подключен"
+                  : "Не подключен"}
+              </div>
+            </div>
+            {session.user.telegram.linked ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => unlinkTelegramMutation.mutate({})}
+                disabled={unlinkTelegramMutation.isPending}
+              >
+                {unlinkTelegramMutation.isPending ? "Отключение..." : "Отключить"}
+              </Button>
+            ) : (
+              <div className="w-56 max-w-full">
+                <TelegramAuthButton
+                  disabled={unlinkTelegramMutation.isPending}
+                  onClick={() => redirectToTelegramLink("/dashboard")}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="flex min-h-9 justify-end gap-2">
           <Button
             type="button"
@@ -247,38 +279,6 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
           </Button>
         </div>
       </form>
-
-      <div className="space-y-3 border-t pt-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-sm font-medium">Telegram</div>
-            <div className="truncate text-xs text-muted-foreground">
-              {session.user.telegram.linked
-                ? session.user.telegram.username
-                  ? `@${session.user.telegram.username}`
-                  : session.user.telegram.displayName || "Подключен"
-                : "Не подключен"}
-            </div>
-          </div>
-          {session.user.telegram.linked ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => unlinkTelegramMutation.mutate({})}
-              disabled={unlinkTelegramMutation.isPending}
-            >
-              {unlinkTelegramMutation.isPending ? "Отключение..." : "Отключить"}
-            </Button>
-          ) : (
-            <div className="w-56 max-w-full">
-              <TelegramAuthButton
-                disabled={unlinkTelegramMutation.isPending}
-                onClick={() => redirectToTelegramLink("/dashboard")}
-              />
-            </div>
-          )}
-        </div>
-      </div>
 
       <AvatarPickerDialog
         open={avatarDialogOpen}

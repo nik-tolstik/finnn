@@ -30,7 +30,7 @@ interface DebtsListProps {
 
 function DebtTypeBadge({ debt }: { debt: DebtWithRelations }) {
   const isLent = debt.type === DebtType.LENT;
-  const label = isLent ? "Кредит" : "Дебет";
+  const label = isLent ? "Мне должны" : "Я должен";
 
   return <div className="text-sm">{label}</div>;
 }

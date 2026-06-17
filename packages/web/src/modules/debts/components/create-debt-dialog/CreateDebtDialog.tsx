@@ -199,13 +199,13 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
                 options={[
                   {
                     value: DebtType.LENT,
-                    label: "Кредит",
+                    label: "Дать в долг",
                     icon: <ArrowDownLeft className="h-4 w-4" />,
                     selectedClassName: "text-success",
                   },
                   {
                     value: DebtType.BORROWED,
-                    label: "Дебет",
+                    label: "Взять в долг",
                     icon: <ArrowUpRight className="h-4 w-4" />,
                     selectedClassName: "text-destructive",
                   },
