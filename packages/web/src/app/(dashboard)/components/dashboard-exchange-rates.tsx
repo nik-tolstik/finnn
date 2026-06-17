@@ -211,3 +211,25 @@ export function DashboardExchangeRatesList({
     </div>
   );
 }
+
+export function DashboardExchangeRatesCards({
+  className,
+  rates,
+}: {
+  className?: string;
+  rates: DashboardExchangeRate[];
+}) {
+  return (
+    <div className={cn("grid grid-cols-3 gap-2", className)}>
+      {rates.map((rate) => (
+        <div className="rounded-md border bg-background p-3 text-sm" key={rate.currency}>
+          <div className="mb-3 flex items-center gap-2">
+            <CurrencyFlag code={rate.flagCode} label={rate.flagLabel} />
+            <span className="font-medium text-foreground">{rate.currency}</span>
+          </div>
+          <p className="text-base font-semibold tabular-nums">{rate.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
