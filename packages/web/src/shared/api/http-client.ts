@@ -2,9 +2,17 @@ export type ErrorType<Error> = Error;
 export type BodyType<BodyData> = BodyData;
 
 type ApiErrorBody = {
+  code?: string;
   message?: string | string[];
   error?: string;
 };
+
+export type ApiClientError = Error & {
+  info?: unknown;
+  status?: number;
+};
+
+export const EMAIL_VERIFICATION_REQUIRED_CODE = "EMAIL_VERIFICATION_REQUIRED";
 
 async function parseResponseBody(response: Response): Promise<unknown> {
   if ([204, 205, 304].includes(response.status)) return undefined;
@@ -69,14 +77,25 @@ export async function apiClient<T>(url: string, options: RequestInit = {}): Prom
   const body = await parseResponseBody(response);
 
   if (!response.ok) {
-    const error = new Error(getErrorMessage(body)) as Error & {
-      info?: unknown;
-      status?: number;
-    };
+    const error = new Error(getErrorMessage(body)) as ApiClientError;
     error.info = body;
     error.status = response.status;
     throw error;
   }
 
   return body as T;
+}
+
+export function isApiClientError(error: unknown): error is ApiClientError {
+  return error instanceof Error && ("status" in error || "info" in error);
+}
+
+export function getApiErrorCode(error: unknown): string | null {
+  if (!isApiClientError(error) || !error.info || typeof error.info !== "object") return null;
+  const code = (error.info as ApiErrorBody).code;
+  return typeof code === "string" ? code : null;
+}
+
+export function isEmailVerificationRequiredError(error: unknown): boolean {
+  return getApiErrorCode(error) === EMAIL_VERIFICATION_REQUIRED_CODE;
 }

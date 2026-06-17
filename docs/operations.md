@@ -18,10 +18,10 @@ Backend API deployments are hosted on Railway:
 
 Keep environment variables aligned with the matching frontend/API pair:
 
-| Environment | `WEB_APP_URL` / `API_ALLOWED_ORIGINS` | `NEXT_PUBLIC_API_URL` | `TELEGRAM_REDIRECT_URI` | Mini App URL |
-| --- | --- | --- | --- | --- |
-| PROD | `https://finnn.xyz` | `https://api.finnn.xyz` | `https://api.finnn.xyz/auth/telegram/callback` | `https://finnn.xyz/dashboard` |
-| DEV | `https://dev.finnn.xyz` | `https://api-dev.finnn.xyz` | `https://api-dev.finnn.xyz/auth/telegram/callback` | `https://dev.finnn.xyz/dashboard` |
+| Environment | `WEB_APP_URL` / `API_ALLOWED_ORIGINS` | `NEXT_PUBLIC_API_URL` | `TELEGRAM_REDIRECT_URI` | `GOOGLE_REDIRECT_URI` | Mini App URL |
+| --- | --- | --- | --- | --- | --- |
+| PROD | `https://finnn.xyz` | `https://api.finnn.xyz` | `https://api.finnn.xyz/auth/telegram/callback` | `https://api.finnn.xyz/auth/google/callback` | `https://finnn.xyz/dashboard` |
+| DEV | `https://dev.finnn.xyz` | `https://api-dev.finnn.xyz` | `https://api-dev.finnn.xyz/auth/telegram/callback` | `https://api-dev.finnn.xyz/auth/google/callback` | `https://dev.finnn.xyz/dashboard` |
 
 Telegram authentication uses two separate bots:
 
@@ -53,6 +53,23 @@ TELEGRAM_BOT_TOKEN="production-bot-token"
 TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
 ```
 
+Google authentication variables are required when Google login/linking is enabled:
+
+```env
+GOOGLE_CLIENT_ID="google-oauth-client-id"
+GOOGLE_CLIENT_SECRET="google-oauth-client-secret"
+GOOGLE_REDIRECT_URI="https://production-api-url/auth/google/callback"
+GOOGLE_AUTH_STATE_SECRET="production-google-state-secret"
+GOOGLE_AUTH_STATE_TTL_SECONDS="600"
+```
+
+Register both deployment callback URLs in Google Cloud Console:
+
+```text
+https://api-dev.finnn.xyz/auth/google/callback
+https://api.finnn.xyz/auth/google/callback
+```
+
 BotFather setup:
 
 - Create or select the production bot.
@@ -72,6 +89,9 @@ SMTP_SECURE="false"
 SMTP_USER="smtp-user"
 SMTP_PASSWORD="smtp-password"
 SMTP_FROM="Finnn <no-reply@example.com>"
+PASSWORD_RESET_CODE_TTL_SECONDS="900"
+PASSWORD_RESET_MAX_ATTEMPTS="5"
+PASSWORD_RESET_RESEND_COOLDOWN_SECONDS="60"
 ```
 
 Avatar uploads require a private Railway Bucket exposed through its S3-compatible credentials:
@@ -135,6 +155,14 @@ TELEGRAM_CLIENT_SECRET="telegram-client-secret"
 TELEGRAM_REDIRECT_URI="https://production-api-url/auth/telegram/callback"
 TELEGRAM_AUTH_STATE_SECRET="production-telegram-state-secret"
 TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
+GOOGLE_CLIENT_ID="google-oauth-client-id"
+GOOGLE_CLIENT_SECRET="google-oauth-client-secret"
+GOOGLE_REDIRECT_URI="https://production-api-url/auth/google/callback"
+GOOGLE_AUTH_STATE_SECRET="production-google-state-secret"
+GOOGLE_AUTH_STATE_TTL_SECONDS="600"
+PASSWORD_RESET_CODE_TTL_SECONDS="900"
+PASSWORD_RESET_MAX_ATTEMPTS="5"
+PASSWORD_RESET_RESEND_COOLDOWN_SECONDS="60"
 TELEGRAM_BOT_TOKEN="production-bot-token"
 TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
 AVATAR_BUCKET="railway-bucket-name"

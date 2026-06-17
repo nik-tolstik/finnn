@@ -5,6 +5,7 @@ export type AuthenticatedUser = {
   email: string | null;
   name: string | null;
   image: string | null;
+  emailVerified: string | null;
 };
 
 export type AuthenticatedRequest = Request & {

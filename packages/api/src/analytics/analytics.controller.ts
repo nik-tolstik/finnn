@@ -14,6 +14,7 @@ import {
 } from "@nestjs/swagger";
 
 import { AuthGuard } from "@/auth/auth.guard";
+import { EmailVerifiedGuard } from "@/auth/email-verified.guard";
 import { AUTH_COOKIE_NAME } from "@/auth/session-cookie";
 import { ApiErrorDto } from "@/common/api-error.dto";
 import { WorkspaceAccessGuard } from "@/workspace/workspace-access.guard";
@@ -23,7 +24,7 @@ import { AnalyticsService } from "./analytics.service";
 
 @Controller("workspaces/:workspaceId/analytics")
 @ApiTags("Analytics")
-@UseGuards(AuthGuard, WorkspaceAccessGuard)
+@UseGuards(AuthGuard, EmailVerifiedGuard, WorkspaceAccessGuard)
 @ApiCookieAuth(AUTH_COOKIE_NAME)
 @ApiExtraModels(AnalyticsOverviewQueryDto)
 export class AnalyticsController {

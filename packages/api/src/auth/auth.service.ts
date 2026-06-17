@@ -19,11 +19,14 @@ import { PrismaService } from "@/prisma/prisma.service";
 
 import type {
   LoginDto,
+  PasswordResetConfirmDto,
+  PasswordResetRequestDto,
   RegisterDto,
   RequestEmailVerificationDto,
   TelegramMiniAppSessionDto,
   UpdateUserDto,
 } from "./auth.dto";
+import { type GoogleClaims, GoogleOidcClient } from "./google-oidc.client";
 import { getSessionExpiresAt, hashSessionToken } from "./session-cookie";
 import { validateTelegramMiniAppInitData } from "./telegram-mini-app";
 import { type TelegramClaims, TelegramOidcClient } from "./telegram-oidc.client";
@@ -34,19 +37,35 @@ const SESSION_TOKEN_BYTES = 32;
 const REGISTRATION_EXPIRY_DAYS = 7;
 const EMAIL_VERIFICATION_EXPIRY_DAYS = 7;
 const TELEGRAM_PROVIDER = "telegram";
+const GOOGLE_PROVIDER = "google";
+const PASSWORD_RESET_CODE_DIGITS = 6;
 const TELEGRAM_STATE_BYTES = 32;
 const TELEGRAM_NONCE_BYTES = 32;
 const TELEGRAM_CODE_VERIFIER_BYTES = 48;
 const DEFAULT_TELEGRAM_STATE_TTL_SECONDS = 600;
+const DEFAULT_GOOGLE_STATE_TTL_SECONDS = 600;
+const DEFAULT_PASSWORD_RESET_CODE_TTL_SECONDS = 900;
+const DEFAULT_PASSWORD_RESET_MAX_ATTEMPTS = 5;
+const DEFAULT_PASSWORD_RESET_RESEND_COOLDOWN_SECONDS = 60;
 const DEFAULT_AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 const ACCEPTED_AVATAR_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 type TelegramAuthMode = "login" | "link";
+type GoogleAuthMode = "login" | "link";
 type TelegramStatePayload = {
   state: string;
   nonce: string;
   codeVerifier: string;
   mode: TelegramAuthMode;
+  returnTo: string;
+  userId?: string;
+  expiresAt: number;
+};
+type GoogleStatePayload = {
+  state: string;
+  nonce: string;
+  codeVerifier: string;
+  mode: GoogleAuthMode;
   returnTo: string;
   userId?: string;
   expiresAt: number;
@@ -59,6 +78,13 @@ type TelegramIdentitySummary = {
   photoUrl: string | null;
 };
 
+type GoogleIdentitySummary = {
+  linked: boolean;
+  email: string | null;
+  displayName: string | null;
+  photoUrl: string | null;
+};
+
 type TelegramMiniAppRequestContext = {
   origin?: string;
   referer?: string;
@@ -66,7 +92,7 @@ type TelegramMiniAppRequestContext = {
   userAgent?: string;
 };
 
-type AuthUserWithIdentities = Pick<User, "id" | "email" | "name" | "image"> & {
+type AuthUserWithIdentities = Pick<User, "id" | "email" | "name" | "image" | "emailVerified"> & {
   authIdentities?: Array<{
     provider: string;
     username: string | null;
@@ -77,8 +103,8 @@ type AuthUserWithIdentities = Pick<User, "id" | "email" | "name" | "image"> & {
 
 type UserAvatarFile = Pick<Express.Multer.File, "buffer" | "mimetype" | "size">;
 
-const TELEGRAM_AUTH_IDENTITY_SELECT = {
-  where: { provider: TELEGRAM_PROVIDER },
+const AUTH_PROVIDER_IDENTITY_SELECT = {
+  where: { provider: { in: [TELEGRAM_PROVIDER, GOOGLE_PROVIDER] } },
   select: {
     provider: true,
     username: true,
@@ -92,7 +118,8 @@ const AUTH_USER_SELECT = {
   email: true,
   name: true,
   image: true,
-  authIdentities: TELEGRAM_AUTH_IDENTITY_SELECT,
+  emailVerified: true,
+  authIdentities: AUTH_PROVIDER_IDENTITY_SELECT,
 } satisfies Prisma.UserSelect;
 
 const LOGIN_USER_SELECT = {
@@ -111,13 +138,25 @@ function getTelegramSummary(user: AuthUserWithIdentities): TelegramIdentitySumma
   };
 }
 
+function getGoogleSummary(user: AuthUserWithIdentities): GoogleIdentitySummary {
+  const google = user.authIdentities?.find((identity) => identity.provider === GOOGLE_PROVIDER);
+  return {
+    linked: Boolean(google),
+    email: google?.username ?? null,
+    displayName: google?.displayName ?? null,
+    photoUrl: google?.photoUrl ?? null,
+  };
+}
+
 function toAuthUser(user: AuthUserWithIdentities) {
   return {
     id: user.id,
     email: user.email,
     name: user.name,
     image: user.image,
+    emailVerified: user.emailVerified?.toISOString() ?? null,
     telegram: getTelegramSummary(user),
+    google: getGoogleSummary(user),
   };
 }
 
@@ -157,6 +196,39 @@ function getTelegramStateSecret(): string {
   }
 
   return secret;
+}
+
+function getGoogleStateTtlSeconds(): number {
+  const configured = Number(process.env.GOOGLE_AUTH_STATE_TTL_SECONDS);
+  return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_GOOGLE_STATE_TTL_SECONDS;
+}
+
+function getGoogleStateSecret(): string {
+  const secret =
+    process.env.GOOGLE_AUTH_STATE_SECRET?.trim() ||
+    process.env.API_AUTH_SECRET?.trim() ||
+    process.env.API_COOKIE_SECRET?.trim();
+
+  if (!secret) {
+    throw new ServiceUnavailableException("GOOGLE_AUTH_STATE_SECRET is not configured");
+  }
+
+  return secret;
+}
+
+function getPasswordResetCodeTtlSeconds(): number {
+  const configured = Number(process.env.PASSWORD_RESET_CODE_TTL_SECONDS);
+  return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_PASSWORD_RESET_CODE_TTL_SECONDS;
+}
+
+function getPasswordResetMaxAttempts(): number {
+  const configured = Number(process.env.PASSWORD_RESET_MAX_ATTEMPTS);
+  return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_PASSWORD_RESET_MAX_ATTEMPTS;
+}
+
+function getPasswordResetResendCooldownSeconds(): number {
+  const configured = Number(process.env.PASSWORD_RESET_RESEND_COOLDOWN_SECONDS);
+  return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_PASSWORD_RESET_RESEND_COOLDOWN_SECONDS;
 }
 
 function getWebBaseUrl(): string {
@@ -210,6 +282,33 @@ function parseTelegramStateToken(token: string): TelegramStatePayload {
   return payload;
 }
 
+function signGoogleState(payload: GoogleStatePayload): string {
+  const body = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+  const signature = createHmac("sha256", getGoogleStateSecret()).update(body).digest("base64url");
+  return `${body}.${signature}`;
+}
+
+function parseGoogleStateToken(token: string): GoogleStatePayload {
+  const [body, signature] = token.split(".");
+  if (!body || !signature) {
+    throw new UnauthorizedException("Google authentication state is invalid");
+  }
+
+  const expectedSignature = createHmac("sha256", getGoogleStateSecret()).update(body).digest("base64url");
+  const actual = Buffer.from(signature);
+  const expected = Buffer.from(expectedSignature);
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+    throw new UnauthorizedException("Google authentication state is invalid");
+  }
+
+  const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as GoogleStatePayload;
+  if (payload.expiresAt < Date.now()) {
+    throw new UnauthorizedException("Google authentication state has expired");
+  }
+
+  return payload;
+}
+
 function getTelegramDisplayName(claims: TelegramClaims): string | null {
   return typeof claims.name === "string" && claims.name.trim() ? claims.name.trim() : null;
 }
@@ -238,6 +337,35 @@ function getTelegramProviderUserId(claims: TelegramClaims): string {
 
 function getTelegramProviderUserIdHash(providerUserId: string): string {
   return createHash("sha256").update(providerUserId).digest("hex").slice(0, 12);
+}
+
+function getGoogleEmail(claims: GoogleClaims): string | null {
+  return typeof claims.email === "string" && claims.email.trim() ? claims.email.trim() : null;
+}
+
+function isGoogleEmailVerified(claims: GoogleClaims): boolean {
+  return claims.email_verified === true;
+}
+
+function getGoogleDisplayName(claims: GoogleClaims): string | null {
+  return typeof claims.name === "string" && claims.name.trim() ? claims.name.trim() : null;
+}
+
+function getGooglePhotoUrl(claims: GoogleClaims): string | null {
+  return typeof claims.picture === "string" && claims.picture.trim() ? claims.picture.trim() : null;
+}
+
+function getPasswordResetExpiryDate(): Date {
+  return new Date(Date.now() + getPasswordResetCodeTtlSeconds() * 1000);
+}
+
+function createPasswordResetCode(): string {
+  const max = 10 ** PASSWORD_RESET_CODE_DIGITS;
+  return String(Number.parseInt(randomBytes(4).toString("hex"), 16) % max).padStart(PASSWORD_RESET_CODE_DIGITS, "0");
+}
+
+function isPasswordResetCodeFormat(value: string): boolean {
+  return /^\d{6}$/.test(value);
 }
 
 function getTelegramOidcIdLikeClaims(claims: TelegramClaims) {
@@ -295,6 +423,7 @@ export class AuthService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(EmailService) private readonly emailService: EmailService,
+    @Inject(GoogleOidcClient) private readonly googleOidcClient: GoogleOidcClient,
     @Inject(TelegramOidcClient) private readonly telegramOidcClient: TelegramOidcClient,
     @Inject(AvatarStorageService) private readonly avatarStorage: AvatarStorageService
   ) {}
@@ -716,6 +845,163 @@ export class AuthService {
     return { success: true };
   }
 
+  async requestPasswordReset(input: PasswordResetRequestDto): Promise<{ success: true }> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: input.email,
+        emailVerified: { not: null },
+      },
+      select: { id: true, email: true, name: true },
+    });
+
+    if (!user?.email) {
+      return { success: true };
+    }
+
+    const existingCode = await this.prisma.passwordResetCode.findUnique({
+      where: { userId: user.id },
+      select: { createdAt: true },
+    });
+    const cooldownStartedAt = new Date(Date.now() - getPasswordResetResendCooldownSeconds() * 1000);
+    if (existingCode && existingCode.createdAt > cooldownStartedAt) {
+      return { success: true };
+    }
+
+    const code = createPasswordResetCode();
+    const codeHash = await bcrypt.hash(code, 10);
+    await this.prisma.passwordResetCode.upsert({
+      where: { userId: user.id },
+      update: {
+        email: user.email,
+        codeHash,
+        expiresAt: getPasswordResetExpiryDate(),
+        attempts: 0,
+        createdAt: new Date(),
+      },
+      create: {
+        userId: user.id,
+        email: user.email,
+        codeHash,
+        expiresAt: getPasswordResetExpiryDate(),
+      },
+    });
+
+    const emailResult = await this.emailService.sendPasswordResetCode(user.email, code, user.name);
+    if ("error" in emailResult) {
+      this.logger.warn({
+        event: "password_reset_email_failed",
+        message: emailResult.error,
+        userId: user.id,
+      });
+    }
+
+    return { success: true };
+  }
+
+  async confirmPasswordReset(input: PasswordResetConfirmDto): Promise<{ success: true }> {
+    if (!isPasswordResetCodeFormat(input.code)) {
+      throw new BadRequestException("Неверный или истекший код восстановления");
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: input.email,
+        emailVerified: { not: null },
+      },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException("Неверный или истекший код восстановления");
+    }
+
+    const resetCode = await this.prisma.passwordResetCode.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (!resetCode || resetCode.email !== input.email || resetCode.expiresAt < new Date()) {
+      if (resetCode) {
+        await this.prisma.passwordResetCode.delete({ where: { id: resetCode.id } });
+      }
+      throw new BadRequestException("Неверный или истекший код восстановления");
+    }
+
+    if (resetCode.attempts >= getPasswordResetMaxAttempts()) {
+      await this.prisma.passwordResetCode.delete({ where: { id: resetCode.id } });
+      throw new BadRequestException("Неверный или истекший код восстановления");
+    }
+
+    const isValidCode = await bcrypt.compare(input.code, resetCode.codeHash);
+    if (!isValidCode) {
+      await this.prisma.passwordResetCode.update({
+        where: { id: resetCode.id },
+        data: { attempts: { increment: 1 } },
+      });
+      throw new BadRequestException("Неверный или истекший код восстановления");
+    }
+
+    const hashedPassword = await bcrypt.hash(input.password, 10);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      });
+      await tx.passwordResetCode.delete({
+        where: { id: resetCode.id },
+      });
+      await tx.authSession.updateMany({
+        where: {
+          userId: user.id,
+          OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
+        },
+        data: { revokedAt: new Date() },
+      });
+    });
+
+    return { success: true };
+  }
+
+  startGoogleLogin(returnTo?: string): { authorizationUrl: string; stateCookieValue: string; ttlSeconds: number } {
+    return this.createGoogleAuthorization("login", sanitizeReturnTo(returnTo));
+  }
+
+  startGoogleLink(
+    userId: string,
+    returnTo?: string
+  ): { authorizationUrl: string; stateCookieValue: string; ttlSeconds: number } {
+    return this.createGoogleAuthorization("link", sanitizeReturnTo(returnTo), userId);
+  }
+
+  async completeGoogleCallback(input: {
+    code: string;
+    state: string;
+    stateCookieValue: string | null;
+  }): Promise<{ token: string | null; returnTo: string; user: ReturnType<typeof toAuthUser> }> {
+    if (!input.stateCookieValue) {
+      throw new UnauthorizedException("Google authentication state is missing");
+    }
+
+    const statePayload = parseGoogleStateToken(input.stateCookieValue);
+    if (statePayload.state !== input.state) {
+      throw new UnauthorizedException("Google authentication state mismatch");
+    }
+
+    const claims = await this.googleOidcClient.exchangeCodeForClaims({
+      code: input.code,
+      codeVerifier: statePayload.codeVerifier,
+      nonce: statePayload.nonce,
+    });
+
+    if (statePayload.mode === "link") {
+      const user = await this.linkGoogleIdentityForUser(statePayload.userId, claims);
+      return { token: null, returnTo: statePayload.returnTo, user };
+    }
+
+    const user = await this.findOrCreateGoogleUser(claims);
+    const token = await this.createSessionForUser(user.id);
+    return { token, returnTo: statePayload.returnTo, user };
+  }
+
   startTelegramLogin(returnTo?: string): { authorizationUrl: string; stateCookieValue: string; ttlSeconds: number } {
     return this.createTelegramAuthorization("login", sanitizeReturnTo(returnTo));
   }
@@ -802,6 +1088,80 @@ export class AuthService {
     return { user: toAuthUser(updatedUser) };
   }
 
+  async unlinkGoogle(userId: string): Promise<{ user: ReturnType<typeof toAuthUser> }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        emailVerified: true,
+        authIdentities: {
+          select: {
+            id: true,
+            provider: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException("Не авторизован");
+    }
+
+    const googleIdentity = user.authIdentities.find((identity) => identity.provider === GOOGLE_PROVIDER);
+    if (!googleIdentity) {
+      throw new BadRequestException("Google не подключен");
+    }
+
+    const hasEmailPassword = Boolean(user.email && user.password && user.emailVerified);
+    const otherIdentityCount = user.authIdentities.filter((identity) => identity.provider !== GOOGLE_PROVIDER).length;
+    if (!hasEmailPassword && otherIdentityCount === 0) {
+      throw new BadRequestException("Нельзя отключить Google: добавьте и подтвердите email с паролем");
+    }
+
+    await this.prisma.authIdentity.delete({
+      where: { id: googleIdentity.id },
+    });
+
+    const updatedUser = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: AUTH_USER_SELECT,
+    });
+
+    return { user: toAuthUser(updatedUser) };
+  }
+
+  private createGoogleAuthorization(
+    mode: GoogleAuthMode,
+    returnTo: string,
+    userId?: string
+  ): { authorizationUrl: string; stateCookieValue: string; ttlSeconds: number } {
+    const ttlSeconds = getGoogleStateTtlSeconds();
+    const codeVerifier = randomBytes(TELEGRAM_CODE_VERIFIER_BYTES).toString("base64url");
+    const payload: GoogleStatePayload = {
+      state: randomBytes(TELEGRAM_STATE_BYTES).toString("hex"),
+      nonce: randomBytes(TELEGRAM_NONCE_BYTES).toString("hex"),
+      codeVerifier,
+      mode,
+      returnTo,
+      userId,
+      expiresAt: Date.now() + ttlSeconds * 1000,
+    };
+
+    const authorizationUrl = this.googleOidcClient.getAuthorizationUrl({
+      codeChallenge: createPkceChallenge(codeVerifier),
+      nonce: payload.nonce,
+      state: payload.state,
+    });
+
+    return {
+      authorizationUrl,
+      stateCookieValue: signGoogleState(payload),
+      ttlSeconds,
+    };
+  }
+
   private createTelegramAuthorization(
     mode: TelegramAuthMode,
     returnTo: string,
@@ -869,6 +1229,162 @@ export class AuthService {
       userAgent: context.userAgent,
       userId: context.userId,
     });
+  }
+
+  private async findOrCreateGoogleUser(claims: GoogleClaims): Promise<ReturnType<typeof toAuthUser>> {
+    const existingIdentity = await this.prisma.authIdentity.findUnique({
+      where: {
+        provider_providerUserId: {
+          provider: GOOGLE_PROVIDER,
+          providerUserId: claims.sub,
+        },
+      },
+      select: { userId: true },
+    });
+
+    if (existingIdentity) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { id: existingIdentity.userId },
+        select: AUTH_USER_SELECT,
+      });
+
+      if (!existingUser) {
+        throw new ConflictException("Google аккаунт привязан к несуществующему пользователю. Переподключите Google.");
+      }
+
+      await this.updateGoogleIdentity(existingIdentity.userId, claims);
+      const user = await this.prisma.user.findUniqueOrThrow({
+        where: { id: existingIdentity.userId },
+        select: AUTH_USER_SELECT,
+      });
+      return toAuthUser(user);
+    }
+
+    return this.createOrAutoLinkGoogleUser(claims);
+  }
+
+  private async createOrAutoLinkGoogleUser(claims: GoogleClaims): Promise<ReturnType<typeof toAuthUser>> {
+    const googleEmail = getGoogleEmail(claims);
+    const googleEmailVerified = isGoogleEmailVerified(claims);
+
+    return this.prisma.$transaction(async (tx) => {
+      if (googleEmail && googleEmailVerified) {
+        const existingUser = await tx.user.findFirst({
+          where: {
+            email: googleEmail,
+            emailVerified: { not: null },
+          },
+          select: { id: true },
+        });
+
+        if (existingUser) {
+          await tx.authIdentity.create({
+            data: this.getGoogleIdentityData(existingUser.id, claims),
+          });
+          const linkedUser = await tx.user.findUniqueOrThrow({
+            where: { id: existingUser.id },
+            select: AUTH_USER_SELECT,
+          });
+          return toAuthUser(linkedUser);
+        }
+
+        const user = await tx.user.create({
+          data: {
+            email: googleEmail,
+            emailVerified: new Date(),
+            name: getGoogleDisplayName(claims),
+            image: getGooglePhotoUrl(claims),
+          },
+          select: { id: true },
+        });
+        await tx.authIdentity.create({
+          data: this.getGoogleIdentityData(user.id, claims),
+        });
+        const createdUser = await tx.user.findUniqueOrThrow({
+          where: { id: user.id },
+          select: AUTH_USER_SELECT,
+        });
+        return toAuthUser(createdUser);
+      }
+
+      const user = await tx.user.create({
+        data: {
+          email: null,
+          name: getGoogleDisplayName(claims) ?? googleEmail,
+          image: getGooglePhotoUrl(claims),
+        },
+        select: { id: true },
+      });
+      await tx.authIdentity.create({
+        data: this.getGoogleIdentityData(user.id, claims),
+      });
+      const createdUser = await tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: AUTH_USER_SELECT,
+      });
+      return toAuthUser(createdUser);
+    });
+  }
+
+  private async linkGoogleIdentityForUser(
+    userId: string | undefined,
+    claims: GoogleClaims
+  ): Promise<ReturnType<typeof toAuthUser>> {
+    if (!userId) {
+      throw new UnauthorizedException("Google link state is invalid");
+    }
+
+    const existingIdentity = await this.prisma.authIdentity.findUnique({
+      where: {
+        provider_providerUserId: {
+          provider: GOOGLE_PROVIDER,
+          providerUserId: claims.sub,
+        },
+      },
+      select: { userId: true },
+    });
+
+    if (existingIdentity && existingIdentity.userId !== userId) {
+      throw new ConflictException("Этот Google аккаунт уже подключен к другому пользователю");
+    }
+
+    await this.prisma.authIdentity.upsert({
+      where: {
+        provider_providerUserId: {
+          provider: GOOGLE_PROVIDER,
+          providerUserId: claims.sub,
+        },
+      },
+      update: this.getGoogleIdentityMetadata(claims),
+      create: this.getGoogleIdentityData(userId, claims),
+    });
+
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: AUTH_USER_SELECT,
+    });
+
+    return toAuthUser(user);
+  }
+
+  private async updateGoogleIdentity(userId: string, claims: GoogleClaims): Promise<void> {
+    await this.prisma.authIdentity.update({
+      where: {
+        provider_providerUserId: {
+          provider: GOOGLE_PROVIDER,
+          providerUserId: claims.sub,
+        },
+      },
+      data: this.getGoogleIdentityMetadata(claims),
+    });
+
+    const photoUrl = getGooglePhotoUrl(claims);
+    if (photoUrl) {
+      await this.prisma.user.updateMany({
+        where: { id: userId, image: null },
+        data: { image: photoUrl },
+      });
+    }
   }
 
   private async findOrCreateTelegramUser(
@@ -1050,6 +1566,23 @@ export class AuthService {
       username: getTelegramUsername(claims),
       displayName: getTelegramDisplayName(claims),
       photoUrl: getTelegramPhotoUrl(claims),
+    };
+  }
+
+  private getGoogleIdentityData(userId: string, claims: GoogleClaims): Prisma.AuthIdentityCreateInput {
+    return {
+      user: { connect: { id: userId } },
+      provider: GOOGLE_PROVIDER,
+      providerUserId: claims.sub,
+      ...this.getGoogleIdentityMetadata(claims),
+    };
+  }
+
+  private getGoogleIdentityMetadata(claims: GoogleClaims) {
+    return {
+      username: getGoogleEmail(claims),
+      displayName: getGoogleDisplayName(claims),
+      photoUrl: getGooglePhotoUrl(claims),
     };
   }
 }

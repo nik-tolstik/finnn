@@ -3,6 +3,10 @@ import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  EMAIL_VERIFICATION_REQUIRED_CODE,
+  EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+} from "../src/auth/email-verified.guard";
 import { AUTH_COOKIE_NAME, hashSessionToken } from "../src/auth/session-cookie";
 import { EmailService } from "../src/email/email.service";
 import { configureApp } from "../src/main";
@@ -129,6 +133,16 @@ function mockAuthenticatedSession(prisma: MockPrisma) {
   });
   prisma.user.findUnique.mockImplementation(async ({ where }) => {
     if (where.id === currentUser.id) return currentUser;
+    return null;
+  });
+}
+
+function mockUnverifiedSession(prisma: MockPrisma) {
+  mockAuthenticatedSession(prisma);
+  prisma.user.findUnique.mockImplementation(async ({ where }) => {
+    if (where.id === currentUser.id) {
+      return { ...currentUser, emailVerified: null, authIdentities: [] };
+    }
     return null;
   });
 }
@@ -260,6 +274,21 @@ describe("Workspace API", () => {
         },
       })
     );
+  });
+
+  it("blocks workspace reads for users without a verified email", async () => {
+    mockUnverifiedSession(prisma);
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+      code: EMAIL_VERIFICATION_REQUIRED_CODE,
+    });
+    expect(prisma.workspace.findMany).not.toHaveBeenCalled();
   });
 
   it("returns workspace summary for authorized members", async () => {
@@ -530,37 +559,8 @@ describe("Workspace API", () => {
     expect(prisma.workspaceMember.create).not.toHaveBeenCalled();
   });
 
-  it("rejects invite acceptance for users without email", async () => {
-    prisma.authSession.findFirst.mockResolvedValue({ userId: currentUser.id });
-    prisma.user.findUnique
-      .mockResolvedValueOnce({ ...currentUser, email: null })
-      .mockResolvedValueOnce({ email: null, emailVerified: null });
-    prisma.workspaceInvite.findUnique.mockResolvedValue({
-      id: "invite-1",
-      workspaceId: "workspace-1",
-      email: "ada@example.com",
-      token: "invite-token",
-      expiresAt: new Date(Date.now() + 1000),
-      workspace: {
-        id: "workspace-1",
-        name: "Shared budget",
-      },
-    });
-
-    const response = await request(app.getHttpServer())
-      .post("/workspace-invites/invite-token/accept")
-      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
-      .expect(400);
-
-    expect(response.body.message).toBe("Добавьте email в настройках аккаунта, чтобы принять приглашение по email");
-    expect(prisma.workspaceMember.create).not.toHaveBeenCalled();
-  });
-
-  it("rejects invite acceptance for unverified email users", async () => {
-    prisma.authSession.findFirst.mockResolvedValue({ userId: currentUser.id });
-    prisma.user.findUnique
-      .mockResolvedValueOnce({ ...currentUser, emailVerified: null })
-      .mockResolvedValueOnce({ email: "ada@example.com", emailVerified: null });
+  it("rejects invite acceptance for users without verified email", async () => {
+    mockUnverifiedSession(prisma);
     prisma.workspaceInvite.findUnique.mockResolvedValue({
       id: "invite-1",
       workspaceId: "workspace-1",
@@ -578,7 +578,38 @@ describe("Workspace API", () => {
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
       .expect(403);
 
-    expect(response.body.message).toBe("Подтвердите email, чтобы принять приглашение");
+    expect(response.body).toMatchObject({
+      message: EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+      code: EMAIL_VERIFICATION_REQUIRED_CODE,
+    });
     expect(prisma.workspaceMember.create).not.toHaveBeenCalled();
+    expect(prisma.workspaceInvite.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("rejects invite acceptance for unverified email users", async () => {
+    mockUnverifiedSession(prisma);
+    prisma.workspaceInvite.findUnique.mockResolvedValue({
+      id: "invite-1",
+      workspaceId: "workspace-1",
+      email: "ada@example.com",
+      token: "invite-token",
+      expiresAt: new Date(Date.now() + 1000),
+      workspace: {
+        id: "workspace-1",
+        name: "Shared budget",
+      },
+    });
+
+    const response = await request(app.getHttpServer())
+      .post("/workspace-invites/invite-token/accept")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+      code: EMAIL_VERIFICATION_REQUIRED_CODE,
+    });
+    expect(prisma.workspaceMember.create).not.toHaveBeenCalled();
+    expect(prisma.workspaceInvite.findUnique).not.toHaveBeenCalled();
   });
 });

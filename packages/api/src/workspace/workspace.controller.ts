@@ -18,6 +18,7 @@ import {
 import { AuthGuard } from "@/auth/auth.guard";
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { CurrentUser } from "@/auth/current-user.decorator";
+import { EmailVerifiedGuard } from "@/auth/email-verified.guard";
 import { AUTH_COOKIE_NAME } from "@/auth/session-cookie";
 import { ApiErrorDto } from "@/common/api-error.dto";
 
@@ -45,7 +46,7 @@ export class WorkspaceController {
   constructor(@Inject(WorkspaceService) private readonly workspaceService: WorkspaceService) {}
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "createWorkspace", summary: "Create a workspace" })
   @ApiBody({ type: CreateWorkspaceDto })
@@ -58,7 +59,7 @@ export class WorkspaceController {
   }
 
   @Get()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "listWorkspaces", summary: "List accessible workspaces" })
   @ApiOkResponse({ type: WorkspaceListResponseDto })
@@ -68,7 +69,7 @@ export class WorkspaceController {
   }
 
   @Get(":workspaceId")
-  @UseGuards(AuthGuard, WorkspaceAccessGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard, WorkspaceAccessGuard)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "getWorkspace", summary: "Get workspace details" })
   @ApiParam({ name: "workspaceId", type: String })
@@ -80,7 +81,7 @@ export class WorkspaceController {
   }
 
   @Get(":workspaceId/summary")
-  @UseGuards(AuthGuard, WorkspaceAccessGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard, WorkspaceAccessGuard)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "getWorkspaceSummary", summary: "Get workspace summary" })
   @ApiParam({ name: "workspaceId", type: String })
@@ -92,7 +93,7 @@ export class WorkspaceController {
   }
 
   @Get(":workspaceId/members")
-  @UseGuards(AuthGuard, WorkspaceAccessGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard, WorkspaceAccessGuard)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "getWorkspaceMembers", summary: "Get workspace members" })
   @ApiParam({ name: "workspaceId", type: String })
@@ -104,7 +105,7 @@ export class WorkspaceController {
   }
 
   @Patch(":workspaceId")
-  @UseGuards(AuthGuard, WorkspaceAccessGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard, WorkspaceAccessGuard)
   @WorkspaceRoles(WORKSPACE_ROLES.ADMIN)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "updateWorkspace", summary: "Update a workspace" })
@@ -121,7 +122,7 @@ export class WorkspaceController {
 
   @Delete(":workspaceId")
   @HttpCode(204)
-  @UseGuards(AuthGuard, WorkspaceAccessGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard, WorkspaceAccessGuard)
   @WorkspaceRoles(WORKSPACE_ROLES.OWNER)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "deleteWorkspace", summary: "Delete a workspace" })
@@ -135,7 +136,7 @@ export class WorkspaceController {
 
   @Post(":workspaceId/leave")
   @HttpCode(200)
-  @UseGuards(AuthGuard, WorkspaceAccessGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard, WorkspaceAccessGuard)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "leaveWorkspace", summary: "Leave a workspace" })
   @ApiParam({ name: "workspaceId", type: String })
@@ -148,7 +149,7 @@ export class WorkspaceController {
   }
 
   @Post(":workspaceId/invites")
-  @UseGuards(AuthGuard, WorkspaceAccessGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard, WorkspaceAccessGuard)
   @WorkspaceRoles(WORKSPACE_ROLES.ADMIN)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "createWorkspaceInvite", summary: "Create a workspace invite" })
@@ -181,7 +182,7 @@ export class WorkspaceInvitesController {
 
   @Post(":token/accept")
   @HttpCode(200)
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
   @ApiOperation({ operationId: "acceptWorkspaceInvite", summary: "Accept a workspace invite" })
   @ApiParam({ name: "token", type: String })

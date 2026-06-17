@@ -5,6 +5,7 @@
  * Backend API for Finnn finance tracking
  * OpenAPI spec version: 0.1.0
  */
+import type { GoogleAuthStatusDto } from "./googleAuthStatusDto";
 import type { TelegramAuthStatusDto } from "./telegramAuthStatusDto";
 
 export interface AuthUserDto {
@@ -15,5 +16,8 @@ export interface AuthUserDto {
   name?: string | null;
   /** @nullable */
   image?: string | null;
+  /** @nullable */
+  emailVerified?: string | null;
   telegram: TelegramAuthStatusDto;
+  google: GoogleAuthStatusDto;
 }

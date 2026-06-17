@@ -7,12 +7,14 @@ import { PrismaModule } from "@/prisma/prisma.module";
 import { AuthController } from "./auth.controller";
 import { AuthGuard } from "./auth.guard";
 import { AuthService } from "./auth.service";
+import { EmailVerifiedGuard } from "./email-verified.guard";
+import { GoogleOidcClient } from "./google-oidc.client";
 import { TelegramOidcClient } from "./telegram-oidc.client";
 
 @Module({
   imports: [AvatarModule, EmailModule, PrismaModule],
   controllers: [AuthController],
-  providers: [AuthService, AuthGuard, TelegramOidcClient],
-  exports: [AuthService, AuthGuard],
+  providers: [AuthService, AuthGuard, EmailVerifiedGuard, GoogleOidcClient, TelegramOidcClient],
+  exports: [AuthService, AuthGuard, EmailVerifiedGuard],
 })
 export class AuthModule {}

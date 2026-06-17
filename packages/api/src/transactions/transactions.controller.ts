@@ -18,6 +18,7 @@ import {
 import { AuthGuard } from "@/auth/auth.guard";
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { CurrentUser } from "@/auth/current-user.decorator";
+import { EmailVerifiedGuard } from "@/auth/email-verified.guard";
 import { AUTH_COOKIE_NAME } from "@/auth/session-cookie";
 import { ApiErrorDto } from "@/common/api-error.dto";
 
@@ -35,7 +36,7 @@ import { TransactionsService } from "./transactions.service";
 
 @Controller()
 @ApiTags("Transactions")
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, EmailVerifiedGuard)
 @ApiCookieAuth(AUTH_COOKIE_NAME)
 @ApiExtraModels(CombinedTransactionsQueryDto)
 export class TransactionsController {

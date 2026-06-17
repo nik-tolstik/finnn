@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import {
   requestEmailVerification,
+  unlinkGoogle,
   unlinkTelegram,
   updateUser as updateApiUser,
 } from "@/shared/api/generated/auth/auth";
@@ -23,8 +24,10 @@ import { cn } from "@/shared/utils/cn";
 
 import { deleteCurrentUserAvatar, uploadCurrentUserAvatar } from "../../auth.api";
 import { type UpdateUserInput, updateUserSchema } from "../../auth.validations";
+import { redirectToGoogleLink } from "../../google-auth-url";
 import { redirectToTelegramLink } from "../../telegram-auth-url";
 import { AvatarPickerDialog } from "../avatar-picker-dialog/AvatarPickerDialog";
+import { GoogleAuthButton } from "../google-auth-button";
 import { TelegramAuthButton } from "../telegram-auth-button";
 
 interface AccountSettingsProps {
@@ -157,6 +160,17 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
     },
   });
 
+  const unlinkGoogleMutation = useMutation({
+    mutationFn: unlinkGoogle,
+    onSuccess: async () => {
+      await updateSession();
+      toast.success("Google отключен");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Не удалось отключить Google");
+    },
+  });
+
   const emailVerificationMutation = useMutation({
     mutationFn: (data: { email: string }) => requestEmailVerification(data),
     onSuccess: async () => {
@@ -259,6 +273,9 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
                     {emailVerificationMutation.isPending ? "Отправка..." : "Подтвердить"}
                   </Button>
                 </div>
+                <div className="text-xs text-muted-foreground">
+                  {session.user.emailVerified ? "Email подтвержден" : "Email не подтвержден"}
+                </div>
               </div>
             </div>
           </div>
@@ -267,6 +284,34 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
         </div>
 
         <div className="space-y-3 border-t pt-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-sm font-medium">Google</div>
+              <div className="truncate text-xs text-muted-foreground">
+                {session.user.google.linked
+                  ? session.user.google.email || session.user.google.displayName || "Подключен"
+                  : "Не подключен"}
+              </div>
+            </div>
+            {session.user.google.linked ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => unlinkGoogleMutation.mutate({})}
+                disabled={unlinkGoogleMutation.isPending}
+              >
+                {unlinkGoogleMutation.isPending ? "Отключение..." : "Отключить"}
+              </Button>
+            ) : (
+              <div className="w-56 max-w-full">
+                <GoogleAuthButton
+                  disabled={unlinkGoogleMutation.isPending}
+                  onClick={() => redirectToGoogleLink("/dashboard")}
+                />
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm font-medium">Telegram</div>

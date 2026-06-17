@@ -40,6 +40,8 @@ import { ApiErrorDto } from "@/common/api-error.dto";
 import {
   AuthUserResponseDto,
   LoginDto,
+  PasswordResetConfirmDto,
+  PasswordResetRequestDto,
   RegisterDto,
   RequestEmailVerificationDto,
   SessionResponseDto,
@@ -53,6 +55,7 @@ import { AuthGuard } from "./auth.guard";
 import { AuthService } from "./auth.service";
 import type { AuthenticatedUser } from "./auth.types";
 import { CurrentUser } from "./current-user.decorator";
+import { createClearGoogleStateCookie, createGoogleStateCookie, parseGoogleStateCookie } from "./google-state-cookie";
 import {
   AUTH_COOKIE_NAME,
   createClearSessionCookie,
@@ -185,6 +188,66 @@ export class AuthController {
     });
     response.setHeader("Set-Cookie", createSessionCookie(result.token));
     return { user: result.user };
+  }
+
+  @Get("google/start")
+  @ApiOperation({ operationId: "startGoogleAuth", summary: "Start Google OIDC authentication" })
+  @ApiQuery({ name: "returnTo", required: false, type: String })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async startGoogleAuth(@Query("returnTo") returnTo: string | undefined, @Res() response: Response) {
+    const result = this.authService.startGoogleLogin(returnTo);
+    response.setHeader("Set-Cookie", createGoogleStateCookie(result.stateCookieValue, result.ttlSeconds));
+    response.redirect(result.authorizationUrl);
+  }
+
+  @Get("google/link/start")
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(AUTH_COOKIE_NAME)
+  @ApiOperation({ operationId: "startGoogleLink", summary: "Start Google account linking" })
+  @ApiQuery({ name: "returnTo", required: false, type: String })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async startGoogleLink(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query("returnTo") returnTo: string | undefined,
+    @Res() response: Response
+  ) {
+    const result = this.authService.startGoogleLink(user.id, returnTo);
+    response.setHeader("Set-Cookie", createGoogleStateCookie(result.stateCookieValue, result.ttlSeconds));
+    response.redirect(result.authorizationUrl);
+  }
+
+  @Get("google/callback")
+  @ApiOperation({ operationId: "completeGoogleAuth", summary: "Complete Google OIDC authentication" })
+  @ApiQuery({ name: "code", required: false, type: String })
+  @ApiQuery({ name: "state", required: false, type: String })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiConflictResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  async completeGoogleAuth(
+    @Query("code") code: string | undefined,
+    @Query("state") state: string | undefined,
+    @Query("error") error: string | undefined,
+    @Req() request: Request,
+    @Res() response: Response
+  ) {
+    response.setHeader("Set-Cookie", createClearGoogleStateCookie());
+
+    if (error || !code || !state) {
+      response.redirect(getWebRedirectUrl(`/login?googleError=${encodeURIComponent(error || "google_auth_failed")}`));
+      return;
+    }
+
+    const result = await this.authService.completeGoogleCallback({
+      code,
+      state,
+      stateCookieValue: parseGoogleStateCookie(request.headers.cookie),
+    });
+
+    if (result.token) {
+      response.setHeader("Set-Cookie", [createClearGoogleStateCookie(), createSessionCookie(result.token)]);
+    }
+    response.redirect(getWebRedirectUrl(result.returnTo));
   }
 
   @Get("telegram/start")
@@ -351,6 +414,26 @@ export class AuthController {
     return this.authService.requestEmailVerification(user.id, body);
   }
 
+  @Post("password-reset/request")
+  @HttpCode(200)
+  @ApiOperation({ operationId: "requestPasswordReset", summary: "Request a password reset code" })
+  @ApiBody({ type: PasswordResetRequestDto })
+  @ApiOkResponse({ type: SuccessResponseDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async requestPasswordReset(@Body() body: PasswordResetRequestDto) {
+    return this.authService.requestPasswordReset(body);
+  }
+
+  @Post("password-reset/confirm")
+  @HttpCode(200)
+  @ApiOperation({ operationId: "confirmPasswordReset", summary: "Confirm a password reset code" })
+  @ApiBody({ type: PasswordResetConfirmDto })
+  @ApiOkResponse({ type: SuccessResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  async confirmPasswordReset(@Body() body: PasswordResetConfirmDto) {
+    return this.authService.confirmPasswordReset(body);
+  }
+
   @Delete("telegram/link")
   @UseGuards(AuthGuard)
   @ApiCookieAuth(AUTH_COOKIE_NAME)
@@ -360,5 +443,16 @@ export class AuthController {
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
   async unlinkTelegram(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.unlinkTelegram(user.id);
+  }
+
+  @Delete("google/link")
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth(AUTH_COOKIE_NAME)
+  @ApiOperation({ operationId: "unlinkGoogle", summary: "Unlink Google from the current user" })
+  @ApiOkResponse({ type: AuthUserResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  async unlinkGoogle(@CurrentUser() user: AuthenticatedUser) {
+    return this.authService.unlinkGoogle(user.id);
   }
 }

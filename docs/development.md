@@ -64,6 +64,32 @@ TELEGRAM_AUTH_STATE_SECRET="paste-generated-secret-here"
 TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
 ```
 
+Required for Google login/linking:
+
+```env
+GOOGLE_CLIENT_ID="google-oauth-client-id"
+GOOGLE_CLIENT_SECRET="google-oauth-client-secret"
+GOOGLE_REDIRECT_URI="http://localhost:4000/auth/google/callback"
+GOOGLE_AUTH_STATE_SECRET="paste-generated-secret-here"
+GOOGLE_AUTH_STATE_TTL_SECONDS="600"
+```
+
+Register these OAuth redirect URIs in Google Cloud Console:
+
+```text
+Local: http://localhost:4000/auth/google/callback
+DEV:   https://api-dev.finnn.xyz/auth/google/callback
+PROD:  https://api.finnn.xyz/auth/google/callback
+```
+
+Password reset uses the same SMTP settings as email verification. Optional tuning:
+
+```env
+PASSWORD_RESET_CODE_TTL_SECONDS="900"
+PASSWORD_RESET_MAX_ATTEMPTS="5"
+PASSWORD_RESET_RESEND_COOLDOWN_SECONDS="60"
+```
+
 Required for Telegram Mini App launch authentication:
 
 ```env

@@ -26,6 +26,10 @@ function toSession(response: SessionResponseDto): Session | null {
   return response.authenticated && response.user ? { user: response.user } : null;
 }
 
+export function userRequiresEmailVerification(user: AuthUserDto | null | undefined): boolean {
+  return Boolean(user && !user.emailVerified);
+}
+
 export function ApiSessionProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const sessionQuery = useQuery({

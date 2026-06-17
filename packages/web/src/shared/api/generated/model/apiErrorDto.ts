@@ -10,6 +10,7 @@ export interface ApiErrorDto {
   statusCode: number;
   message: string;
   error: string;
+  code?: string;
   path: string;
   timestamp: string;
 }

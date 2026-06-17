@@ -111,6 +111,7 @@ function createPrismaMock(): MockPrisma {
 const currentUser = {
   id: "user-1",
   email: "ada@example.com",
+  emailVerified: new Date("2026-05-25T00:00:00.000Z"),
   name: "Ada",
   image: null,
 };
