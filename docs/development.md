@@ -71,6 +71,24 @@ TELEGRAM_BOT_TOKEN="bot-token-from-botfather"
 TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
 ```
 
+Required for custom avatar uploads:
+
+```env
+AVATAR_BUCKET="railway-bucket-name"
+AVATAR_BUCKET_ACCESS_KEY_ID="railway-bucket-access-key-id"
+AVATAR_BUCKET_SECRET_ACCESS_KEY="railway-bucket-secret-access-key"
+AVATAR_BUCKET_REGION="auto"
+AVATAR_BUCKET_ENDPOINT="https://storage.railway.app"
+AVATAR_BUCKET_FORCE_PATH_STYLE="false"
+AVATAR_MAX_BYTES="2097152"
+AVATAR_PRESIGNED_URL_TTL_SECONDS="3600"
+```
+
+Railway Buckets expose `BUCKET`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`, `REGION`, and `ENDPOINT`; map those values into
+the `AVATAR_BUCKET_*` variables above. Use a dedicated development bucket when production avatar objects should stay
+isolated. If these variables are missing, the avatar upload and read endpoints return a controlled service-unavailable
+error instead of writing profile data.
+
 BotFather setup:
 
 - Create or select a bot in BotFather.

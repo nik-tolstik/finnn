@@ -23,6 +23,8 @@
     "telegram:link-mini": "node --import tsx scripts/link-telegram-mini-identity.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1070.0",
+    "@aws-sdk/s3-request-presigner": "^3.1070.0",
     "@nestjs/common": "^11.1.9",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.9",
@@ -46,6 +48,7 @@
     "@nestjs/testing": "^11.1.9",
     "@types/big.js": "^6.2.2",
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.4",
     "@types/supertest": "^6.0.3",

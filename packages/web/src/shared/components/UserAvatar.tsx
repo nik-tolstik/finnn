@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 
+import { getApiBaseUrl } from "@/shared/api/http-client";
 import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { cn } from "@/shared/utils/cn";
 
@@ -24,10 +25,23 @@ const sizeMap: Record<UserAvatarSize, { container: string; text: string; pixels:
   "2xl": { container: "size-20", text: "text-2xl", pixels: 80 },
 };
 
+function resolveImageSrc(image: string): string {
+  if (image.startsWith("/auth/")) {
+    return new URL(image, `${getApiBaseUrl()}/`).toString();
+  }
+
+  return image;
+}
+
+function isPresetAvatarSrc(image: string): boolean {
+  return image.startsWith("/avatars/");
+}
+
 export function UserAvatar({ name, email, image, size = "md", className, fallbackClassName }: UserAvatarProps) {
   const displayName = name || email || "U";
   const initial = displayName.trim().charAt(0).toUpperCase() || "U";
   const { container, text, pixels } = sizeMap[size];
+  const resolvedImage = image ? resolveImageSrc(image) : null;
 
   return (
     <div
@@ -41,15 +55,18 @@ export function UserAvatar({ name, email, image, size = "md", className, fallbac
       style={!image ? { backgroundColor: getAvatarColor(displayName) } : undefined}
       aria-hidden="true"
     >
-      {image ? (
+      {resolvedImage && image && isPresetAvatarSrc(image) ? (
         <Image
-          src={image}
+          src={resolvedImage}
           alt={`${displayName} avatar`}
           fill
           sizes={`${pixels}px`}
           className="object-cover"
           unoptimized
         />
+      ) : resolvedImage ? (
+        // biome-ignore lint/performance/noImgElement: Uploaded and external avatar URLs are intentionally not routed through Next Image.
+        <img src={resolvedImage} alt={`${displayName} avatar`} className="size-full object-cover" />
       ) : (
         <span className={cn("leading-none font-medium", fallbackClassName)}>{initial}</span>
       )}

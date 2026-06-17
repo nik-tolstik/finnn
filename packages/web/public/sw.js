@@ -21,6 +21,10 @@ function isCacheableStaticAsset(request) {
     return false;
   }
 
+  if (url.pathname.startsWith("/auth/users/")) {
+    return false;
+  }
+
   if (url.pathname.startsWith("/_next/data/")) {
     return false;
   }

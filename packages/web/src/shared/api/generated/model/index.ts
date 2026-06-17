@@ -136,6 +136,7 @@ export * from "./updatePaymentTransactionDto";
 export * from "./updateTransferTransactionDto";
 export * from "./updateUserDto";
 export * from "./updateWorkspaceDto";
+export * from "./uploadUserAvatarDto";
 export * from "./verifyEmailResponseDto";
 export * from "./workspaceDetailDto";
 export * from "./workspaceInviteDto";
