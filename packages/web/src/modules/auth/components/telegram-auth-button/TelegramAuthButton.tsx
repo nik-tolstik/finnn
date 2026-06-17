@@ -4,24 +4,28 @@ import type { ButtonHTMLAttributes } from "react";
 
 import { Button } from "@/shared/ui/button";
 
-type TelegramAuthButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
+import { TelegramIcon } from "../social-provider-icons";
 
-function TelegramLogo() {
-  return (
-    <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M21.7 4.3 18.4 20c-.2 1-.8 1.2-1.6.7l-4.5-3.3-2.2 2.1c-.2.2-.4.4-.9.4l.3-4.6 8.4-7.6c.4-.3-.1-.5-.5-.2L7 14 2.5 12.6c-1-.3-1-1 0-1.4L20.3 4c.8-.3 1.6.2 1.4.3Z"
-        fill="#229ED9"
-      />
-    </svg>
-  );
-}
+type TelegramAuthButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
 export function TelegramAuthButton({ disabled, ...props }: TelegramAuthButtonProps) {
   return (
-    <Button type="button" variant="outline" className="w-full bg-transparent" disabled={disabled} {...props}>
-      <TelegramLogo />
-      Продолжить с Telegram
+    <Button
+      type="button"
+      variant="outline"
+      className="group relative h-11 w-full overflow-hidden rounded-lg border-border bg-background px-3 text-foreground shadow-sm hover:border-[#229ED9]/60 hover:bg-background hover:text-foreground hover:shadow-md dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground dark:hover:bg-white/[0.09]"
+      disabled={disabled}
+      {...props}
+    >
+      <span className="absolute inset-y-0 left-0 w-1 bg-[#229ED9]" />
+      <span
+        className="flex size-7 shrink-0 items-center justify-center rounded-md bg-[#229ED9]/10 shadow-sm ring-1 ring-[#229ED9]/20 transition-transform group-hover:scale-105 dark:bg-[#229ED9]/15"
+        aria-hidden="true"
+      >
+        <TelegramIcon className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1 text-center text-sm font-semibold">Продолжить с Telegram</span>
+      <span className="size-7 shrink-0" aria-hidden="true" />
     </Button>
   );
 }

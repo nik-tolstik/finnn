@@ -2,11 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { LeaveWorkspaceDialog } from "@/modules/workspace/components/leave-workspace-dialog";
 import { getWorkspaceSummary, updateWorkspace } from "@/modules/workspace/workspace.api";
 import { useSession } from "@/shared/lib/api-session-client";
 import { runOptimisticWorkspaceMutation, updateWorkspaceCaches } from "@/shared/lib/optimistic-workspace-updates";
@@ -28,6 +29,7 @@ interface WorkspaceSettingsProps {
 export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
   const { data: session } = useSession();
   const queryClient = useQueryClient();
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
 
   const { data: workspaceData } = useQuery({
     queryKey: workspaceKeys.summary(workspaceId),
@@ -109,36 +111,65 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
   const isFormChanged = isDirty;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Название</Label>
-        <Input
-          id="name"
-          {...register("name")}
-          placeholder="Название workspace"
-          disabled={!isOwner}
-          aria-invalid={errors.name ? "true" : "false"}
-        />
-        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-      </div>
-
-      {!isOwner && <p className="text-sm text-muted-foreground">Только владелец может изменять настройки workspace</p>}
-
-      {isOwner && isFormChanged && (
-        <div className="flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isSubmitting || updateMutation.isPending}
-          >
-            Отменить
-          </Button>
-          <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
-            {isSubmitting || updateMutation.isPending ? "Сохранение..." : "Сохранить"}
-          </Button>
+    <>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="name">Название</Label>
+          <Input
+            id="name"
+            {...register("name")}
+            placeholder="Название workspace"
+            disabled={!isOwner}
+            aria-invalid={errors.name ? "true" : "false"}
+          />
+          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
         </div>
+
+        {!isOwner && (
+          <p className="text-sm text-muted-foreground">Только владелец может изменять настройки workspace</p>
+        )}
+
+        {isOwner && isFormChanged && (
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSubmitting || updateMutation.isPending}
+            >
+              Отменить
+            </Button>
+            <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
+              {isSubmitting || updateMutation.isPending ? "Сохранение..." : "Сохранить"}
+            </Button>
+          </div>
+        )}
+
+        {!isOwner && (
+          <div className="space-y-3 border-t pt-5">
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Покинуть</div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setLeaveDialogOpen(true)}
+            >
+              Покинуть
+            </Button>
+          </div>
+        )}
+      </form>
+
+      {!isOwner && (
+        <LeaveWorkspaceDialog
+          workspaceId={workspaceId}
+          workspaceName={workspace.name}
+          open={leaveDialogOpen}
+          onOpenChange={setLeaveDialogOpen}
+        />
       )}
-    </form>
+    </>
   );
 }
