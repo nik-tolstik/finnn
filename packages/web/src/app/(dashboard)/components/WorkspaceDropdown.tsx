@@ -2,7 +2,7 @@
 
 import type { Placement } from "@floating-ui/react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, ArrowRight, LogOut, Plus, Settings } from "lucide-react";
+import { Archive, ArrowRight, Building, Check, LogOut, Plus, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -13,6 +13,7 @@ import { getWorkspaces } from "@/modules/workspace/workspace.api";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { useSession } from "@/shared/lib/api-session-client";
 import { workspacesKeys } from "@/shared/lib/query-keys";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Popover } from "@/shared/ui/popover";
 import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
@@ -23,14 +24,18 @@ interface WorkspaceDropdownProps {
   currentWorkspaceId?: string;
   className?: string;
   collapsed?: boolean;
+  onWorkspaceSelect?: () => void;
   placement?: Placement;
+  variant?: "dropdown" | "list";
 }
 
 export function WorkspaceDropdown({
   currentWorkspaceId,
   className,
   collapsed = false,
+  onWorkspaceSelect,
   placement = "bottom-start",
+  variant = "dropdown",
 }: WorkspaceDropdownProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -61,6 +66,7 @@ export function WorkspaceDropdown({
     router.push(`/dashboard?workspaceId=${workspaceId}`);
     setOpen(false);
     setSwitchOpen(false);
+    onWorkspaceSelect?.();
   };
 
   const handleCreateWorkspace = () => {
@@ -82,6 +88,145 @@ export function WorkspaceDropdown({
       setSwitchOpen(false);
     }, 150);
   };
+
+  const dialogs = (
+    <>
+      {createDialog.mounted && (
+        <CreateWorkspaceDialog open={createDialog.open} onOpenChange={createDialog.closeDialog} />
+      )}
+      {settingsDialog.mounted && currentWorkspaceId && (
+        <SettingsDialog
+          workspaceId={settingsDialog.data.workspaceId}
+          open={settingsDialog.open}
+          onOpenChange={settingsDialog.closeDialog}
+        />
+      )}
+      {leaveDialog.mounted && (
+        <LeaveWorkspaceDialog
+          workspaceId={leaveDialog.data.workspaceId}
+          workspaceName={leaveDialog.data.workspaceName}
+          open={leaveDialog.open}
+          onOpenChange={leaveDialog.closeDialog}
+        />
+      )}
+      {archivedAccountsDialog.mounted && currentWorkspaceId && (
+        <ArchivedAccountsDialog
+          workspaceId={currentWorkspaceId}
+          open={archivedAccountsDialog.open}
+          onOpenChange={archivedAccountsDialog.closeDialog}
+          onCloseComplete={archivedAccountsDialog.unmountDialog}
+        />
+      )}
+    </>
+  );
+
+  if (variant === "list") {
+    return (
+      <>
+        <section className={cn("space-y-2", className)}>
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Building className="size-4 shrink-0 text-muted-foreground" />
+            <span className="truncate">{triggerLabel}</span>
+          </div>
+
+          <div className="space-y-1">
+            {currentWorkspaceId && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentWorkspaceId) {
+                      settingsDialog.openDialog({
+                        workspaceId: currentWorkspaceId,
+                      });
+                    }
+                  }}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                >
+                  <Settings className="size-4 text-muted-foreground" />
+                  <span>Настройки</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSwitchOpen(true)}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                >
+                  <ArrowRight className="size-4 text-muted-foreground" />
+                  <span>Перейти</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => archivedAccountsDialog.openDialog(null)}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                >
+                  <Archive className="size-4 text-muted-foreground" />
+                  <span>Архив</span>
+                </button>
+              </>
+            )}
+            {currentWorkspaceId && !isOwner && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (currentWorkspaceId && currentWorkspace) {
+                    leaveDialog.openDialog({
+                      workspaceId: currentWorkspaceId,
+                      workspaceName: currentWorkspace.name,
+                    });
+                  }
+                }}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <LogOut className="size-4" />
+                <span>Покинуть</span>
+              </button>
+            )}
+          </div>
+        </section>
+
+        <Dialog open={switchOpen} onOpenChange={setSwitchOpen}>
+          <DialogWindow mobilePosition="bottom" className="max-h-[82dvh] rounded-t-lg sm:w-100">
+            <DialogHeader>
+              <DialogTitle>Перейти в workspace</DialogTitle>
+            </DialogHeader>
+            <DialogContent className="space-y-2">
+              {workspaces.map((workspace) => {
+                const selected = workspace.id === currentWorkspaceId;
+
+                return (
+                  <button
+                    type="button"
+                    key={workspace.id}
+                    disabled={selected}
+                    onClick={() => handleWorkspaceSelect(workspace.id)}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors",
+                      selected ? "bg-accent text-accent-foreground" : "hover:bg-accent hover:text-accent-foreground"
+                    )}
+                  >
+                    <span className="truncate">{workspace.name}</span>
+                    {selected && <Check className="size-4 shrink-0 text-primary" />}
+                  </button>
+                );
+              })}
+              <div className="border-t pt-2">
+                <button
+                  type="button"
+                  onClick={handleCreateWorkspace}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                >
+                  <Plus className="size-4 text-muted-foreground" />
+                  <span>Создать новый</span>
+                </button>
+              </div>
+            </DialogContent>
+          </DialogWindow>
+        </Dialog>
+
+        {dialogs}
+      </>
+    );
+  }
 
   return (
     <>
@@ -108,7 +253,7 @@ export function WorkspaceDropdown({
               )}
               {...triggerProps}
             >
-              {collapsed && <Settings className="h-4 w-4" />}
+              <Building className="h-4 w-4 shrink-0" />
               {!collapsed && <span className="max-w-[200px] truncate">{triggerLabel}</span>}
             </button>
           </Tooltip>
@@ -222,32 +367,7 @@ export function WorkspaceDropdown({
           </div>
         </div>
       </Popover>
-      {createDialog.mounted && (
-        <CreateWorkspaceDialog open={createDialog.open} onOpenChange={createDialog.closeDialog} />
-      )}
-      {settingsDialog.mounted && currentWorkspaceId && (
-        <SettingsDialog
-          workspaceId={settingsDialog.data.workspaceId}
-          open={settingsDialog.open}
-          onOpenChange={settingsDialog.closeDialog}
-        />
-      )}
-      {leaveDialog.mounted && (
-        <LeaveWorkspaceDialog
-          workspaceId={leaveDialog.data.workspaceId}
-          workspaceName={leaveDialog.data.workspaceName}
-          open={leaveDialog.open}
-          onOpenChange={leaveDialog.closeDialog}
-        />
-      )}
-      {archivedAccountsDialog.mounted && currentWorkspaceId && (
-        <ArchivedAccountsDialog
-          workspaceId={currentWorkspaceId}
-          open={archivedAccountsDialog.open}
-          onOpenChange={archivedAccountsDialog.closeDialog}
-          onCloseComplete={archivedAccountsDialog.unmountDialog}
-        />
-      )}
+      {dialogs}
     </>
   );
 }

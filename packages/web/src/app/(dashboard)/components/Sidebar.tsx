@@ -1,22 +1,21 @@
 "use client";
 
-import { PanelLeftClose, PanelLeftOpen, SunMoon } from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { useSession } from "@/shared/lib/api-session-client";
+import { signOut, useSession } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
-import { Popover } from "@/shared/ui/popover";
 import { Tooltip, type TooltipProps } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
 import { useUIStore } from "@/stores/ui-store";
 
-import { DashboardExchangeRatesList, useDashboardExchangeRates } from "./dashboard-exchange-rates";
+import { CurrencyFlag, DashboardExchangeRatesList, useDashboardExchangeRates } from "./dashboard-exchange-rates";
 import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
 import { WorkspaceDropdown } from "./WorkspaceDropdown";
 
@@ -51,6 +50,8 @@ export function Sidebar() {
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const workspaceId = searchParams.get("workspaceId") || undefined;
@@ -62,6 +63,35 @@ export function Sidebar() {
     shouldRender: shouldRenderExchangeRates,
   } = useDashboardExchangeRates(workspaceId);
   const shouldShowExchangeRates = isExchangeRatesLoading || shouldRenderExchangeRates;
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
+
+  useEffect(() => {
+    if (!userMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!userMenuRef.current?.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [userMenuOpen]);
 
   return (
     <>
@@ -101,6 +131,15 @@ export function Sidebar() {
           </div>
         )}
 
+        <div className="px-4 pb-2">
+          <WorkspaceDropdown
+            className={cn(sidebarOpen ? "w-full justify-start" : "mx-auto")}
+            collapsed={!sidebarOpen}
+            currentWorkspaceId={workspaceId}
+            placement={sidebarOpen ? "bottom-start" : "right-start"}
+          />
+        </div>
+
         <nav className="flex-1 space-y-1 px-4 py-2">
           {DASHBOARD_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -128,15 +167,6 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="px-4 pb-3">
-          <WorkspaceDropdown
-            className={cn(sidebarOpen ? "w-full justify-start" : "mx-auto")}
-            collapsed={!sidebarOpen}
-            currentWorkspaceId={workspaceId}
-            placement="right-start"
-          />
-        </div>
-
         <div className="mt-auto space-y-2 border-t px-4 py-4">
           {shouldShowExchangeRates &&
             (sidebarOpen ? (
@@ -151,7 +181,7 @@ export function Sidebar() {
                 )}
               </div>
             ) : (
-              <div className="flex w-10 flex-col items-center gap-0.5 px-0 py-1">
+              <div className="flex w-10 flex-col items-center gap-1.5 px-0 py-1">
                 {isExchangeRatesLoading ? (
                   <>
                     <div className="h-3 w-8 rounded bg-muted animate-pulse" />
@@ -160,65 +190,79 @@ export function Sidebar() {
                 ) : (
                   exchangeRates.map((rate) => (
                     <div
-                      className="flex w-full items-center justify-center gap-0.5 text-xs font-medium leading-5 tabular-nums text-foreground"
+                      className="flex w-full flex-col items-center justify-center gap-1 text-[10px] font-medium leading-tight tabular-nums text-foreground"
                       key={rate.currency}
                     >
-                      <span className="text-muted-foreground">{rate.symbol}</span>
-                      <span>{rate.value}</span>
+                      <CurrencyFlag className="size-3.5" code={rate.flagCode} label={rate.flagLabel} />
+                      <span>{rate.shortValue}</span>
                     </div>
                   ))
                 )}
               </div>
             ))}
 
-          {sidebarOpen ? (
-            <AppearanceSettings title="Тема" description={null} className="space-y-2" showLabels={false} />
-          ) : (
-            <Popover
-              placement="right-end"
-              className="w-64 p-3"
-              trigger={({ ref, ...triggerProps }) => (
-                <SidebarIconTooltip content="Тема" disabled={false}>
-                  <button
-                    ref={ref}
-                    type="button"
-                    aria-label="Выбор темы"
-                    className="flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                    {...triggerProps}
-                  >
-                    <SunMoon className="size-5" />
-                  </button>
-                </SidebarIconTooltip>
-              )}
-            >
-              <AppearanceSettings title="Тема" description={null} className="space-y-2" showLabels={false} />
-            </Popover>
-          )}
+          <div className="relative" ref={userMenuRef}>
+            <SidebarIconTooltip content="Меню пользователя" disabled={sidebarOpen || userMenuOpen}>
+              <button
+                type="button"
+                aria-label="Открыть меню пользователя"
+                aria-expanded={userMenuOpen}
+                data-state={userMenuOpen ? "open" : "closed"}
+                onClick={() => setUserMenuOpen((open) => !open)}
+                className={cn(
+                  "flex w-full items-center rounded-md text-left transition-colors hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+                  sidebarOpen ? "gap-3 px-2 py-2" : "size-10 justify-center p-0"
+                )}
+              >
+                <UserAvatar
+                  name={session?.user?.name || telegramName}
+                  email={email}
+                  image={session?.user?.image}
+                  size={sidebarOpen ? "lg" : "md"}
+                />
+                {sidebarOpen && (
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">{displayName}</span>
+                    {email && <span className="block truncate text-xs text-muted-foreground">{email}</span>}
+                  </span>
+                )}
+              </button>
+            </SidebarIconTooltip>
 
-          <SidebarIconTooltip content="Настройки пользователя" disabled={sidebarOpen}>
-            <button
-              type="button"
-              aria-label="Открыть настройки пользователя"
-              onClick={() => setSettingsDialogOpen(true)}
-              className={cn(
-                "flex w-full items-center rounded-md text-left transition-colors hover:bg-accent hover:text-accent-foreground",
-                sidebarOpen ? "gap-3 px-2 py-2" : "size-10 justify-center p-0"
-              )}
-            >
-              <UserAvatar
-                name={session?.user?.name || telegramName}
-                email={email}
-                image={session?.user?.image}
-                size={sidebarOpen ? "lg" : "md"}
-              />
-              {sidebarOpen && (
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">{displayName}</span>
-                  {email && <span className="block truncate text-xs text-muted-foreground">{email}</span>}
-                </span>
-              )}
-            </button>
-          </SidebarIconTooltip>
+            {userMenuOpen && (
+              <div className="absolute bottom-0 left-full z-50 ml-2 w-72 rounded-md border bg-card p-2 text-card-foreground shadow-md">
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      setSettingsDialogOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <UserRound className="size-4 text-muted-foreground" />
+                    <span>Профиль</span>
+                  </button>
+                </div>
+                <div className="px-2 py-2">
+                  <AppearanceSettings title={null} description={null} className="space-y-2" showLabels={false} />
+                </div>
+                <div className="border-t pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      void handleLogout();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10"
+                  >
+                    <LogOut className="size-4" />
+                    <span>Выйти</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
 

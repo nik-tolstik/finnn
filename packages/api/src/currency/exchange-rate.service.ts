@@ -4,7 +4,8 @@ import { Currency } from "@prisma/client";
 import { PrismaService } from "@/prisma/prisma.service";
 
 const BASE_CURRENCY = Currency.BYN;
-const NON_BASE_CURRENCIES = [Currency.USD, Currency.EUR] as const;
+const NON_BASE_CURRENCIES = [Currency.USD, Currency.EUR, Currency.RUB] as const;
+const NON_BASE_CURRENCY_LABELS = NON_BASE_CURRENCIES.join("/");
 const NBRB_LATEST_TIMEOUT_MS = 5000;
 const NBRB_BY_DATE_TIMEOUT_MS = 3000;
 const EXCHANGE_RATE_API_TIMEOUT_MS = 5000;
@@ -22,11 +23,10 @@ interface ExchangeRateAPIResponse {
 }
 
 type CurrencyRatesResult = { data: Record<string, number> } | { error: string };
+type NonBaseCurrency = (typeof NON_BASE_CURRENCIES)[number];
 type BaseRates = {
   [Currency.BYN]: number;
-  [Currency.USD]?: number;
-  [Currency.EUR]?: number;
-};
+} & Partial<Record<NonBaseCurrency, number>>;
 
 export interface ExchangeRateRequest {
   date: Date;
@@ -155,12 +155,11 @@ export class ExchangeRateService {
         const data = (await response.json()) as ExchangeRateAPIResponse;
         const rates: Record<string, number> = { BYN: 1 };
 
-        if (data.rates.USD) {
-          rates.USD = 1 / data.rates.USD;
-        }
-
-        if (data.rates.EUR) {
-          rates.EUR = 1 / data.rates.EUR;
+        for (const currency of NON_BASE_CURRENCIES) {
+          const rate = data.rates[currency];
+          if (rate) {
+            rates[currency] = 1 / rate;
+          }
         }
 
         this.fallbackRatesCache = {
@@ -234,15 +233,17 @@ export class ExchangeRateService {
   }
 
   private toBaseRates(rates: Record<string, number>): BaseRates {
-    return {
-      [Currency.BYN]: 1,
-      [Currency.USD]: rates[Currency.USD],
-      [Currency.EUR]: rates[Currency.EUR],
-    };
+    return NON_BASE_CURRENCIES.reduce<BaseRates>(
+      (baseRates, currency) => {
+        baseRates[currency] = rates[currency];
+        return baseRates;
+      },
+      { [Currency.BYN]: 1 }
+    );
   }
 
   private hasCompleteBaseRates(baseRates: BaseRates) {
-    return typeof baseRates[Currency.USD] === "number" && typeof baseRates[Currency.EUR] === "number";
+    return NON_BASE_CURRENCIES.every((currency) => typeof baseRates[currency] === "number");
   }
 
   private getRateFromBaseRates(baseRates: BaseRates, fromCurrency: Currency, toCurrency: Currency) {
@@ -362,7 +363,7 @@ export class ExchangeRateService {
       const fetchedBaseRates = this.toBaseRates(apiResult.data);
 
       if (!this.hasCompleteBaseRates(fetchedBaseRates)) {
-        throw new Error(`Курсы USD/EUR на ${dateKey} не найдены`);
+        throw new Error(`Курсы ${NON_BASE_CURRENCY_LABELS} на ${dateKey} не найдены`);
       }
 
       await this.saveBaseRates(normalizedDate, fetchedBaseRates);
@@ -462,7 +463,7 @@ export class ExchangeRateService {
 
     const baseRates = this.toBaseRates(apiResult.data);
     if (!this.hasCompleteBaseRates(baseRates)) {
-      throw new Error(`Курсы USD/EUR на ${this.getDateKey(today)} не найдены`);
+      throw new Error(`Курсы ${NON_BASE_CURRENCY_LABELS} на ${this.getDateKey(today)} не найдены`);
     }
 
     return this.saveBaseRates(today, baseRates);

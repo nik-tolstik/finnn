@@ -142,7 +142,7 @@ Debt mutation logic is intentionally centralized in `packages/api/src/debts/debt
 
 ## Exchange Rates
 
-Currency support is centered around BYN, USD, and EUR.
+Currency support is centered around BYN, USD, EUR, and RUB.
 
 Important files:
 

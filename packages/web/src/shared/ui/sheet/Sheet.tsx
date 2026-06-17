@@ -33,6 +33,7 @@ interface SheetProps {
 }
 
 interface SheetContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  showCloseButton?: boolean;
   side?: SheetSide;
 }
 
@@ -90,7 +91,14 @@ function getClosedTransform(side: SheetSide) {
   }
 }
 
-function SheetContent({ className, children, side = "right", style, ...props }: SheetContentProps) {
+function SheetContent({
+  className,
+  children,
+  showCloseButton = true,
+  side = "right",
+  style,
+  ...props
+}: SheetContentProps) {
   const { descriptionId, onOpenChange, open, titleId } = useSheetContext();
   const [portalRoot, setPortalRoot] = React.useState<HTMLDivElement | null>(null);
   const { context, refs } = useFloating({
@@ -156,14 +164,16 @@ function SheetContent({ className, children, side = "right", style, ...props }: 
               data-slot="sheet-overlay-portal-root"
               className="pointer-events-none absolute inset-0 z-50"
             />
-            <button
-              type="button"
-              data-slot="sheet-close"
-              className="absolute top-4 right-4 text-[20px] active:bg-accent hover:bg-accent p-1 rounded-full transition-all focus:ring focus:ring-accent"
-              onClick={() => onOpenChange(false)}
-            >
-              <XIcon size="1em" />
-            </button>
+            {showCloseButton && (
+              <button
+                type="button"
+                data-slot="sheet-close"
+                className="absolute top-4 right-4 text-[20px] active:bg-accent hover:bg-accent p-1 rounded-full transition-all focus:ring focus:ring-accent"
+                onClick={() => onOpenChange(false)}
+              >
+                <XIcon size="1em" />
+              </button>
+            )}
           </div>
         </FloatingFocusManager>
       </FloatingOverlay>

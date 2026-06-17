@@ -11,5 +11,6 @@ export type UpdateAccountDtoCurrency = (typeof UpdateAccountDtoCurrency)[keyof t
 export const UpdateAccountDtoCurrency = {
   USD: "USD",
   EUR: "EUR",
+  RUB: "RUB",
   BYN: "BYN",
 } as const;

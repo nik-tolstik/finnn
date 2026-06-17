@@ -3539,7 +3539,7 @@
             "required": true,
             "in": "query",
             "schema": {
-              "enum": ["USD", "EUR", "BYN"],
+              "enum": ["USD", "EUR", "RUB", "BYN"],
               "type": "string"
             }
           },
@@ -3548,7 +3548,7 @@
             "required": true,
             "in": "query",
             "schema": {
-              "enum": ["USD", "EUR", "BYN"],
+              "enum": ["USD", "EUR", "RUB", "BYN"],
               "type": "string"
             }
           },
@@ -4307,7 +4307,7 @@
           },
           "currency": {
             "type": "string",
-            "enum": ["USD", "EUR", "BYN"],
+            "enum": ["USD", "EUR", "RUB", "BYN"],
             "example": "BYN"
           },
           "ownerId": {
@@ -4614,7 +4614,7 @@
           },
           "currency": {
             "type": "string",
-            "enum": ["USD", "EUR", "BYN"],
+            "enum": ["USD", "EUR", "RUB", "BYN"],
             "example": "USD"
           },
           "ownerId": {
@@ -6182,12 +6182,12 @@
           },
           "fromCurrency": {
             "type": "string",
-            "enum": ["USD", "EUR", "BYN"],
+            "enum": ["USD", "EUR", "RUB", "BYN"],
             "example": "USD"
           },
           "toCurrency": {
             "type": "string",
-            "enum": ["USD", "EUR", "BYN"],
+            "enum": ["USD", "EUR", "RUB", "BYN"],
             "example": "BYN"
           }
         },
@@ -6204,6 +6204,7 @@
             "example": {
               "BYN": 1,
               "EUR": 3.6124,
+              "RUB": 0.0351,
               "USD": 3.2721
             }
           }
@@ -6234,12 +6235,12 @@
           },
           "fromCurrency": {
             "type": "string",
-            "enum": ["USD", "EUR", "BYN"],
+            "enum": ["USD", "EUR", "RUB", "BYN"],
             "example": "USD"
           },
           "toCurrency": {
             "type": "string",
-            "enum": ["USD", "EUR", "BYN"],
+            "enum": ["USD", "EUR", "RUB", "BYN"],
             "example": "BYN"
           },
           "rate": {

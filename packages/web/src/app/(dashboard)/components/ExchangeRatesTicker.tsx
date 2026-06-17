@@ -22,7 +22,7 @@ export function ExchangeRatesTicker() {
 
   if (!isMounted || isLoading) {
     return (
-      <div className="h-8 overflow-hidden border-b bg-muted/50 md:hidden">
+      <div className="h-8 overflow-hidden border-b md:hidden">
         <div className="flex items-center h-full px-4 sm:px-8">
           <div className="h-4 w-24 bg-muted rounded animate-pulse" />
         </div>
@@ -35,9 +35,9 @@ export function ExchangeRatesTicker() {
   }
 
   return (
-    <div className="h-8 border-b bg-muted/50 md:hidden">
+    <div className="h-8 border-b md:hidden">
       <div className="flex h-full items-center px-4 sm:px-8">
-        <DashboardExchangeRatesList rates={rates} />
+        <DashboardExchangeRatesList labelMode="flag" rates={rates} />
       </div>
     </div>
   );

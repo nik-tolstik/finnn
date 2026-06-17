@@ -12,5 +12,6 @@ export type ExchangeRateQueryDtoFromCurrency =
 export const ExchangeRateQueryDtoFromCurrency = {
   USD: "USD",
   EUR: "EUR",
+  RUB: "RUB",
   BYN: "BYN",
 } as const;
