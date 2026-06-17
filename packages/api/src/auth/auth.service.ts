@@ -6,12 +6,14 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import type { Prisma, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import { AvatarStorageService } from "@/avatar/avatar-storage.service";
 import { EmailService } from "@/email/email.service";
 import { PrismaService } from "@/prisma/prisma.service";
 
@@ -25,6 +27,7 @@ import type {
 import { getSessionExpiresAt, hashSessionToken } from "./session-cookie";
 import { validateTelegramMiniAppInitData } from "./telegram-mini-app";
 import { type TelegramClaims, TelegramOidcClient } from "./telegram-oidc.client";
+import { getUploadedUserAvatarPath, isPresetUserAvatar } from "./user-avatar-presets";
 
 const VERIFICATION_TOKEN_BYTES = 32;
 const SESSION_TOKEN_BYTES = 32;
@@ -35,6 +38,8 @@ const TELEGRAM_STATE_BYTES = 32;
 const TELEGRAM_NONCE_BYTES = 32;
 const TELEGRAM_CODE_VERIFIER_BYTES = 48;
 const DEFAULT_TELEGRAM_STATE_TTL_SECONDS = 600;
+const DEFAULT_AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const ACCEPTED_AVATAR_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 type TelegramAuthMode = "login" | "link";
 type TelegramStatePayload = {
@@ -69,6 +74,8 @@ type AuthUserWithIdentities = Pick<User, "id" | "email" | "name" | "image"> & {
     photoUrl: string | null;
   }>;
 };
+
+type UserAvatarFile = Pick<Express.Multer.File, "buffer" | "mimetype" | "size">;
 
 const TELEGRAM_AUTH_IDENTITY_SELECT = {
   where: { provider: TELEGRAM_PROVIDER },
@@ -244,6 +251,43 @@ function getTelegramOidcIdLikeClaims(claims: TelegramClaims) {
     }));
 }
 
+function getAvatarMaxBytes(): number {
+  const configured = Number(process.env.AVATAR_MAX_BYTES);
+  return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_AVATAR_MAX_BYTES;
+}
+
+function hasExpectedAvatarMagicBytes(file: UserAvatarFile): boolean {
+  const buffer = file.buffer;
+
+  if (file.mimetype === "image/jpeg") {
+    return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+
+  if (file.mimetype === "image/png") {
+    return (
+      buffer.length >= 8 &&
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47 &&
+      buffer[4] === 0x0d &&
+      buffer[5] === 0x0a &&
+      buffer[6] === 0x1a &&
+      buffer[7] === 0x0a
+    );
+  }
+
+  if (file.mimetype === "image/webp") {
+    return (
+      buffer.length >= 12 &&
+      buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+      buffer.subarray(8, 12).toString("ascii") === "WEBP"
+    );
+  }
+
+  return false;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -251,7 +295,8 @@ export class AuthService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(EmailService) private readonly emailService: EmailService,
-    @Inject(TelegramOidcClient) private readonly telegramOidcClient: TelegramOidcClient
+    @Inject(TelegramOidcClient) private readonly telegramOidcClient: TelegramOidcClient,
+    @Inject(AvatarStorageService) private readonly avatarStorage: AvatarStorageService
   ) {}
 
   async register(input: RegisterDto): Promise<{ success: true }> {
@@ -489,22 +534,125 @@ export class AuthService {
   }
 
   async updateUser(userId: string, input: UpdateUserDto): Promise<ReturnType<typeof toAuthUser>> {
+    const data: Prisma.UserUpdateInput = {
+      name: input.name,
+    };
+    let oldAvatarStorageKey: string | null = null;
+
+    if (input.image !== undefined) {
+      const currentUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatarStorageKey: true },
+      });
+
+      if (!currentUser) {
+        throw new UnauthorizedException("Не авторизован");
+      }
+
+      oldAvatarStorageKey = currentUser.avatarStorageKey;
+
+      if (input.image === null) {
+        data.image = null;
+        data.avatarStorageKey = null;
+      } else if (typeof input.image === "string" && isPresetUserAvatar(input.image)) {
+        data.image = input.image;
+        data.avatarStorageKey = null;
+      } else if (typeof input.image === "string" && input.image === getUploadedUserAvatarPath(userId)) {
+        data.image = input.image;
+      } else {
+        throw new BadRequestException("Выберите аватар из предложенного списка");
+      }
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: AUTH_USER_SELECT,
+    });
+
+    if (oldAvatarStorageKey && data.avatarStorageKey === null) {
+      await this.deleteAvatarBestEffort(oldAvatarStorageKey);
+    }
+
+    return toAuthUser(user);
+  }
+
+  async uploadUserAvatar(userId: string, file: UserAvatarFile | undefined): Promise<ReturnType<typeof toAuthUser>> {
+    this.validateAvatarFile(file);
+
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, avatarStorageKey: true },
+    });
+
+    if (!currentUser) {
+      throw new UnauthorizedException("Не авторизован");
+    }
+
+    const newStorageKey = await this.avatarStorage.upload({
+      userId,
+      buffer: file.buffer,
+      contentType: file.mimetype,
+    });
+
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          image: getUploadedUserAvatarPath(userId),
+          avatarStorageKey: newStorageKey,
+        },
+        select: AUTH_USER_SELECT,
+      });
+
+      if (currentUser.avatarStorageKey) {
+        await this.deleteAvatarBestEffort(currentUser.avatarStorageKey);
+      }
+
+      return toAuthUser(user);
+    } catch (error) {
+      await this.deleteAvatarBestEffort(newStorageKey);
+      throw error;
+    }
+  }
+
+  async deleteUserAvatar(userId: string): Promise<ReturnType<typeof toAuthUser>> {
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarStorageKey: true },
+    });
+
+    if (!currentUser) {
+      throw new UnauthorizedException("Не авторизован");
+    }
+
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        name: input.name,
-        image: input.image ?? null,
+        image: null,
+        avatarStorageKey: null,
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        image: true,
-        authIdentities: TELEGRAM_AUTH_IDENTITY_SELECT,
-      },
+      select: AUTH_USER_SELECT,
     });
 
+    if (currentUser.avatarStorageKey) {
+      await this.deleteAvatarBestEffort(currentUser.avatarStorageKey);
+    }
+
     return toAuthUser(user);
+  }
+
+  async getUserAvatarReadUrl(userId: string): Promise<string> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarStorageKey: true },
+    });
+
+    if (!user?.avatarStorageKey) {
+      throw new NotFoundException("Avatar not found");
+    }
+
+    return this.avatarStorage.getReadUrl(user.avatarStorageKey);
   }
 
   async requestEmailVerification(userId: string, input: RequestEmailVerificationDto): Promise<{ success: true }> {
@@ -850,10 +998,40 @@ export class AuthService {
       data: this.getTelegramIdentityMetadata(claims),
     });
 
-    if (getTelegramPhotoUrl(claims)) {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { image: getTelegramPhotoUrl(claims) },
+    const photoUrl = getTelegramPhotoUrl(claims);
+    if (photoUrl) {
+      await this.prisma.user.updateMany({
+        where: { id: userId, image: null },
+        data: { image: photoUrl },
+      });
+    }
+  }
+
+  private validateAvatarFile(file: UserAvatarFile | undefined): asserts file is UserAvatarFile {
+    if (!file) {
+      throw new BadRequestException("Выберите файл аватара");
+    }
+
+    if (file.size <= 0 || file.buffer.length === 0) {
+      throw new BadRequestException("Файл аватара пуст");
+    }
+
+    if (file.size > getAvatarMaxBytes()) {
+      throw new BadRequestException("Файл аватара слишком большой");
+    }
+
+    if (!ACCEPTED_AVATAR_MIME_TYPES.has(file.mimetype) || !hasExpectedAvatarMagicBytes(file)) {
+      throw new BadRequestException("Загрузите PNG, JPEG или WebP изображение");
+    }
+  }
+
+  private async deleteAvatarBestEffort(storageKey: string): Promise<void> {
+    try {
+      await this.avatarStorage.delete(storageKey);
+    } catch (error) {
+      this.logger.warn({
+        event: "avatar_delete_failed",
+        message: error instanceof Error ? error.message : "Unknown avatar storage delete error",
       });
     }
   }

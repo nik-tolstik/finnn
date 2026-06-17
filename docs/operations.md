@@ -74,6 +74,23 @@ SMTP_PASSWORD="smtp-password"
 SMTP_FROM="Finnn <no-reply@example.com>"
 ```
 
+Avatar uploads require a private Railway Bucket exposed through its S3-compatible credentials:
+
+```env
+AVATAR_BUCKET="railway-bucket-name"
+AVATAR_BUCKET_ACCESS_KEY_ID="railway-bucket-access-key-id"
+AVATAR_BUCKET_SECRET_ACCESS_KEY="railway-bucket-secret-access-key"
+AVATAR_BUCKET_REGION="auto"
+AVATAR_BUCKET_ENDPOINT="https://storage.railway.app"
+AVATAR_BUCKET_FORCE_PATH_STYLE="false"
+AVATAR_MAX_BYTES="2097152"
+AVATAR_PRESIGNED_URL_TTL_SECONDS="3600"
+```
+
+Keep the bucket private. The API stores object keys in `users.avatarStorageKey`, keeps `users.image` as a stable
+`/auth/users/:userId/avatar` display path, and redirects reads to short-lived presigned URLs. Some older buckets may need
+`AVATAR_BUCKET_FORCE_PATH_STYLE="true"`.
+
 ## Build
 
 The production build runs:
@@ -120,6 +137,14 @@ TELEGRAM_AUTH_STATE_SECRET="production-telegram-state-secret"
 TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
 TELEGRAM_BOT_TOKEN="production-bot-token"
 TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
+AVATAR_BUCKET="railway-bucket-name"
+AVATAR_BUCKET_ACCESS_KEY_ID="railway-bucket-access-key-id"
+AVATAR_BUCKET_SECRET_ACCESS_KEY="railway-bucket-secret-access-key"
+AVATAR_BUCKET_REGION="auto"
+AVATAR_BUCKET_ENDPOINT="https://storage.railway.app"
+AVATAR_BUCKET_FORCE_PATH_STYLE="false"
+AVATAR_MAX_BYTES="2097152"
+AVATAR_PRESIGNED_URL_TTL_SECONDS="3600"
 ```
 
 Frontend production variables stay with the web deployment:
@@ -290,6 +315,7 @@ Also verify:
 - Required env vars exist in the target environment.
 - MongoDB accepts Prisma transactions.
 - `pnpm db:push` has been run for schema/index changes.
+- Railway Bucket avatar variables are present and point at the correct environment bucket.
 - Cron endpoint returns success with a valid secret.
 - API auth cookie variables match the deployed API and web hosts.
 - Telegram redirect URI is registered in BotFather and matches `TELEGRAM_REDIRECT_URI`.

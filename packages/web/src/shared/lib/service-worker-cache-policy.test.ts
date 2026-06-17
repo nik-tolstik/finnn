@@ -15,6 +15,7 @@ describe("service worker cache policy", () => {
     expect(swSource).toContain('request.method !== "GET"');
     expect(swSource).toContain('request.destination === "document"');
     expect(swSource).toContain('url.pathname.startsWith("/api/")');
+    expect(swSource).toContain('url.pathname.startsWith("/auth/users/")');
     expect(swSource).toContain('url.pathname.startsWith("/_next/data/")');
   });
 });
