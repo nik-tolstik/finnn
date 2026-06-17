@@ -88,7 +88,7 @@ export function FloatingActionButton() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-50 flex items-center justify-center md:hidden">
+      <div className="pointer-events-none fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),0.5rem)] z-50 flex items-center justify-center md:hidden">
         <div className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3">
           <nav
             ref={navRef}
