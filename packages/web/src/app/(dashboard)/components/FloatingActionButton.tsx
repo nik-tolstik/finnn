@@ -88,7 +88,7 @@ export function FloatingActionButton() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-50 flex items-center justify-center md:hidden">
+      <div className="pointer-events-none fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-50 flex items-center justify-center md:hidden">
         <div className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3">
           <nav
             ref={navRef}
@@ -123,12 +123,12 @@ export function FloatingActionButton() {
                   whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
                   transition={{ type: "spring", stiffness: 520, damping: 32, mass: 0.5 }}
                   className={cn(
-                    "relative z-10 flex h-12 items-center justify-center rounded-full transition-colors",
+                    "relative z-10 flex h-12 flex-col items-center justify-center gap-0.5 rounded-full transition-colors",
                     isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  <Icon className="size-5" />
-                  <span className="sr-only">{item.label}</span>
+                  <Icon aria-hidden="true" className="size-4" />
+                  <span className="whitespace-nowrap text-[10px] font-medium leading-none">{item.label}</span>
                 </MotionLink>
               );
             })}

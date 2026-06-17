@@ -131,41 +131,43 @@ export function Sidebar() {
           </div>
         )}
 
-        <div className="px-4 pb-2">
-          <WorkspaceDropdown
-            className={cn(sidebarOpen ? "w-full justify-start" : "mx-auto")}
-            collapsed={!sidebarOpen}
-            currentWorkspaceId={workspaceId}
-            placement={sidebarOpen ? "bottom-start" : "right-start"}
-          />
+        <div className="flex-1 px-4 py-2">
+          <nav className="space-y-1">
+            {DASHBOARD_NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+
+              return (
+                <SidebarIconTooltip content={item.label} disabled={sidebarOpen} key={item.href}>
+                  <Link
+                    href={`${item.href}${basePath}`}
+                    prefetch
+                    aria-label={sidebarOpen ? undefined : item.label}
+                    className={cn(
+                      "flex items-center rounded-md text-sm font-medium transition-colors",
+                      sidebarOpen ? "gap-3 px-3 py-2" : "size-10 justify-center p-0",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    <Icon className={cn(sidebarOpen ? "size-4" : "size-5")} />
+                    {sidebarOpen && <span className="truncate">{item.label}</span>}
+                  </Link>
+                </SidebarIconTooltip>
+              );
+            })}
+          </nav>
+
+          <div className="mt-4 border-t pt-4">
+            <WorkspaceDropdown
+              className={cn(sidebarOpen ? "w-full justify-start" : "mx-auto")}
+              collapsed={!sidebarOpen}
+              currentWorkspaceId={workspaceId}
+              placement={sidebarOpen ? "bottom-start" : "right-start"}
+            />
+          </div>
         </div>
-
-        <nav className="flex-1 space-y-1 px-4 py-2">
-          {DASHBOARD_NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-
-            return (
-              <SidebarIconTooltip content={item.label} disabled={sidebarOpen} key={item.href}>
-                <Link
-                  href={`${item.href}${basePath}`}
-                  prefetch
-                  aria-label={sidebarOpen ? undefined : item.label}
-                  className={cn(
-                    "flex items-center rounded-md text-sm font-medium transition-colors",
-                    sidebarOpen ? "gap-3 px-3 py-2" : "size-10 justify-center p-0",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  )}
-                >
-                  <Icon className={cn(sidebarOpen ? "size-4" : "size-5")} />
-                  {sidebarOpen && <span className="truncate">{item.label}</span>}
-                </Link>
-              </SidebarIconTooltip>
-            );
-          })}
-        </nav>
 
         <div className="mt-auto space-y-2 border-t px-4 py-4">
           {shouldShowExchangeRates &&
@@ -245,7 +247,7 @@ export function Sidebar() {
                   </button>
                 </div>
                 <div className="px-2 py-2">
-                  <AppearanceSettings title={null} description={null} className="space-y-2" showLabels={false} />
+                  <AppearanceSettings title="Интерфейс" description={null} className="space-y-2" showLabels={false} />
                 </div>
                 <div className="border-t pt-1">
                   <button

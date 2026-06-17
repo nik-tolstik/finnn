@@ -9,7 +9,7 @@ const BurgerMenu = dynamic(() => import("./BurgerMenu").then((mod) => mod.Burger
 
 export function Header() {
   return (
-    <header className="bg-background py-2 sticky top-0 z-20 flex h-16 items-center md:hidden">
+    <header className="bg-background sticky top-0 z-20 flex h-16 items-center md:hidden">
       <div className="flex items-center justify-between px-4 sm:px-8 w-full">
         <div className="flex items-center justify-end gap-4 flex-1">
           <BurgerMenu />

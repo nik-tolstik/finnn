@@ -51,10 +51,9 @@ export function BurgerMenu() {
               <button
                 type="button"
                 onClick={() => {
-                  setOpen(false);
                   setSettingsDialogOpen(true);
                 }}
-                className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 <UserAvatar
                   name={session?.user?.name || telegramName}
@@ -71,15 +70,15 @@ export function BurgerMenu() {
             </div>
 
             <div className="px-4 mt-4">
-              <AppearanceSettings title={null} description={null} className="space-y-2" />
-            </div>
-
-            <div className="px-4 mt-4">
               <WorkspaceDropdown
                 currentWorkspaceId={workspaceId}
                 variant="list"
                 onWorkspaceSelect={() => setOpen(false)}
               />
+            </div>
+
+            <div className="px-4 mt-6">
+              <AppearanceSettings title="Интерфейс" description={null} className="space-y-3" />
             </div>
 
             <div className="mt-auto border-t p-4 space-y-1">
