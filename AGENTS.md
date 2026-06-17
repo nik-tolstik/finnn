@@ -17,6 +17,7 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 - Do not revert user changes unless the user explicitly requests it.
 - Prefer existing project patterns over introducing new abstractions.
 - Keep comments in English.
+- Do not run Browser screenshot QA with Playwright, `agent-browser`, or similar browser automation unless the user explicitly asks for screenshot/browser QA.
 
 ## Key Commands
 

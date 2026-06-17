@@ -1,8 +1,7 @@
 "use client";
 
-import { ChevronRight, Grip, LogOut } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { ChevronRight, LogOut } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
@@ -13,18 +12,15 @@ import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";
 
-import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
 import { WorkspaceDropdown } from "./WorkspaceDropdown";
 
 export function BurgerMenu() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const workspaceId = searchParams.get("workspaceId") || undefined;
 
-  const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
   const handleLogout = async () => {
     setOpen(false);
     await signOut({ callbackUrl: "/login" });
@@ -39,11 +35,17 @@ export function BurgerMenu() {
   return (
     <>
       <Sheet open={open} onOpenChange={setOpen}>
-        <Button variant="ghost" size="icon" className="md:hidden p-0 size-6" onClick={() => setOpen(true)}>
-          <Grip className="size-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Открыть меню пользователя"
+          className="md:hidden p-0 size-9 rounded-full"
+          onClick={() => setOpen(true)}
+        >
+          <UserAvatar name={session?.user?.name || telegramName} email={email} image={session?.user?.image} size="lg" />
         </Button>
-        <SheetContent side="left" showCloseButton={false} className="w-[calc(100vw-48px)] max-w-sm p-0">
-          <SheetTitle className="sr-only">Меню навигации</SheetTitle>
+        <SheetContent side="right" showCloseButton={false} className="w-[calc(100vw-48px)] max-w-sm p-0">
+          <SheetTitle className="sr-only">Меню пользователя</SheetTitle>
           <div className="flex h-full flex-col">
             <div className="px-4 mt-6">
               <button
@@ -75,33 +77,10 @@ export function BurgerMenu() {
             <div className="px-4 mt-4">
               <WorkspaceDropdown
                 currentWorkspaceId={workspaceId}
-                className="w-full justify-start"
+                variant="list"
                 onWorkspaceSelect={() => setOpen(false)}
               />
             </div>
-
-            <nav className="flex-1 p-4 space-y-1">
-              {DASHBOARD_NAV_ITEMS.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-
-                return (
-                  <Link
-                    href={`${item.href}${basePath}`}
-                    key={item.href}
-                    prefetch
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                      isActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
-                    )}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
 
             <div className="mt-auto border-t p-4 space-y-1">
               <button
