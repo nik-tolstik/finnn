@@ -12,5 +12,6 @@ export type SavedExchangeRateDtoFromCurrency =
 export const SavedExchangeRateDtoFromCurrency = {
   USD: "USD",
   EUR: "EUR",
+  RUB: "RUB",
   BYN: "BYN",
 } as const;

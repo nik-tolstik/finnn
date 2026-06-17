@@ -31,7 +31,6 @@ export class UpdateWorkspaceDto {
   @MaxLength(50)
   @Matches(/^[a-z0-9-]+$/)
   slug?: string;
-
 }
 
 export class WorkspaceOwnerDto {

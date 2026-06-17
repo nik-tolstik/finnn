@@ -69,7 +69,7 @@ function WorkspaceCapitalChartCard({ viewModel }: AnalyticsChartsProps) {
       </CardHeader>
       <CardContent>
         {viewModel.capitalTimeSeries.length > 0 ? (
-          <div className="h-[320px] w-full">
+          <div className="h-[320px] w-full select-none [&_.recharts-surface]:select-none [&_.recharts-surface]:outline-none [&_.recharts-surface_*]:select-none [&_.recharts-surface_*]:outline-none">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={viewModel.capitalTimeSeries}

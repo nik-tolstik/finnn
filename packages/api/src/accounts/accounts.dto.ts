@@ -13,7 +13,7 @@ import {
   ValidateNested,
 } from "class-validator";
 
-const ACCOUNT_CURRENCIES = ["USD", "EUR", "BYN"] as const;
+const ACCOUNT_CURRENCIES = ["USD", "EUR", "RUB", "BYN"] as const;
 
 class AccountOwnerDto {
   @ApiProperty({ example: "665f5d865ef5a20c0d2f1111", type: String })

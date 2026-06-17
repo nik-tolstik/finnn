@@ -10,6 +10,7 @@ datasource db {
 enum Currency {
   USD
   EUR
+  RUB
   BYN
 }
 

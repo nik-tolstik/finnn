@@ -11,5 +11,6 @@ export type GetExchangeRateToCurrency = (typeof GetExchangeRateToCurrency)[keyof
 export const GetExchangeRateToCurrency = {
   USD: "USD",
   EUR: "EUR",
+  RUB: "RUB",
   BYN: "BYN",
 } as const;

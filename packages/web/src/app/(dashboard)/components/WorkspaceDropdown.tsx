@@ -2,7 +2,7 @@
 
 import type { Placement } from "@floating-ui/react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, ArrowRight, LogOut, Plus, Settings } from "lucide-react";
+import { Archive, ArrowRight, Building, LogOut, Plus, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -23,6 +23,7 @@ interface WorkspaceDropdownProps {
   currentWorkspaceId?: string;
   className?: string;
   collapsed?: boolean;
+  onWorkspaceSelect?: () => void;
   placement?: Placement;
 }
 
@@ -30,6 +31,7 @@ export function WorkspaceDropdown({
   currentWorkspaceId,
   className,
   collapsed = false,
+  onWorkspaceSelect,
   placement = "bottom-start",
 }: WorkspaceDropdownProps) {
   const router = useRouter();
@@ -61,6 +63,7 @@ export function WorkspaceDropdown({
     router.push(`/dashboard?workspaceId=${workspaceId}`);
     setOpen(false);
     setSwitchOpen(false);
+    onWorkspaceSelect?.();
   };
 
   const handleCreateWorkspace = () => {
@@ -108,7 +111,7 @@ export function WorkspaceDropdown({
               )}
               {...triggerProps}
             >
-              {collapsed && <Settings className="h-4 w-4" />}
+              <Building className="h-4 w-4 shrink-0" />
               {!collapsed && <span className="max-w-[200px] truncate">{triggerLabel}</span>}
             </button>
           </Tooltip>

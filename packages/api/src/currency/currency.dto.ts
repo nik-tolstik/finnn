@@ -3,7 +3,7 @@ import { Currency } from "@prisma/client";
 import { Type } from "class-transformer";
 import { IsDate, IsIn } from "class-validator";
 
-const CURRENCIES = [Currency.USD, Currency.EUR, Currency.BYN] as const;
+const CURRENCIES = [Currency.USD, Currency.EUR, Currency.RUB, Currency.BYN] as const;
 
 export class ExchangeRateQueryDto {
   @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
@@ -28,7 +28,7 @@ export class ExchangeRateResponseDto {
 export class ExchangeRatesResponseDto {
   @ApiProperty({
     additionalProperties: { type: "number" },
-    example: { BYN: 1, EUR: 3.6124, USD: 3.2721 },
+    example: { BYN: 1, EUR: 3.6124, RUB: 0.0351, USD: 3.2721 },
     type: "object",
   })
   data!: Record<string, number>;

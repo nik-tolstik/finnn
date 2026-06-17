@@ -1,6 +1,6 @@
 "use client";
 
-import { Grip, Settings } from "lucide-react";
+import { ChevronRight, Grip, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -8,12 +8,13 @@ import { useState } from "react";
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { useSession } from "@/shared/lib/api-session-client";
+import { signOut, useSession } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";
 
 import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
+import { WorkspaceDropdown } from "./WorkspaceDropdown";
 
 export function BurgerMenu() {
   const { data: session } = useSession();
@@ -24,6 +25,10 @@ export function BurgerMenu() {
   const workspaceId = searchParams.get("workspaceId") || undefined;
 
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
+  const handleLogout = async () => {
+    setOpen(false);
+    await signOut({ callbackUrl: "/login" });
+  };
 
   const telegramName = session?.user?.telegram.username
     ? `@${session.user.telegram.username}`
@@ -37,11 +42,18 @@ export function BurgerMenu() {
         <Button variant="ghost" size="icon" className="md:hidden p-0 size-6" onClick={() => setOpen(true)}>
           <Grip className="size-5" />
         </Button>
-        <SheetContent side="left" className="w-full max-w-full p-0">
+        <SheetContent side="left" showCloseButton={false} className="w-[calc(100vw-48px)] max-w-sm p-0">
           <SheetTitle className="sr-only">Меню навигации</SheetTitle>
           <div className="flex h-full flex-col">
-            <div className="px-4 mt-10">
-              <div className="flex items-center gap-3 p-2 border rounded-lg">
+            <div className="px-4 mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setSettingsDialogOpen(true);
+                }}
+                className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
                 <UserAvatar
                   name={session?.user?.name || telegramName}
                   email={email}
@@ -52,13 +64,20 @@ export function BurgerMenu() {
                   <div className="text-sm font-medium truncate">{displayName}</div>
                   {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
                 </div>
-              </div>
+                <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+              </button>
             </div>
 
             <div className="px-4 mt-4">
-              <div className="rounded-lg border p-3">
-                <AppearanceSettings title="Тема" description={null} className="space-y-2" />
-              </div>
+              <AppearanceSettings title={null} description={null} className="space-y-2" />
+            </div>
+
+            <div className="px-4 mt-4">
+              <WorkspaceDropdown
+                currentWorkspaceId={workspaceId}
+                className="w-full justify-start"
+                onWorkspaceSelect={() => setOpen(false)}
+              />
             </div>
 
             <nav className="flex-1 p-4 space-y-1">
@@ -88,15 +107,14 @@ export function BurgerMenu() {
               <button
                 type="button"
                 onClick={() => {
-                  setOpen(false);
-                  setSettingsDialogOpen(true);
+                  void handleLogout();
                 }}
                 className={cn(
-                  "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-3"
+                  "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10"
                 )}
               >
-                <Settings className="h-5 w-5 text-muted-foreground" />
-                <span>Настройки</span>
+                <LogOut className="h-5 w-5" />
+                <span>Выйти</span>
               </button>
             </div>
           </div>

@@ -24,7 +24,7 @@ function createJsonResponse(body: unknown, status = 200) {
   });
 }
 
-function createNBRBResponse(usdRate: number, eurRate: number) {
+function createNBRBResponse(usdRate: number, eurRate: number, rubRate = 3.5, rubScale = 100) {
   return createJsonResponse([
     {
       Cur_Abbreviation: "USD",
@@ -35,6 +35,11 @@ function createNBRBResponse(usdRate: number, eurRate: number) {
       Cur_Abbreviation: "EUR",
       Cur_OfficialRate: eurRate,
       Cur_Scale: 1,
+    },
+    {
+      Cur_Abbreviation: "RUB",
+      Cur_OfficialRate: rubRate,
+      Cur_Scale: rubScale,
     },
   ]);
 }
@@ -131,7 +136,7 @@ describe("Currency API", () => {
     expect(response.body.message).toEqual(
       expect.arrayContaining([
         "date must be a Date instance",
-        "fromCurrency must be one of the following values: USD, EUR, BYN",
+        "fromCurrency must be one of the following values: USD, EUR, RUB, BYN",
       ])
     );
   });
@@ -153,7 +158,7 @@ describe("Currency API", () => {
       .expect(200);
 
     expect(response.body).toEqual({ data: 3 });
-    expect(prisma.exchangeRate.upsert).toHaveBeenCalledTimes(2);
+    expect(prisma.exchangeRate.upsert).toHaveBeenCalledTimes(3);
     expect(prisma.exchangeRate.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({
@@ -168,6 +173,15 @@ describe("Currency API", () => {
         create: expect.objectContaining({
           fromCurrency: Currency.EUR,
           rate: 4,
+          toCurrency: Currency.BYN,
+        }),
+      })
+    );
+    expect(prisma.exchangeRate.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          fromCurrency: Currency.RUB,
+          rate: 0.035,
           toCurrency: Currency.BYN,
         }),
       })
@@ -192,6 +206,7 @@ describe("Currency API", () => {
             date: "2026-03-31",
             rates: {
               EUR: 0.25,
+              RUB: 100,
               USD: 0.5,
             },
           })
@@ -203,10 +218,11 @@ describe("Currency API", () => {
     expect(response.body).toEqual({
       data: {
         EUR: 4,
+        RUB: 0.01,
         USD: 2,
       },
     });
-    expect(prisma.exchangeRate.upsert).toHaveBeenCalledTimes(2);
+    expect(prisma.exchangeRate.upsert).toHaveBeenCalledTimes(3);
   });
 
   it("protects the exchange-rate cron endpoint with CRON_SECRET", async () => {
@@ -233,7 +249,7 @@ describe("Currency API", () => {
       .expect(200);
 
     expect(response.body).toMatchObject({
-      saved: 2,
+      saved: 3,
       success: true,
     });
     expect(prisma.exchangeRate.upsert).toHaveBeenCalledWith(
@@ -242,6 +258,16 @@ describe("Currency API", () => {
           date: new Date("2026-03-31T00:00:00.000Z"),
           fromCurrency: Currency.USD,
           rate: 2.95,
+          toCurrency: Currency.BYN,
+        }),
+      })
+    );
+    expect(prisma.exchangeRate.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          date: new Date("2026-03-31T00:00:00.000Z"),
+          fromCurrency: Currency.RUB,
+          rate: 0.035,
           toCurrency: Currency.BYN,
         }),
       })

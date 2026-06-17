@@ -11,5 +11,6 @@ export type CreateAccountDtoCurrency = (typeof CreateAccountDtoCurrency)[keyof t
 export const CreateAccountDtoCurrency = {
   USD: "USD",
   EUR: "EUR",
+  RUB: "RUB",
   BYN: "BYN",
 } as const;

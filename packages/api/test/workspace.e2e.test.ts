@@ -313,7 +313,9 @@ describe("Workspace API", () => {
       if (where.slug === "updated-budget") return null;
       return createWorkspaceRecord();
     });
-    prisma.workspace.update.mockResolvedValue(createWorkspaceRecord({ name: "Updated budget", slug: "updated-budget" }));
+    prisma.workspace.update.mockResolvedValue(
+      createWorkspaceRecord({ name: "Updated budget", slug: "updated-budget" })
+    );
 
     const response = await request(app.getHttpServer())
       .patch("/workspaces/workspace-1")
