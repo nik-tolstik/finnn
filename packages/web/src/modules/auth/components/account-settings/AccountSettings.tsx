@@ -14,6 +14,7 @@ import {
 } from "@/shared/api/generated/auth/auth";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { useSession } from "@/shared/lib/api-session-client";
+import { bumpUploadedAvatarVersion } from "@/shared/lib/avatar-cache-bust";
 import { runOptimisticWorkspaceMutation, updateUserReferencesInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -110,6 +111,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
   const avatarUploadMutation = useMutation({
     mutationFn: (file: File) => uploadCurrentUserAvatar(file),
     onSuccess: async (result) => {
+      bumpUploadedAvatarVersion(result.user.image);
       await updateSession();
       setValue("image", result.user.image ?? null, {
         shouldDirty: true,

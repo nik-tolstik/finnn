@@ -1,12 +1,11 @@
 "use client";
 
-import { ImagePlusIcon, UploadIcon } from "lucide-react";
+import { ImagePlusIcon } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { USER_AVATAR_GROUP_LABELS, USER_AVATARS, type UserAvatarGroup } from "@/shared/constants/user-avatars";
-import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { cn } from "@/shared/utils/cn";
 
@@ -102,41 +101,15 @@ export function AvatarPickerDialog({
         <DialogContent className="flex-1 overflow-y-auto">
           <div className="space-y-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium">Загрузка</p>
-              <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-muted-foreground">
-                  {previewUrl ? (
-                    // biome-ignore lint/performance/noImgElement: Local object URLs cannot be rendered through Next Image.
-                    <img src={previewUrl} alt="" className="size-full object-cover" />
-                  ) : (
-                    <ImagePlusIcon className="size-5" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={uploadPending}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <UploadIcon />
-                    {uploadPending ? "Загрузка..." : "Загрузить"}
-                  </Button>
-                  {uploadError && <p className="mt-2 text-xs text-destructive">{uploadError}</p>}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
               <p className="text-sm font-medium">Стандартный</p>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
                 <button
                   type="button"
                   title="Аватар с инициалами"
@@ -157,7 +130,31 @@ export function AvatarPickerDialog({
                   />
                   <span className="text-[11px] text-center leading-tight text-muted-foreground">Стандартный</span>
                 </button>
+                <button
+                  type="button"
+                  title="Загрузить аватар"
+                  aria-label="Загрузить аватар"
+                  disabled={uploadPending}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "flex flex-col items-center gap-2 rounded-xl border p-3 transition-colors disabled:pointer-events-none disabled:opacity-60",
+                    "border-border hover:border-primary/50"
+                  )}
+                >
+                  <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-muted-foreground">
+                    {previewUrl ? (
+                      // biome-ignore lint/performance/noImgElement: Local object URLs cannot be rendered through Next Image.
+                      <img src={previewUrl} alt="" className="size-full object-cover" />
+                    ) : (
+                      <ImagePlusIcon className="size-5" />
+                    )}
+                  </div>
+                  <span className="text-[11px] text-center leading-tight text-muted-foreground">
+                    {uploadPending ? "Загрузка..." : "Загрузить"}
+                  </span>
+                </button>
               </div>
+              {uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
             </div>
 
             {avatarSections.map((section) => (

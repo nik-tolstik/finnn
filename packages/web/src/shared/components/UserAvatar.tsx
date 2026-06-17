@@ -3,6 +3,7 @@
 import Image from "next/image";
 
 import { getApiBaseUrl } from "@/shared/api/http-client";
+import { getUploadedAvatarVersion, isUploadedAvatarPath } from "@/shared/lib/avatar-cache-bust";
 import { getAvatarColor } from "@/shared/utils/avatar-colors";
 import { cn } from "@/shared/utils/cn";
 
@@ -26,8 +27,14 @@ const sizeMap: Record<UserAvatarSize, { container: string; text: string; pixels:
 };
 
 function resolveImageSrc(image: string): string {
-  if (image.startsWith("/auth/")) {
-    return new URL(image, `${getApiBaseUrl()}/`).toString();
+  if (isUploadedAvatarPath(image)) {
+    const url = new URL(image, `${getApiBaseUrl()}/`);
+    const version = getUploadedAvatarVersion(image);
+    if (version) {
+      url.searchParams.set("v", version);
+    }
+
+    return url.toString();
   }
 
   return image;
