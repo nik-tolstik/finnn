@@ -17,6 +17,7 @@ export function createOpenApiDocument(app: INestApplication) {
     .addTag("Workspace Invites")
     .addTag("Transactions")
     .addTag("Debts")
+    .addTag("Telegram")
     .addTag("Currency")
     .addTag("Cron")
     .build();

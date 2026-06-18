@@ -6,10 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AddToDebtDto {
-  amount: string;
-  useAccount: boolean;
-  toAmount?: string;
-  accountId?: string;
-  date?: string;
+export interface TelegramWebhookResponseDto {
+  ok: boolean;
 }
