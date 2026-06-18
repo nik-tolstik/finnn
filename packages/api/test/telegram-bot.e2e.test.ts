@@ -2524,6 +2524,121 @@ describe("Telegram Bot API", () => {
     );
   });
 
+  it("uses currency hints when transfer accounts have the same name", async () => {
+    const bynBsbCardAccount = {
+      ...bynCardAccount,
+      id: "account-6",
+      name: "BSB Card",
+      balance: "53.36",
+      currency: "BYN",
+    };
+    const usdBsbCardAccount = {
+      ...usdCardAccount,
+      id: "account-7",
+      name: "BSB Card",
+      balance: "100",
+      currency: "USD",
+    };
+    let storedDraft: Record<string, unknown> | null = null;
+    prisma.aiFinanceDraft.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = {
+        id: "draft-same-name-currency-transfer-1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        committedAt: null,
+        ...data,
+      };
+      return storedDraft;
+    });
+    prisma.aiFinanceDraft.findFirst.mockImplementation(async () => storedDraft);
+    prisma.aiFinanceDraft.findUnique.mockImplementation(async () => storedDraft);
+    prisma.aiFinanceDraft.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = { ...storedDraft, ...data, updatedAt: new Date() };
+      return storedDraft;
+    });
+    prisma.account.findMany.mockResolvedValue([bynBsbCardAccount, usdBsbCardAccount]);
+    prisma.account.findFirst.mockImplementation(async ({ where }: { where: { id: string } }) => {
+      if (where.id === bynBsbCardAccount.id) return bynBsbCardAccount;
+      if (where.id === usdBsbCardAccount.id) return usdBsbCardAccount;
+      return null;
+    });
+    openRouter.createStructuredCompletion.mockResolvedValue(
+      JSON.stringify({
+        kind: "transfer",
+        paymentType: null,
+        amount: "70.77",
+        toAmount: "200",
+        totalAmount: null,
+        currency: null,
+        description: "Перевод с bsb card usd на bsb card byn",
+        merchant: null,
+        dateText: "today",
+        accountHint: null,
+        fromAccountHint: "bsb card usd",
+        toAccountHint: "bsb card byn",
+        categoryHint: null,
+        reason: null,
+        payments: [],
+        items: [],
+        confidence: 0.92,
+      })
+    );
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 30,
+        message: {
+          message_id: 36,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Перевод с bsb card usd на bsb card byn. 70.77$ => 200 byn",
+        },
+      })
+      .expect(200);
+
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- From: BSB Card (USD)"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- To: BSB Card (BYN)"),
+      })
+    );
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 31,
+        message: {
+          message_id: 37,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "отлично",
+        },
+      })
+      .expect(200);
+
+    expect(prisma.transferTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          amount: "70.77",
+          createdByAi: true,
+          fromAccountId: "account-7",
+          toAccountId: "account-6",
+          toAmount: "200",
+        }),
+      })
+    );
+    expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
+  });
+
   it("treats currency exchange between own cards as a transfer", async () => {
     let storedDraft: Record<string, unknown> | null = null;
     prisma.aiFinanceDraft.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {

@@ -32,6 +32,11 @@ function getEntryAmountText(entry: NonNullable<AiFinanceDraftPayload["entries"]>
   return `${entry.amount} ${currency}${convertedFrom}`.trim();
 }
 
+function getTransferAccountText(name: string | null | undefined, currency: string | null | undefined) {
+  if (!name) return "-";
+  return currency ? `${name} (${currency})` : name;
+}
+
 @Injectable()
 export class AiFinancePreviewService {
   renderDraft(input: {
@@ -74,8 +79,8 @@ export class AiFinancePreviewService {
     if (input.payload.transfer) {
       const transfer = input.payload.transfer;
       lines.push("Перевод:");
-      lines.push(`- From: ${transfer.fromAccountName ?? "-"}`);
-      lines.push(`- To: ${transfer.toAccountName ?? "-"}`);
+      lines.push(`- From: ${getTransferAccountText(transfer.fromAccountName, transfer.fromAccountCurrency)}`);
+      lines.push(`- To: ${getTransferAccountText(transfer.toAccountName, transfer.toAccountCurrency)}`);
       lines.push(`- Amount: ${transfer.amount}`);
       lines.push(`- Destination amount: ${transfer.toAmount}`);
       if (transfer.description) lines.push(`- Description: ${transfer.description}`);

@@ -25,6 +25,8 @@ import { AiFinancePreferenceService } from "./ai-finance-preference.service";
 const MONEY_PATTERN = /^(?=.*[1-9])\d+(?:\.\d+)?$/;
 const ISO_LOCAL_DATE_TIME_PATTERN = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/;
 const SHORT_LOCAL_DATE_PATTERN = /^(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?$/;
+const CURRENCY_HINT_WORD_PATTERN =
+  /(?:\$|€|₽|\busd\b|\beur\b|\brub\b|\bbyn\b|\bbr\b|\bbyr\b|доллар[а-яё]*|бакс[а-яё]*|евро|российск[а-яё]*|руб[а-яё]*|белорусск[а-яё]*|беларуск[а-яё]*)/giu;
 
 function normalizeHint(value: string | null | undefined) {
   return value?.trim().toLowerCase() || null;
@@ -61,6 +63,31 @@ function includesHint(name: string, hint: string | null) {
 function includesCurrencyHint(account: Account, hint: string | null) {
   const currency = normalizeCurrencyCode(hint);
   return Boolean(currency && account.currency === currency);
+}
+
+function stripCurrencyHint(hint: string | null) {
+  return hint?.replace(CURRENCY_HINT_WORD_PATTERN, " ").replace(/\s+/g, " ").trim() || null;
+}
+
+function resolveHintedAccount(accounts: Account[], hint: string | null, excludedAccountId?: string | null) {
+  if (!hint) return null;
+
+  const candidates = accounts.filter((account) => account.id !== excludedAccountId);
+  const currency = normalizeCurrencyCode(hint);
+  if (currency) {
+    const currencyCandidates = candidates.filter((account) => account.currency === currency);
+    const exactCurrencyMatch = currencyCandidates.find((account) => includesHint(account.name, hint));
+    if (exactCurrencyMatch) return exactCurrencyMatch;
+
+    const nameHint = stripCurrencyHint(hint);
+    const namedCurrencyMatch = currencyCandidates.find((account) => includesHint(account.name, nameHint));
+    if (namedCurrencyMatch) return namedCurrencyMatch;
+
+    const currencyMatch = candidates.find((account) => includesCurrencyHint(account, hint));
+    if (currencyMatch) return currencyMatch;
+  }
+
+  return candidates.find((account) => includesHint(account.name, hint)) ?? null;
 }
 
 function isExactCatalogName(name: string, value: string | null | undefined) {
@@ -267,19 +294,35 @@ function normalizeCurrencyCode(value: string | null | undefined): Currency | nul
   const normalizedValue = value?.trim().toUpperCase();
   if (!normalizedValue) return null;
 
-  if (normalizedValue === "$" || normalizedValue.includes("DOLLAR") || normalizedValue.includes("ДОЛЛАР")) {
+  if (
+    normalizedValue === "$" ||
+    /\bUSD\b/.test(normalizedValue) ||
+    normalizedValue.includes("DOLLAR") ||
+    normalizedValue.includes("ДОЛЛАР")
+  ) {
     return Currency.USD;
   }
 
-  if (normalizedValue === "€" || normalizedValue.includes("EURO") || normalizedValue.includes("ЕВРО")) {
+  if (
+    normalizedValue === "€" ||
+    /\bEUR\b/.test(normalizedValue) ||
+    normalizedValue.includes("EURO") ||
+    normalizedValue.includes("ЕВРО")
+  ) {
     return Currency.EUR;
   }
 
-  if (normalizedValue === "₽" || normalizedValue.includes("РОС")) {
+  if (normalizedValue === "₽" || /\bRUB\b/.test(normalizedValue) || normalizedValue.includes("РОС")) {
     return Currency.RUB;
   }
 
-  if (normalizedValue === "BR" || normalizedValue.includes("БЕЛ") || normalizedValue.includes("РУБ")) {
+  if (
+    normalizedValue === "BR" ||
+    /\bBYN\b/.test(normalizedValue) ||
+    /\bBYR\b/.test(normalizedValue) ||
+    normalizedValue.includes("БЕЛ") ||
+    normalizedValue.includes("РУБ")
+  ) {
     return Currency.BYN;
   }
 
@@ -737,7 +780,7 @@ export class AiFinanceResolverService {
         : extraction.kind === "transfer"
           ? normalizeHint(extraction.fromAccountHint)
           : null;
-    const hinted = accounts.find((account) => includesHint(account.name, hint) || includesCurrencyHint(account, hint));
+    const hinted = resolveHintedAccount(accounts, hint);
     if (hinted) return hinted;
 
     const defaultAccountId = this.preferences.getDefaultAccountId(preference, workspaceId);
@@ -753,10 +796,7 @@ export class AiFinanceResolverService {
     fromAccountId?: string
   ) {
     const hint = normalizeHint(toAccountHint);
-    const hinted = accounts.find(
-      (account) =>
-        account.id !== fromAccountId && (includesHint(account.name, hint) || includesCurrencyHint(account, hint))
-    );
+    const hinted = resolveHintedAccount(accounts, hint, fromAccountId);
     if (hinted) return hinted;
 
     const candidates = accounts.filter((account) => account.id !== fromAccountId);
@@ -844,7 +884,7 @@ export class AiFinanceResolverService {
     }
 
     const hint = normalizeHint(accountHint);
-    const hinted = accounts.find((account) => includesHint(account.name, hint) || includesCurrencyHint(account, hint));
+    const hinted = resolveHintedAccount(accounts, hint);
     if (hinted) return hinted;
 
     if (fallbackAccount) return fallbackAccount;
@@ -991,8 +1031,10 @@ export class AiFinanceResolverService {
     return {
       fromAccountId: fromAccount?.id ?? null,
       fromAccountName: fromAccount?.name ?? null,
+      fromAccountCurrency: fromAccount?.currency ?? null,
       toAccountId: toAccount?.id ?? null,
       toAccountName: toAccount?.name ?? null,
+      toAccountCurrency: toAccount?.currency ?? null,
       amount: extraction.amount,
       toAmount: isMoney(extraction.toAmount) ? extraction.toAmount : extraction.amount,
       description: extraction.description,

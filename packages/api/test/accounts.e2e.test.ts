@@ -25,6 +25,7 @@ type MockPrisma = {
   account: {
     count: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
+    findFirst: ReturnType<typeof vi.fn>;
     findMany: ReturnType<typeof vi.fn>;
     findUnique: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
@@ -63,6 +64,7 @@ function createPrismaMock(): MockPrisma {
     account: {
       count: vi.fn(),
       create: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
@@ -158,6 +160,7 @@ describe("Accounts API", () => {
     prisma.account.create.mockResolvedValue(
       createAccountRecord({ order: 2, owner: accountOwner, ownerId: accountOwner.id })
     );
+    prisma.account.findFirst.mockResolvedValue(null);
     prisma.account.findMany.mockResolvedValue([createAccountRecord({ owner: accountOwner, ownerId: accountOwner.id })]);
     prisma.account.findUnique.mockResolvedValue(createAccountRecord());
     prisma.account.update.mockResolvedValue(createAccountRecord({ name: "Updated card" }));
@@ -240,6 +243,34 @@ describe("Accounts API", () => {
       })
       .expect(400);
 
+    expect(prisma.account.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects duplicate account name and currency on create", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ id: "account-2" }));
+
+    const response = await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/accounts")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        name: "Main card",
+        balance: "125.50",
+        currency: "BYN",
+        ownerId: null,
+        createdAt: "2026-05-25T12:00:00.000Z",
+      })
+      .expect(400);
+
+    expect(response.body.message).toBe("Счёт с таким названием и валютой уже существует");
+    expect(prisma.account.findFirst).toHaveBeenCalledWith({
+      where: {
+        workspaceId: "workspace-1",
+        name: "Main card",
+        currency: "BYN",
+      },
+      select: { id: true },
+    });
     expect(prisma.account.create).not.toHaveBeenCalled();
   });
 
@@ -341,6 +372,29 @@ describe("Accounts API", () => {
       .send({ balance: "not-money" })
       .expect(400);
 
+    expect(prisma.account.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects duplicate account name and currency on update", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ id: "account-2" }));
+
+    const response = await request(app.getHttpServer())
+      .patch("/accounts/account-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ currency: "BYN", name: "Main card" })
+      .expect(400);
+
+    expect(response.body.message).toBe("Счёт с таким названием и валютой уже существует");
+    expect(prisma.account.findFirst).toHaveBeenCalledWith({
+      where: {
+        workspaceId: "workspace-1",
+        name: "Main card",
+        currency: "BYN",
+        NOT: { id: "account-1" },
+      },
+      select: { id: true },
+    });
     expect(prisma.account.update).not.toHaveBeenCalled();
   });
 

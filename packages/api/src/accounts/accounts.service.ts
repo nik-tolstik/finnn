@@ -96,6 +96,10 @@ function formatAccountDependencyBreakdown(counts: AccountDependencyCounts) {
   return parts.join(", ");
 }
 
+function isUniqueConstraintError(error: unknown) {
+  return Boolean(error && typeof error === "object" && "code" in error && error.code === "P2002");
+}
+
 @Injectable()
 export class AccountsService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
@@ -190,30 +194,60 @@ export class AccountsService {
     }
   }
 
+  private async assertAccountNameCurrencyAvailable(
+    workspaceId: string,
+    name: string,
+    currency: string,
+    excludeAccountId?: string
+  ) {
+    const duplicate = await this.prisma.account.findFirst({
+      where: {
+        workspaceId,
+        name,
+        currency,
+        ...(excludeAccountId ? { NOT: { id: excludeAccountId } } : {}),
+      },
+      select: { id: true },
+    });
+
+    if (duplicate) {
+      throw new BadRequestException("Счёт с таким названием и валютой уже существует");
+    }
+  }
+
   async createAccount(workspaceId: string, input: CreateAccountDto, currentUser: AuthenticatedUser) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
     await this.assertOwnerBelongsToWorkspace(workspaceId, input.ownerId);
+    await this.assertAccountNameCurrencyAvailable(workspaceId, input.name, input.currency);
 
     const accountsCount = await this.prisma.account.count({
       where: { workspaceId, archived: false },
     });
 
-    const account = await this.prisma.account.create({
-      data: {
-        name: input.name,
-        balance: input.balance,
-        currency: input.currency,
-        color: input.color,
-        icon: input.icon,
-        ownerId: input.ownerId ?? null,
-        workspaceId,
-        order: accountsCount,
-        createdAt: input.createdAt,
-      },
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
-    });
+    try {
+      const account = await this.prisma.account.create({
+        data: {
+          name: input.name,
+          balance: input.balance,
+          currency: input.currency,
+          color: input.color,
+          icon: input.icon,
+          ownerId: input.ownerId ?? null,
+          workspaceId,
+          order: accountsCount,
+          createdAt: input.createdAt,
+        },
+        include: ACCOUNT_WITH_OWNER_INCLUDE,
+      });
 
-    return { account: toAccountDto(account) };
+      return { account: toAccountDto(account) };
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new BadRequestException("Счёт с таким названием и валютой уже существует");
+      }
+
+      throw error;
+    }
   }
 
   async listAccounts(workspaceId: string, currentUser: AuthenticatedUser) {
@@ -240,6 +274,10 @@ export class AccountsService {
     const existingAccount = await this.getAccessibleAccount(accountId, currentUser);
     await this.assertOwnerBelongsToWorkspace(existingAccount.workspaceId, input.ownerId);
 
+    const nextName = input.name ?? existingAccount.name;
+    const nextCurrency = input.currency ?? existingAccount.currency;
+    await this.assertAccountNameCurrencyAvailable(existingAccount.workspaceId, nextName, nextCurrency, accountId);
+
     const updateData: Prisma.AccountUpdateInput = {};
     if (input.name !== undefined) updateData.name = input.name;
     if (input.balance !== undefined) updateData.balance = input.balance;
@@ -251,13 +289,21 @@ export class AccountsService {
     if (input.createdAt !== undefined) updateData.createdAt = input.createdAt;
     if (input.order !== undefined) updateData.order = input.order;
 
-    const account = await this.prisma.account.update({
-      where: { id: accountId },
-      data: updateData,
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
-    });
+    try {
+      const account = await this.prisma.account.update({
+        where: { id: accountId },
+        data: updateData,
+        include: ACCOUNT_WITH_OWNER_INCLUDE,
+      });
 
-    return { account: toAccountDto(account) };
+      return { account: toAccountDto(account) };
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new BadRequestException("Счёт с таким названием и валютой уже существует");
+      }
+
+      throw error;
+    }
   }
 
   async updateAccountsOrder(workspaceId: string, input: UpdateAccountsOrderDto, currentUser: AuthenticatedUser) {
