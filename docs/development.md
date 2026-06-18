@@ -194,6 +194,7 @@ Manual Telegram bot checks:
 - `/start` from a linked Telegram account shows the current context and examples.
 - `/start` from an unknown Telegram account returns a Mini App/open-Finnn button.
 - Text such as `Coffee 12 BYN yesterday from Main card` creates a draft and shows a preview.
+- Text such as `Coffee 2 USD from Main card` creates a draft that previews and commits the account-currency amount.
 - Receipt photos create grouped expense drafts by category by default, with buttons for one transaction, category, or
   item modes.
 - Voice messages are transcribed through OpenRouter and then follow the same text draft flow.

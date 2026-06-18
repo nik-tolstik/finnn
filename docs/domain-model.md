@@ -171,6 +171,10 @@ Important files:
 - `packages/api/src/currency/currency.controller.ts` exposes exchange-rate reads and the protected cron endpoint.
 - `packages/web/src/shared/api/generated/currency` is the frontend contract client for exchange-rate UI.
 
+Telegram AI finance drafts convert payment entries to the selected account currency during draft resolution, before the
+draft is previewed or committed. The draft keeps `originalAmount`, `originalCurrency`, and `exchangeRate` when a
+conversion was applied, while `amount` remains the account-side value used by transaction creation.
+
 The API cron endpoint must be protected with `CRON_SECRET`.
 
 ## PWA Cache Boundary

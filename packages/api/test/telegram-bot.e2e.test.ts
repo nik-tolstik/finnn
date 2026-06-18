@@ -46,6 +46,10 @@ type MockPrisma = {
   transferTransaction: {
     create: ReturnType<typeof vi.fn>;
   };
+  exchangeRate: {
+    findMany: ReturnType<typeof vi.fn>;
+    upsert: ReturnType<typeof vi.fn>;
+  };
 };
 
 function createPrismaMock(): MockPrisma {
@@ -85,6 +89,10 @@ function createPrismaMock(): MockPrisma {
     },
     transferTransaction: {
       create: vi.fn(),
+    },
+    exchangeRate: {
+      findMany: vi.fn(),
+      upsert: vi.fn(),
     },
   };
 
@@ -260,6 +268,8 @@ describe("Telegram Bot API", () => {
     prisma.account.update.mockResolvedValue({ ...account, balance: "88" });
     prisma.category.findMany.mockResolvedValue([category, fuelCategory, giftCategory]);
     prisma.category.findFirst.mockResolvedValue(category);
+    prisma.exchangeRate.findMany.mockResolvedValue([]);
+    prisma.exchangeRate.upsert.mockImplementation(async ({ create }: { create: Record<string, unknown> }) => create);
     prisma.aiFinanceDraft.updateMany.mockResolvedValue({ count: 1 });
     prisma.paymentTransaction.create.mockResolvedValue({
       id: "payment-1",
@@ -681,6 +691,100 @@ describe("Telegram Bot API", () => {
       expect.objectContaining({
         chatId: "1001",
         text: "Готово. Создано записей: 1.",
+      })
+    );
+  });
+
+  it("converts a foreign-currency text expense to the account currency before commit", async () => {
+    let storedDraft: Record<string, unknown> | null = null;
+    prisma.aiFinanceDraft.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = {
+        id: "draft-usd-to-byn-1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        committedAt: null,
+        ...data,
+      };
+      return storedDraft;
+    });
+    prisma.aiFinanceDraft.findFirst.mockImplementation(async () => storedDraft);
+    prisma.aiFinanceDraft.findUnique.mockImplementation(async () => storedDraft);
+    prisma.aiFinanceDraft.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = { ...storedDraft, ...data, updatedAt: new Date() };
+      return storedDraft;
+    });
+    prisma.exchangeRate.findMany.mockResolvedValue([
+      {
+        date: new Date("2026-06-18T00:00:00.000Z"),
+        fromCurrency: "USD",
+        toCurrency: "BYN",
+        rate: 3.25,
+      },
+    ]);
+    openRouter.createStructuredCompletion.mockResolvedValueOnce(
+      JSON.stringify({
+        kind: "unknown",
+        paymentType: null,
+        amount: null,
+        toAmount: null,
+        totalAmount: null,
+        currency: null,
+        description: null,
+        merchant: null,
+        dateText: null,
+        accountHint: null,
+        fromAccountHint: null,
+        toAccountHint: null,
+        categoryHint: null,
+        reason: "Could not parse",
+        payments: [],
+        items: [],
+        confidence: 0.2,
+      })
+    );
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 24,
+        message: {
+          message_id: 31,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Потратить 2 доллара с белорусской карты",
+        },
+      })
+      .expect(200);
+
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- [Main card] Expense: 6.50 BYN из 2 USD"),
+      })
+    );
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 25,
+        callback_query: {
+          id: "callback-usd-to-byn-1",
+          from: { id: 42, first_name: "Ada" },
+          message: { message_id: 31, chat: { id: 1001, type: "private" } },
+          data: "ai:confirm:draft-usd-to-byn-1",
+        },
+      })
+      .expect(200);
+
+    expect(prisma.paymentTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          accountId: "account-1",
+          amount: "6.50",
+          type: "expense",
+        }),
       })
     );
   });
