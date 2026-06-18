@@ -14,6 +14,7 @@ This documentation is written for two audiences:
 - [Domain Model](./domain-model.md) - core entities, money invariants, workspaces, transactions, transfers, debts, exchange rates, and PWA cache boundaries.
 - [Operations](./operations.md) - deployment, cron, MongoDB import/export, email, service worker, and production checks.
 - [AI Contributor Guide](./ai-contributor-guide.md) - how Codex or another AI agent should approach changes in this repo.
+- [Feature Plans](./plans/README.md) - how to write and maintain `docs/plans/<feature>` implementation plans.
 
 ## Project At A Glance
 

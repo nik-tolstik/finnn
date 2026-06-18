@@ -142,6 +142,15 @@ Telegram redirects are navigated in the browser with explicit API URLs because t
 cross-site redirects. Telegram identities are stored in `AuthIdentity`; the returned session user includes nullable
 email plus Telegram link status for UI display and settings.
 
+Telegram bot finance entry is handled by `packages/api/src/telegram-bot` and `packages/api/src/ai-finance`.
+`POST /telegram/webhook` is authenticated with Telegram's `x-telegram-bot-api-secret-token` header and does not use
+cookie guards. Bot updates resolve users by `AuthIdentity(provider = "telegram", providerUserId = from.id)`, where
+`from.id` is the Telegram sender id rather than the chat id. Linked users can send text, receipt photos, or voice
+messages; the API creates an `AiFinanceDraft`, asks for missing workspace/account/date data in Telegram, renders a
+preview, and commits only after an explicit callback confirmation. Draft payloads are intermediate JSON and expire by
+`TELEGRAM_BOT_DRAFT_TTL_SECONDS`; committed financial records are still created through domain services such as
+`TransactionsService`.
+
 Google uses the same backend-owned redirect model. Existing verified email/password users are auto-linked only when
 Google returns a verified email that matches the already verified Finnn email. Google access and refresh tokens are not
 stored.

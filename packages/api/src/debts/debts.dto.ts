@@ -80,6 +80,12 @@ export class CloseDebtDto {
   @IsString()
   accountId?: string;
 
+  @ApiPropertyOptional({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  date?: Date;
+
   @ApiProperty({ example: true, type: Boolean })
   @IsBoolean()
   useAccount!: boolean;
@@ -105,6 +111,12 @@ export class AddToDebtDto {
   @IsOptional()
   @IsString()
   accountId?: string;
+
+  @ApiPropertyOptional({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  date?: Date;
 }
 
 export class UpdateDebtDto {

@@ -33,6 +33,8 @@ model User {
   authIdentities   AuthIdentity[]
   pendingEmailVerifications PendingEmailVerification[]
   passwordResetCodes PasswordResetCode[]
+  telegramBotPreference TelegramBotPreference?
+  aiFinanceDrafts AiFinanceDraft[]
 
   @@map("users")
 }
@@ -322,4 +324,48 @@ model DebtTransaction {
   @@index([workspaceId, type, date])
   @@index([debtId])
   @@map("debt_transactions")
+}
+
+model TelegramBotPreference {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String   @unique @db.ObjectId
+  telegramChatId    String?
+  activeWorkspaceId String?  @db.ObjectId
+  defaultAccountByWorkspace Json?
+  receiptMode       String   @default("category")
+  timezone          String   @default("Europe/Minsk")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([activeWorkspaceId])
+  @@map("telegram_bot_preferences")
+}
+
+model AiFinanceDraft {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String    @db.ObjectId
+  telegramChatId  String?
+  workspaceId     String?   @db.ObjectId
+  status          String    @default("pending")
+  sourceType      String
+  sourceText      String?
+  receiptMode     String?
+  kind            String?
+  payload         Json
+  missingFields   String[]
+  confidence      Float?
+  currentQuestion String?
+  expiresAt       DateTime
+  committedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, status, updatedAt])
+  @@index([telegramChatId, status, updatedAt])
+  @@index([expiresAt])
+  @@map("ai_finance_drafts")
 }

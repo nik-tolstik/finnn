@@ -97,6 +97,20 @@ TELEGRAM_BOT_TOKEN="bot-token-from-botfather"
 TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
 ```
 
+Required for Telegram bot finance entry:
+
+```env
+TELEGRAM_BOT_WEBHOOK_SECRET="paste-telegram-webhook-secret-here"
+TELEGRAM_BOT_WEBHOOK_URL="https://your-stable-domain.ngrok-free.dev/telegram/webhook"
+TELEGRAM_BOT_DRAFT_TTL_SECONDS="1800"
+OPENROUTER_API_KEY="openrouter-api-key"
+OPENROUTER_APP_REFERER="http://localhost:3000"
+OPENROUTER_APP_TITLE="Finnn Local"
+OPENROUTER_TEXT_MODEL="openai/gpt-4.1-mini"
+OPENROUTER_VISION_MODEL="google/gemini-2.5-flash"
+OPENROUTER_TRANSCRIPTION_MODEL="openai/gpt-4o-mini-transcribe"
+```
+
 Required for custom avatar uploads:
 
 ```env
@@ -127,6 +141,12 @@ BotFather setup:
   `https://your-stable-domain.ngrok-free.app/dashboard` for local testing or `https://dev.finnn.xyz/dashboard` for the
   shared DEV environment.
 - Copy the bot token into `TELEGRAM_BOT_TOKEN`; the API uses it only to validate `Telegram.WebApp.initData`.
+- Set the bot webhook to the API tunnel URL and pass the same secret token as `TELEGRAM_BOT_WEBHOOK_SECRET`:
+
+```bash
+curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+  --json '{"url":"https://your-stable-domain.ngrok-free.dev/telegram/webhook","secret_token":"paste-telegram-webhook-secret-here"}'
+```
 
 Telegram Mini Apps must load over public HTTPS. For local testing, run the API and web app normally, then expose the web
 app through a stable HTTPS tunnel and point the DEV bot's Mini App URL at the tunnel `/dashboard` route. Keep
@@ -157,6 +177,7 @@ API_ALLOWED_ORIGINS="http://localhost:3000,http://127.0.0.1:3000"
 API_COOKIE_SAME_SITE="Lax"
 API_COOKIE_SECURE="false"
 TELEGRAM_REDIRECT_URI="https://your-stable-domain.ngrok-free.dev/auth/telegram/callback"
+TELEGRAM_BOT_WEBHOOK_URL="https://your-stable-domain.ngrok-free.dev/telegram/webhook"
 
 # packages/web/.env
 NEXT_PUBLIC_API_URL="http://localhost:4000"
@@ -167,6 +188,16 @@ Register the same callback URI in BotFather:
 ```text
 https://your-stable-domain.ngrok-free.dev/auth/telegram/callback
 ```
+
+Manual Telegram bot checks:
+
+- `/start` from a linked Telegram account shows the current context and examples.
+- `/start` from an unknown Telegram account returns a Mini App/open-Finnn button.
+- Text such as `Coffee 12 BYN yesterday from Main card` creates a draft and shows a preview.
+- Receipt photos create grouped expense drafts by category by default, with buttons for one transaction, category, or
+  item modes.
+- Voice messages are transcribed through OpenRouter and then follow the same text draft flow.
+- No financial records are created until the Telegram `Create` button is pressed.
 
 Generate API secrets with:
 

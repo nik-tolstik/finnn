@@ -7,6 +7,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
   MinLength,
@@ -14,6 +15,7 @@ import {
 } from "class-validator";
 
 const ACCOUNT_CURRENCIES = ["USD", "EUR", "RUB", "BYN"] as const;
+const MONEY_PATTERN = /^-?\d+(?:\.\d+)?$/;
 
 class AccountOwnerDto {
   @ApiProperty({ example: "665f5d865ef5a20c0d2f1111", type: String })
@@ -39,6 +41,7 @@ export class CreateAccountDto {
   @ApiProperty({ example: "125.50", type: String })
   @IsString()
   @MinLength(1)
+  @Matches(MONEY_PATTERN, { message: "Баланс должен быть корректной суммой" })
   balance!: string;
 
   @ApiProperty({ enum: ACCOUNT_CURRENCIES, example: "BYN", type: String })
@@ -77,6 +80,7 @@ export class UpdateAccountDto {
   @ApiPropertyOptional({ example: "200.00", type: String })
   @IsOptional()
   @IsString()
+  @Matches(MONEY_PATTERN, { message: "Баланс должен быть корректной суммой" })
   balance?: string;
 
   @ApiPropertyOptional({ enum: ACCOUNT_CURRENCIES, example: "USD", type: String })

@@ -122,6 +122,7 @@ export * from "./startTelegramLinkParams";
 export * from "./successResponseDto";
 export * from "./telegramAuthStatusDto";
 export * from "./telegramMiniAppSessionDto";
+export * from "./telegramWebhookResponseDto";
 export * from "./transactionAccountDto";
 export * from "./transactionCategoryDto";
 export * from "./transactionUserDto";

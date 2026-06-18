@@ -157,8 +157,42 @@ export class AccountsService {
     };
   }
 
+  private async assertOwnerBelongsToWorkspace(workspaceId: string, ownerId: string | null | undefined) {
+    if (!ownerId) {
+      return;
+    }
+
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { ownerId: true },
+    });
+
+    if (!workspace) {
+      throw new NotFoundException("Рабочий стол не найден");
+    }
+
+    if (workspace.ownerId === ownerId) {
+      return;
+    }
+
+    const membership = await this.prisma.workspaceMember.findUnique({
+      where: {
+        workspaceId_userId: {
+          workspaceId,
+          userId: ownerId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!membership) {
+      throw new BadRequestException("Владелец счёта должен быть участником рабочего стола");
+    }
+  }
+
   async createAccount(workspaceId: string, input: CreateAccountDto, currentUser: AuthenticatedUser) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
+    await this.assertOwnerBelongsToWorkspace(workspaceId, input.ownerId);
 
     const accountsCount = await this.prisma.account.count({
       where: { workspaceId, archived: false },
@@ -203,7 +237,8 @@ export class AccountsService {
   }
 
   async updateAccount(accountId: string, input: UpdateAccountDto, currentUser: AuthenticatedUser) {
-    await this.getAccessibleAccount(accountId, currentUser);
+    const existingAccount = await this.getAccessibleAccount(accountId, currentUser);
+    await this.assertOwnerBelongsToWorkspace(existingAccount.workspaceId, input.ownerId);
 
     const updateData: Prisma.AccountUpdateInput = {};
     if (input.name !== undefined) updateData.name = input.name;

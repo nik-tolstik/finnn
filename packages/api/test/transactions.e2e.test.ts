@@ -29,6 +29,7 @@ type MockPrisma = {
   };
   category: {
     create: ReturnType<typeof vi.fn>;
+    findFirst: ReturnType<typeof vi.fn>;
   };
   paymentTransaction: {
     count: ReturnType<typeof vi.fn>;
@@ -74,6 +75,7 @@ function createPrismaMock(): MockPrisma {
     },
     category: {
       create: vi.fn(),
+      findFirst: vi.fn(),
     },
     paymentTransaction: {
       count: vi.fn(),
@@ -259,6 +261,7 @@ describe("Transactions API", () => {
     prisma.account.findUnique.mockResolvedValue(createAccountRecord());
     prisma.account.update.mockResolvedValue(createAccountRecord());
     prisma.category.create.mockResolvedValue({ id: "category-new" });
+    prisma.category.findFirst.mockResolvedValue({ id: "category-1" });
     prisma.paymentTransaction.create.mockResolvedValue(createPaymentTransactionRecord());
     prisma.paymentTransaction.findUnique.mockResolvedValue(createPaymentTransactionRecord());
     prisma.paymentTransaction.findMany.mockResolvedValue([createPaymentTransactionRecord()]);
@@ -399,6 +402,70 @@ describe("Transactions API", () => {
     expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
   });
 
+  it("rejects payment transactions for archived accounts", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst.mockResolvedValue(null);
+
+    await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/payment-transactions")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        accountId: "account-1",
+        amount: "25",
+        type: "expense",
+        date: "2026-05-26T12:00:00.000Z",
+      })
+      .expect(404);
+
+    expect(prisma.account.findFirst).toHaveBeenCalledWith({
+      where: { archived: false, id: "account-1", workspaceId: "workspace-1" },
+    });
+    expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects payment categories outside the workspace or type", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.category.findFirst.mockResolvedValue(null);
+
+    const response = await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/payment-transactions")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        accountId: "account-1",
+        amount: "25",
+        type: "expense",
+        date: "2026-05-26T12:00:00.000Z",
+        categoryId: "category-income-or-other-workspace",
+      })
+      .expect(400);
+
+    expect(response.body.message).toBe("Категория не найдена или не подходит для этой операции");
+    expect(prisma.category.findFirst).toHaveBeenCalledWith({
+      where: { id: "category-income-or-other-workspace", type: "expense", workspaceId: "workspace-1" },
+    });
+    expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects new payment categories with a type that does not match the transaction", async () => {
+    mockAuthenticatedSession(prisma);
+
+    const response = await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/payment-transactions")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        accountId: "account-1",
+        amount: "25",
+        type: "expense",
+        date: "2026-05-26T12:00:00.000Z",
+        newCategory: { name: "Salary", type: "income" },
+      })
+      .expect(400);
+
+    expect(response.body.message).toBe("Категория не подходит для типа операции");
+    expect(prisma.category.create).not.toHaveBeenCalled();
+    expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
+  });
+
   it("updates payment transactions for workspace owners without relying on membership rows", async () => {
     mockAuthenticatedSession(prisma);
 
@@ -426,6 +493,40 @@ describe("Transactions API", () => {
         }),
       })
     );
+  });
+
+  it("rejects payment transaction category updates outside the workspace or type", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.category.findFirst.mockResolvedValue(null);
+
+    const response = await request(app.getHttpServer())
+      .patch("/payment-transactions/payment-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        categoryId: "category-income-or-other-workspace",
+      })
+      .expect(400);
+
+    expect(response.body.message).toBe("Категория не найдена или не подходит для этой операции");
+    expect(prisma.category.findFirst).toHaveBeenCalledWith({
+      where: { id: "category-income-or-other-workspace", type: "expense", workspaceId: "workspace-1" },
+    });
+    expect(prisma.paymentTransaction.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects payment transaction updates when the current account is archived", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findUnique.mockResolvedValue(
+      createPaymentTransactionRecord({ account: createAccountRecord({ archived: true }) })
+    );
+
+    await request(app.getHttpServer())
+      .patch("/payment-transactions/payment-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ description: "Updated groceries" })
+      .expect(404);
+
+    expect(prisma.paymentTransaction.update).not.toHaveBeenCalled();
   });
 
   it("creates transfer transactions and applies source and destination deltas", async () => {

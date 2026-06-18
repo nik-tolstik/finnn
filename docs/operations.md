@@ -51,6 +51,15 @@ TELEGRAM_AUTH_STATE_SECRET="production-telegram-state-secret"
 TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
 TELEGRAM_BOT_TOKEN="production-bot-token"
 TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
+TELEGRAM_BOT_WEBHOOK_SECRET="production-telegram-webhook-secret"
+TELEGRAM_BOT_WEBHOOK_URL="https://api.finnn.xyz/telegram/webhook"
+TELEGRAM_BOT_DRAFT_TTL_SECONDS="1800"
+OPENROUTER_API_KEY="production-openrouter-api-key"
+OPENROUTER_APP_REFERER="https://finnn.xyz"
+OPENROUTER_APP_TITLE="Finnn"
+OPENROUTER_TEXT_MODEL="openai/gpt-4.1-mini"
+OPENROUTER_VISION_MODEL="google/gemini-2.5-flash"
+OPENROUTER_TRANSCRIPTION_MODEL="openai/gpt-4o-mini-transcribe"
 ```
 
 Google authentication variables are required when Google login/linking is enabled:
@@ -79,6 +88,8 @@ BotFather setup:
 - Open Bot Settings > Mini Apps.
 - Register the production Mini App URL as `https://finnn.xyz/dashboard`.
 - Store the same production bot token in `TELEGRAM_BOT_TOKEN` for API-side Mini App `initData` validation.
+- Set the production bot webhook to `https://api.finnn.xyz/telegram/webhook` with the production secret token. Repeat the
+  same process for the DEV bot with `https://api-dev.finnn.xyz/telegram/webhook` and separate OpenRouter/bot secrets.
 
 Email variables are required when registration verification and workspace invites should send real email:
 
