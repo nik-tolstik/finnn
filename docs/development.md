@@ -148,6 +148,15 @@ curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
   --json '{"url":"https://your-stable-domain.ngrok-free.dev/telegram/webhook","secret_token":"paste-telegram-webhook-secret-here"}'
 ```
 
+Or set `TELEGRAM_BOT_WEBHOOK_URL` and `TELEGRAM_BOT_WEBHOOK_SECRET` in `packages/api/.env`, then run:
+
+```bash
+pnpm --filter api telegram:webhook:enable
+```
+
+Use `-- --url=https://your-stable-domain.ngrok-free.dev/telegram/webhook` to override the env URL for one run, and
+`-- --drop-pending` when switching environments and old queued updates should be discarded.
+
 Telegram Mini Apps must load over public HTTPS. For local testing, run the API and web app normally, then expose the web
 app through a stable HTTPS tunnel and point the DEV bot's Mini App URL at the tunnel `/dashboard` route. Keep
 `NEXT_PUBLIC_API_URL` aligned with an API URL that the WebView can reach and keep `API_ALLOWED_ORIGINS` aligned with the
@@ -168,6 +177,15 @@ pnpm dev
 ngrok http 4000 --url https://your-stable-domain.ngrok-free.dev
 ```
 
+Or set `NGROK_URL` in `packages/api/.env` and start the API tunnel with:
+
+```bash
+pnpm --filter api ngrok
+```
+
+If `NGROK_URL` is not set, the script uses the origin from `TELEGRAM_BOT_WEBHOOK_URL`. Use
+`-- --url=https://your-stable-domain.ngrok-free.dev` or `-- --port=4000` to override one run.
+
 Use these values while testing through ngrok:
 
 ```env
@@ -178,6 +196,7 @@ API_COOKIE_SAME_SITE="Lax"
 API_COOKIE_SECURE="false"
 TELEGRAM_REDIRECT_URI="https://your-stable-domain.ngrok-free.dev/auth/telegram/callback"
 TELEGRAM_BOT_WEBHOOK_URL="https://your-stable-domain.ngrok-free.dev/telegram/webhook"
+NGROK_URL="https://your-stable-domain.ngrok-free.dev"
 
 # packages/web/.env
 NEXT_PUBLIC_API_URL="http://localhost:4000"
@@ -195,6 +214,8 @@ Manual Telegram bot checks:
 - `/start` from an unknown Telegram account returns a Mini App/open-Finnn button.
 - Text such as `Coffee 12 BYN yesterday from Main card` creates a draft and shows a preview.
 - Text such as `Coffee 2 USD from Main card` creates a draft that previews and commits the account-currency amount.
+- Questions about account balances, available accounts, categories, today's spending, or open debts return answers and
+  must not create AI finance drafts.
 - Receipt photos create grouped expense drafts by category by default, with buttons for one transaction, category, or
   item modes.
 - Voice messages are transcribed through OpenRouter and then follow the same text draft flow.

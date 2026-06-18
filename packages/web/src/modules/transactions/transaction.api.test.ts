@@ -56,6 +56,7 @@ function createPaymentTransactionDto(overrides: Record<string, unknown> = {}) {
     description: "Groceries",
     date: "2026-04-01T10:00:00.000Z",
     categoryId: "category-1",
+    createdByAi: false,
     createdAt: "2026-04-01T10:00:00.000Z",
     updatedAt: "2026-04-02T10:00:00.000Z",
     account: createAccountDto("account-1"),
@@ -78,6 +79,7 @@ function createTransferTransactionDto(overrides: Record<string, unknown> = {}) {
     toAmount: "49.50",
     description: "Move cash",
     date: "2026-04-03T10:00:00.000Z",
+    createdByAi: false,
     createdAt: "2026-04-03T10:00:00.000Z",
     updatedAt: "2026-04-04T10:00:00.000Z",
     fromAccount: createAccountDto("account-1"),
@@ -132,11 +134,11 @@ describe("transaction.api", () => {
       data: [
         {
           kind: "paymentTransaction",
-          data: createPaymentTransactionDto({ category: null, categoryId: null }),
+          data: createPaymentTransactionDto({ category: null, categoryId: null, createdByAi: true }),
         },
         {
           kind: "transferTransaction",
-          data: createTransferTransactionDto(),
+          data: createTransferTransactionDto({ createdByAi: true }),
         },
         {
           kind: "debtTransaction",
@@ -185,6 +187,7 @@ describe("transaction.api", () => {
             id: "payment-1",
             categoryId: null,
             category: null,
+            createdByAi: true,
             date: new Date("2026-04-01T10:00:00.000Z"),
             updatedAt: new Date("2026-04-02T10:00:00.000Z"),
           }),
@@ -193,6 +196,7 @@ describe("transaction.api", () => {
           kind: "transferTransaction",
           data: expect.objectContaining({
             id: "transfer-1",
+            createdByAi: true,
             toAccount: expect.objectContaining({ ownerId: null, owner: null }),
             createdBy: expect.objectContaining({ id: "user-1" }),
             date: new Date("2026-04-03T10:00:00.000Z"),

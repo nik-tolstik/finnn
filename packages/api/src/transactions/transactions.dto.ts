@@ -295,6 +295,9 @@ export class PaymentTransactionDto {
   @ApiPropertyOptional({ nullable: true, type: String })
   categoryId!: string | null;
 
+  @ApiProperty({ type: Boolean })
+  createdByAi!: boolean;
+
   @ApiProperty({ format: "date-time", type: String })
   createdAt!: string;
 
@@ -335,6 +338,9 @@ export class TransferTransactionDto {
 
   @ApiProperty({ format: "date-time", type: String })
   date!: string;
+
+  @ApiProperty({ type: Boolean })
+  createdByAi!: boolean;
 
   @ApiProperty({ format: "date-time", type: String })
   createdAt!: string;

@@ -10,7 +10,7 @@ import {
 
 function getQuestionText(question: string | null | undefined) {
   if (question === "workspace") return "Выберите рабочий стол.";
-  if (question === "account") return "Выберите счёт или напишите его название.";
+  if (question === "account") return "Какой счёт вы имеете в виду? Напишите название счёта.";
   if (question === "date") return "Укажите дату, например: вчера, 5 days ago или 2026-06-13.";
   return "Не удалось собрать черновик. Уточните данные текстом или напишите `отмена`.";
 }
@@ -55,13 +55,13 @@ export class AiFinancePreviewService {
 
     if (input.payload.entries?.length) {
       lines.push("Операции:");
-      for (const entry of input.payload.entries) {
+      for (const [index, entry] of input.payload.entries.entries()) {
         const type = entry.type === "income" ? "Income" : "Expense";
         const account = entry.accountName ? `[${entry.accountName}] ` : "";
         const category = entry.categoryName ? `${entry.categoryName}: ` : "";
         const amount = getEntryAmountText(entry, input.payload.accountCurrency ?? "");
         const description = entry.description ? ` (${entry.description})` : "";
-        lines.push(`- ${account}${type}: ${category}${amount}${description}`.trim());
+        lines.push(`${index + 1}. ${account}${type}: ${category}${amount}${description}`.trim());
       }
       const total = input.payload.entries.reduce((sum, entry) => sum + Number(entry.amount), 0);
       lines.push("");

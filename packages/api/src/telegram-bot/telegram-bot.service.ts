@@ -90,14 +90,22 @@ function getReceiptModeFromCallback(action: ParsedTelegramCallbackData["action"]
 function getExceptionMessage(error: unknown) {
   if (error instanceof HttpException) {
     const response = error.getResponse();
-    if (typeof response === "string") return response;
+    if (typeof response === "string") return normalizeAiFinanceErrorMessage(response);
     if (response && typeof response === "object" && "message" in response) {
       const message = response.message;
-      return Array.isArray(message) ? message.join("\n") : String(message);
+      return normalizeAiFinanceErrorMessage(Array.isArray(message) ? message.join("\n") : String(message));
     }
   }
 
-  return error instanceof Error ? error.message : "Unknown error";
+  return normalizeAiFinanceErrorMessage(error instanceof Error ? error.message : "Unknown error");
+}
+
+function normalizeAiFinanceErrorMessage(message: string) {
+  if (message.includes("AI finance extraction is invalid")) {
+    return "Я не понял, какую операцию создать. Напишите расход, доход или перевод с суммой.";
+  }
+
+  return message;
 }
 
 function isTelegramMessageNotModifiedError(error: unknown) {
@@ -277,7 +285,7 @@ export class TelegramBotService {
         }
 
         const blob = await this.telegram.downloadFile(file.file_path);
-        const transcript = await this.openRouter.transcribeAudio(blob, "voice.ogg");
+        const transcript = await this.openRouter.transcribeAudio(blob, file.file_path);
         const response = await this.aiFinance.createDraftFromText(user, transcript, chatId);
         const reply = await this.buildDraftReply(user.id, response);
         return { reply, transcript };

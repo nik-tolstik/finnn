@@ -1,7 +1,7 @@
 import { BadRequestException, type INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OpenRouterClient } from "../src/ai-finance/openrouter.client";
 import { configureApp } from "../src/main";
@@ -42,9 +42,13 @@ type MockPrisma = {
   };
   paymentTransaction: {
     create: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
   };
   transferTransaction: {
     create: ReturnType<typeof vi.fn>;
+  };
+  debt: {
+    findMany: ReturnType<typeof vi.fn>;
   };
   exchangeRate: {
     findMany: ReturnType<typeof vi.fn>;
@@ -86,9 +90,13 @@ function createPrismaMock(): MockPrisma {
     },
     paymentTransaction: {
       create: vi.fn(),
+      findMany: vi.fn(),
     },
     transferTransaction: {
       create: vi.fn(),
+    },
+    debt: {
+      findMany: vi.fn(),
     },
     exchangeRate: {
       findMany: vi.fn(),
@@ -181,6 +189,22 @@ const cashAccount = {
   balance: "200",
 };
 
+const usdCardAccount = {
+  ...account,
+  id: "account-4",
+  name: "BSB Card Usd",
+  balance: "500",
+  currency: "USD",
+};
+
+const bynCardAccount = {
+  ...account,
+  id: "account-5",
+  name: "BSB Bank",
+  balance: "100",
+  currency: "BYN",
+};
+
 const category = {
   id: "category-1",
   workspaceId: "workspace-1",
@@ -268,6 +292,8 @@ describe("Telegram Bot API", () => {
     prisma.account.update.mockResolvedValue({ ...account, balance: "88" });
     prisma.category.findMany.mockResolvedValue([category, fuelCategory, giftCategory]);
     prisma.category.findFirst.mockResolvedValue(category);
+    prisma.paymentTransaction.findMany.mockResolvedValue([]);
+    prisma.debt.findMany.mockResolvedValue([]);
     prisma.exchangeRate.findMany.mockResolvedValue([]);
     prisma.exchangeRate.upsert.mockImplementation(async ({ create }: { create: Record<string, unknown> }) => create);
     prisma.aiFinanceDraft.updateMany.mockResolvedValue({ count: 1 });
@@ -280,6 +306,7 @@ describe("Telegram Bot API", () => {
       description: "Coffee",
       date: new Date("2026-06-18T12:00:00.000Z"),
       categoryId: category.id,
+      createdByAi: true,
       createdAt: new Date("2026-06-18T12:00:00.000Z"),
       updatedAt: new Date("2026-06-18T12:00:00.000Z"),
       account,
@@ -295,6 +322,7 @@ describe("Telegram Bot API", () => {
       toAmount: "20",
       description: "Move money",
       date: new Date("2026-06-18T12:00:00.000Z"),
+      createdByAi: true,
       createdAt: new Date("2026-06-18T12:00:00.000Z"),
       updatedAt: new Date("2026-06-18T12:00:00.000Z"),
       fromAccount: account,
@@ -326,6 +354,10 @@ describe("Telegram Bot API", () => {
 
   afterAll(async () => {
     await app.close();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("rejects webhook requests with an invalid secret", async () => {
@@ -491,6 +523,263 @@ describe("Telegram Bot API", () => {
     );
   });
 
+  it("answers account balance questions without creating a draft", async () => {
+    prisma.account.findMany.mockResolvedValue([account, usdCardAccount]);
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 30,
+        message: {
+          message_id: 36,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Какой баланс по счетам",
+        },
+      })
+      .expect(200);
+
+    expect(openRouter.createStructuredCompletion).not.toHaveBeenCalled();
+    expect(prisma.aiFinanceDraft.create).not.toHaveBeenCalled();
+    expect(telegram.sendMessage).not.toHaveBeenCalledWith(expect.objectContaining({ text: "Думаю..." }));
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("Счета:"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- Main card: 100.00 Br"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- BSB Card Usd: 500.00$"),
+      })
+    );
+  });
+
+  it("answers open debt questions without creating a draft", async () => {
+    prisma.debt.findMany.mockResolvedValue([
+      {
+        id: "debt-1",
+        workspaceId: workspace.id,
+        type: "borrowed",
+        personName: "Маша",
+        amount: "120",
+        remainingAmount: "80",
+        currency: "BYN",
+        date: new Date("2026-06-01T10:00:00.000Z"),
+        status: "open",
+        createdAt: new Date("2026-06-01T10:00:00.000Z"),
+        updatedAt: new Date("2026-06-01T10:00:00.000Z"),
+      },
+      {
+        id: "debt-2",
+        workspaceId: workspace.id,
+        type: "lent",
+        personName: "Игорь",
+        amount: "50",
+        remainingAmount: "50",
+        currency: "USD",
+        date: new Date("2026-06-02T10:00:00.000Z"),
+        status: "open",
+        createdAt: new Date("2026-06-02T10:00:00.000Z"),
+        updatedAt: new Date("2026-06-02T10:00:00.000Z"),
+      },
+    ]);
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 31,
+        message: {
+          message_id: 37,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Какие долги открыты?",
+        },
+      })
+      .expect(200);
+
+    expect(openRouter.createStructuredCompletion).not.toHaveBeenCalled();
+    expect(prisma.aiFinanceDraft.create).not.toHaveBeenCalled();
+    expect(telegram.sendMessage).not.toHaveBeenCalledWith(expect.objectContaining({ text: "Думаю..." }));
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("Открытые долги:"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- Маша: 80.00 Br (я должен)"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- Игорь: 50.00$ (мне должны)"),
+      })
+    );
+  });
+
+  it("answers today's spending questions without creating a draft", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-06-18T16:30:00.000Z"));
+    prisma.paymentTransaction.findMany.mockResolvedValue([
+      {
+        id: "payment-today-1",
+        workspaceId: workspace.id,
+        accountId: account.id,
+        amount: "12.50",
+        type: "expense",
+        description: "Lunch",
+        date: new Date("2026-06-18T10:00:00.000Z"),
+        categoryId: category.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        account: { currency: "BYN" },
+      },
+      {
+        id: "payment-today-2",
+        workspaceId: workspace.id,
+        accountId: account.id,
+        amount: "3.25",
+        type: "expense",
+        description: "Coffee",
+        date: new Date("2026-06-18T11:00:00.000Z"),
+        categoryId: category.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        account: { currency: "BYN" },
+      },
+    ]);
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 27,
+        message: {
+          message_id: 34,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Сколько за сегодня я потратил денег",
+        },
+      })
+      .expect(200);
+
+    expect(prisma.paymentTransaction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          workspaceId: workspace.id,
+          type: "expense",
+          date: {
+            gte: new Date("2026-06-17T21:00:00.000Z"),
+            lt: new Date("2026-06-18T21:00:00.000Z"),
+          },
+        }),
+      })
+    );
+    expect(openRouter.createStructuredCompletion).not.toHaveBeenCalled();
+    expect(prisma.aiFinanceDraft.create).not.toHaveBeenCalled();
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: "Сегодня в Home потрачено: 15.75 Br.",
+      })
+    );
+  });
+
+  it("does not create a draft when AI returns an unknown text intent", async () => {
+    openRouter.createStructuredCompletion.mockResolvedValue(
+      JSON.stringify({
+        kind: "unknown",
+        paymentType: null,
+        amount: null,
+        toAmount: null,
+        totalAmount: null,
+        currency: null,
+        description: null,
+        merchant: null,
+        dateText: null,
+        accountHint: null,
+        fromAccountHint: null,
+        toAccountHint: null,
+        categoryHint: null,
+        reason: "Question, not a transaction",
+        payments: [],
+        items: [],
+        confidence: 0.4,
+      })
+    );
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 32,
+        message: {
+          message_id: 38,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Что там с финансами?",
+        },
+      })
+      .expect(200);
+
+    expect(prisma.aiFinanceDraft.create).not.toHaveBeenCalled();
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("Я не понял, какую операцию создать"),
+      })
+    );
+    expect(telegram.sendMessage).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining("Я собрал черновик"),
+      })
+    );
+  });
+
+  it("does not create a draft or expose technical errors when AI extraction is invalid", async () => {
+    openRouter.createStructuredCompletion.mockResolvedValue(JSON.stringify({ kind: "payment" }));
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 33,
+        message: {
+          message_id: 39,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "непонятно что",
+        },
+      })
+      .expect(200);
+
+    expect(prisma.aiFinanceDraft.create).not.toHaveBeenCalled();
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("Я не понял, какую операцию создать"),
+      })
+    );
+    expect(telegram.sendMessage).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining("AI finance extraction is invalid"),
+      })
+    );
+  });
+
   it("normalizes Telegram photo octet-stream downloads to image data URLs", async () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-bot-token";
     const fetchMock = vi
@@ -610,7 +899,8 @@ describe("Telegram Bot API", () => {
   });
 
   it("creates and confirms a text expense draft", async () => {
-    let storedDraft: Record<string, unknown> | null = null;
+    let storedDraft: (Record<string, unknown> & { payload?: { entries?: Array<{ date: string | null }> } }) | null =
+      null;
     prisma.aiFinanceDraft.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
       storedDraft = {
         id: "draft-1",
@@ -677,6 +967,7 @@ describe("Telegram Bot API", () => {
           accountId: "account-1",
           amount: "12",
           categoryId: "category-1",
+          createdByAi: true,
           type: "expense",
         }),
       })
@@ -691,6 +982,189 @@ describe("Telegram Bot API", () => {
       expect.objectContaining({
         chatId: "1001",
         text: "Готово. Создано записей: 1.",
+      })
+    );
+  });
+
+  it("uses the current time for text draft dates when no explicit time is provided", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-06-18T14:37:45.000Z"));
+
+    let storedDraft: Record<string, unknown> | null = null;
+    prisma.aiFinanceDraft.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = {
+        id: "draft-current-time-1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        committedAt: null,
+        ...data,
+      };
+      return storedDraft;
+    });
+    prisma.aiFinanceDraft.findFirst.mockImplementation(async () => storedDraft);
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 26,
+        message: {
+          message_id: 33,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Coffee 12 BYN from Main card",
+        },
+      })
+      .expect(200);
+
+    const createdDraft = storedDraft as { payload?: { entries?: Array<{ date: string | null }> } } | null;
+    expect(createdDraft?.payload?.entries?.[0]?.date).toBe("2026-06-18T14:37:45.000Z");
+  });
+
+  it("calculates account-currency expense amounts from before-after balance text", async () => {
+    let storedDraft: Record<string, unknown> | null = null;
+    prisma.account.findMany.mockResolvedValue([bynCardAccount]);
+    prisma.account.findFirst.mockResolvedValue(bynCardAccount);
+    prisma.aiFinanceDraft.findFirst.mockResolvedValue(null);
+    prisma.aiFinanceDraft.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = {
+        id: "draft-balance-difference-1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        committedAt: null,
+        ...data,
+      };
+      return storedDraft;
+    });
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 34,
+        message: {
+          message_id: 40,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Мне списало с белоруской карты 2 USD, это 60.44-55.34 рублей",
+        },
+      })
+      .expect(200);
+
+    const createdDraft = storedDraft as {
+      payload?: {
+        entries?: Array<{ accountId: string | null; amount: string; currency: string; description: string }>;
+      };
+    } | null;
+    expect(openRouter.createStructuredCompletion).not.toHaveBeenCalled();
+    expect(createdDraft?.payload?.entries?.[0]).toEqual(
+      expect.objectContaining({
+        accountId: bynCardAccount.id,
+        amount: "5.10",
+        currency: "BYN",
+        description: "Списание по разнице остатков (2 USD)",
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("[BSB Bank] Expense: 5.10 BYN"),
+      })
+    );
+  });
+
+  it("accepts account clarification phrases with a selecting prefix", async () => {
+    let storedDraft: Record<string, unknown> | null = {
+      id: "draft-account-prefix-1",
+      userId: user.id,
+      telegramChatId: "1001",
+      workspaceId: workspace.id,
+      sourceType: "text",
+      sourceText: "Мне списало 5.10 рублей",
+      receiptMode: "category",
+      kind: "payment",
+      status: "pending",
+      currentQuestion: "account",
+      missingFields: ["account"],
+      confidence: 0.86,
+      payload: {
+        extraction: {
+          kind: "payment",
+          paymentType: "expense",
+          amount: "5.10",
+          currency: "BYN",
+          description: "Списание",
+          merchant: null,
+          dateText: null,
+          accountHint: null,
+          categoryHint: null,
+          confidence: 0.86,
+        },
+        workspaceName: "Home",
+        accountName: null,
+        accountCurrency: null,
+        entries: [
+          {
+            accountId: null,
+            accountName: null,
+            categoryId: null,
+            categoryName: null,
+            amount: "5.10",
+            currency: "BYN",
+            type: "expense",
+            description: "Списание",
+            date: null,
+          },
+        ],
+      },
+      expiresAt: new Date(Date.now() + 60000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      committedAt: null,
+    };
+    prisma.account.findMany.mockResolvedValue([account, bynCardAccount]);
+    prisma.aiFinanceDraft.findFirst.mockImplementation(async () => storedDraft);
+    prisma.aiFinanceDraft.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = { ...storedDraft, ...data, updatedAt: new Date() };
+      return storedDraft;
+    });
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 35,
+        message: {
+          message_id: 41,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Выбираю BSB Bank",
+        },
+      })
+      .expect(200);
+
+    expect(prisma.aiFinanceDraft.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          currentQuestion: null,
+          payload: expect.objectContaining({
+            accountName: "BSB Bank",
+            entries: expect.arrayContaining([
+              expect.objectContaining({
+                accountId: bynCardAccount.id,
+                accountName: "BSB Bank",
+                amount: "5.10",
+              }),
+            ]),
+          }),
+        }),
+        where: { id: "draft-account-prefix-1" },
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("[BSB Bank] Expense: 5.10 BYN"),
       })
     );
   });
@@ -760,7 +1234,7 @@ describe("Telegram Bot API", () => {
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("- [Main card] Expense: 6.50 BYN из 2 USD"),
+        text: expect.stringContaining("1. [Main card] Expense: 6.50 BYN из 2 USD"),
       })
     );
 
@@ -783,6 +1257,7 @@ describe("Telegram Bot API", () => {
         data: expect.objectContaining({
           accountId: "account-1",
           amount: "6.50",
+          createdByAi: true,
           type: "expense",
         }),
       })
@@ -870,13 +1345,13 @@ describe("Telegram Bot API", () => {
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("- [Main card] Expense: Питание: 15.23 BYN (Блины в Мама Дома)"),
+        text: expect.stringContaining("1. [Main card] Expense: Питание: 15.23 BYN (Блины в Мама Дома)"),
       })
     );
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("- [Cash] Expense: Машина: 100 BYN (Заправил машину)"),
+        text: expect.stringContaining("2. [Cash] Expense: Машина: 100 BYN (Заправил машину)"),
       })
     );
   });
@@ -934,19 +1409,19 @@ describe("Telegram Bot API", () => {
       expect.objectContaining({
         chatId: "1001",
         replyMarkup: undefined,
-        text: expect.stringContaining("- [Main card] Expense: Питание: 15.23 BYN (Блины в Мама Дома)"),
+        text: expect.stringContaining("1. [Main card] Expense: Питание: 15.23 BYN (Блины в Мама Дома)"),
       })
     );
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("- [Main card] Expense: Машина: 100 BYN (машину)"),
+        text: expect.stringContaining("2. [Main card] Expense: Машина: 100 BYN (машину)"),
       })
     );
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("- [Main card] Expense: Подарки: 3000 BYN (ноутбук)"),
+        text: expect.stringContaining("3. [Main card] Expense: Подарки: 3000 BYN (ноутбук)"),
       })
     );
   });
@@ -1072,7 +1547,116 @@ describe("Telegram Bot API", () => {
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("- [BSB Bank] Expense: Подарки: 3000 BYN (Купил ноутбук)"),
+        text: expect.stringContaining("3. [BSB Bank] Expense: Подарки: 3000 BYN (Купил ноутбук)"),
+      })
+    );
+  });
+
+  it("removes a single matching entry from an active ready draft by amount", async () => {
+    let storedDraft: Record<string, unknown> | null = {
+      id: "draft-delete-entry-1",
+      userId: user.id,
+      telegramChatId: "1001",
+      workspaceId: workspace.id,
+      sourceType: "voice",
+      sourceText: "Списали 2 доллара и пришло 2 рубля",
+      receiptMode: "category",
+      kind: "payments",
+      status: "ready",
+      currentQuestion: null,
+      missingFields: [],
+      confidence: 0.92,
+      payload: {
+        extraction: {
+          kind: "payments",
+          dateText: null,
+          payments: [],
+          confidence: 0.92,
+        },
+        workspaceName: "test",
+        accountName: "BSB Bank",
+        accountCurrency: "BYN",
+        entries: [
+          {
+            accountId: account.id,
+            accountName: "BSB Bank",
+            categoryId: category.id,
+            categoryName: category.name,
+            amount: "5.52",
+            currency: "BYN",
+            originalAmount: "2",
+            originalCurrency: "USD",
+            exchangeRate: "2.76",
+            type: "expense",
+            description: null,
+            date: "2026-06-18T12:00:00.000Z",
+          },
+          {
+            accountId: account.id,
+            accountName: "BSB Bank",
+            categoryId: null,
+            categoryName: null,
+            amount: "2",
+            currency: "BYN",
+            type: "income",
+            description: null,
+            date: "2026-06-18T12:00:00.000Z",
+          },
+        ],
+      },
+      expiresAt: new Date(Date.now() + 60000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      committedAt: null,
+    };
+    prisma.aiFinanceDraft.findFirst.mockImplementation(async () => storedDraft);
+    prisma.aiFinanceDraft.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = { ...storedDraft, ...data, updatedAt: new Date() };
+      return storedDraft;
+    });
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 25,
+        message: {
+          message_id: 32,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "убери 2 рубля транзакцию",
+        },
+      })
+      .expect(200);
+
+    expect(openRouter.createStructuredCompletion).not.toHaveBeenCalled();
+    expect(prisma.aiFinanceDraft.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          payload: expect.objectContaining({
+            entries: [
+              expect.objectContaining({
+                amount: "5.52",
+                originalAmount: "2",
+                originalCurrency: "USD",
+                type: "expense",
+              }),
+            ],
+          }),
+        }),
+        where: { id: "draft-delete-entry-1" },
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("Total: 5.52 BYN"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.not.stringContaining("Income: 2 BYN"),
       })
     );
   });
@@ -1550,6 +2134,7 @@ describe("Telegram Bot API", () => {
         data: expect.objectContaining({
           accountId: "account-1",
           amount: "8",
+          createdByAi: true,
           type: "expense",
         }),
       })
@@ -1925,6 +2510,7 @@ describe("Telegram Bot API", () => {
       expect.objectContaining({
         data: expect.objectContaining({
           amount: "20",
+          createdByAi: true,
           fromAccountId: "account-1",
           toAccountId: "account-2",
         }),
@@ -1936,5 +2522,104 @@ describe("Telegram Bot API", () => {
         text: "Готово. Перевод создан.",
       })
     );
+  });
+
+  it("treats currency exchange between own cards as a transfer", async () => {
+    let storedDraft: Record<string, unknown> | null = null;
+    prisma.aiFinanceDraft.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = {
+        id: "draft-currency-exchange-transfer-1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        committedAt: null,
+        ...data,
+      };
+      return storedDraft;
+    });
+    prisma.aiFinanceDraft.findFirst.mockImplementation(async () => storedDraft);
+    prisma.aiFinanceDraft.findUnique.mockImplementation(async () => storedDraft);
+    prisma.aiFinanceDraft.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+      storedDraft = { ...storedDraft, ...data, updatedAt: new Date() };
+      return storedDraft;
+    });
+    prisma.account.findMany.mockResolvedValue([usdCardAccount, bynCardAccount]);
+    prisma.account.findFirst.mockImplementation(async ({ where }: { where: { id: string } }) => {
+      if (where.id === usdCardAccount.id) return usdCardAccount;
+      if (where.id === bynCardAccount.id) return bynCardAccount;
+      return null;
+    });
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 28,
+        message: {
+          message_id: 35,
+          from: { id: 42, first_name: "Ada" },
+          chat: { id: 1001, type: "private" },
+          text: "Я поменял с долларовой карты 300 долларов и получил 1000 рублей на белорусскую карту.",
+        },
+      })
+      .expect(200);
+
+    expect(openRouter.createStructuredCompletion).not.toHaveBeenCalled();
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("Перевод:"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- From: BSB Card Usd"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- To: BSB Bank"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- Amount: 300"),
+      })
+    );
+    expect(telegram.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "1001",
+        text: expect.stringContaining("- Destination amount: 1000"),
+      })
+    );
+
+    await request(app.getHttpServer())
+      .post("/telegram/webhook")
+      .set("x-telegram-bot-api-secret-token", "secret")
+      .send({
+        update_id: 29,
+        callback_query: {
+          id: "callback-currency-exchange-transfer-1",
+          from: { id: 42, first_name: "Ada" },
+          message: { message_id: 35, chat: { id: 1001, type: "private" } },
+          data: "ai:confirm:draft-currency-exchange-transfer-1",
+        },
+      })
+      .expect(200);
+
+    expect(prisma.transferTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          amount: "300",
+          createdByAi: true,
+          fromAccountId: "account-4",
+          toAccountId: "account-5",
+          toAmount: "1000",
+        }),
+      })
+    );
+    expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
   });
 });

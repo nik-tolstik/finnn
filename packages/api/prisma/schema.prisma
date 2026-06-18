@@ -196,6 +196,7 @@ model PaymentTransaction {
   description String?
   date        DateTime @default(now())
   categoryId  String?  @db.ObjectId
+  createdByAi Boolean? @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -221,6 +222,7 @@ model TransferTransaction {
   toAmount          String
   description       String?
   date              DateTime @default(now())
+  createdByAi       Boolean? @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

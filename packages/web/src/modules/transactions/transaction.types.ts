@@ -26,6 +26,7 @@ export type PaymentTransactionWithRelations = {
   description: string | null;
   date: Date;
   categoryId: string | null;
+  createdByAi: boolean;
   createdAt: Date;
   updatedAt: Date;
   account: TransactionAccountWithOwner;
@@ -45,6 +46,7 @@ export type TransferTransactionWithRelations = {
   toAmount: string;
   description: string | null;
   date: Date;
+  createdByAi: boolean;
   createdAt: Date;
   updatedAt: Date;
   fromAccount: TransactionAccountWithOwner;

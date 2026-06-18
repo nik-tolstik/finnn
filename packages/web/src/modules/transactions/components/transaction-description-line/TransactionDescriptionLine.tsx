@@ -21,6 +21,7 @@ export interface TransactionLineAmount {
 
 interface TransactionLineFooter {
   icon?: ReactNode;
+  badges?: ReactNode[];
   chips?: AccountChipData[];
   chipSeparator?: ReactNode;
   layout?: "right" | "between" | "stackedRight";
@@ -108,6 +109,11 @@ export function TransactionDescriptionLine({
     );
   });
   const footerIcon = footer?.icon ? <span className="[&>svg]:size-4">{footer.icon}</span> : null;
+  const footerBadges = footer?.badges?.map((badge, index) => (
+    <span key={index} className="inline-flex shrink-0">
+      {badge}
+    </span>
+  ));
   const footerTrailing = footer?.trailing ? (
     <span
       className={cn(
@@ -119,22 +125,29 @@ export function TransactionDescriptionLine({
     </span>
   ) : null;
   const footerContent =
-    footerIcon || footerChips?.length || footerTrailing ? (
+    footerIcon || footerBadges?.length || footerChips?.length || footerTrailing ? (
       footer?.layout === "stackedRight" ? (
         <div className="space-y-2 text-muted-foreground">
-          <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">{footerChips}</div>
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
+            {footerBadges}
+            {footerChips}
+          </div>
           {footerIcon ? <div className="flex justify-end">{footerIcon}</div> : null}
           {footerTrailing ? <div className="flex justify-end">{footerTrailing}</div> : null}
         </div>
       ) : footer?.layout === "between" ? (
         <div className="flex min-w-0 items-center justify-between gap-3 text-muted-foreground">
-          <span className="flex min-w-0 flex-wrap items-center gap-1.5">{footerChips}</span>
+          <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {footerBadges}
+            {footerChips}
+          </span>
           <span className="ml-auto shrink-0">{footerTrailing ?? footerIcon}</span>
         </div>
       ) : footerTrailing ? (
         <div className="flex min-w-0 items-center justify-between gap-3 text-muted-foreground">
           <span className="flex min-w-0 flex-wrap items-center gap-1.5">
             {footerIcon}
+            {footerBadges}
             {footerChips}
           </span>
           {footerTrailing}
@@ -142,6 +155,7 @@ export function TransactionDescriptionLine({
       ) : (
         <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-muted-foreground">
           {footerIcon}
+          {footerBadges}
           {footerChips}
         </div>
       )

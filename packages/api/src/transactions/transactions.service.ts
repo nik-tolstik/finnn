@@ -129,6 +129,9 @@ type CombinedTransaction =
   | { kind: "paymentTransaction"; data: PaymentTransactionWithRelations }
   | { kind: "transferTransaction"; data: TransferTransactionWithRelations }
   | { kind: "debtTransaction"; data: DebtTransactionWithRelations };
+type CreateTransactionOptions = {
+  createdByAi?: boolean;
+};
 
 function toIsoString(value: Date): string {
   return value.toISOString();
@@ -345,6 +348,7 @@ function toPaymentTransactionDto(transaction: PaymentTransactionWithRelations) {
     description: transaction.description,
     date: toIsoString(transaction.date),
     categoryId: transaction.categoryId,
+    createdByAi: transaction.createdByAi ?? false,
     createdAt: toIsoString(transaction.createdAt),
     updatedAt: toIsoString(transaction.updatedAt),
     account: toAccountDto(transaction.account),
@@ -363,6 +367,7 @@ function toTransferTransactionDto(transaction: TransferTransactionWithRelations)
     toAmount: transaction.toAmount,
     description: transaction.description,
     date: toIsoString(transaction.date),
+    createdByAi: transaction.createdByAi ?? false,
     createdAt: toIsoString(transaction.createdAt),
     updatedAt: toIsoString(transaction.updatedAt),
     fromAccount: toAccountDto(transaction.fromAccount),
@@ -485,7 +490,8 @@ export class TransactionsService {
   async createPaymentTransaction(
     workspaceId: string,
     input: CreatePaymentTransactionDto,
-    currentUser: AuthenticatedUser
+    currentUser: AuthenticatedUser,
+    options: CreateTransactionOptions = {}
   ) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
 
@@ -534,6 +540,7 @@ export class TransactionsService {
           description: input.description,
           date: input.date,
           categoryId: finalCategoryId,
+          createdByAi: options.createdByAi ?? false,
         },
         include: PAYMENT_TRANSACTION_INCLUDE,
       });
@@ -552,7 +559,8 @@ export class TransactionsService {
   async createPaymentTransactionsBatch(
     workspaceId: string,
     inputs: CreatePaymentTransactionDto[],
-    currentUser: AuthenticatedUser
+    currentUser: AuthenticatedUser,
+    options: CreateTransactionOptions = {}
   ) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
 
@@ -620,6 +628,7 @@ export class TransactionsService {
             description: input.description,
             date: input.date,
             categoryId: finalCategoryId,
+            createdByAi: options.createdByAi ?? false,
           },
           include: PAYMENT_TRANSACTION_INCLUDE,
         });
@@ -644,7 +653,8 @@ export class TransactionsService {
   async createTransferTransaction(
     workspaceId: string,
     input: CreateTransferTransactionDto,
-    currentUser: AuthenticatedUser
+    currentUser: AuthenticatedUser,
+    options: CreateTransactionOptions = {}
   ) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
 
@@ -670,6 +680,7 @@ export class TransactionsService {
           toAmount: input.toAmount,
           description: input.description,
           date: input.date,
+          createdByAi: options.createdByAi ?? false,
         },
         include: TRANSFER_TRANSACTION_INCLUDE,
       });
@@ -784,6 +795,7 @@ export class TransactionsService {
       if (input.amount !== undefined) updateData.amount = input.amount;
       if (input.description !== undefined) updateData.description = input.description;
       if (input.date !== undefined) updateData.date = input.date;
+      updateData.createdByAi = false;
       if (input.categoryId !== undefined) {
         updateData.category = input.categoryId ? { connect: { id: input.categoryId } } : { disconnect: true };
       }
@@ -892,6 +904,7 @@ export class TransactionsService {
           toAmount: newToAmount,
           description: input.description ?? existingTransfer.description,
           date: input.date || existingTransfer.date,
+          createdByAi: false,
         },
         include: TRANSFER_TRANSACTION_INCLUDE,
       });

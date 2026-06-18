@@ -60,7 +60,8 @@ export class AiFinanceCommitService {
             description: transfer.description ?? undefined,
             date: new Date(transfer.date),
           },
-          user
+          user,
+          { createdByAi: true }
         );
         const nextPayload: AiFinanceDraftPayload = {
           ...payload,
@@ -93,7 +94,9 @@ export class AiFinanceCommitService {
     });
 
     try {
-      const result = await this.transactions.createPaymentTransactionsBatch(draft.workspaceId, inputs, user);
+      const result = await this.transactions.createPaymentTransactionsBatch(draft.workspaceId, inputs, user, {
+        createdByAi: true,
+      });
       const nextPayload: AiFinanceDraftPayload = {
         ...payload,
         createdPaymentTransactionIds: result.transactions.map((transaction) => transaction.id),

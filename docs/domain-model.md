@@ -129,6 +129,7 @@ Creation and update rules include:
 - The transaction date cannot be before the account creation date.
 - Expense amount cannot exceed the account balance.
 - A newly typed category may be created during transaction creation.
+- `createdByAi` marks transactions committed from Telegram AI drafts; manual edits clear this marker.
 
 ## Transfers
 
@@ -143,6 +144,7 @@ Rules include:
 - Source and destination accounts must be different.
 - Source amount cannot exceed source account balance.
 - `createdById` stores the user that created the transfer.
+- `createdByAi` marks transfers committed from Telegram AI drafts; manual edits clear this marker.
 
 Transfers support cross-currency use cases by storing both source `amount` and destination `toAmount`.
 
