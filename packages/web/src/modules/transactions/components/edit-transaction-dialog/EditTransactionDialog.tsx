@@ -165,6 +165,7 @@ export function EditTransactionDialog({
         description: data.description ?? transaction.description,
         date: data.date ?? transaction.date,
         categoryId: nextCategory?.id ?? null,
+        createdByAi: false,
         updatedAt: new Date(),
         account: nextAccount,
         category: nextCategory,

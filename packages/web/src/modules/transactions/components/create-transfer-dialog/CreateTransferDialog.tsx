@@ -139,6 +139,7 @@ export function CreateTransferDialog({
         toAmount: data.toAmount,
         description: data.description || null,
         date: data.date,
+        createdByAi: false,
         createdAt: optimisticNow,
         updatedAt: optimisticNow,
         fromAccount,

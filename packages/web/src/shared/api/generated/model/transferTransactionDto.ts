@@ -20,6 +20,7 @@ export interface TransferTransactionDto {
   /** @nullable */
   description?: string | null;
   date: string;
+  createdByAi: boolean;
   createdAt: string;
   updatedAt: string;
   fromAccount: TransactionAccountDto;

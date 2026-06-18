@@ -23,9 +23,18 @@ import type { AiFinanceConversationAction } from "./ai-finance-parser.service";
 import { AiFinancePreferenceService } from "./ai-finance-preference.service";
 
 const MONEY_PATTERN = /^(?=.*[1-9])\d+(?:\.\d+)?$/;
+const ISO_LOCAL_DATE_TIME_PATTERN = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/;
+const SHORT_LOCAL_DATE_PATTERN = /^(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?$/;
 
 function normalizeHint(value: string | null | undefined) {
   return value?.trim().toLowerCase() || null;
+}
+
+function normalizeAccountAnswer(value: string) {
+  return value
+    .trim()
+    .replace(/^(?:выбираю|выбери|выбрал|выбрала|это|сч[её]т|карта|карту)\s+/iu, "")
+    .trim();
 }
 
 function includesHint(name: string, hint: string | null) {
@@ -49,12 +58,27 @@ function includesHint(name: string, hint: string | null) {
   return false;
 }
 
+function includesCurrencyHint(account: Account, hint: string | null) {
+  const currency = normalizeCurrencyCode(hint);
+  return Boolean(currency && account.currency === currency);
+}
+
 function isExactCatalogName(name: string, value: string | null | undefined) {
   return Boolean(value && name.trim().toLowerCase() === value.trim().toLowerCase());
 }
 
 function isMoney(value: string | null | undefined): value is string {
   return Boolean(value && MONEY_PATTERN.test(value));
+}
+
+function isSameMoney(left: string | null | undefined, right: string | null | undefined) {
+  if (!isMoney(left) || !isMoney(right)) return false;
+
+  try {
+    return new Big(left).eq(right);
+  } catch {
+    return false;
+  }
 }
 
 const EDIT_STOP_WORDS = new Set([
@@ -81,16 +105,118 @@ function getEditWords(value: string | null | undefined) {
   );
 }
 
-function startOfToday(timezone: string) {
-  const now = new Date();
-  const localDate = new Intl.DateTimeFormat("en-CA", {
+function getZonedDateParts(date: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
+    hourCycle: "h23",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(now);
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(date);
+  const getPart = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? "0");
 
-  return new Date(`${localDate}T12:00:00.000Z`);
+  return {
+    year: getPart("year"),
+    month: getPart("month"),
+    day: getPart("day"),
+    hour: getPart("hour"),
+    minute: getPart("minute"),
+    second: getPart("second"),
+    millisecond: date.getUTCMilliseconds(),
+  };
+}
+
+function getTimeZoneOffsetMs(date: Date, timezone: string) {
+  const parts = getZonedDateParts(date, timezone);
+  const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  return asUtc - date.getTime() + parts.millisecond;
+}
+
+function localDateTimeToUtc(
+  parts: Pick<ReturnType<typeof getZonedDateParts>, "year" | "month" | "day" | "hour" | "minute" | "second"> & {
+    millisecond?: number;
+  },
+  timezone: string
+) {
+  const utcGuess = new Date(
+    Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second, parts.millisecond ?? 0)
+  );
+  const offset = getTimeZoneOffsetMs(utcGuess, timezone);
+  const resolved = new Date(utcGuess.getTime() - offset);
+  const correctedOffset = getTimeZoneOffsetMs(resolved, timezone);
+
+  return correctedOffset === offset ? resolved : new Date(utcGuess.getTime() - correctedOffset);
+}
+
+function currentTimeOnLocalDate(
+  dateParts: Pick<ReturnType<typeof getZonedDateParts>, "year" | "month" | "day">,
+  timezone: string
+) {
+  const currentParts = getZonedDateParts(new Date(), timezone);
+  return localDateTimeToUtc(
+    {
+      ...dateParts,
+      hour: currentParts.hour,
+      minute: currentParts.minute,
+      second: currentParts.second,
+      millisecond: currentParts.millisecond,
+    },
+    timezone
+  );
+}
+
+function relativeLocalDate(daysOffset: number, timezone: string) {
+  const currentParts = getZonedDateParts(new Date(), timezone);
+  const shiftedDate = new Date(Date.UTC(currentParts.year, currentParts.month - 1, currentParts.day + daysOffset));
+  return localDateTimeToUtc(
+    {
+      year: shiftedDate.getUTCFullYear(),
+      month: shiftedDate.getUTCMonth() + 1,
+      day: shiftedDate.getUTCDate(),
+      hour: currentParts.hour,
+      minute: currentParts.minute,
+      second: currentParts.second,
+      millisecond: currentParts.millisecond,
+    },
+    timezone
+  );
+}
+
+function parseLocalDateText(text: string, timezone: string) {
+  const isoMatch = text.match(ISO_LOCAL_DATE_TIME_PATTERN);
+  if (isoMatch) {
+    const [, year, month, day, hour, minute, second] = isoMatch;
+    if (!year || !month || !day) return null;
+    if (hour && minute) {
+      return localDateTimeToUtc(
+        {
+          year: Number(year),
+          month: Number(month),
+          day: Number(day),
+          hour: Number(hour),
+          minute: Number(minute),
+          second: Number(second ?? 0),
+        },
+        timezone
+      );
+    }
+
+    return currentTimeOnLocalDate({ year: Number(year), month: Number(month), day: Number(day) }, timezone);
+  }
+
+  const shortMatch = text.match(SHORT_LOCAL_DATE_PATTERN);
+  if (shortMatch) {
+    const [, day, month, year] = shortMatch;
+    if (!day || !month) return null;
+    const currentParts = getZonedDateParts(new Date(), timezone);
+    const fullYear = year ? Number(year.length === 2 ? `20${year}` : year) : currentParts.year;
+    return currentTimeOnLocalDate({ year: fullYear, month: Number(month), day: Number(day) }, timezone);
+  }
+
+  return null;
 }
 
 function parseDateText(
@@ -99,28 +225,26 @@ function parseDateText(
   allowTodayDefault: boolean
 ): string | null {
   const text = dateText?.trim().toLowerCase();
-  const today = startOfToday(timezone);
 
   if (!text) {
-    return allowTodayDefault ? today.toISOString() : null;
+    return allowTodayDefault ? new Date().toISOString() : null;
   }
 
   if (text === "today" || text === "сегодня") {
-    return today.toISOString();
+    return new Date().toISOString();
   }
 
   if (text === "yesterday" || text === "вчера") {
-    const date = new Date(today);
-    date.setUTCDate(date.getUTCDate() - 1);
-    return date.toISOString();
+    return relativeLocalDate(-1, timezone).toISOString();
   }
 
   const daysAgoMatch = text.match(/(\d+)\s+(?:days?\s+ago|дн(?:я|ей|ь)?\s+назад)/);
   if (daysAgoMatch) {
-    const date = new Date(today);
-    date.setUTCDate(date.getUTCDate() - Number(daysAgoMatch[1]));
-    return date.toISOString();
+    return relativeLocalDate(-Number(daysAgoMatch[1]), timezone).toISOString();
   }
+
+  const localDate = parseLocalDateText(text, timezone);
+  if (localDate) return localDate.toISOString();
 
   const parsed = new Date(text);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
@@ -218,12 +342,13 @@ export class AiFinanceResolverService {
         extraction.dateText = answer;
       }
     } else if (input.currentQuestion === "account") {
+      const accountHint = normalizeAccountAnswer(answer);
       if (extraction.kind === "payment" || extraction.kind === "receipt") {
-        extraction.accountHint = answer;
+        extraction.accountHint = accountHint;
       } else if (extraction.kind === "payments") {
-        extraction.payments = extraction.payments.map((payment) => ({ ...payment, accountHint: answer }));
+        extraction.payments = extraction.payments.map((payment) => ({ ...payment, accountHint }));
       } else if (extraction.kind === "transfer") {
-        extraction.fromAccountHint = answer;
+        extraction.fromAccountHint = accountHint;
       }
     }
 
@@ -320,6 +445,17 @@ export class AiFinanceResolverService {
 
     if (targetIndex < 0 || !entries[targetIndex]) {
       return this.toResolvedDraft(input.payload, input.workspaceId, input.receiptMode);
+    }
+
+    if (input.action.action === "delete_entry") {
+      return this.toResolvedDraft(
+        {
+          ...input.payload,
+          entries: entries.filter((_, index) => index !== targetIndex),
+        },
+        input.workspaceId,
+        input.receiptMode
+      );
     }
 
     const targetEntry = entries[targetIndex];
@@ -601,7 +737,7 @@ export class AiFinanceResolverService {
         : extraction.kind === "transfer"
           ? normalizeHint(extraction.fromAccountHint)
           : null;
-    const hinted = accounts.find((account) => includesHint(account.name, hint));
+    const hinted = accounts.find((account) => includesHint(account.name, hint) || includesCurrencyHint(account, hint));
     if (hinted) return hinted;
 
     const defaultAccountId = this.preferences.getDefaultAccountId(preference, workspaceId);
@@ -617,7 +753,10 @@ export class AiFinanceResolverService {
     fromAccountId?: string
   ) {
     const hint = normalizeHint(toAccountHint);
-    const hinted = accounts.find((account) => account.id !== fromAccountId && includesHint(account.name, hint));
+    const hinted = accounts.find(
+      (account) =>
+        account.id !== fromAccountId && (includesHint(account.name, hint) || includesCurrencyHint(account, hint))
+    );
     if (hinted) return hinted;
 
     const candidates = accounts.filter((account) => account.id !== fromAccountId);
@@ -705,7 +844,7 @@ export class AiFinanceResolverService {
     }
 
     const hint = normalizeHint(accountHint);
-    const hinted = accounts.find((account) => includesHint(account.name, hint));
+    const hinted = accounts.find((account) => includesHint(account.name, hint) || includesCurrencyHint(account, hint));
     if (hinted) return hinted;
 
     if (fallbackAccount) return fallbackAccount;
@@ -880,11 +1019,23 @@ export class AiFinanceResolverService {
 
   private resolveTargetEntryIndex(
     entries: AiFinancePaymentEntry[],
-    action: Pick<AiFinanceConversationAction, "entryIndex" | "targetText">,
+    action: Pick<AiFinanceConversationAction, "entryIndex" | "targetText" | "amount">,
     fallbackText: string
   ) {
     if (action.entryIndex && action.entryIndex >= 1 && action.entryIndex <= entries.length) {
       return action.entryIndex - 1;
+    }
+
+    if (action.amount) {
+      const amountMatches = entries
+        .map((entry, index) => (isSameMoney(entry.amount, action.amount) ? index : -1))
+        .filter((index) => index >= 0);
+      if (amountMatches.length === 1) return amountMatches[0];
+
+      const originalAmountMatches = entries
+        .map((entry, index) => (isSameMoney(entry.originalAmount, action.amount) ? index : -1))
+        .filter((index) => index >= 0);
+      if (originalAmountMatches.length === 1) return originalAmountMatches[0];
     }
 
     const text = action.targetText || fallbackText;

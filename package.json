@@ -26,6 +26,8 @@
     "db:unset-debt-account-ids": "pnpm --filter api db:unset-debt-account-ids",
     "db:seed": "pnpm --filter api db:seed",
     "db:export": "pnpm --filter api db:export",
-    "db:import": "pnpm --filter api db:import"
+    "db:import": "pnpm --filter api db:import",
+    "ngrok": "pnpm --filter api ngrok",
+    "telegram:webhook:enable": "pnpm --filter api telegram:webhook:enable"
   }
 }

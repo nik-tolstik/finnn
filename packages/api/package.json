@@ -20,7 +20,9 @@
     "db:seed": "node --import tsx scripts/db-seed.ts",
     "db:export": "node --import tsx scripts/mongo-export.ts",
     "db:import": "node --import tsx scripts/mongo-import.ts",
-    "telegram:link-mini": "node --import tsx scripts/link-telegram-mini-identity.ts"
+    "telegram:link-mini": "node --import tsx scripts/link-telegram-mini-identity.ts",
+    "ngrok": "node --import tsx scripts/start-ngrok.ts",
+    "telegram:webhook:enable": "node --import tsx scripts/set-telegram-webhook.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1070.0",

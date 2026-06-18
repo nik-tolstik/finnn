@@ -9,6 +9,7 @@ import { hexToRgba } from "@/shared/utils/color-utils";
 import { formatMoney } from "@/shared/utils/money";
 
 import type { TransferTransactionWithRelations } from "../../../transaction.types";
+import { AiCreatedBadge } from "./AiCreatedBadge";
 
 interface TransferTransactionItemProps {
   transaction: TransferTransactionWithRelations;
@@ -55,7 +56,10 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
     >
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm font-medium leading-relaxed">Перевод</span>
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-sm font-medium leading-relaxed">
+            <span>Перевод</span>
+            {transaction.createdByAi ? <AiCreatedBadge className="size-5" /> : null}
+          </span>
           <span className="text-right text-sm font-medium leading-relaxed text-amber-600 dark:text-amber-400">
             {formatMoney(transaction.amount, transaction.fromAccount.currency)}
           </span>

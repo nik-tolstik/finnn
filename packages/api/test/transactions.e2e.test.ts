@@ -157,6 +157,7 @@ function createPaymentTransactionRecord(overrides: Record<string, unknown> = {})
     description: "Groceries",
     date: new Date("2026-05-26T12:00:00.000Z"),
     categoryId: "category-1",
+    createdByAi: false,
     createdAt: new Date("2026-05-26T12:01:00.000Z"),
     updatedAt: new Date("2026-05-26T12:02:00.000Z"),
     account,
@@ -179,6 +180,7 @@ function createTransferTransactionRecord(overrides: Record<string, unknown> = {}
     toAmount: "29",
     description: "Move money",
     date: new Date("2026-05-26T13:00:00.000Z"),
+    createdByAi: false,
     createdAt: new Date("2026-05-26T13:01:00.000Z"),
     updatedAt: new Date("2026-05-26T13:02:00.000Z"),
     fromAccount: createAccountRecord({ id: "account-1", balance: "100" }),
@@ -375,7 +377,7 @@ describe("Transactions API", () => {
     });
     expect(prisma.paymentTransaction.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ categoryId: "category-new", type: "expense" }),
+        data: expect.objectContaining({ categoryId: "category-new", createdByAi: false, type: "expense" }),
       })
     );
     expect(prisma.account.update).toHaveBeenCalledWith({
@@ -553,6 +555,7 @@ describe("Transactions API", () => {
       expect.objectContaining({
         data: expect.objectContaining({
           createdById: currentUser.id,
+          createdByAi: false,
           fromAccountId: "account-1",
           toAccountId: "account-2",
         }),

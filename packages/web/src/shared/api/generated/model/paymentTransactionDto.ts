@@ -20,6 +20,7 @@ export interface PaymentTransactionDto {
   date: string;
   /** @nullable */
   categoryId?: string | null;
+  createdByAi: boolean;
   createdAt: string;
   updatedAt: string;
   account: TransactionAccountDto;

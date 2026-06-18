@@ -84,6 +84,19 @@ function formatOpenRouterRawError(raw: unknown) {
   return value.length > 1000 ? `${value.slice(0, 1000)}...` : value;
 }
 
+function getAudioFormat(filename: string, mimeType: string) {
+  const extension = filename.split("?")[0]?.split(".").pop()?.toLowerCase();
+  if (extension === "oga" || extension === "opus") return "ogg";
+  if (extension) return extension;
+
+  const normalizedMimeType = mimeType.trim().toLowerCase();
+  if (normalizedMimeType === "audio/mpeg") return "mp3";
+  if (normalizedMimeType === "audio/mp4" || normalizedMimeType === "audio/x-m4a") return "m4a";
+  if (normalizedMimeType === "application/ogg") return "ogg";
+
+  return normalizedMimeType.startsWith("audio/") ? normalizedMimeType.replace("audio/", "") : "ogg";
+}
+
 @Injectable()
 export class OpenRouterClient {
   async createStructuredCompletion(
@@ -147,14 +160,21 @@ export class OpenRouterClient {
   }
 
   async transcribeAudio(file: Blob, filename: string) {
-    const formData = new FormData();
-    formData.set("model", getOpenRouterTranscriptionModel());
-    formData.set("file", file, filename);
+    const audioBuffer = Buffer.from(await file.arrayBuffer());
 
     const response = await fetch(OPENROUTER_AUDIO_TRANSCRIPTIONS_URL, {
       method: "POST",
-      headers: getOpenRouterHeaders(),
-      body: formData,
+      headers: {
+        ...getOpenRouterHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: getOpenRouterTranscriptionModel(),
+        input_audio: {
+          data: audioBuffer.toString("base64"),
+          format: getAudioFormat(filename, file.type),
+        },
+      }),
     });
 
     const json = await readOpenRouterJson(response);

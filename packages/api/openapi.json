@@ -5941,6 +5941,9 @@
             "type": "string",
             "nullable": true
           },
+          "createdByAi": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -5962,7 +5965,18 @@
             ]
           }
         },
-        "required": ["id", "workspaceId", "accountId", "amount", "type", "date", "createdAt", "updatedAt", "account"]
+        "required": [
+          "id",
+          "workspaceId",
+          "accountId",
+          "amount",
+          "type",
+          "date",
+          "createdByAi",
+          "createdAt",
+          "updatedAt",
+          "account"
+        ]
       },
       "PaymentCombinedTransactionDto": {
         "type": "object",
@@ -6010,6 +6024,9 @@
             "type": "string",
             "format": "date-time"
           },
+          "createdByAi": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -6042,6 +6059,7 @@
           "amount",
           "toAmount",
           "date",
+          "createdByAi",
           "createdAt",
           "updatedAt",
           "fromAccount",

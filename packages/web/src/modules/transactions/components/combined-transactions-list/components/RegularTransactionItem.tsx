@@ -4,6 +4,7 @@ import type { PaymentTransactionWithRelations } from "../../../transaction.types
 import { getTransactionDescriptionSegments } from "../../../utils/transactionDescription";
 import { TransactionDescriptionLine } from "../../transaction-description-line/TransactionDescriptionLine";
 import { getPaymentTransactionAmountDisplay } from "../utils/transactionAmountDisplay";
+import { AiCreatedBadge } from "./AiCreatedBadge";
 import { TransactionActorAvatar } from "./TransactionActorAvatar";
 
 interface RegularTransactionItemProps {
@@ -28,6 +29,7 @@ export function RegularTransactionItem({ transaction, workspaceName, onClick }: 
       segments={segments}
       footer={{
         icon: <TransactionActorAvatar account={transaction.account} showName workspaceName={workspaceName} />,
+        badges: transaction.createdByAi ? [<AiCreatedBadge key="ai-created" />] : undefined,
         chips: [
           {
             color: transaction.account.color,

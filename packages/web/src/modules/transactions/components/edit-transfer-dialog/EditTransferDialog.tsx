@@ -143,6 +143,7 @@ export function EditTransferDialog({
         toAmount: data.toAmount,
         description: data.description || null,
         date: data.date,
+        createdByAi: false,
         updatedAt: new Date(),
         fromAccount: nextFromAccount,
         toAccount: nextToAccount,

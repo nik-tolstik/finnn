@@ -1,4 +1,5 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import Big from "big.js";
 
 import type { AiFinanceExtraction } from "./ai-finance.types";
 import { OpenRouterClient } from "./openrouter.client";
@@ -11,7 +12,14 @@ export type AiFinancePromptContext = {
 };
 
 export type AiFinanceConversationAction = {
-  action: "create_draft" | "update_entry" | "set_receipt_mode" | "commit" | "cancel" | "ask_clarification";
+  action:
+    | "create_draft"
+    | "update_entry"
+    | "delete_entry"
+    | "set_receipt_mode"
+    | "commit"
+    | "cancel"
+    | "ask_clarification";
   targetText: string | null;
   entryIndex: number | null;
   categoryName: string | null;
@@ -114,7 +122,15 @@ const CONVERSATION_ACTION_SCHEMA = {
   additionalProperties: false,
   properties: {
     action: {
-      enum: ["create_draft", "update_entry", "set_receipt_mode", "commit", "cancel", "ask_clarification"],
+      enum: [
+        "create_draft",
+        "update_entry",
+        "delete_entry",
+        "set_receipt_mode",
+        "commit",
+        "cancel",
+        "ask_clarification",
+      ],
     },
     targetText: { type: ["string", "null"] },
     entryIndex: { type: ["number", "null"], minimum: 1 },
@@ -146,6 +162,14 @@ const CONVERSATION_ACTION_SCHEMA = {
 
 const TEXT_AMOUNT_PATTERN =
   /(?:^|\s)(?:за|на|по)?\s*(\d+(?:[.,]\d{1,2})?)\s*(byn|br|бел(?:орусских)?\.?\s*руб(?:лей|ля|ль)?|руб(?:лей|ля|ль)?|р\.?|usd|\$|доллар(?:ов|а)?|бакс(?:ов|а)?|eur|€|евро|rub|₽|рос(?:сийских)?\.?\s*руб(?:лей|ля|ль)?)(?:\s|$)/iu;
+const MONEY_MENTION_PATTERN =
+  /(\d+(?:[.,]\d{1,2})?)\s*(byn|br|бел(?:орусских)?\.?\s*руб(?:лей|ля|ль)?|руб(?:лей|ля|ль)?|р\.?|usd|\$|доллар(?:ов|а)?|бакс(?:ов|а)?|eur|€|евро|rub|₽|рос(?:сийских)?\.?\s*руб(?:лей|ля|ль)?)/giu;
+const BALANCE_DIFFERENCE_PATTERN =
+  /(\d+(?:[.,]\d{1,2})?)\s*[-−]\s*(\d+(?:[.,]\d{1,2})?)\s*(byn|br|бел(?:орусских)?\.?\s*руб(?:лей|ля|ль)?|руб(?:лей|ля|ль)?|р\.?|usd|\$|доллар(?:ов|а)?|бакс(?:ов|а)?|eur|€|евро|rub|₽|рос(?:сийских)?\.?\s*руб(?:лей|ля|ль)?)/iu;
+const CURRENCY_EXCHANGE_PATTERN =
+  /(?:поменял|поменяла|обменял|обменяла|обмен|конвертировал|конвертировала|convert|exchange).*(?:получил|получила|получено|пришло|зачисл|got|received)|(?:получил|получила|получено|пришло|зачисл|got|received).*(?:поменял|поменяла|обменял|обменяла|обмен|конвертировал|конвертировала|convert|exchange)/iu;
+const EXPENSE_TEXT_PATTERN = /(?:списал|списало|снял|сняло|потрат|оплат|купил|купила|расход|expense)/iu;
+const INCOME_TEXT_PATTERN = /(?:пришло|зачисл|получил|получила|доход|income)/iu;
 const EXTRACTION_AMOUNT_PATTERN = /^(?=.*[1-9])\d+(?:\.\d+)?$/;
 
 const CATEGORY_KEYWORDS = [
@@ -198,7 +222,9 @@ function getFallbackCurrency(context?: AiFinancePromptContext | null) {
 function getFallbackAccountHint(text: string) {
   const normalizedText = normalizeText(text);
   if (/(cash|налич)/i.test(normalizedText)) return "cash";
+  if (/(белорус|беларус|byn|byr|руб)/i.test(normalizedText) && /карт/i.test(normalizedText)) return "BYN";
   if (/(card|карт)/i.test(normalizedText)) return "card";
+  if (/(белорус|беларус|byn|byr|руб)/i.test(normalizedText)) return "BYN";
   return null;
 }
 
@@ -275,6 +301,83 @@ function parseSimplePaymentLines(text: string, context?: AiFinancePromptContext 
     dateText: null,
     payments,
     confidence: 0.65,
+  };
+}
+
+function calculateBalanceDifference(text: string) {
+  const match = text.match(BALANCE_DIFFERENCE_PATTERN);
+  if (!match?.[1] || !match[2]) return null;
+
+  const left = normalizeAmount(match[1]);
+  const right = normalizeAmount(match[2]);
+  const amount = new Big(left).minus(right).abs().round(2).toFixed(2);
+  if (!isMoney(amount)) return null;
+
+  return {
+    amount,
+    currency: normalizeCurrency(match[3]) ?? null,
+    expression: `${match[1]}-${match[2]}`,
+  };
+}
+
+function parseBalanceDifferencePayment(text: string): AiFinanceExtraction | null {
+  const difference = calculateBalanceDifference(text);
+  if (!difference) return null;
+
+  const originalMoneyMentions = [...text.matchAll(MONEY_MENTION_PATTERN)]
+    .map((match) => ({ amount: normalizeAmount(match[1] || ""), currency: normalizeCurrency(match[2]) }))
+    .filter(
+      (mention) =>
+        mention.currency &&
+        mention.currency !== difference.currency &&
+        isMoney(mention.amount) &&
+        !difference.expression.includes(mention.amount)
+    );
+  const original = originalMoneyMentions[0];
+
+  const paymentType = INCOME_TEXT_PATTERN.test(text) && !EXPENSE_TEXT_PATTERN.test(text) ? "income" : "expense";
+  const originalDescription = original ? ` (${original.amount} ${original.currency})` : "";
+
+  return {
+    kind: "payment",
+    paymentType,
+    amount: difference.amount,
+    currency: difference.currency ?? getFallbackCurrency(),
+    description: `${paymentType === "income" ? "Зачисление" : "Списание"} по разнице остатков${originalDescription}`,
+    merchant: null,
+    dateText: null,
+    accountHint: getFallbackAccountHint(text),
+    categoryHint: null,
+    confidence: 0.86,
+  };
+}
+
+function parseCurrencyExchangeTransfer(text: string): AiFinanceExtraction | null {
+  if (!CURRENCY_EXCHANGE_PATTERN.test(text)) return null;
+
+  const mentions = [...text.matchAll(MONEY_MENTION_PATTERN)].map((match) => ({
+    amount: normalizeAmount(match[1] || ""),
+    currency: normalizeCurrency(match[2]),
+  }));
+  const [source, destination] = mentions;
+  if (
+    !source?.currency ||
+    !destination?.currency ||
+    source.currency === destination.currency ||
+    !isMoney(source.amount) ||
+    !isMoney(destination.amount)
+  )
+    return null;
+
+  return {
+    kind: "transfer",
+    amount: source.amount,
+    toAmount: destination.amount,
+    fromAccountHint: source.currency,
+    toAccountHint: destination.currency,
+    dateText: null,
+    description: "Обмен валюты",
+    confidence: 0.88,
   };
 }
 
@@ -387,6 +490,7 @@ function isConversationAction(value: unknown): value is AiFinanceConversationAct
   if (
     value.action !== "create_draft" &&
     value.action !== "update_entry" &&
+    value.action !== "delete_entry" &&
     value.action !== "set_receipt_mode" &&
     value.action !== "commit" &&
     value.action !== "cancel" &&
@@ -453,12 +557,20 @@ export class AiFinanceParserService {
   constructor(@Inject(OpenRouterClient) private readonly openRouter: OpenRouterClient) {}
 
   async parseText(text: string, context?: AiFinancePromptContext | null): Promise<AiFinanceExtraction> {
+    const balanceDifferencePayment = parseBalanceDifferencePayment(text);
+    if (balanceDifferencePayment) return balanceDifferencePayment;
+
+    const currencyExchangeTransfer = parseCurrencyExchangeTransfer(text);
+    if (currencyExchangeTransfer) return currencyExchangeTransfer;
+
     const content = await this.openRouter.createStructuredCompletion(
       [
         {
           role: "system",
-          content:
-            "Extract Finnn finance intents from the user's message. If the message contains multiple independent payments, use kind=payments and include each payment separately. Return strict JSON only. Money amounts must stay strings. Always include every schema field; use null or [] for fields that do not apply to the selected kind.",
+          content: [
+            "Extract Finnn finance intents from the user's message. If the message contains multiple independent payments, use kind=payments and include each payment separately. Treat currency exchange between the user's own accounts as kind=transfer with amount from the source account and toAmount received by the destination account, not as expense plus income. Return strict JSON only. Money amounts must stay strings. Always include every schema field; use null or [] for fields that do not apply to the selected kind.",
+            "If the user provides before-after balances like 60.44-55.34 rubles/BYN, calculate the absolute difference and use that as the payment amount in the account currency. Keep any visible foreign-card amount such as 2 USD in the description, not as the committed amount.",
+          ].join("\n"),
         },
         {
           role: "system",
@@ -491,6 +603,7 @@ export class AiFinanceParserService {
             "You are a Finnn finance draft assistant.",
             "Classify the user's message as one action against the current draft.",
             "Use update_entry for edits like changing category, account, amount, date, or description.",
+            "Use delete_entry when the user asks to remove, delete, drop, exclude, or undo one row from the current draft.",
             "Use commit only when the user clearly confirms the current draft.",
             "Use cancel only when the user clearly cancels.",
             "Use set_receipt_mode for requests to split/group receipts.",
@@ -498,6 +611,7 @@ export class AiFinanceParserService {
             "Use ask_clarification if the edit cannot be mapped to the current draft.",
             "For categoryName and accountName, use exact names from the provided lists only; otherwise null.",
             "entryIndex is 1-based when the user targets a numbered draft row; otherwise null.",
+            "For delete_entry by amount, set amount to the amount mentioned by the user and targetText to any words that identify the row.",
           ].join("\n"),
         },
         {
@@ -522,6 +636,7 @@ export class AiFinanceParserService {
       [
         "Extract receipt items, total, currency, merchant, date, account hint, and likely category hints.",
         "If the image is a bank or finance app transaction-history screenshot, use kind=payments and extract each visible transaction as a separate payment.",
+        "If a transaction screenshot shows a foreign amount plus before-after account balances, calculate the account-currency amount from the balance difference, for example 60.44-55.34 BYN => 5.10 BYN. Keep the visible foreign amount in the description.",
         "For visible transaction dates/times, set dateText on each payment. Prefer ISO-like dates such as YYYY-MM-DD or YYYY-MM-DD HH:mm when the image shows enough information.",
         userNote ? `User note/caption: ${userNote}` : null,
         "Return strict JSON only. Always include every schema field; use null or [] for fields that do not apply to the selected kind.",
