@@ -57,9 +57,9 @@ TELEGRAM_BOT_DRAFT_TTL_SECONDS="1800"
 OPENROUTER_API_KEY="production-openrouter-api-key"
 OPENROUTER_APP_REFERER="https://finnn.xyz"
 OPENROUTER_APP_TITLE="Finnn"
-OPENROUTER_TEXT_MODEL="production-text-model"
-OPENROUTER_VISION_MODEL="production-vision-model"
-OPENROUTER_TRANSCRIPTION_MODEL="production-transcription-model"
+OPENROUTER_TEXT_MODEL="openai/gpt-4.1-mini"
+OPENROUTER_VISION_MODEL="google/gemini-2.5-flash"
+OPENROUTER_TRANSCRIPTION_MODEL="openai/gpt-4o-mini-transcribe"
 ```
 
 Google authentication variables are required when Google login/linking is enabled:

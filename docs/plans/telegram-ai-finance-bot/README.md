@@ -118,9 +118,9 @@ Recommended environment variables:
 OPENROUTER_API_KEY="..."
 OPENROUTER_APP_REFERER="https://finnn.xyz"
 OPENROUTER_APP_TITLE="Finnn"
-OPENROUTER_TEXT_MODEL="..."
-OPENROUTER_VISION_MODEL="..."
-OPENROUTER_TRANSCRIPTION_MODEL="..."
+OPENROUTER_TEXT_MODEL="openai/gpt-4.1-mini"
+OPENROUTER_VISION_MODEL="google/gemini-2.5-flash"
+OPENROUTER_TRANSCRIPTION_MODEL="openai/gpt-4o-mini-transcribe"
 TELEGRAM_BOT_WEBHOOK_SECRET="..."
 TELEGRAM_BOT_WEBHOOK_URL="https://api.finnn.xyz/telegram/webhook"
 TELEGRAM_BOT_DRAFT_TTL_SECONDS="1800"
@@ -520,4 +520,3 @@ asks for screenshot/browser QA.
 - Should default account be global per workspace or scoped per Telegram chat?
 - Should Telegram group chats be supported, or only direct chats for MVP? Recommended MVP: direct chats only.
 - How should failed commits be retried when a draft becomes invalid because account balance changed?
-

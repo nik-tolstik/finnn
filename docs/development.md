@@ -106,9 +106,9 @@ TELEGRAM_BOT_DRAFT_TTL_SECONDS="1800"
 OPENROUTER_API_KEY="openrouter-api-key"
 OPENROUTER_APP_REFERER="http://localhost:3000"
 OPENROUTER_APP_TITLE="Finnn Local"
-OPENROUTER_TEXT_MODEL="openrouter-text-model"
-OPENROUTER_VISION_MODEL="openrouter-vision-model"
-OPENROUTER_TRANSCRIPTION_MODEL="openrouter-transcription-model"
+OPENROUTER_TEXT_MODEL="openai/gpt-4.1-mini"
+OPENROUTER_VISION_MODEL="google/gemini-2.5-flash"
+OPENROUTER_TRANSCRIPTION_MODEL="openai/gpt-4o-mini-transcribe"
 ```
 
 Required for custom avatar uploads:
