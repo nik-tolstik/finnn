@@ -92,6 +92,9 @@ export type AiFinancePaymentEntry = {
   categoryName: string | null;
   amount: string;
   currency: string | null;
+  originalAmount?: string | null;
+  originalCurrency?: string | null;
+  exchangeRate?: string | null;
   type: "expense" | "income";
   description: string | null;
   date: string | null;

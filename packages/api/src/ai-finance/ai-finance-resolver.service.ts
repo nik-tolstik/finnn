@@ -1,8 +1,10 @@
-import { Inject, Injectable } from "@nestjs/common";
-import type { Account, Category, TelegramBotPreference, Workspace } from "@prisma/client";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import { type Account, type Category, Currency, type TelegramBotPreference, type Workspace } from "@prisma/client";
+import Big from "big.js";
 
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { addMoney } from "@/common/money";
+import { ExchangeRateService } from "@/currency/exchange-rate.service";
 import { PrismaService } from "@/prisma/prisma.service";
 
 import {
@@ -137,11 +139,39 @@ function normalizeReceiptMode(value: string | null | undefined): ReceiptMode {
   return RECEIPT_MODE_CATEGORY;
 }
 
+function normalizeCurrencyCode(value: string | null | undefined): Currency | null {
+  const normalizedValue = value?.trim().toUpperCase();
+  if (!normalizedValue) return null;
+
+  if (normalizedValue === "$" || normalizedValue.includes("DOLLAR") || normalizedValue.includes("ДОЛЛАР")) {
+    return Currency.USD;
+  }
+
+  if (normalizedValue === "€" || normalizedValue.includes("EURO") || normalizedValue.includes("ЕВРО")) {
+    return Currency.EUR;
+  }
+
+  if (normalizedValue === "₽" || normalizedValue.includes("РОС")) {
+    return Currency.RUB;
+  }
+
+  if (normalizedValue === "BR" || normalizedValue.includes("БЕЛ") || normalizedValue.includes("РУБ")) {
+    return Currency.BYN;
+  }
+
+  return Object.values(Currency).includes(normalizedValue as Currency) ? (normalizedValue as Currency) : null;
+}
+
+function roundConvertedMoney(amount: string, rate: number) {
+  return new Big(amount).times(rate).round(2).toFixed(2);
+}
+
 @Injectable()
 export class AiFinanceResolverService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AiFinancePreferenceService) private readonly preferences: AiFinancePreferenceService
+    @Inject(AiFinancePreferenceService) private readonly preferences: AiFinancePreferenceService,
+    @Inject(ExchangeRateService) private readonly exchangeRates: ExchangeRateService
   ) {}
 
   async resolveInitial(input: {
@@ -307,25 +337,32 @@ export class AiFinanceResolverService {
     const nextEntries = entries.map((entry, index) => {
       if (index !== targetIndex) return entry;
 
+      const nextAmount = isMoney(input.action.amount) ? input.action.amount : null;
+      const amountChanged = Boolean(nextAmount);
+
       return {
         ...entry,
         accountId: account?.id ?? entry.accountId,
         accountName: account?.name ?? entry.accountName,
         categoryId: category?.id ?? entry.categoryId,
         categoryName: category?.name ?? entry.categoryName,
-        amount: isMoney(input.action.amount) ? input.action.amount : entry.amount,
+        amount: nextAmount ?? entry.amount,
         currency: account?.currency ?? entry.currency,
+        originalAmount: amountChanged ? null : entry.originalAmount,
+        originalCurrency: amountChanged ? null : entry.originalCurrency,
+        exchangeRate: amountChanged ? null : entry.exchangeRate,
         description: input.action.description ?? entry.description,
         date: date ?? entry.date,
       };
     });
+    const convertedEntries = await this.convertEntries(nextEntries, accounts);
 
     return this.toResolvedDraft(
       {
         ...input.payload,
         accountName: account?.name ?? input.payload.accountName,
         accountCurrency: account?.currency ?? input.payload.accountCurrency,
-        entries: nextEntries,
+        entries: convertedEntries,
       },
       input.workspaceId,
       input.receiptMode
@@ -451,18 +488,21 @@ export class AiFinanceResolverService {
     const categories = workspace ? await this.getWorkspaceCategories(workspace.id) : [];
     const date = this.resolveDate(input.extraction, input.preference.timezone, input.sourceType === "text");
     const receiptMode = input.extraction.kind === "receipt" ? input.receiptMode || RECEIPT_MODE_CATEGORY : null;
-    const entries = this.buildEntries(
-      input.extraction,
-      account,
-      accounts,
-      input.preference,
-      workspace?.id ?? null,
-      categories,
-      date,
-      receiptMode,
-      input.preference.timezone,
-      input.sourceType === "text",
-      input.forcedAccountId
+    const entries = await this.convertEntries(
+      this.buildEntries(
+        input.extraction,
+        account,
+        accounts,
+        input.preference,
+        workspace?.id ?? null,
+        categories,
+        date,
+        receiptMode,
+        input.preference.timezone,
+        input.sourceType === "text",
+        input.forcedAccountId
+      ),
+      accounts
     );
     const transfer = this.buildTransfer(input.extraction, account, toAccount, date);
 
@@ -604,6 +644,54 @@ export class AiFinanceResolverService {
     return null;
   }
 
+  private getAccountCurrency(accounts: Account[], entry: AiFinancePaymentEntry) {
+    const account = entry.accountId ? accounts.find((candidate) => candidate.id === entry.accountId) : null;
+    return normalizeCurrencyCode(account?.currency ?? entry.currency);
+  }
+
+  private async convertEntries(entries: AiFinancePaymentEntry[], accounts: Account[]) {
+    return Promise.all(
+      entries.map(async (entry) => {
+        const sourceCurrency = normalizeCurrencyCode(entry.originalCurrency ?? entry.currency);
+        const targetCurrency = this.getAccountCurrency(accounts, entry);
+        const sourceAmount = entry.originalAmount ?? entry.amount;
+
+        if (!sourceCurrency && entry.currency) {
+          throw new BadRequestException(`Валюта ${entry.currency} пока не поддерживается`);
+        }
+
+        if (sourceCurrency && targetCurrency && sourceCurrency === targetCurrency) {
+          return {
+            ...entry,
+            amount: sourceAmount,
+            currency: targetCurrency,
+            originalAmount: null,
+            originalCurrency: null,
+            exchangeRate: null,
+          };
+        }
+
+        if (!sourceCurrency || !targetCurrency || sourceCurrency === targetCurrency || !entry.date) {
+          return {
+            ...entry,
+            currency: (targetCurrency ?? sourceCurrency)?.toString() ?? entry.currency,
+          };
+        }
+
+        const rate = await this.exchangeRates.getExchangeRate(new Date(entry.date), sourceCurrency, targetCurrency);
+
+        return {
+          ...entry,
+          amount: roundConvertedMoney(sourceAmount, rate),
+          currency: targetCurrency,
+          originalAmount: sourceAmount,
+          originalCurrency: sourceCurrency,
+          exchangeRate: String(rate),
+        };
+      })
+    );
+  }
+
   private resolvePaymentAccount(
     accounts: Account[],
     accountHint: string | null | undefined,
@@ -654,7 +742,7 @@ export class AiFinanceResolverService {
           categoryId: category?.id ?? null,
           categoryName: category?.name ?? null,
           amount: extraction.amount,
-          currency: account?.currency ?? extraction.currency,
+          currency: extraction.currency ?? account?.currency ?? null,
           type: extraction.paymentType,
           description: extraction.description || extraction.merchant,
           date,
@@ -683,7 +771,7 @@ export class AiFinanceResolverService {
             categoryId: category?.id ?? null,
             categoryName: category?.name ?? null,
             amount: payment.amount as string,
-            currency: paymentAccount?.currency ?? payment.currency,
+            currency: payment.currency ?? paymentAccount?.currency ?? null,
             type: payment.paymentType,
             description: payment.description || payment.merchant,
             date: paymentDate,
@@ -704,7 +792,7 @@ export class AiFinanceResolverService {
           categoryId: null,
           categoryName: null,
           amount: extraction.totalAmount,
-          currency: account?.currency ?? extraction.currency,
+          currency: extraction.currency ?? account?.currency ?? null,
           type: "expense",
           description: extraction.merchant || "Receipt",
           date,
@@ -722,7 +810,7 @@ export class AiFinanceResolverService {
           categoryId: category?.id ?? null,
           categoryName: category?.name ?? null,
           amount: item.amount as string,
-          currency: account?.currency ?? extraction.currency,
+          currency: extraction.currency ?? account?.currency ?? null,
           type: "expense" as const,
           description: item.name,
           date,

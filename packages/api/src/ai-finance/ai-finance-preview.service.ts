@@ -22,6 +22,16 @@ function getReceiptModeLabel(mode: string | null | undefined) {
   return null;
 }
 
+function getEntryAmountText(entry: NonNullable<AiFinanceDraftPayload["entries"]>[number], fallbackCurrency: string) {
+  const currency = entry.currency ?? fallbackCurrency;
+  const convertedFrom =
+    entry.originalAmount && entry.originalCurrency && entry.originalCurrency !== currency
+      ? ` из ${entry.originalAmount} ${entry.originalCurrency}`
+      : "";
+
+  return `${entry.amount} ${currency}${convertedFrom}`.trim();
+}
+
 @Injectable()
 export class AiFinancePreviewService {
   renderDraft(input: {
@@ -49,9 +59,9 @@ export class AiFinancePreviewService {
         const type = entry.type === "income" ? "Income" : "Expense";
         const account = entry.accountName ? `[${entry.accountName}] ` : "";
         const category = entry.categoryName ? `${entry.categoryName}: ` : "";
-        const currency = entry.currency ?? input.payload.accountCurrency ?? "";
+        const amount = getEntryAmountText(entry, input.payload.accountCurrency ?? "");
         const description = entry.description ? ` (${entry.description})` : "";
-        lines.push(`- ${account}${type}: ${category}${entry.amount} ${currency}${description}`.trim());
+        lines.push(`- ${account}${type}: ${category}${amount}${description}`.trim());
       }
       const total = input.payload.entries.reduce((sum, entry) => sum + Number(entry.amount), 0);
       lines.push("");

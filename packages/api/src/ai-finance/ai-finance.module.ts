@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { CurrencyModule } from "@/currency/currency.module";
 import { PrismaModule } from "@/prisma/prisma.module";
 import { TransactionsModule } from "@/transactions/transactions.module";
 
@@ -13,7 +14,7 @@ import { AiFinanceResolverService } from "./ai-finance-resolver.service";
 import { OpenRouterClient } from "./openrouter.client";
 
 @Module({
-  imports: [PrismaModule, TransactionsModule],
+  imports: [CurrencyModule, PrismaModule, TransactionsModule],
   providers: [
     AiFinanceCommitService,
     AiFinanceDraftService,

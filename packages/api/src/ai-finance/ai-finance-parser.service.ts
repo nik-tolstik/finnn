@@ -145,7 +145,7 @@ const CONVERSATION_ACTION_SCHEMA = {
 };
 
 const TEXT_AMOUNT_PATTERN =
-  /(?:^|\s)(?:за|на|по)?\s*(\d+(?:[.,]\d{1,2})?)\s*(?:byn|br|бел(?:орусских)?\.?\s*руб(?:лей|ля|ль)?|руб(?:лей|ля|ль)?|р\.?)(?:\s|$)/iu;
+  /(?:^|\s)(?:за|на|по)?\s*(\d+(?:[.,]\d{1,2})?)\s*(byn|br|бел(?:орусских)?\.?\s*руб(?:лей|ля|ль)?|руб(?:лей|ля|ль)?|р\.?|usd|\$|доллар(?:ов|а)?|бакс(?:ов|а)?|eur|€|евро|rub|₽|рос(?:сийских)?\.?\s*руб(?:лей|ля|ль)?)(?:\s|$)/iu;
 const EXTRACTION_AMOUNT_PATTERN = /^(?=.*[1-9])\d+(?:\.\d+)?$/;
 
 const CATEGORY_KEYWORDS = [
@@ -178,10 +178,28 @@ function normalizeAmount(value: string) {
   return value.replace(",", ".");
 }
 
+function normalizeCurrency(value: string | null | undefined) {
+  const normalizedValue = value?.trim().toLowerCase();
+  if (!normalizedValue) return null;
+
+  if (normalizedValue === "$" || normalizedValue === "usd" || /доллар|бакс/.test(normalizedValue)) return "USD";
+  if (normalizedValue === "€" || normalizedValue === "eur" || normalizedValue === "евро") return "EUR";
+  if (normalizedValue === "₽" || normalizedValue === "rub" || normalizedValue.includes("рос")) return "RUB";
+
+  return "BYN";
+}
+
 function getFallbackCurrency(context?: AiFinancePromptContext | null) {
   return (
     context?.accounts.find((account) => account.currency === "BYN")?.currency ?? context?.accounts[0]?.currency ?? "BYN"
   );
+}
+
+function getFallbackAccountHint(text: string) {
+  const normalizedText = normalizeText(text);
+  if (/(cash|налич)/i.test(normalizedText)) return "cash";
+  if (/(card|карт)/i.test(normalizedText)) return "card";
+  return null;
 }
 
 function getFallbackCategoryHint(text: string, context?: AiFinancePromptContext | null) {
@@ -223,11 +241,11 @@ function parseSimplePaymentLines(text: string, context?: AiFinancePromptContext 
       {
         paymentType: "expense" as const,
         amount: normalizeAmount(match[1]),
-        currency: getFallbackCurrency(context),
+        currency: normalizeCurrency(match[2]) ?? getFallbackCurrency(context),
         description: getFallbackDescription(line) || line,
         merchant: null,
         dateText: null,
-        accountHint: null,
+        accountHint: getFallbackAccountHint(line),
         categoryHint: getFallbackCategoryHint(line, context),
         confidence: 0.65,
       },
