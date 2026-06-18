@@ -8,6 +8,7 @@ import { AuthModule } from "./auth/auth.module";
 import { CategoriesModule } from "./categories/categories.module";
 import { CurrencyModule } from "./currency/currency.module";
 import { DebtsModule } from "./debts/debts.module";
+import { TelegramBotModule } from "./telegram-bot/telegram-bot.module";
 import { TransactionsModule } from "./transactions/transactions.module";
 import { WorkspaceModule } from "./workspace/workspace.module";
 
@@ -20,6 +21,7 @@ import { WorkspaceModule } from "./workspace/workspace.module";
     CategoriesModule,
     DebtsModule,
     TransactionsModule,
+    TelegramBotModule,
     AnalyticsModule,
     CurrencyModule,
   ],

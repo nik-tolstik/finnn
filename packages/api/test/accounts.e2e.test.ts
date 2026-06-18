@@ -225,6 +225,53 @@ describe("Accounts API", () => {
     );
   });
 
+  it("rejects invalid account balance strings", async () => {
+    mockAuthenticatedSession(prisma);
+
+    await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/accounts")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        name: "Main card",
+        balance: "12abc",
+        currency: "BYN",
+        ownerId: null,
+        createdAt: "2026-05-25T12:00:00.000Z",
+      })
+      .expect(400);
+
+    expect(prisma.account.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects account owners outside the workspace", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspaceMember.findUnique.mockResolvedValue(null);
+
+    const response = await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/accounts")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        name: "Main card",
+        balance: "125.50",
+        currency: "BYN",
+        ownerId: "user-outside-workspace",
+        createdAt: "2026-05-25T12:00:00.000Z",
+      })
+      .expect(400);
+
+    expect(response.body.message).toBe("Владелец счёта должен быть участником рабочего стола");
+    expect(prisma.workspaceMember.findUnique).toHaveBeenCalledWith({
+      where: {
+        workspaceId_userId: {
+          workspaceId: "workspace-1",
+          userId: "user-outside-workspace",
+        },
+      },
+      select: { id: true },
+    });
+    expect(prisma.account.create).not.toHaveBeenCalled();
+  });
+
   it("lists active accounts with owner details", async () => {
     mockAuthenticatedSession(prisma);
 
@@ -282,6 +329,41 @@ describe("Accounts API", () => {
       .send({ name: "Updated card" })
       .expect(404);
 
+    expect(prisma.account.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid account balance updates", async () => {
+    mockAuthenticatedSession(prisma);
+
+    await request(app.getHttpServer())
+      .patch("/accounts/account-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ balance: "not-money" })
+      .expect(400);
+
+    expect(prisma.account.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects account owner updates outside the workspace", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspaceMember.findUnique.mockResolvedValue(null);
+
+    const response = await request(app.getHttpServer())
+      .patch("/accounts/account-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ ownerId: "user-outside-workspace" })
+      .expect(400);
+
+    expect(response.body.message).toBe("Владелец счёта должен быть участником рабочего стола");
+    expect(prisma.workspaceMember.findUnique).toHaveBeenCalledWith({
+      where: {
+        workspaceId_userId: {
+          workspaceId: "workspace-1",
+          userId: "user-outside-workspace",
+        },
+      },
+      select: { id: true },
+    });
     expect(prisma.account.update).not.toHaveBeenCalled();
   });
 

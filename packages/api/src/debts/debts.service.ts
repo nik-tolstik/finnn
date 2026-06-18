@@ -669,7 +669,7 @@ export class DebtsService {
           type: DEBT_TRANSACTION_ADDED,
           amount: input.amount,
           toAmount,
-          date: new Date(),
+          date: input.date ?? new Date(),
         },
       });
 
@@ -694,7 +694,7 @@ export class DebtsService {
       let closeAmount = input.amount;
       let categoryAmount = "0";
       let categoryTransactionType: string | null = null;
-      const closeDate = new Date();
+      const closeDate = input.date ?? new Date();
       let currenciesMatch = true;
 
       if (input.useAccount && input.accountId) {

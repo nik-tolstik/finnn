@@ -13,5 +13,6 @@ export interface CloseDebtDto {
   categoryId?: string;
   closeEarly?: boolean;
   accountId?: string;
+  date?: string;
   useAccount: boolean;
 }

@@ -455,6 +455,7 @@ export class TransactionsService {
       where: {
         id: accountId,
         workspaceId,
+        archived: false,
       },
     });
 
@@ -463,6 +464,22 @@ export class TransactionsService {
     }
 
     return account;
+  }
+
+  private async getWorkspaceCategoryOrThrow(tx: PrismaTx, workspaceId: string, categoryId: string, type: string) {
+    const category = await tx.category.findFirst({
+      where: {
+        id: categoryId,
+        workspaceId,
+        type,
+      },
+    });
+
+    if (!category) {
+      throw new BadRequestException("Категория не найдена или не подходит для этой операции");
+    }
+
+    return category;
   }
 
   async createPaymentTransaction(
@@ -491,6 +508,10 @@ export class TransactionsService {
 
       let finalCategoryId = input.categoryId;
       if (input.newCategory) {
+        if (input.newCategory.type !== input.type) {
+          throw new BadRequestException("Категория не подходит для типа операции");
+        }
+
         const category = await tx.category.create({
           data: {
             workspaceId,
@@ -498,6 +519,9 @@ export class TransactionsService {
             type: input.newCategory.type,
           },
         });
+        finalCategoryId = category.id;
+      } else if (input.categoryId) {
+        const category = await this.getWorkspaceCategoryOrThrow(tx, workspaceId, input.categoryId, input.type);
         finalCategoryId = category.id;
       }
 
@@ -523,6 +547,98 @@ export class TransactionsService {
     });
 
     return { transaction: toPaymentTransactionDto(transaction) };
+  }
+
+  async createPaymentTransactionsBatch(
+    workspaceId: string,
+    inputs: CreatePaymentTransactionDto[],
+    currentUser: AuthenticatedUser
+  ) {
+    await this.assertWorkspaceAccess(workspaceId, currentUser);
+
+    if (inputs.length === 0) {
+      throw new BadRequestException("Нет транзакций для создания");
+    }
+
+    const transactions = await this.prisma.$transaction(async (tx) => {
+      const accountsById = new Map<string, Account>();
+      const balancesByAccountId = new Map<string, string>();
+      const createdTransactions: PaymentTransactionWithRelations[] = [];
+
+      for (const input of inputs) {
+        let account = accountsById.get(input.accountId);
+        if (!account) {
+          account = await this.getWorkspaceAccountOrThrow(tx, workspaceId, input.accountId);
+          accountsById.set(input.accountId, account);
+          balancesByAccountId.set(input.accountId, account.balance);
+        }
+
+        const accountCreatedDate = new Date(account.createdAt);
+        accountCreatedDate.setHours(0, 0, 0, 0);
+        const transactionDate = new Date(input.date);
+        transactionDate.setHours(0, 0, 0, 0);
+
+        if (transactionDate < accountCreatedDate) {
+          throw new BadRequestException(
+            `Дата транзакции не может быть раньше даты создания счета (${accountCreatedDate.toLocaleDateString(
+              "ru-RU"
+            )})`
+          );
+        }
+
+        let finalCategoryId = input.categoryId;
+        if (input.newCategory) {
+          if (input.newCategory.type !== input.type) {
+            throw new BadRequestException("Категория не подходит для типа операции");
+          }
+
+          const category = await tx.category.create({
+            data: {
+              workspaceId,
+              name: input.newCategory.name,
+              type: input.newCategory.type,
+            },
+          });
+          finalCategoryId = category.id;
+        } else if (input.categoryId) {
+          const category = await this.getWorkspaceCategoryOrThrow(tx, workspaceId, input.categoryId, input.type);
+          finalCategoryId = category.id;
+        }
+
+        const currentBalance = balancesByAccountId.get(input.accountId) || account.balance;
+        const nextBalance = applyPaymentTransactionBalance(currentBalance, input.type, input.amount);
+        if (input.type === PAYMENT_EXPENSE && compareMoney(nextBalance, "0") < 0) {
+          throw new BadRequestException(`Сумма не может превышать баланс счёта (${currentBalance})`);
+        }
+
+        const createdTransaction = await tx.paymentTransaction.create({
+          data: {
+            workspaceId,
+            accountId: input.accountId,
+            amount: input.amount,
+            type: input.type,
+            description: input.description,
+            date: input.date,
+            categoryId: finalCategoryId,
+          },
+          include: PAYMENT_TRANSACTION_INCLUDE,
+        });
+
+        balancesByAccountId.set(input.accountId, nextBalance);
+        createdTransactions.push(createdTransaction as PaymentTransactionWithRelations);
+      }
+
+      for (const [accountId, balance] of balancesByAccountId) {
+        await tx.account.update({
+          where: { id: accountId },
+          data: { balance },
+        });
+      }
+
+      return createdTransactions;
+    });
+
+    return { transactions: transactions.map(toPaymentTransactionDto) };
   }
 
   async createTransferTransaction(
@@ -593,12 +709,25 @@ export class TransactionsService {
 
       await this.assertWorkspaceAccessWithClient(tx, existingTransaction.workspaceId, currentUser);
 
+      if (existingTransaction.account.archived) {
+        throw new NotFoundException("Счёт не найден");
+      }
+
       const oldAccountId = existingTransaction.accountId;
       const newAccountId = input.accountId || oldAccountId;
       const accountChanged = oldAccountId !== newAccountId;
       const oldAmount = existingTransaction.amount;
       const newAmount = input.amount || oldAmount;
       const amountChanged = oldAmount !== newAmount;
+
+      if (input.categoryId) {
+        await this.getWorkspaceCategoryOrThrow(
+          tx,
+          existingTransaction.workspaceId,
+          input.categoryId,
+          existingTransaction.type
+        );
+      }
 
       if (accountChanged || amountChanged) {
         const oldAccount = await tx.account.findUnique({

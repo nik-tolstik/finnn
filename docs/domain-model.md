@@ -21,6 +21,8 @@ Main models:
 - `PendingEmailVerification` - verification state for an existing user adding or changing email.
 - `PasswordResetCode` - hashed short-lived email code for password reset.
 - `ExchangeRate` - persisted daily currency rate.
+- `TelegramBotPreference` - per-user Telegram bot context, active workspace, default accounts, timezone, and receipt mode.
+- `AiFinanceDraft` - short-lived AI finance entry draft that must be confirmed before creating financial records.
 
 ## Identity And Email
 
@@ -37,6 +39,10 @@ External identities are stored in `AuthIdentity`:
 
 Telegram OIDC login/linking and Telegram Mini App launch authentication both use `provider = "telegram"`, so the same
 Telegram account resolves to the same Finnn user across browser login, account linking, and Mini App launch.
+
+Telegram bot updates use the same identity row. The API resolves the Telegram sender id from update `from.id`, not
+`chat.id`, through `AuthIdentity(provider = "telegram")`. Bot preferences and AI finance drafts are linked to `User`;
+draft payloads are intermediate JSON and are not the source of truth for financial records.
 
 Google login/linking uses `provider = "google"` and Google `sub` as `providerUserId`. A first Google login can auto-link
 to an existing Finnn user only when Google returns `email_verified = true` and the local Finnn email is already verified.

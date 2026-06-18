@@ -320,6 +320,7 @@ describe("Debts API", () => {
   it("closes a same-currency lent debt with overpayment category handling", async () => {
     mockAuthenticatedSession(prisma);
     prisma.debt.update.mockResolvedValue(createDebtRecord({ remainingAmount: "0", status: "closed" }));
+    const closeDate = "2026-05-24T09:15:00.000Z";
 
     const response = await request(app.getHttpServer())
       .post("/debts/debt-1/close")
@@ -331,6 +332,7 @@ describe("Debts API", () => {
         closeEarly: false,
         accountId: "account-1",
         useAccount: true,
+        date: closeDate,
       })
       .expect(200);
 
@@ -338,10 +340,16 @@ describe("Debts API", () => {
     expect(prisma.paymentTransaction.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         amount: "5",
+        date: new Date(closeDate),
         description: "Закрытие долга: Grace",
         type: "income",
       }),
     });
+    expect(prisma.debtTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ date: new Date(closeDate), type: "closed" }),
+      })
+    );
     expect(prisma.account.update).toHaveBeenCalledWith({
       data: { balance: "195" },
       where: { id: "account-1" },
@@ -369,11 +377,12 @@ describe("Debts API", () => {
   it("adds to open debts and applies selected account balance deltas", async () => {
     mockAuthenticatedSession(prisma);
     prisma.debt.update.mockResolvedValue(createDebtRecord({ amount: "120", remainingAmount: "110" }));
+    const addDate = "2026-05-24T08:45:00.000Z";
 
     const response = await request(app.getHttpServer())
       .post("/debts/debt-1/add")
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
-      .send({ amount: "20", useAccount: true, accountId: "account-1" })
+      .send({ amount: "20", useAccount: true, accountId: "account-1", date: addDate })
       .expect(200);
 
     expect(response.body.debt.amount).toBe("120");
@@ -383,7 +392,7 @@ describe("Debts API", () => {
     });
     expect(prisma.debtTransaction.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ amount: "20", type: "added" }),
+        data: expect.objectContaining({ amount: "20", date: new Date(addDate), type: "added" }),
       })
     );
   });

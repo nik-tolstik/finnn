@@ -3752,6 +3752,55 @@
         "tags": ["Transactions"]
       }
     },
+    "/telegram/webhook": {
+      "post": {
+        "operationId": "handleTelegramWebhook",
+        "parameters": [
+          {
+            "name": "x-telegram-bot-api-secret-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramWebhookResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Receive Telegram bot webhook updates",
+        "tags": ["Telegram"]
+      }
+    },
     "/workspaces/{workspaceId}/analytics/overview": {
       "get": {
         "operationId": "getAnalyticsOverview",
@@ -4163,6 +4212,10 @@
     },
     {
       "name": "Debts",
+      "description": ""
+    },
+    {
+      "name": "Telegram",
       "description": ""
     },
     {
@@ -5533,6 +5586,11 @@
           "accountId": {
             "type": "string",
             "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
           }
         },
         "required": ["amount", "useAccount"]
@@ -5563,6 +5621,11 @@
           "accountId": {
             "type": "string",
             "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
           },
           "useAccount": {
             "type": "boolean",
@@ -6297,6 +6360,16 @@
           }
         },
         "required": ["fromAccountId", "toAccountId", "amount", "toAmount", "date"]
+      },
+      "TelegramWebhookResponseDto": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["ok"]
       },
       "AnalyticsOverviewQueryDto": {
         "type": "object",
