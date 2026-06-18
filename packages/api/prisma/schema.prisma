@@ -165,6 +165,7 @@ model Account {
   incomingTransfers TransferTransaction[] @relation("TransferToAccount")
   debtTransactions DebtTransaction[]
 
+  @@unique([workspaceId, name, currency])
   @@index([workspaceId, archived])
   @@index([workspaceId, ownerId, archived, order])
   @@map("accounts")

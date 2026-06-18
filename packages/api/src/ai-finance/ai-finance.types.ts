@@ -103,8 +103,10 @@ export type AiFinancePaymentEntry = {
 export type AiFinanceTransferEntry = {
   fromAccountId: string | null;
   fromAccountName: string | null;
+  fromAccountCurrency: string | null;
   toAccountId: string | null;
   toAccountName: string | null;
+  toAccountCurrency: string | null;
   amount: string;
   toAmount: string;
   description: string | null;
