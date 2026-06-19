@@ -32,6 +32,15 @@ function getEntryAmountText(entry: NonNullable<AiFinanceDraftPayload["entries"]>
   return `${entry.amount} ${currency}${convertedFrom}`.trim();
 }
 
+function getEntryTypeText(type: NonNullable<AiFinanceDraftPayload["entries"]>[number]["type"]) {
+  return type === "income" ? "Доход" : "Расход";
+}
+
+function getEntryAccountText(entry: NonNullable<AiFinanceDraftPayload["entries"]>[number]) {
+  if (!entry.accountName) return "";
+  return entry.currency ? `[${entry.accountName} (${entry.currency})] ` : `[${entry.accountName}] `;
+}
+
 function getTransferAccountText(name: string | null | undefined, currency: string | null | undefined) {
   if (!name) return "-";
   return currency ? `${name} (${currency})` : name;
@@ -61,8 +70,8 @@ export class AiFinancePreviewService {
     if (input.payload.entries?.length) {
       lines.push("Операции:");
       for (const [index, entry] of input.payload.entries.entries()) {
-        const type = entry.type === "income" ? "Income" : "Expense";
-        const account = entry.accountName ? `[${entry.accountName}] ` : "";
+        const type = getEntryTypeText(entry.type);
+        const account = getEntryAccountText(entry);
         const category = entry.categoryName ? `${entry.categoryName}: ` : "";
         const amount = getEntryAmountText(entry, input.payload.accountCurrency ?? "");
         const description = entry.description ? ` (${entry.description})` : "";
