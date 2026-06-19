@@ -322,6 +322,59 @@ pnpm --filter api check
 
 - None.
 
+## 2026-06-19 15:54 +0300 - Codex / Developer
+
+### Scope
+
+- Removed local regex/keyword fallback parsing for Telegram AI text finance messages.
+- Kept deterministic validation and resolver logic for money formats, dates, and account currency hints.
+- Updated Telegram e2e expectations so balance-difference, foreign-currency, multiline, and exchange flows come from
+  structured AI extraction instead of backend phrase matching.
+- Documented the architecture rule that free-form language parsing belongs in the AI extraction contract.
+
+### Files Changed
+
+- `packages/api/src/ai-finance/ai-finance-parser.service.ts`
+- `packages/api/test/telegram-bot.e2e.test.ts`
+- `docs/plans/telegram-ai-finance-bot/README.md`
+- `docs/plans/telegram-ai-finance-bot/work-log.md`
+
+### Commands Run
+
+```bash
+date '+%Y-%m-%d %H:%M %z'
+rg -n "TEXT_AMOUNT_PATTERN|MONEY_MENTION_PATTERN|BALANCE_DIFFERENCE_PATTERN|CURRENCY_EXCHANGE_PATTERN|EXPENSE_TEXT_PATTERN|INCOME_TEXT_PATTERN|parseSimplePaymentLines|parseBalanceDifferencePayment|parseCurrencyExchangeTransfer|getFallback|isUsableTextExtraction" packages/api/src packages/api/test docs
+pnpm --filter api exec biome format src/ai-finance/ai-finance-parser.service.ts test/telegram-bot.e2e.test.ts --write
+pnpm --filter api exec vitest run test/telegram-bot.e2e.test.ts
+pnpm --filter api check
+pnpm --filter api typecheck
+pnpm --filter api exec vitest run test/transactions.e2e.test.ts
+pnpm --filter api exec vitest run test/telegram-bot.e2e.test.ts
+git diff --check
+```
+
+### Results
+
+- Passed: Telegram bot e2e suite, 1 file / 40 tests.
+- Passed: transactions e2e suite, 1 file / 15 tests.
+- Passed: API Biome check.
+- Passed: API typecheck.
+- Passed: `git diff --check`.
+
+### Decisions
+
+- Removed backend text intent heuristics instead of expanding phrase lists.
+- Left `CURRENCY_HINT_WORD_PATTERN` in the resolver because it only helps choose an account by currency hint after AI
+  extraction, not classify the user's financial intent.
+
+### Subagent Contributions
+
+- None.
+
+### Blockers / Follow-ups
+
+- None.
+
 ## 2026-06-19 15:45 +03 - Codex
 
 ### Scope

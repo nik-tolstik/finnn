@@ -1,5 +1,4 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import Big from "big.js";
 
 import type { AiFinanceDescriptionSource, AiFinanceExtraction } from "./ai-finance.types";
 import { OpenRouterClient } from "./openrouter.client";
@@ -180,24 +179,6 @@ const CONVERSATION_ACTION_SCHEMA = {
   ],
 };
 
-const TEXT_AMOUNT_PATTERN =
-  /(?:^|\s)(?:за|на|по)?\s*(\d+(?:[.,]\d{1,2})?)\s*(byn|br|бел(?:орусских)?\.?\s*руб(?:лей|ля|ль)?|руб(?:лей|ля|ль)?|р\.?|usd|\$|доллар(?:ов|а)?|бакс(?:ов|а)?|eur|€|евро|rub|₽|рос(?:сийских)?\.?\s*руб(?:лей|ля|ль)?)(?:\s|$)/iu;
-const MONEY_MENTION_PATTERN =
-  /(\d+(?:[.,]\d{1,2})?)\s*(byn|br|бел(?:орусских)?\.?\s*руб(?:лей|ля|ль)?|руб(?:лей|ля|ль)?|р\.?|usd|\$|доллар(?:ов|а)?|бакс(?:ов|а)?|eur|€|евро|rub|₽|рос(?:сийских)?\.?\s*руб(?:лей|ля|ль)?)/giu;
-const BALANCE_DIFFERENCE_PATTERN =
-  /(\d+(?:[.,]\d{1,2})?)\s*[-−]\s*(\d+(?:[.,]\d{1,2})?)\s*(byn|br|бел(?:орусских)?\.?\s*руб(?:лей|ля|ль)?|руб(?:лей|ля|ль)?|р\.?|usd|\$|доллар(?:ов|а)?|бакс(?:ов|а)?|eur|€|евро|rub|₽|рос(?:сийских)?\.?\s*руб(?:лей|ля|ль)?)/iu;
-const CURRENCY_EXCHANGE_PATTERN =
-  /(?:поменял|поменяла|обменял|обменяла|обмен|конвертировал|конвертировала|convert|exchange).*(?:получил|получила|получено|пришло|зачисл|got|received)|(?:получил|получила|получено|пришло|зачисл|got|received).*(?:поменял|поменяла|обменял|обменяла|обмен|конвертировал|конвертировала|convert|exchange)/iu;
-const EXPENSE_TEXT_PATTERN = /(?:списал|списало|снял|сняло|потрат|оплат|купил|купила|расход|expense)/iu;
-const INCOME_TEXT_PATTERN = /(?:пришло|зачисл|получил|получила|доход|income)/iu;
-const EXTRACTION_AMOUNT_PATTERN = /^(?=.*[1-9])\d+(?:\.\d+)?$/;
-
-const CATEGORY_KEYWORDS = [
-  { words: ["блин", "мама дома", "кофе", "кафе", "еда", "обед", "ужин", "завтрак"], names: ["питание", "еда", "кафе"] },
-  { words: ["заправ", "бензин", "топливо", "машин", "авто"], names: ["машина", "авто", "транспорт"] },
-  { words: ["ноутбук", "подар"], names: ["подарки", "техника", "покупки"] },
-];
-
 function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -214,215 +195,6 @@ function isDescriptionSource(value: unknown): value is AiFinanceDescriptionSourc
   return (
     value === null || (typeof value === "string" && DESCRIPTION_SOURCES.includes(value as AiFinanceDescriptionSource))
   );
-}
-
-function isMoney(value: string | null | undefined): value is string {
-  return Boolean(value && EXTRACTION_AMOUNT_PATTERN.test(value));
-}
-
-function normalizeText(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function normalizeAmount(value: string) {
-  return value.replace(",", ".");
-}
-
-function normalizeCurrency(value: string | null | undefined) {
-  const normalizedValue = value?.trim().toLowerCase();
-  if (!normalizedValue) return null;
-
-  if (normalizedValue === "$" || normalizedValue === "usd" || /доллар|бакс/.test(normalizedValue)) return "USD";
-  if (normalizedValue === "€" || normalizedValue === "eur" || normalizedValue === "евро") return "EUR";
-  if (normalizedValue === "₽" || normalizedValue === "rub" || normalizedValue.includes("рос")) return "RUB";
-
-  return "BYN";
-}
-
-function getFallbackCurrency(context?: AiFinancePromptContext | null) {
-  return (
-    context?.accounts.find((account) => account.currency === "BYN")?.currency ?? context?.accounts[0]?.currency ?? "BYN"
-  );
-}
-
-function getFallbackAccountHint(text: string) {
-  const normalizedText = normalizeText(text);
-  if (/(cash|налич)/i.test(normalizedText)) return "cash";
-  if (/(белорус|беларус|byn|byr|руб)/i.test(normalizedText) && /карт/i.test(normalizedText)) return "BYN";
-  if (/(card|карт)/i.test(normalizedText)) return "card";
-  if (/(белорус|беларус|byn|byr|руб)/i.test(normalizedText)) return "BYN";
-  return null;
-}
-
-function getFallbackCategoryHint(text: string, context?: AiFinancePromptContext | null) {
-  const normalizedText = normalizeText(text);
-  const categories = context?.categories.filter((category) => category.type === "expense") ?? [];
-
-  for (const rule of CATEGORY_KEYWORDS) {
-    if (!rule.words.some((word) => normalizedText.includes(word))) continue;
-
-    const category = categories.find((candidate) => {
-      const categoryName = normalizeText(candidate.name);
-      return rule.names.some((name) => categoryName === name || categoryName.includes(name));
-    });
-    if (category) return category.name;
-  }
-
-  return null;
-}
-
-function getFallbackDescription(line: string) {
-  return line
-    .replace(TEXT_AMOUNT_PATTERN, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^(купил|купила|заправил|заправила)\s+/iu, "")
-    .trim();
-}
-
-function parseSimplePaymentLines(text: string, context?: AiFinancePromptContext | null): AiFinanceExtraction | null {
-  const lines = text
-    .split(/\r?\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  const payments = lines.flatMap((line) => {
-    const match = line.match(TEXT_AMOUNT_PATTERN);
-    if (!match?.[1]) return [];
-
-    return [
-      {
-        paymentType: "expense" as const,
-        amount: normalizeAmount(match[1]),
-        originalAmount: null,
-        originalCurrency: null,
-        currency: normalizeCurrency(match[2]) ?? getFallbackCurrency(context),
-        description: getFallbackDescription(line) || line,
-        descriptionSource: getFallbackCategoryHint(line, context) ? ("explicit_user_note" as const) : ("none" as const),
-        merchant: null,
-        dateText: null,
-        accountHint: getFallbackAccountHint(line),
-        categoryHint: getFallbackCategoryHint(line, context),
-        confidence: 0.65,
-      },
-    ];
-  });
-
-  if (!payments.length) return null;
-
-  if (payments.length === 1) {
-    const [payment] = payments;
-    return {
-      kind: "payment",
-      paymentType: payment.paymentType,
-      amount: payment.amount,
-      originalAmount: payment.originalAmount,
-      originalCurrency: payment.originalCurrency,
-      currency: payment.currency,
-      description: payment.description,
-      descriptionSource: payment.descriptionSource,
-      merchant: payment.merchant,
-      dateText: payment.dateText,
-      accountHint: payment.accountHint,
-      categoryHint: payment.categoryHint,
-      confidence: payment.confidence,
-    };
-  }
-
-  return {
-    kind: "payments",
-    dateText: null,
-    payments,
-    confidence: 0.65,
-  };
-}
-
-function calculateBalanceDifference(text: string) {
-  const match = text.match(BALANCE_DIFFERENCE_PATTERN);
-  if (!match?.[1] || !match[2]) return null;
-
-  const left = normalizeAmount(match[1]);
-  const right = normalizeAmount(match[2]);
-  const amount = new Big(left).minus(right).abs().round(2).toFixed(2);
-  if (!isMoney(amount)) return null;
-
-  return {
-    amount,
-    currency: normalizeCurrency(match[3]) ?? null,
-    expression: `${match[1]}-${match[2]}`,
-  };
-}
-
-function parseBalanceDifferencePayment(text: string): AiFinanceExtraction | null {
-  const difference = calculateBalanceDifference(text);
-  if (!difference) return null;
-
-  const originalMoneyMentions = [...text.matchAll(MONEY_MENTION_PATTERN)]
-    .map((match) => ({ amount: normalizeAmount(match[1] || ""), currency: normalizeCurrency(match[2]) }))
-    .filter(
-      (mention) =>
-        mention.currency &&
-        mention.currency !== difference.currency &&
-        isMoney(mention.amount) &&
-        !difference.expression.includes(mention.amount)
-    );
-  const original = originalMoneyMentions[0];
-
-  const paymentType = INCOME_TEXT_PATTERN.test(text) && !EXPENSE_TEXT_PATTERN.test(text) ? "income" : "expense";
-
-  return {
-    kind: "payment",
-    paymentType,
-    amount: difference.amount,
-    originalAmount: original?.amount ?? null,
-    originalCurrency: original?.currency ?? null,
-    currency: difference.currency ?? getFallbackCurrency(),
-    description: null,
-    descriptionSource: original ? "technical_context" : "none",
-    merchant: null,
-    dateText: null,
-    accountHint: getFallbackAccountHint(text),
-    categoryHint: null,
-    confidence: 0.86,
-  };
-}
-
-function parseCurrencyExchangeTransfer(text: string): AiFinanceExtraction | null {
-  if (!CURRENCY_EXCHANGE_PATTERN.test(text)) return null;
-
-  const mentions = [...text.matchAll(MONEY_MENTION_PATTERN)].map((match) => ({
-    amount: normalizeAmount(match[1] || ""),
-    currency: normalizeCurrency(match[2]),
-  }));
-  const [source, destination] = mentions;
-  if (
-    !source?.currency ||
-    !destination?.currency ||
-    source.currency === destination.currency ||
-    !isMoney(source.amount) ||
-    !isMoney(destination.amount)
-  )
-    return null;
-
-  return {
-    kind: "transfer",
-    amount: source.amount,
-    toAmount: destination.amount,
-    fromAccountHint: source.currency,
-    toAccountHint: destination.currency,
-    dateText: null,
-    description: null,
-    descriptionSource: "none",
-    confidence: 0.88,
-  };
-}
-
-function isUsableTextExtraction(extraction: AiFinanceExtraction) {
-  if (extraction.kind === "payment") return isMoney(extraction.amount);
-  if (extraction.kind === "payments") return extraction.payments.some((payment) => isMoney(payment.amount));
-  if (extraction.kind === "transfer") return isMoney(extraction.amount);
-  if (extraction.kind === "receipt")
-    return isMoney(extraction.totalAmount) || extraction.items.some((item) => isMoney(item.amount));
-  return false;
 }
 
 function assertValidPayment(value: Record<string, unknown>, message: string) {
@@ -596,12 +368,6 @@ export class AiFinanceParserService {
   constructor(@Inject(OpenRouterClient) private readonly openRouter: OpenRouterClient) {}
 
   async parseText(text: string, context?: AiFinancePromptContext | null): Promise<AiFinanceExtraction> {
-    const balanceDifferencePayment = parseBalanceDifferencePayment(text);
-    if (balanceDifferencePayment) return balanceDifferencePayment;
-
-    const currencyExchangeTransfer = parseCurrencyExchangeTransfer(text);
-    if (currencyExchangeTransfer) return currencyExchangeTransfer;
-
     const content = await this.openRouter.createStructuredCompletion(
       [
         {
@@ -623,14 +389,7 @@ export class AiFinanceParserService {
       EXTRACTION_SCHEMA
     );
 
-    try {
-      const extraction = assertValidExtraction(JSON.parse(content));
-      return isUsableTextExtraction(extraction) ? extraction : (parseSimplePaymentLines(text, context) ?? extraction);
-    } catch (error) {
-      const fallbackExtraction = parseSimplePaymentLines(text, context);
-      if (fallbackExtraction) return fallbackExtraction;
-      throw error;
-    }
+    return assertValidExtraction(JSON.parse(content));
   }
 
   async parseConversationAction(

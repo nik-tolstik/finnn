@@ -366,6 +366,13 @@ Before AI-created records are allowed, tighten these invariants:
 
 Use a strict local TypeScript validator for the model response.
 
+Free-form text parsing must rely on the structured AI extraction contract. Backend code should validate the JSON shape,
+resolve workspace/account/category/date/currency against Finnn data, and apply deterministic money/date calculations
+from structured fields. Do not add local keyword or regex fallback parsers for payment verbs, currency exchange wording,
+merchant phrases, or before-after balance text; those language decisions belong in the extraction prompt and schema.
+Small regexes are still acceptable for format validation and deterministic resolver hints, such as money-string syntax,
+local date formats, and account currency hints.
+
 Suggested high-level schema:
 
 ```ts

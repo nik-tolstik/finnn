@@ -1039,6 +1039,30 @@ describe("Telegram Bot API", () => {
       };
       return storedDraft;
     });
+    openRouter.createStructuredCompletion.mockResolvedValueOnce(
+      JSON.stringify({
+        kind: "payment",
+        paymentType: "expense",
+        amount: "5.10",
+        originalAmount: "2",
+        originalCurrency: "USD",
+        toAmount: null,
+        totalAmount: null,
+        currency: "BYN",
+        description: null,
+        descriptionSource: "technical_context",
+        merchant: null,
+        dateText: "today",
+        accountHint: "BSB Bank",
+        fromAccountHint: null,
+        toAccountHint: null,
+        categoryHint: null,
+        reason: null,
+        payments: [],
+        items: [],
+        confidence: 0.86,
+      })
+    );
 
     await request(app.getHttpServer())
       .post("/telegram/webhook")
@@ -1066,7 +1090,7 @@ describe("Telegram Bot API", () => {
         }>;
       };
     } | null;
-    expect(openRouter.createStructuredCompletion).not.toHaveBeenCalled();
+    expect(openRouter.createStructuredCompletion).toHaveBeenCalled();
     expect(createdDraft?.payload?.entries?.[0]).toEqual(
       expect.objectContaining({
         accountId: bynCardAccount.id,
@@ -1211,23 +1235,26 @@ describe("Telegram Bot API", () => {
     ]);
     openRouter.createStructuredCompletion.mockResolvedValueOnce(
       JSON.stringify({
-        kind: "unknown",
-        paymentType: null,
-        amount: null,
+        kind: "payment",
+        paymentType: "expense",
+        amount: "2",
+        originalAmount: null,
+        originalCurrency: null,
         toAmount: null,
         totalAmount: null,
-        currency: null,
+        currency: "USD",
         description: null,
+        descriptionSource: "none",
         merchant: null,
-        dateText: null,
-        accountHint: null,
+        dateText: "today",
+        accountHint: "Main",
         fromAccountHint: null,
         toAccountHint: null,
         categoryHint: null,
-        reason: "Could not parse",
+        reason: null,
         payments: [],
         items: [],
-        confidence: 0.2,
+        confidence: 0.86,
       })
     );
 
@@ -1376,11 +1403,11 @@ describe("Telegram Bot API", () => {
     );
   });
 
-  it("falls back to simple multiline Russian payments when AI returns unknown", async () => {
+  it("creates simple multiline Russian payments from AI extraction", async () => {
     let storedDraft: Record<string, unknown> | null = null;
     prisma.aiFinanceDraft.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
       storedDraft = {
-        id: "draft-russian-fallback-1",
+        id: "draft-russian-payments-1",
         createdAt: new Date(),
         updatedAt: new Date(),
         committedAt: null,
@@ -1391,23 +1418,69 @@ describe("Telegram Bot API", () => {
     prisma.aiFinanceDraft.findFirst.mockImplementation(async () => storedDraft);
     openRouter.createStructuredCompletion.mockResolvedValueOnce(
       JSON.stringify({
-        kind: "unknown",
+        kind: "payments",
         paymentType: null,
         amount: null,
+        originalAmount: null,
+        originalCurrency: null,
         toAmount: null,
         totalAmount: null,
         currency: null,
         description: null,
+        descriptionSource: null,
         merchant: null,
-        dateText: null,
+        dateText: "today",
         accountHint: null,
         fromAccountHint: null,
         toAccountHint: null,
         categoryHint: null,
-        reason: "Could not parse",
-        payments: [],
+        reason: null,
+        payments: [
+          {
+            paymentType: "expense",
+            amount: "15.23",
+            originalAmount: null,
+            originalCurrency: null,
+            currency: "BYN",
+            description: "Блины в Мама Дома",
+            descriptionSource: "explicit_user_note",
+            merchant: "Мама Дома",
+            dateText: "today",
+            accountHint: "Main",
+            categoryHint: "Питание",
+            confidence: 0.92,
+          },
+          {
+            paymentType: "expense",
+            amount: "100",
+            originalAmount: null,
+            originalCurrency: null,
+            currency: "BYN",
+            description: "машину",
+            descriptionSource: "explicit_user_note",
+            merchant: null,
+            dateText: "today",
+            accountHint: "Main",
+            categoryHint: "Машина",
+            confidence: 0.9,
+          },
+          {
+            paymentType: "expense",
+            amount: "3000",
+            originalAmount: null,
+            originalCurrency: null,
+            currency: "BYN",
+            description: "ноутбук",
+            descriptionSource: "explicit_user_note",
+            merchant: null,
+            dateText: "today",
+            accountHint: "Main",
+            categoryHint: "Подарки",
+            confidence: 0.9,
+          },
+        ],
         items: [],
-        confidence: 0.2,
+        confidence: 0.9,
       })
     );
 
@@ -2814,6 +2887,30 @@ describe("Telegram Bot API", () => {
       if (where.id === bynCardAccount.id) return bynCardAccount;
       return null;
     });
+    openRouter.createStructuredCompletion.mockResolvedValueOnce(
+      JSON.stringify({
+        kind: "transfer",
+        paymentType: null,
+        amount: "300",
+        originalAmount: null,
+        originalCurrency: null,
+        toAmount: "1000",
+        totalAmount: null,
+        currency: null,
+        description: null,
+        descriptionSource: "none",
+        merchant: null,
+        dateText: "today",
+        accountHint: null,
+        fromAccountHint: "долларовая карта",
+        toAccountHint: "белорусская карта",
+        categoryHint: null,
+        reason: null,
+        payments: [],
+        items: [],
+        confidence: 0.92,
+      })
+    );
 
     await request(app.getHttpServer())
       .post("/telegram/webhook")
@@ -2829,7 +2926,7 @@ describe("Telegram Bot API", () => {
       })
       .expect(200);
 
-    expect(openRouter.createStructuredCompletion).not.toHaveBeenCalled();
+    expect(openRouter.createStructuredCompletion).toHaveBeenCalled();
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
