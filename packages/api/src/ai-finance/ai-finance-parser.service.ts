@@ -569,6 +569,7 @@ export class AiFinanceParserService {
           role: "system",
           content: [
             "Extract Finnn finance intents from the user's message. If the message contains multiple independent payments, use kind=payments and include each payment separately. Treat currency exchange between the user's own accounts as kind=transfer with amount from the source account and toAmount received by the destination account, not as expense plus income. Return strict JSON only. Money amounts must stay strings. Always include every schema field; use null or [] for fields that do not apply to the selected kind.",
+            "Set description only when the user provides useful extra context that is not already captured by type, amount, currency, accounts, category, or date, such as a birthday, person, place, merchant, event, or purpose. Do not copy generic phrases like transfer from one account to another, move money, payment, purchase, or currency exchange into description.",
             "If the user provides before-after balances like 60.44-55.34 rubles/BYN, calculate the absolute difference and use that as the payment amount in the account currency. Keep any visible foreign-card amount such as 2 USD in the description, not as the committed amount.",
           ].join("\n"),
         },

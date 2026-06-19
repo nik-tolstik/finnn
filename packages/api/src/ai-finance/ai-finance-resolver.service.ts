@@ -27,6 +27,105 @@ const ISO_LOCAL_DATE_TIME_PATTERN = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}
 const SHORT_LOCAL_DATE_PATTERN = /^(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?$/;
 const CURRENCY_HINT_WORD_PATTERN =
   /(?:\$|€|₽|\busd\b|\beur\b|\brub\b|\bbyn\b|\bbr\b|\bbyr\b|доллар[а-яё]*|бакс[а-яё]*|евро|российск[а-яё]*|руб[а-яё]*|белорусск[а-яё]*|беларуск[а-яё]*)/giu;
+const DESCRIPTION_WORD_PATTERN = /[\p{L}\p{N}]+/gu;
+const GENERIC_DESCRIPTION_WORDS = new Set([
+  "account",
+  "accounts",
+  "between",
+  "buy",
+  "bought",
+  "card",
+  "cards",
+  "conversion",
+  "converted",
+  "currency",
+  "expense",
+  "exchange",
+  "from",
+  "funds",
+  "income",
+  "money",
+  "move",
+  "moved",
+  "moving",
+  "paid",
+  "payment",
+  "purchase",
+  "receipt",
+  "to",
+  "transaction",
+  "transfer",
+  "а",
+  "банк",
+  "банка",
+  "банке",
+  "белорусских",
+  "белорусская",
+  "белорусской",
+  "белорусскую",
+  "белорусские",
+  "валют",
+  "валюта",
+  "валюты",
+  "в",
+  "во",
+  "деньги",
+  "для",
+  "доход",
+  "зачисление",
+  "из",
+  "и",
+  "карта",
+  "карте",
+  "картой",
+  "карту",
+  "карты",
+  "конвертация",
+  "на",
+  "обмен",
+  "операция",
+  "оплата",
+  "оплатил",
+  "оплатила",
+  "перевел",
+  "перевела",
+  "перевести",
+  "перевод",
+  "перевёл",
+  "перекинул",
+  "перекинула",
+  "по",
+  "покупка",
+  "потратить",
+  "потратил",
+  "потратила",
+  "расход",
+  "рублей",
+  "с",
+  "со",
+  "списание",
+  "счета",
+  "счет",
+  "счёта",
+  "счёт",
+]);
+const GENERIC_CURRENCY_WORDS = new Set([
+  "br",
+  "byn",
+  "byr",
+  "eur",
+  "rub",
+  "usd",
+  "бел",
+  "белруб",
+  "доллар",
+  "доллара",
+  "долларов",
+  "евро",
+  "руб",
+  "рубль",
+  "рубля",
+]);
 
 function normalizeHint(value: string | null | undefined) {
   return value?.trim().toLowerCase() || null;
@@ -67,6 +166,50 @@ function includesCurrencyHint(account: Account, hint: string | null) {
 
 function stripCurrencyHint(hint: string | null) {
   return hint?.replace(CURRENCY_HINT_WORD_PATTERN, " ").replace(/\s+/g, " ").trim() || null;
+}
+
+function getDescriptionWords(value: string | null | undefined) {
+  return normalizeHint(value)?.match(DESCRIPTION_WORD_PATTERN) ?? [];
+}
+
+function getDescriptionContextWords(values: Array<string | null | undefined>) {
+  const words = new Set<string>();
+  for (const value of values) {
+    for (const word of getDescriptionWords(value)) {
+      words.add(word);
+    }
+  }
+
+  return words;
+}
+
+function isGenericDescriptionWord(word: string) {
+  return (
+    word.length <= 1 || /^\d+$/.test(word) || GENERIC_DESCRIPTION_WORDS.has(word) || GENERIC_CURRENCY_WORDS.has(word)
+  );
+}
+
+function normalizeAiDescription(
+  description: string | null | undefined,
+  contextValues: Array<string | null | undefined>
+) {
+  const text = description?.trim();
+  if (!text) return null;
+
+  const contextWords = getDescriptionContextWords(contextValues);
+  const usefulWords = getDescriptionWords(text).filter(
+    (word) => !isGenericDescriptionWord(word) && !contextWords.has(word)
+  );
+
+  return usefulWords.length ? text : null;
+}
+
+function normalizePaymentDescription(
+  description: string | null | undefined,
+  merchant: string | null | undefined,
+  contextValues: Array<string | null | undefined>
+) {
+  return normalizeAiDescription(description, contextValues) ?? normalizeAiDescription(merchant, contextValues);
 }
 
 function resolveHintedAccount(accounts: Account[], hint: string | null, excludedAccountId?: string | null) {
@@ -923,7 +1066,13 @@ export class AiFinanceResolverService {
           amount: extraction.amount,
           currency: extraction.currency ?? account?.currency ?? null,
           type: extraction.paymentType,
-          description: extraction.description || extraction.merchant,
+          description: normalizePaymentDescription(extraction.description, extraction.merchant, [
+            extraction.amount,
+            extraction.currency,
+            account?.name,
+            account?.currency,
+            category?.name,
+          ]),
           date,
         },
       ];
@@ -952,7 +1101,13 @@ export class AiFinanceResolverService {
             amount: payment.amount as string,
             currency: payment.currency ?? paymentAccount?.currency ?? null,
             type: payment.paymentType,
-            description: payment.description || payment.merchant,
+            description: normalizePaymentDescription(payment.description, payment.merchant, [
+              payment.amount,
+              payment.currency,
+              paymentAccount?.name,
+              paymentAccount?.currency,
+              category?.name,
+            ]),
             date: paymentDate,
           };
         });
@@ -973,7 +1128,12 @@ export class AiFinanceResolverService {
           amount: extraction.totalAmount,
           currency: extraction.currency ?? account?.currency ?? null,
           type: "expense",
-          description: extraction.merchant || "Receipt",
+          description: normalizeAiDescription(extraction.merchant, [
+            extraction.totalAmount,
+            extraction.currency,
+            account?.name,
+            account?.currency,
+          ]),
           date,
         },
       ];
@@ -1007,7 +1167,12 @@ export class AiFinanceResolverService {
       if (!current) {
         grouped.set(key, {
           ...entry,
-          description: entry.categoryName ?? extraction.merchant ?? "Receipt",
+          description: normalizeAiDescription(extraction.merchant, [
+            entry.amount,
+            entry.currency,
+            entry.accountName,
+            entry.categoryName,
+          ]),
         });
         continue;
       }
@@ -1037,7 +1202,16 @@ export class AiFinanceResolverService {
       toAccountCurrency: toAccount?.currency ?? null,
       amount: extraction.amount,
       toAmount: isMoney(extraction.toAmount) ? extraction.toAmount : extraction.amount,
-      description: extraction.description,
+      description: normalizeAiDescription(extraction.description, [
+        extraction.amount,
+        extraction.toAmount,
+        extraction.fromAccountHint,
+        extraction.toAccountHint,
+        fromAccount?.name,
+        fromAccount?.currency,
+        toAccount?.name,
+        toAccount?.currency,
+      ]),
       date,
     };
   }
