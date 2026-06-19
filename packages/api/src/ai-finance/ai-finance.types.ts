@@ -24,14 +24,23 @@ export type AiDraftStatus =
 export type ReceiptMode = typeof RECEIPT_MODE_SINGLE | typeof RECEIPT_MODE_CATEGORY | typeof RECEIPT_MODE_ITEMS;
 export type AiFinanceSourceType = "text" | "voice" | "receipt";
 export type AiFinanceQuestion = "workspace" | "account" | "date" | "preview";
+export type AiFinanceDescriptionSource =
+  | "none"
+  | "explicit_user_note"
+  | "merchant_or_place"
+  | "receipt_item"
+  | "technical_context";
 
 export type AiFinanceExtraction =
   | {
       kind: "payment";
       paymentType: "expense" | "income";
       amount: string | null;
+      originalAmount: string | null;
+      originalCurrency: string | null;
       currency: string | null;
       description: string | null;
+      descriptionSource: AiFinanceDescriptionSource | null;
       merchant: string | null;
       dateText: string | null;
       accountHint: string | null;
@@ -44,8 +53,11 @@ export type AiFinanceExtraction =
       payments: Array<{
         paymentType: "expense" | "income";
         amount: string | null;
+        originalAmount: string | null;
+        originalCurrency: string | null;
         currency: string | null;
         description: string | null;
+        descriptionSource: AiFinanceDescriptionSource | null;
         merchant: string | null;
         dateText: string | null;
         accountHint: string | null;
@@ -77,6 +89,7 @@ export type AiFinanceExtraction =
       toAccountHint: string | null;
       dateText: string | null;
       description: string | null;
+      descriptionSource: AiFinanceDescriptionSource | null;
       confidence: number;
     }
   | {

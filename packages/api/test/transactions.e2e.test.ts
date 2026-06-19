@@ -400,7 +400,7 @@ describe("Transactions API", () => {
       })
       .expect(400);
 
-    expect(response.body.message).toBe("Сумма не может превышать баланс счёта (100)");
+    expect(response.body.message).toBe("Сумма не может превышать баланс счёта «Main card» (100)");
     expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
   });
 

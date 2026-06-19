@@ -322,6 +322,55 @@ pnpm --filter api check
 
 - None.
 
+## 2026-06-19 15:45 +03 - Codex
+
+### Scope
+
+- Replaced word-list AI description filtering with an explicit `descriptionSource` extraction contract.
+- Moved technical foreign-amount context into `originalAmount` / `originalCurrency` instead of transaction descriptions.
+- Kept Telegram UX fixes for balance errors with account names and cancellation without an active draft.
+
+### Files Changed
+
+- `packages/api/src/ai-finance/ai-finance.types.ts`
+- `packages/api/src/ai-finance/ai-finance-parser.service.ts`
+- `packages/api/src/ai-finance/ai-finance-resolver.service.ts`
+- `packages/api/src/telegram-bot/telegram-bot.service.ts`
+- `packages/api/src/transactions/transactions.service.ts`
+- `packages/api/test/telegram-bot.e2e.test.ts`
+- `packages/api/test/transactions.e2e.test.ts`
+- `docs/plans/telegram-ai-finance-bot/README.md`
+- `docs/plans/telegram-ai-finance-bot/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter api check
+pnpm --filter api typecheck
+pnpm --filter api exec vitest run test/telegram-bot.e2e.test.ts
+pnpm --filter api exec vitest run test/transactions.e2e.test.ts -t "rejects payment expenses above account balance"
+```
+
+### Results
+
+- Passed: API Biome check.
+- Passed: API typecheck.
+- Passed: Telegram bot e2e suite, 1 file / 40 tests.
+- Passed: targeted transactions e2e balance-error test.
+
+### Decisions
+
+- Existing active drafts without `descriptionSource` default to not persisting AI-provided descriptions.
+- Kept account hint parsing as-is; only description persistence moved to the explicit source policy.
+
+### Subagent Contributions
+
+- None.
+
+### Blockers / Follow-ups
+
+- Consider a later account-hint schema refactor so account name and currency hints are structured separately.
+
 ## 2026-06-18 14:53 +03 - Codex / Reviewer Integration
 
 ### Scope
