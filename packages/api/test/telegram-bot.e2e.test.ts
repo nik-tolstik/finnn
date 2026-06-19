@@ -2610,6 +2610,12 @@ describe("Telegram Bot API", () => {
         text: expect.stringContaining("- To: BSB Card (BYN)"),
       })
     );
+    const transferPreviewText = telegram.sendMessage.mock.calls
+      .map(([message]) => message as { text?: string })
+      .find((message) => message.text?.includes("Перевод:"))?.text;
+    expect(transferPreviewText).not.toContain("- Description:");
+    const createdDraft = storedDraft as unknown as { payload?: { transfer?: { description?: string | null } } } | null;
+    expect(createdDraft?.payload?.transfer?.description).toBeNull();
 
     await request(app.getHttpServer())
       .post("/telegram/webhook")
@@ -2630,6 +2636,7 @@ describe("Telegram Bot API", () => {
         data: expect.objectContaining({
           amount: "70.77",
           createdByAi: true,
+          description: undefined,
           fromAccountId: "account-7",
           toAccountId: "account-6",
           toAmount: "200",
