@@ -2,13 +2,13 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
 import { getVisibleAccounts, resolveViewerUserId } from "@/modules/accounts/account-visibility";
 import { AccountsCards } from "@/modules/accounts/components/accounts-cards";
+import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog";
 import { getCategories } from "@/modules/categories/category.api";
 import { CombinedTransactionsList } from "@/modules/transactions/components/combined-transactions-list";
 import {
@@ -44,10 +44,6 @@ interface DashboardContentProps {
 }
 
 const TRANSACTIONS_PER_PAGE = 20;
-
-const CreateAccountDialog = dynamic(() =>
-  import("@/modules/accounts/components/create-account-dialog").then((mod) => mod.CreateAccountDialog)
-);
 
 function isSuccessResponse(data: any): data is { data: CombinedTransaction[]; total: number } {
   return data && "data" in data && !("error" in data);

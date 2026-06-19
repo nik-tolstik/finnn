@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -25,6 +24,7 @@ import {
   DialogTitle,
   DialogWindow,
 } from "@/shared/ui/dialog";
+import { ColorPicker } from "@/shared/ui/color-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select";
@@ -32,8 +32,6 @@ import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 
 import { updateAccount } from "../../account.api";
-
-const ColorPicker = dynamic(() => import("@/shared/ui/color-picker").then((mod) => mod.ColorPicker));
 
 interface EditAccountDialogProps {
   account: Account;

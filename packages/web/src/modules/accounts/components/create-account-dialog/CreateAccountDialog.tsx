@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Wallet } from "lucide-react";
-import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -27,6 +26,7 @@ import {
   DialogTitle,
   DialogWindow,
 } from "@/shared/ui/dialog";
+import { ColorPicker } from "@/shared/ui/color-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
@@ -37,7 +37,6 @@ import { cn } from "@/shared/utils/cn";
 import { createAccount } from "../../account.api";
 
 const DEFAULT_ACCOUNT_COLOR = "#3b82f6";
-const ColorPicker = dynamic(() => import("@/shared/ui/color-picker").then((mod) => mod.ColorPicker));
 
 interface CreateAccountDialogProps {
   workspaceId: string;
