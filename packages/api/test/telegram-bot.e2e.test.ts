@@ -1080,7 +1080,7 @@ describe("Telegram Bot API", () => {
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("[BSB Bank] Expense: 5.10 BYN"),
+        text: expect.stringContaining("[BSB Bank (BYN)] Расход: 5.10 BYN"),
       })
     );
   });
@@ -1176,7 +1176,7 @@ describe("Telegram Bot API", () => {
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("[BSB Bank] Expense: 5.10 BYN"),
+        text: expect.stringContaining("[BSB Bank (BYN)] Расход: 5.10 BYN"),
       })
     );
   });
@@ -1365,13 +1365,13 @@ describe("Telegram Bot API", () => {
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("1. [Main card] Expense: Питание: 15.23 BYN (Блины в Мама Дома)"),
+        text: expect.stringContaining("1. [Main card (BYN)] Расход: Питание: 15.23 BYN (Блины в Мама Дома)"),
       })
     );
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("2. [Cash] Expense: Машина: 100 BYN (Заправил машину)"),
+        text: expect.stringContaining("2. [Cash (BYN)] Расход: Машина: 100 BYN (Заправил машину)"),
       })
     );
   });
@@ -1429,19 +1429,19 @@ describe("Telegram Bot API", () => {
       expect.objectContaining({
         chatId: "1001",
         replyMarkup: undefined,
-        text: expect.stringContaining("1. [Main card] Expense: Питание: 15.23 BYN (Блины в Мама Дома)"),
+        text: expect.stringContaining("1. [Main card (BYN)] Расход: Питание: 15.23 BYN (Блины в Мама Дома)"),
       })
     );
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("2. [Main card] Expense: Машина: 100 BYN (машину)"),
+        text: expect.stringContaining("2. [Main card (BYN)] Расход: Машина: 100 BYN (машину)"),
       })
     );
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("3. [Main card] Expense: Подарки: 3000 BYN (ноутбук)"),
+        text: expect.stringContaining("3. [Main card (BYN)] Расход: Подарки: 3000 BYN (ноутбук)"),
       })
     );
   });
@@ -1567,7 +1567,7 @@ describe("Telegram Bot API", () => {
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.stringContaining("3. [BSB Bank] Expense: Подарки: 3000 BYN (Купил ноутбук)"),
+        text: expect.stringContaining("3. [BSB Bank (BYN)] Расход: Подарки: 3000 BYN (Купил ноутбук)"),
       })
     );
   });
@@ -1676,7 +1676,7 @@ describe("Telegram Bot API", () => {
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: expect.not.stringContaining("Income: 2 BYN"),
+        text: expect.not.stringContaining("Доход: 2 BYN"),
       })
     );
   });
