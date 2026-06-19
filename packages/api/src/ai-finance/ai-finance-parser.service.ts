@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import Big from "big.js";
 
-import type { AiFinanceExtraction } from "./ai-finance.types";
+import type { AiFinanceDescriptionSource, AiFinanceExtraction } from "./ai-finance.types";
 import { OpenRouterClient } from "./openrouter.client";
 
 export type AiFinancePromptContext = {
@@ -33,6 +33,14 @@ export type AiFinanceConversationAction = {
   confidence: number;
 };
 
+const DESCRIPTION_SOURCES = [
+  "none",
+  "explicit_user_note",
+  "merchant_or_place",
+  "receipt_item",
+  "technical_context",
+] satisfies AiFinanceDescriptionSource[];
+
 const EXTRACTION_SCHEMA = {
   type: "object",
   additionalProperties: false,
@@ -40,10 +48,13 @@ const EXTRACTION_SCHEMA = {
     kind: { enum: ["payment", "payments", "receipt", "transfer", "unknown"] },
     paymentType: { enum: ["expense", "income", null] },
     amount: { type: ["string", "null"] },
+    originalAmount: { type: ["string", "null"] },
+    originalCurrency: { type: ["string", "null"] },
     toAmount: { type: ["string", "null"] },
     totalAmount: { type: ["string", "null"] },
     currency: { type: ["string", "null"] },
     description: { type: ["string", "null"] },
+    descriptionSource: { enum: [...DESCRIPTION_SOURCES, null] },
     merchant: { type: ["string", "null"] },
     dateText: { type: ["string", "null"] },
     accountHint: { type: ["string", "null"] },
@@ -59,8 +70,11 @@ const EXTRACTION_SCHEMA = {
         properties: {
           paymentType: { enum: ["expense", "income"] },
           amount: { type: ["string", "null"] },
+          originalAmount: { type: ["string", "null"] },
+          originalCurrency: { type: ["string", "null"] },
           currency: { type: ["string", "null"] },
           description: { type: ["string", "null"] },
+          descriptionSource: { enum: [...DESCRIPTION_SOURCES, null] },
           merchant: { type: ["string", "null"] },
           dateText: { type: ["string", "null"] },
           accountHint: { type: ["string", "null"] },
@@ -70,8 +84,11 @@ const EXTRACTION_SCHEMA = {
         required: [
           "paymentType",
           "amount",
+          "originalAmount",
+          "originalCurrency",
           "currency",
           "description",
+          "descriptionSource",
           "merchant",
           "dateText",
           "accountHint",
@@ -100,10 +117,13 @@ const EXTRACTION_SCHEMA = {
     "kind",
     "paymentType",
     "amount",
+    "originalAmount",
+    "originalCurrency",
     "toAmount",
     "totalAmount",
     "currency",
     "description",
+    "descriptionSource",
     "merchant",
     "dateText",
     "accountHint",
@@ -190,6 +210,12 @@ function isConfidence(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 }
 
+function isDescriptionSource(value: unknown): value is AiFinanceDescriptionSource | null {
+  return (
+    value === null || (typeof value === "string" && DESCRIPTION_SOURCES.includes(value as AiFinanceDescriptionSource))
+  );
+}
+
 function isMoney(value: string | null | undefined): value is string {
   return Boolean(value && EXTRACTION_AMOUNT_PATTERN.test(value));
 }
@@ -267,8 +293,11 @@ function parseSimplePaymentLines(text: string, context?: AiFinancePromptContext 
       {
         paymentType: "expense" as const,
         amount: normalizeAmount(match[1]),
+        originalAmount: null,
+        originalCurrency: null,
         currency: normalizeCurrency(match[2]) ?? getFallbackCurrency(context),
         description: getFallbackDescription(line) || line,
+        descriptionSource: getFallbackCategoryHint(line, context) ? ("explicit_user_note" as const) : ("none" as const),
         merchant: null,
         dateText: null,
         accountHint: getFallbackAccountHint(line),
@@ -286,8 +315,11 @@ function parseSimplePaymentLines(text: string, context?: AiFinancePromptContext 
       kind: "payment",
       paymentType: payment.paymentType,
       amount: payment.amount,
+      originalAmount: payment.originalAmount,
+      originalCurrency: payment.originalCurrency,
       currency: payment.currency,
       description: payment.description,
+      descriptionSource: payment.descriptionSource,
       merchant: payment.merchant,
       dateText: payment.dateText,
       accountHint: payment.accountHint,
@@ -336,14 +368,16 @@ function parseBalanceDifferencePayment(text: string): AiFinanceExtraction | null
   const original = originalMoneyMentions[0];
 
   const paymentType = INCOME_TEXT_PATTERN.test(text) && !EXPENSE_TEXT_PATTERN.test(text) ? "income" : "expense";
-  const originalDescription = original ? ` (${original.amount} ${original.currency})` : "";
 
   return {
     kind: "payment",
     paymentType,
     amount: difference.amount,
+    originalAmount: original?.amount ?? null,
+    originalCurrency: original?.currency ?? null,
     currency: difference.currency ?? getFallbackCurrency(),
-    description: `${paymentType === "income" ? "Зачисление" : "Списание"} по разнице остатков${originalDescription}`,
+    description: null,
+    descriptionSource: original ? "technical_context" : "none",
     merchant: null,
     dateText: null,
     accountHint: getFallbackAccountHint(text),
@@ -376,7 +410,8 @@ function parseCurrencyExchangeTransfer(text: string): AiFinanceExtraction | null
     fromAccountHint: source.currency,
     toAccountHint: destination.currency,
     dateText: null,
-    description: "Обмен валюты",
+    description: null,
+    descriptionSource: "none",
     confidence: 0.88,
   };
 }
@@ -394,8 +429,11 @@ function assertValidPayment(value: Record<string, unknown>, message: string) {
   if (
     (value.paymentType !== "expense" && value.paymentType !== "income") ||
     !isNullableString(value.amount) ||
+    !isNullableString(value.originalAmount) ||
+    !isNullableString(value.originalCurrency) ||
     !isNullableString(value.currency) ||
     !isNullableString(value.description) ||
+    !isDescriptionSource(value.descriptionSource) ||
     !isNullableString(value.merchant) ||
     !isNullableString(value.dateText) ||
     !isNullableString(value.accountHint) ||
@@ -467,7 +505,8 @@ function assertValidExtraction(value: unknown): AiFinanceExtraction {
       !isNullableString(value.fromAccountHint) ||
       !isNullableString(value.toAccountHint) ||
       !isNullableString(value.dateText) ||
-      !isNullableString(value.description)
+      !isNullableString(value.description) ||
+      !isDescriptionSource(value.descriptionSource)
     ) {
       throw new BadRequestException("AI transfer extraction is invalid");
     }
@@ -569,8 +608,10 @@ export class AiFinanceParserService {
           role: "system",
           content: [
             "Extract Finnn finance intents from the user's message. If the message contains multiple independent payments, use kind=payments and include each payment separately. Treat currency exchange between the user's own accounts as kind=transfer with amount from the source account and toAmount received by the destination account, not as expense plus income. Return strict JSON only. Money amounts must stay strings. Always include every schema field; use null or [] for fields that do not apply to the selected kind.",
-            "Set description only when the user provides useful extra context that is not already captured by type, amount, currency, accounts, category, or date, such as a birthday, person, place, merchant, event, or purpose. Do not copy generic phrases like transfer from one account to another, move money, payment, purchase, or currency exchange into description.",
-            "If the user provides before-after balances like 60.44-55.34 rubles/BYN, calculate the absolute difference and use that as the payment amount in the account currency. Keep any visible foreign-card amount such as 2 USD in the description, not as the committed amount.",
+            "For descriptionSource use one of: none, explicit_user_note, merchant_or_place, receipt_item, technical_context. Set descriptionSource=null only for kinds where description cannot apply.",
+            "Persistable descriptions must be useful extra context that is not already captured by type, amount, currency, accounts, category, or date. Examples: `Перевод с наличных на BSB Card` => description=null, descriptionSource=none. `Перевод на BSB Card, день рождения` => description=`день рождения`, descriptionSource=explicit_user_note. `Кофе в Surf Coffee 12 BYN` => description=`Surf Coffee`, merchant=`Surf Coffee`, descriptionSource=merchant_or_place.",
+            "Never copy generic phrases like transfer from one account to another, move money, payment, purchase, or currency exchange into description.",
+            "If the user provides before-after balances like 60.44-55.34 rubles/BYN, calculate the absolute difference and use that as the payment amount in the account currency. Put any visible foreign-card amount such as 2 USD into originalAmount/originalCurrency, not description. If a text is only technical context, use description=null and descriptionSource=technical_context.",
           ].join("\n"),
         },
         {
@@ -637,7 +678,8 @@ export class AiFinanceParserService {
       [
         "Extract receipt items, total, currency, merchant, date, account hint, and likely category hints.",
         "If the image is a bank or finance app transaction-history screenshot, use kind=payments and extract each visible transaction as a separate payment.",
-        "If a transaction screenshot shows a foreign amount plus before-after account balances, calculate the account-currency amount from the balance difference, for example 60.44-55.34 BYN => 5.10 BYN. Keep the visible foreign amount in the description.",
+        "If a transaction screenshot shows a foreign amount plus before-after account balances, calculate the account-currency amount from the balance difference, for example 60.44-55.34 BYN => 5.10 BYN. Put the visible foreign amount into originalAmount/originalCurrency, not description.",
+        "For descriptionSource use none, explicit_user_note, merchant_or_place, receipt_item, or technical_context. Do not store generic transaction wording in description.",
         "For visible transaction dates/times, set dateText on each payment. Prefer ISO-like dates such as YYYY-MM-DD or YYYY-MM-DD HH:mm when the image shows enough information.",
         userNote ? `User note/caption: ${userNote}` : null,
         "Return strict JSON only. Always include every schema field; use null or [] for fields that do not apply to the selected kind.",

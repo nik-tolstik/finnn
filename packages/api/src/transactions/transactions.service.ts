@@ -27,6 +27,14 @@ const PAYMENT_EXPENSE = "expense";
 const TRANSFER_TRANSACTION_FILTER_VALUE = "transfer";
 const DEBT_TRANSACTION_FILTER_VALUE = "debt";
 
+function getAccountBalanceLimitMessage(account: Pick<Account, "name" | "balance">) {
+  return `Сумма не может превышать баланс счёта «${account.name}» (${account.balance})`;
+}
+
+function getTransferBalanceLimitMessage(account: Pick<Account, "name" | "balance">) {
+  return `Сумма отправления не может превышать баланс счёта «${account.name}» (${account.balance})`;
+}
+
 const ACCOUNT_OWNER_SELECT = {
   id: true,
   name: true,
@@ -509,7 +517,7 @@ export class TransactionsService {
       }
 
       if (input.type === PAYMENT_EXPENSE && compareMoney(input.amount, account.balance) > 0) {
-        throw new BadRequestException(`Сумма не может превышать баланс счёта (${account.balance})`);
+        throw new BadRequestException(getAccountBalanceLimitMessage(account));
       }
 
       let finalCategoryId = input.categoryId;
@@ -616,7 +624,7 @@ export class TransactionsService {
         const currentBalance = balancesByAccountId.get(input.accountId) || account.balance;
         const nextBalance = applyPaymentTransactionBalance(currentBalance, input.type, input.amount);
         if (input.type === PAYMENT_EXPENSE && compareMoney(nextBalance, "0") < 0) {
-          throw new BadRequestException(`Сумма не может превышать баланс счёта (${currentBalance})`);
+          throw new BadRequestException(getAccountBalanceLimitMessage({ ...account, balance: currentBalance }));
         }
 
         const createdTransaction = await tx.paymentTransaction.create({
@@ -667,7 +675,7 @@ export class TransactionsService {
       }
 
       if (compareMoney(input.amount, fromAccount.balance) > 0) {
-        throw new BadRequestException(`Сумма отправления не может превышать баланс счёта (${fromAccount.balance})`);
+        throw new BadRequestException(getTransferBalanceLimitMessage(fromAccount));
       }
 
       const createdTransfer = await tx.transferTransaction.create({
@@ -764,7 +772,7 @@ export class TransactionsService {
           );
 
           if (existingTransaction.type === PAYMENT_EXPENSE && compareMoney(newAmount, newAccount.balance) > 0) {
-            throw new BadRequestException(`Сумма не может превышать баланс счёта (${newAccount.balance})`);
+            throw new BadRequestException(getAccountBalanceLimitMessage(newAccount));
           }
 
           await tx.account.update({
@@ -780,7 +788,9 @@ export class TransactionsService {
           });
         } else {
           if (existingTransaction.type === PAYMENT_EXPENSE && compareMoney(newAmount, revertedOldBalance) > 0) {
-            throw new BadRequestException(`Сумма не может превышать баланс счёта (${revertedOldBalance})`);
+            throw new BadRequestException(
+              getAccountBalanceLimitMessage({ ...oldAccount, balance: revertedOldBalance })
+            );
           }
 
           await tx.account.update({
@@ -878,7 +888,7 @@ export class TransactionsService {
 
       const newFromAccountCurrent = await tx.account.findUnique({
         where: { id: newFromAccountId },
-        select: { balance: true },
+        select: { balance: true, name: true },
       });
       const newToAccountCurrent = await tx.account.findUnique({
         where: { id: newToAccountId },
@@ -890,9 +900,7 @@ export class TransactionsService {
       }
 
       if (compareMoney(newAmount, newFromAccountCurrent.balance) > 0) {
-        throw new BadRequestException(
-          `Сумма отправления не может превышать баланс счёта (${newFromAccountCurrent.balance})`
-        );
+        throw new BadRequestException(getTransferBalanceLimitMessage(newFromAccountCurrent));
       }
 
       const updatedTransfer = await tx.transferTransaction.update({

@@ -374,12 +374,40 @@ type AiFinanceExtraction =
       kind: "payment";
       paymentType: "expense" | "income";
       amount: string | null;
+      originalAmount: string | null;
+      originalCurrency: string | null;
       currency: string | null;
       description: string | null;
+      descriptionSource: "none" | "explicit_user_note" | "merchant_or_place" | "receipt_item" | "technical_context" | null;
       merchant: string | null;
       dateText: string | null;
       accountHint: string | null;
       categoryHint: string | null;
+      confidence: number;
+    }
+  | {
+      kind: "payments";
+      dateText: string | null;
+      payments: Array<{
+        paymentType: "expense" | "income";
+        amount: string | null;
+        originalAmount: string | null;
+        originalCurrency: string | null;
+        currency: string | null;
+        description: string | null;
+        descriptionSource:
+          | "none"
+          | "explicit_user_note"
+          | "merchant_or_place"
+          | "receipt_item"
+          | "technical_context"
+          | null;
+        merchant: string | null;
+        dateText: string | null;
+        accountHint: string | null;
+        categoryHint: string | null;
+        confidence: number;
+      }>;
       confidence: number;
     }
   | {
@@ -405,6 +433,7 @@ type AiFinanceExtraction =
       toAccountHint: string | null;
       dateText: string | null;
       description: string | null;
+      descriptionSource: "none" | "explicit_user_note" | "merchant_or_place" | "receipt_item" | "technical_context" | null;
       confidence: number;
     }
   | {
@@ -413,6 +442,12 @@ type AiFinanceExtraction =
       confidence: number;
     };
 ```
+
+Persist extracted descriptions only when `descriptionSource` is `explicit_user_note`, `merchant_or_place`, or
+`receipt_item`. Use `none` for generic operation wording such as "transfer from cash to card", and use
+`technical_context` for data that helps calculation/display but should not become a transaction comment. Foreign visible
+amounts from bank screenshots or before-after balance text should go into `originalAmount` / `originalCurrency`, not
+`description`.
 
 Receipt category grouping should be computed by API code after resolving category hints, not trusted blindly from the
 model.

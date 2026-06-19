@@ -30,6 +30,7 @@ import type {
 } from "./telegram-update.types";
 
 const TELEGRAM_PROVIDER = "telegram";
+const CANCELLATION_TEXTS = new Set(["отмена", "cancel", "не надо", "отмени", "стоп"]);
 
 type ResolvedTelegramUser = {
   telegramUserId: string;
@@ -106,6 +107,14 @@ function normalizeAiFinanceErrorMessage(message: string) {
   }
 
   return message;
+}
+
+function normalizeCommandText(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function isCancellationText(value: string) {
+  return CANCELLATION_TEXTS.has(normalizeCommandText(value));
 }
 
 function isTelegramMessageNotModifiedError(error: unknown) {
@@ -185,8 +194,13 @@ export class TelegramBotService {
     }
 
     if (command === "/cancel") {
-      await this.aiFinance.cancelActiveDraft(user, chatId);
-      await this.telegram.sendMessage({ chatId, text: "Черновик отменён." });
+      const cancelledDraft = await this.aiFinance.cancelActiveDraft(user, chatId);
+      await this.telegram.sendMessage({
+        chatId,
+        text: cancelledDraft
+          ? "Черновик отменён."
+          : "Активного черновика нет. Отправьте операцию, чтобы создать новый черновик.",
+      });
       return;
     }
 
@@ -226,6 +240,16 @@ export class TelegramBotService {
   }
 
   private async handleTextMessage(chatId: string, text: string, user: AuthenticatedUser) {
+    const activeDraft = await this.drafts.findActiveDraft(user.id, chatId);
+
+    if (!activeDraft && isCancellationText(text)) {
+      await this.telegram.sendMessage({
+        chatId,
+        text: "Активного черновика нет. Отправьте операцию, чтобы создать новый черновик.",
+      });
+      return;
+    }
+
     const catalogAnswer = await this.aiFinance.answerCatalogQuestion(user, text, chatId);
     if (catalogAnswer) {
       await this.telegram.sendMessage({ chatId, text: catalogAnswer });
@@ -234,7 +258,6 @@ export class TelegramBotService {
 
     const reply = await this.withAiErrorMessage(chatId, async () =>
       this.withThinkingMessage(chatId, async () => {
-        const activeDraft = await this.drafts.findActiveDraft(user.id, chatId);
         const response = activeDraft
           ? await this.aiFinance.answerDraft(user, activeDraft.id, text, chatId)
           : await this.aiFinance.createDraftFromText(user, text, chatId);
