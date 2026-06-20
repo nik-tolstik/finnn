@@ -192,7 +192,7 @@ export function Sidebar() {
                 ) : (
                   exchangeRates.map((rate) => (
                     <div
-                      className="flex w-full flex-col items-center justify-center gap-1 text-[10px] font-medium leading-tight tabular-nums text-foreground"
+                      className="flex w-full flex-col items-center justify-center gap-1 text-[10px] font-medium leading-tight text-foreground"
                       key={rate.currency}
                     >
                       <CurrencyFlag className="size-3.5" code={rate.flagCode} label={rate.flagLabel} />

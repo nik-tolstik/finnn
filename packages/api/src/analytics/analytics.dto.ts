@@ -172,6 +172,23 @@ export class AnalyticsTimeSeriesPointDto {
   expenseTotalInBaseCurrency!: string;
 }
 
+export class AnalyticsCalendarDayDto {
+  @ApiProperty({ example: "2026-05-01", type: String })
+  date!: string;
+
+  @ApiProperty({ type: String })
+  incomeTotalInBaseCurrency!: string;
+
+  @ApiProperty({ type: String })
+  expenseTotalInBaseCurrency!: string;
+
+  @ApiProperty({ type: String })
+  netTotalInBaseCurrency!: string;
+
+  @ApiProperty({ type: Number })
+  transactionCount!: number;
+}
+
 export class AnalyticsCapitalTimeSeriesPointDto {
   @ApiProperty({ example: "2026-05-01", type: String })
   date!: string;
@@ -270,4 +287,15 @@ export class AnalyticsOverviewResponseDto {
 
   @ApiProperty({ type: [AnalyticsLargestMovementDto] })
   largestMovements!: AnalyticsLargestMovementDto[];
+}
+
+export class AnalyticsCalendarResponseDto {
+  @ApiProperty({ example: "BYN", type: String })
+  baseCurrency!: string;
+
+  @ApiProperty({ type: AnalyticsEffectiveRangeDto })
+  effectiveRange!: AnalyticsEffectiveRangeDto;
+
+  @ApiProperty({ type: [AnalyticsCalendarDayDto] })
+  calendarDays!: AnalyticsCalendarDayDto[];
 }

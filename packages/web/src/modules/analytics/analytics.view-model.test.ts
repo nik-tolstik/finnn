@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { AnalyticsOverviewResult } from "./analytics.types";
+import type { AnalyticsCalendarResult, AnalyticsOverviewResult } from "./analytics.types";
 import {
   applyAnalyticsPeriodPreset,
+  buildAnalyticsCalendarCells,
   buildAnalyticsOverviewViewModel,
   getActiveAnalyticsPeriodPreset,
+  getAnalyticsCalendarMonthRange,
   getAnalyticsPeriodPresetRange,
   getAnalyticsTrendTone,
   selectAnalyticsCapitalTicks,
@@ -119,6 +121,44 @@ function createAnalytics(overrides: Partial<AnalyticsOverviewResult> = {}): Anal
       },
     ],
     largestMovements: [],
+    ...overrides,
+  };
+}
+
+function createCalendar(overrides: Partial<AnalyticsCalendarResult> = {}): AnalyticsCalendarResult {
+  return {
+    baseCurrency: "BYN",
+    effectiveRange: {
+      startDate: "2026-04-01",
+      endDate: "2026-04-30",
+      previousStartDate: "2026-03-02",
+      previousEndDate: "2026-03-31",
+      dayCount: 30,
+      isImplicit: false,
+    },
+    calendarDays: [
+      {
+        date: "2026-04-01",
+        incomeTotalInBaseCurrency: "100",
+        expenseTotalInBaseCurrency: "20",
+        netTotalInBaseCurrency: "80",
+        transactionCount: 2,
+      },
+      {
+        date: "2026-04-02",
+        incomeTotalInBaseCurrency: "0",
+        expenseTotalInBaseCurrency: "80",
+        netTotalInBaseCurrency: "-80",
+        transactionCount: 1,
+      },
+      {
+        date: "2026-04-03",
+        incomeTotalInBaseCurrency: "200",
+        expenseTotalInBaseCurrency: "20",
+        netTotalInBaseCurrency: "180",
+        transactionCount: 2,
+      },
+    ],
     ...overrides,
   };
 }
@@ -300,5 +340,70 @@ describe("analytics period presets", () => {
     expect(getActiveAnalyticsPeriodPreset({ dateFrom: "2026-03-10", dateTo: "2026-04-05" })).toBeNull();
 
     vi.useRealTimers();
+  });
+});
+
+describe("analytics calendar view model", () => {
+  it("returns full month ranges", () => {
+    expect(getAnalyticsCalendarMonthRange(new Date("2026-02-12T12:00:00.000Z"))).toEqual({
+      dateFrom: "2026-02-01",
+      dateTo: "2026-02-28",
+    });
+    expect(getAnalyticsCalendarMonthRange(new Date("2028-02-12T12:00:00.000Z"))).toEqual({
+      dateFrom: "2028-02-01",
+      dateTo: "2028-02-29",
+    });
+  });
+
+  it("builds a Monday-start grid with leading and trailing days", () => {
+    const cells = buildAnalyticsCalendarCells({
+      calendar: createCalendar(),
+      monthDate: new Date("2026-04-15T00:00:00.000Z"),
+      today: new Date("2026-04-10T00:00:00.000Z"),
+    });
+
+    expect(cells).toHaveLength(42);
+    expect(cells[0]).toMatchObject({ date: "2026-03-30", dayNumber: 30, isCurrentMonth: false });
+    expect(cells[0]).toMatchObject({
+      incomeLabel: "0.00 Br",
+      expenseLabel: "0.00 Br",
+      hasActivity: false,
+      transactionCount: 0,
+    });
+    expect(cells[2]).toMatchObject({
+      date: "2026-04-01",
+      dayNumber: 1,
+      isCurrentMonth: true,
+      incomeLabel: "100.00 Br",
+      expenseLabel: "20.00 Br",
+      hasActivity: true,
+      transactionCount: 2,
+    });
+    expect(cells.at(-1)).toMatchObject({ date: "2026-05-10", dayNumber: 10, isCurrentMonth: false });
+  });
+
+  it("marks selected and today cells while keeping empty days quiet", () => {
+    const cells = buildAnalyticsCalendarCells({
+      calendar: createCalendar(),
+      monthDate: new Date("2026-04-15T00:00:00.000Z"),
+      selectedDate: "2026-04-02",
+      today: new Date("2026-04-02T10:00:00.000Z"),
+    });
+    const selectedCell = cells.find((cell) => cell.date === "2026-04-02");
+    const emptyCell = cells.find((cell) => cell.date === "2026-04-04");
+
+    expect(selectedCell).toMatchObject({
+      isSelected: true,
+      isToday: true,
+      incomeLabel: "0.00 Br",
+      expenseLabel: "80.00 Br",
+      hasActivity: true,
+    });
+    expect(emptyCell).toMatchObject({
+      hasActivity: false,
+      incomeLabel: "0.00 Br",
+      expenseLabel: "0.00 Br",
+      transactionCount: 0,
+    });
   });
 });

@@ -13,6 +13,7 @@ export function CombinedTransactionsList({
   onLoadMore,
   workspaceId,
   isLoadingMore,
+  showDateHeaders,
 }: CombinedTransactionsListProps) {
   const groups = useGroupedCombinedTransactions(transactions);
   const { workspaceName } = useCombinedTransactionsWorkspace({ workspaceId });
@@ -26,6 +27,7 @@ export function CombinedTransactionsList({
         showLoadMore={showLoadMore}
         onLoadMore={onLoadMore}
         isLoadingMore={isLoadingMore}
+        showDateHeaders={showDateHeaders}
         onTransactionClick={controller.openTransactionActions}
         onDebtTransactionClick={controller.openDebtTransactionActions}
       />

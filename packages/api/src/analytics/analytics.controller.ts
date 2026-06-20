@@ -19,7 +19,7 @@ import { AUTH_COOKIE_NAME } from "@/auth/session-cookie";
 import { ApiErrorDto } from "@/common/api-error.dto";
 import { WorkspaceAccessGuard } from "@/workspace/workspace-access.guard";
 
-import { AnalyticsOverviewQueryDto, AnalyticsOverviewResponseDto } from "./analytics.dto";
+import { AnalyticsCalendarResponseDto, AnalyticsOverviewQueryDto, AnalyticsOverviewResponseDto } from "./analytics.dto";
 import { AnalyticsService } from "./analytics.service";
 
 @Controller("workspaces/:workspaceId/analytics")
@@ -49,5 +49,26 @@ export class AnalyticsController {
   @ApiServiceUnavailableResponse({ type: ApiErrorDto })
   async getAnalyticsOverview(@Param("workspaceId") workspaceId: string, @Query() query: AnalyticsOverviewQueryDto) {
     return this.analyticsService.getAnalyticsOverview(workspaceId, query);
+  }
+
+  @Get("calendar")
+  @ApiOperation({ operationId: "getAnalyticsCalendar", summary: "Get workspace analytics calendar" })
+  @ApiParam({ name: "workspaceId", type: String })
+  @ApiQuery({ name: "amountFrom", required: false, type: String })
+  @ApiQuery({ name: "amountTo", required: false, type: String })
+  @ApiQuery({ name: "userIds", required: false, type: [String] })
+  @ApiQuery({ name: "transactionTypes", required: false, type: [String] })
+  @ApiQuery({ name: "categoryIds", required: false, type: [String] })
+  @ApiQuery({ name: "accountIds", required: false, type: [String] })
+  @ApiQuery({ name: "description", required: false, type: String })
+  @ApiQuery({ name: "dateFrom", required: false, type: String })
+  @ApiQuery({ name: "dateTo", required: false, type: String })
+  @ApiOkResponse({ type: AnalyticsCalendarResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async getAnalyticsCalendar(@Param("workspaceId") workspaceId: string, @Query() query: AnalyticsOverviewQueryDto) {
+    return this.analyticsService.getAnalyticsCalendar(workspaceId, query);
   }
 }

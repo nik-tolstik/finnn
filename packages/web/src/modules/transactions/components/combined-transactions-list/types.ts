@@ -14,6 +14,7 @@ export interface CombinedTransactionsListProps {
   onLoadMore?: () => void;
   workspaceId: string;
   isLoadingMore?: boolean;
+  showDateHeaders?: boolean;
 }
 
 export type ActionableCombinedTransaction = Extract<

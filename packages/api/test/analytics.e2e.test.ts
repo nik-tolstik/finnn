@@ -392,6 +392,7 @@ describe("Analytics API", () => {
         expenseTotalInBaseCurrency: "0",
       },
     ]);
+    expect(response.body.calendarDays).toBeUndefined();
     expect(response.body.incomeCategories[0]).toMatchObject({
       id: "category-income",
       totalInBaseCurrency: "300",
@@ -614,6 +615,157 @@ describe("Analytics API", () => {
         id: "large-payment",
         kind: "paymentTransaction",
       }),
+    ]);
+  });
+
+  it("returns calendar days with payment totals, debt cash impact, transfer-neutral counts, and empty days", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findMany.mockResolvedValue([
+      createPaymentTransactionRecord({
+        id: "income-1",
+        amount: "100",
+        type: "income",
+        description: "Зарплата",
+        account: createAccountRecord({
+          id: "account-usd",
+          name: "USD Wallet",
+          currency: Currency.USD,
+        }),
+        category: {
+          id: "category-income",
+          name: "Зарплата",
+        },
+      }),
+      createPaymentTransactionRecord({
+        id: "expense-1",
+        amount: "50",
+        account: createAccountRecord({
+          id: "account-eur",
+          name: "EUR Card",
+          currency: Currency.EUR,
+        }),
+      }),
+      createPaymentTransactionRecord({
+        id: "expense-2",
+        amount: "25",
+        date: new Date("2026-04-02T00:00:00.000Z"),
+        category: {
+          id: "category-transport",
+          name: "Транспорт",
+        },
+      }),
+    ]);
+    prisma.transferTransaction.findMany.mockResolvedValue([createTransferTransactionRecord()]);
+    prisma.debtTransaction.findMany.mockResolvedValue([createDebtTransactionRecord()]);
+    exchangeRateService.preloadExchangeRates.mockResolvedValue(
+      new Map([
+        [createRateKey("2026-04-01", Currency.USD, Currency.BYN), 3],
+        [createRateKey("2026-04-01", Currency.EUR, Currency.BYN), 4],
+      ])
+    );
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/analytics/calendar")
+      .query({ dateFrom: "2026-04-01", dateTo: "2026-04-03" })
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.baseCurrency).toBe(Currency.BYN);
+    expect(response.body.effectiveRange).toMatchObject({
+      startDate: "2026-04-01",
+      endDate: "2026-04-03",
+      dayCount: 3,
+      isImplicit: false,
+    });
+    expect(response.body.calendarDays).toEqual([
+      {
+        date: "2026-04-01",
+        incomeTotalInBaseCurrency: "300",
+        expenseTotalInBaseCurrency: "200",
+        netTotalInBaseCurrency: "100",
+        transactionCount: 2,
+      },
+      {
+        date: "2026-04-02",
+        incomeTotalInBaseCurrency: "0",
+        expenseTotalInBaseCurrency: "25",
+        netTotalInBaseCurrency: "-25",
+        transactionCount: 2,
+      },
+      {
+        date: "2026-04-03",
+        incomeTotalInBaseCurrency: "60",
+        expenseTotalInBaseCurrency: "0",
+        netTotalInBaseCurrency: "60",
+        transactionCount: 1,
+      },
+    ]);
+  });
+
+  it("uses the current month for calendar reads without dates", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-20T12:00:00.000Z"));
+    mockAuthenticatedSession(prisma);
+
+    try {
+      const response = await request(app.getHttpServer())
+        .get("/workspaces/workspace-1/analytics/calendar")
+        .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+        .expect(200);
+
+      expect(response.body.effectiveRange).toMatchObject({
+        startDate: "2026-06-01",
+        endDate: "2026-06-30",
+        dayCount: 30,
+        isImplicit: true,
+      });
+      expect(response.body.calendarDays).toHaveLength(30);
+      expect(response.body.calendarDays[0]).toMatchObject({ date: "2026-06-01" });
+      expect(response.body.calendarDays.at(-1)).toMatchObject({ date: "2026-06-30" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("applies calendar amount and category filters across mixed transaction types", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findMany.mockResolvedValue([
+      createPaymentTransactionRecord({ id: "small-payment", amount: "5" }),
+      createPaymentTransactionRecord({ id: "large-payment", amount: "50" }),
+    ]);
+    prisma.transferTransaction.findMany.mockResolvedValue([
+      createTransferTransactionRecord({ id: "large-transfer", amount: "7", toAmount: "80" }),
+    ]);
+    prisma.debtTransaction.findMany.mockResolvedValue([createDebtTransactionRecord({ amount: "60" })]);
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/analytics/calendar")
+      .query({ amountFrom: "40", categoryIds: ["category-food"], dateFrom: "2026-04-01", dateTo: "2026-04-03" })
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.calendarDays).toEqual([
+      {
+        date: "2026-04-01",
+        incomeTotalInBaseCurrency: "0",
+        expenseTotalInBaseCurrency: "50",
+        netTotalInBaseCurrency: "-50",
+        transactionCount: 1,
+      },
+      {
+        date: "2026-04-02",
+        incomeTotalInBaseCurrency: "0",
+        expenseTotalInBaseCurrency: "0",
+        netTotalInBaseCurrency: "0",
+        transactionCount: 0,
+      },
+      {
+        date: "2026-04-03",
+        incomeTotalInBaseCurrency: "0",
+        expenseTotalInBaseCurrency: "0",
+        netTotalInBaseCurrency: "0",
+        transactionCount: 0,
+      },
     ]);
   });
 

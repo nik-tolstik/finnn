@@ -11,7 +11,13 @@ import { useMutation } from "@tanstack/react-query";
 
 import type { ErrorType } from "../../http-client";
 import { apiClient } from "../../http-client";
-import type { AnalyticsOverviewResponseDto, ApiErrorDto, GetAnalyticsOverviewParams } from "../model";
+import type {
+  AnalyticsCalendarResponseDto,
+  AnalyticsOverviewResponseDto,
+  ApiErrorDto,
+  GetAnalyticsCalendarParams,
+  GetAnalyticsOverviewParams,
+} from "../model";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
@@ -103,4 +109,93 @@ export const useGetAnalyticsOverview = <TError = ErrorType<ApiErrorDto>, TContex
   TContext
 > => {
   return useMutation(getGetAnalyticsOverviewMutationOptions(options), queryClient);
+};
+export const getGetAnalyticsCalendarUrl = (workspaceId: string, params?: GetAnalyticsCalendarParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/workspaces/${workspaceId}/analytics/calendar?${stringifiedParams}`
+    : `/workspaces/${workspaceId}/analytics/calendar`;
+};
+
+/**
+ * @summary Get workspace analytics calendar
+ */
+export const getAnalyticsCalendar = async (
+  workspaceId: string,
+  params?: GetAnalyticsCalendarParams,
+  options?: RequestInit
+): Promise<AnalyticsCalendarResponseDto> => {
+  return apiClient<AnalyticsCalendarResponseDto>(getGetAnalyticsCalendarUrl(workspaceId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAnalyticsCalendarMutationOptions = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getAnalyticsCalendar>>,
+    TError,
+    { workspaceId: string; params?: GetAnalyticsCalendarParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getAnalyticsCalendar>>,
+  TError,
+  { workspaceId: string; params?: GetAnalyticsCalendarParams },
+  TContext
+> => {
+  const mutationKey = ["getAnalyticsCalendar"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getAnalyticsCalendar>>,
+    { workspaceId: string; params?: GetAnalyticsCalendarParams }
+  > = (props) => {
+    const { workspaceId, params } = props ?? {};
+
+    return getAnalyticsCalendar(workspaceId, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetAnalyticsCalendarMutationResult = NonNullable<Awaited<ReturnType<typeof getAnalyticsCalendar>>>;
+
+export type GetAnalyticsCalendarMutationError = ErrorType<ApiErrorDto>;
+
+/**
+ * @summary Get workspace analytics calendar
+ */
+export const useGetAnalyticsCalendar = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof getAnalyticsCalendar>>,
+      TError,
+      { workspaceId: string; params?: GetAnalyticsCalendarParams },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof getAnalyticsCalendar>>,
+  TError,
+  { workspaceId: string; params?: GetAnalyticsCalendarParams },
+  TContext
+> => {
+  return useMutation(getGetAnalyticsCalendarMutationOptions(options), queryClient);
 };
