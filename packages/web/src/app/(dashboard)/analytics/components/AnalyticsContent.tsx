@@ -1,10 +1,10 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { addMonths, format, startOfMonth, subMonths } from "date-fns";
 import { Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   DashboardExchangeRatesCards,
@@ -12,31 +12,42 @@ import {
 } from "@/app/(dashboard)/components/dashboard-exchange-rates";
 import { getAccounts } from "@/modules/accounts/account.api";
 import {
+  toAnalyticsCalendarParams,
+  toAnalyticsCalendarResult,
   toAnalyticsErrorResult,
   toAnalyticsOverviewParams,
   toAnalyticsOverviewResult,
 } from "@/modules/analytics/analytics.api";
-import type { AnalyticsOverviewResult } from "@/modules/analytics/analytics.types";
+import type { AnalyticsCalendarResult, AnalyticsOverviewResult } from "@/modules/analytics/analytics.types";
 import {
   ANALYTICS_PERIOD_PRESETS,
   type AnalyticsPeriodPreset,
   applyAnalyticsPeriodPreset,
   buildAnalyticsOverviewViewModel,
   getActiveAnalyticsPeriodPreset,
+  getAnalyticsCalendarMonthRange,
 } from "@/modules/analytics/analytics.view-model";
 import { getCategories } from "@/modules/categories/category.api";
 import {
   TransactionsFilterButton,
   TransactionsFilterDrawer,
+  type TransactionViewFilters,
   useTransactionFilters,
 } from "@/modules/transactions/components/transactions-filters";
+import { toDateString, toDateValue } from "@/modules/transactions/components/transactions-filters/utils/date";
 import { getWorkspaceMembers } from "@/modules/workspace/workspace.api";
-import { getAnalyticsOverview as getApiAnalyticsOverview } from "@/shared/api/generated/analytics/analytics";
+import {
+  getAnalyticsCalendar as getApiAnalyticsCalendar,
+  getAnalyticsOverview as getApiAnalyticsOverview,
+} from "@/shared/api/generated/analytics/analytics";
 import { accountKeys, analyticsKeys, categoryKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { DatePicker } from "@/shared/ui/date-picker";
 import { Select } from "@/shared/ui/select";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { formatMoney } from "@/shared/utils/money";
+
+import { AnalyticsCalendar } from "./AnalyticsCalendar";
 
 interface AnalyticsContentProps {
   workspaceId: string;
@@ -49,6 +60,10 @@ const AnalyticsCharts = dynamic(() => import("./AnalyticsCharts").then((mod) => 
 
 function isAnalyticsSuccessResponse(data: unknown): data is AnalyticsOverviewResult {
   return Boolean(data && typeof data === "object" && "summary" in data && !("error" in data));
+}
+
+function isCalendarSuccessResponse(data: unknown): data is AnalyticsCalendarResult {
+  return Boolean(data && typeof data === "object" && "calendarDays" in data && !("error" in data));
 }
 
 function formatRangeLabel(startDate: string, endDate: string) {
@@ -72,6 +87,31 @@ function AnalyticsChartsSkeleton() {
       </div>
     </div>
   );
+}
+
+function AnalyticsCalendarSkeleton() {
+  return <Skeleton className="h-[520px] w-full rounded-xl" />;
+}
+
+function omitDateFilters(filters: TransactionViewFilters): TransactionViewFilters {
+  const { dateFrom: _dateFrom, dateTo: _dateTo, ...rest } = filters;
+  return rest;
+}
+
+function getCalendarFiltersForMonth(filters: TransactionViewFilters, monthDate: Date) {
+  return {
+    ...filters,
+    ...getAnalyticsCalendarMonthRange(monthDate),
+  };
+}
+
+async function getAnalyticsCalendarResult(workspaceId: string, filters: TransactionViewFilters) {
+  try {
+    const response = await getApiAnalyticsCalendar(workspaceId, toAnalyticsCalendarParams(filters));
+    return toAnalyticsCalendarResult(response);
+  } catch (error: unknown) {
+    return toAnalyticsErrorResult(error);
+  }
 }
 
 function SecondaryMetricCard({ title, value }: { title: string; value: string }) {
@@ -113,6 +153,8 @@ function MobileExchangeRates({ workspaceId }: { workspaceId: string }) {
 
 export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
+  const queryClient = useQueryClient();
   const {
     appliedFilters,
     appliedFiltersCount,
@@ -152,8 +194,46 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
     },
     placeholderData: keepPreviousData,
   });
+  const calendarBaseFilters = useMemo(() => omitDateFilters(appliedFilters), [appliedFilters]);
+  const previousCalendarMonth = useMemo(() => subMonths(calendarMonth, 1), [calendarMonth]);
+  const nextCalendarMonth = useMemo(() => addMonths(calendarMonth, 1), [calendarMonth]);
+  const previousCalendarFilters = useMemo(
+    () => getCalendarFiltersForMonth(calendarBaseFilters, previousCalendarMonth),
+    [calendarBaseFilters, previousCalendarMonth]
+  );
+  const calendarFilters = useMemo(
+    () => getCalendarFiltersForMonth(calendarBaseFilters, calendarMonth),
+    [calendarBaseFilters, calendarMonth]
+  );
+  const nextCalendarFilters = useMemo(
+    () => getCalendarFiltersForMonth(calendarBaseFilters, nextCalendarMonth),
+    [calendarBaseFilters, nextCalendarMonth]
+  );
+  const {
+    data: calendarData,
+    isLoading: isCalendarLoading,
+    isFetching: isCalendarFetching,
+  } = useQuery({
+    queryKey: analyticsKeys.calendar(workspaceId, calendarFilters),
+    queryFn: () => getAnalyticsCalendarResult(workspaceId, calendarFilters),
+  });
 
   const analytics = isAnalyticsSuccessResponse(analyticsData) ? analyticsData : null;
+  const calendar = isCalendarSuccessResponse(calendarData) ? calendarData : null;
+  useEffect(() => {
+    if (!calendar) {
+      return;
+    }
+
+    void queryClient.prefetchQuery({
+      queryKey: analyticsKeys.calendar(workspaceId, previousCalendarFilters),
+      queryFn: () => getAnalyticsCalendarResult(workspaceId, previousCalendarFilters),
+    });
+    void queryClient.prefetchQuery({
+      queryKey: analyticsKeys.calendar(workspaceId, nextCalendarFilters),
+      queryFn: () => getAnalyticsCalendarResult(workspaceId, nextCalendarFilters),
+    });
+  }, [calendar, nextCalendarFilters, previousCalendarFilters, queryClient, workspaceId]);
   const viewModel = useMemo(() => (analytics ? buildAnalyticsOverviewViewModel(analytics) : null), [analytics]);
   const activePeriodPreset = analytics
     ? getActiveAnalyticsPeriodPreset({
@@ -181,7 +261,15 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
     applyFilters(applyAnalyticsPeriodPreset(appliedFilters, preset));
   };
 
+  const handleDateFilterChange = (key: "dateFrom" | "dateTo", date: Date | undefined) => {
+    applyFilters({
+      ...appliedFilters,
+      [key]: toDateString(date),
+    });
+  };
+
   const isInitialLoading = isLoading && !analytics;
+  const isCalendarInitialLoading = isCalendarLoading && !calendar;
 
   return (
     <div className="mx-auto w-full max-w-[1440px]">
@@ -203,6 +291,26 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
                 onChange={handlePeriodPresetChange}
               />
             </div>
+            <div className="hidden items-center gap-2 md:flex">
+              <DatePicker
+                date={toDateValue(appliedFilters.dateFrom)}
+                onSelect={(date) => {
+                  handleDateFilterChange("dateFrom", date);
+                }}
+                placeholder="От"
+                className="w-[132px]"
+                align="end"
+              />
+              <DatePicker
+                date={toDateValue(appliedFilters.dateTo)}
+                onSelect={(date) => {
+                  handleDateFilterChange("dateTo", date);
+                }}
+                placeholder="До"
+                className="w-[132px]"
+                align="end"
+              />
+            </div>
             <TransactionsFilterButton
               appliedFiltersCount={appliedFiltersCount}
               disabled={isFiltersNavigationPending}
@@ -220,6 +328,29 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
         ) : null}
 
         <MobileExchangeRates workspaceId={workspaceId} />
+
+        {isCalendarInitialLoading ? (
+          <AnalyticsCalendarSkeleton />
+        ) : calendar ? (
+          <AnalyticsCalendar
+            calendar={calendar}
+            monthDate={calendarMonth}
+            appliedFilters={calendarBaseFilters}
+            onMonthChange={setCalendarMonth}
+            workspaceId={workspaceId}
+          />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Не удалось загрузить календарь</CardTitle>
+              <CardDescription>
+                {calendarData && typeof calendarData === "object" && "error" in calendarData
+                  ? calendarData.error
+                  : "Попробуйте обновить страницу."}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
 
         {isInitialLoading ? (
           <div className="space-y-6">
@@ -284,7 +415,7 @@ export function AnalyticsContent({ workspaceId }: AnalyticsContentProps) {
         onReset={handleResetFilters}
       />
 
-      {isFetching && analytics ? (
+      {(isFetching && analytics) || (isCalendarFetching && calendar) ? (
         <div
           role="status"
           className="fixed right-4 bottom-4 z-50 rounded-full border bg-background/95 p-3 text-muted-foreground shadow-lg backdrop-blur"

@@ -36,6 +36,8 @@ export const analyticsKeys = {
   all: (workspaceId: string) => ["analytics", workspaceId] as const,
   overview: (workspaceId: string, filters: TransactionFilters) =>
     ["analytics", workspaceId, "overview", filters] as const,
+  calendar: (workspaceId: string, filters: TransactionFilters) =>
+    ["analytics", workspaceId, "calendar", filters] as const,
 };
 
 export const debtKeys = {

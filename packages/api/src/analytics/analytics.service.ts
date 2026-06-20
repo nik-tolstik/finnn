@@ -153,6 +153,13 @@ type AnalyticsCategoryTotal = {
   totalInBaseCurrency: string;
   transactionCount: number;
 };
+type AnalyticsCalendarDayBucket = {
+  date: string;
+  incomeTotalInBaseCurrency: string;
+  expenseTotalInBaseCurrency: string;
+  netTotalInBaseCurrency: string;
+  transactionCount: number;
+};
 type AnalyticsDebtByPerson = {
   personName: string;
   lentTotalInBaseCurrency: string;
@@ -189,6 +196,14 @@ function endOfDay(date: Date) {
   const nextDate = new Date(date);
   nextDate.setHours(23, 59, 59, 999);
   return nextDate;
+}
+
+function startOfMonth(date: Date) {
+  return startOfDay(new Date(date.getFullYear(), date.getMonth(), 1));
+}
+
+function endOfMonth(date: Date) {
+  return endOfDay(new Date(date.getFullYear(), date.getMonth() + 1, 0));
 }
 
 function addDays(date: Date, days: number) {
@@ -281,6 +296,40 @@ function resolvePreviousAnalyticsDateRange(range: AnalyticsDateRange): Analytics
   };
 }
 
+function resolveAnalyticsCalendarDateRange(
+  filters: Pick<AnalyticsOverviewQueryDto, "dateFrom" | "dateTo">,
+  referenceDate = new Date()
+): AnalyticsDateRange {
+  const explicitStart = filters.dateFrom ? startOfDay(new Date(`${filters.dateFrom}T00:00:00`)) : null;
+  const explicitEnd = filters.dateTo ? endOfDay(new Date(`${filters.dateTo}T00:00:00`)) : null;
+
+  if (explicitStart && explicitEnd) {
+    const normalized = normalizeRange(explicitStart, explicitEnd);
+
+    return {
+      start: normalized.start,
+      end: normalized.end,
+      startDate: toDateString(normalized.start) ?? "",
+      endDate: toDateString(normalized.end) ?? "",
+      dayCount: differenceInCalendarDays(normalized.end, normalized.start) + 1,
+      isImplicit: false,
+    };
+  }
+
+  const monthDate = explicitStart ?? explicitEnd ?? referenceDate;
+  const start = startOfMonth(monthDate);
+  const end = endOfMonth(monthDate);
+
+  return {
+    start,
+    end,
+    startDate: toDateString(start) ?? "",
+    endDate: toDateString(end) ?? "",
+    dayCount: differenceInCalendarDays(end, start) + 1,
+    isImplicit: !explicitStart && !explicitEnd,
+  };
+}
+
 function applyAnalyticsDateRangeToFilters(
   filters: AnalyticsOverviewQueryDto,
   range: AnalyticsDateRange
@@ -302,6 +351,40 @@ function getPreviousPeriodPercentageChange(current: string, previous: string): n
 
 function buildInclusiveDateRangeDates(range: AnalyticsDateRange) {
   return Array.from({ length: range.dayCount }, (_value, index) => startOfDay(addDays(range.start, index)));
+}
+
+function buildCalendarDayBuckets(dates: Date[]) {
+  return new Map(
+    dates.map((date) => {
+      const key = toDateString(date) ?? "";
+
+      return [
+        key,
+        {
+          date: key,
+          incomeTotalInBaseCurrency: "0",
+          expenseTotalInBaseCurrency: "0",
+          netTotalInBaseCurrency: "0",
+          transactionCount: 0,
+        },
+      ];
+    })
+  );
+}
+
+function addCalendarCashImpact(
+  bucket: AnalyticsCalendarDayBucket,
+  amountInBaseCurrency: string,
+  direction: "income" | "expense"
+) {
+  if (direction === "income") {
+    bucket.incomeTotalInBaseCurrency = new Big(bucket.incomeTotalInBaseCurrency).plus(amountInBaseCurrency).toString();
+    bucket.netTotalInBaseCurrency = new Big(bucket.netTotalInBaseCurrency).plus(amountInBaseCurrency).toString();
+    return;
+  }
+
+  bucket.expenseTotalInBaseCurrency = new Big(bucket.expenseTotalInBaseCurrency).plus(amountInBaseCurrency).toString();
+  bucket.netTotalInBaseCurrency = new Big(bucket.netTotalInBaseCurrency).minus(amountInBaseCurrency).toString();
 }
 
 function buildCurrentRangeWhere(workspaceId: string, range: AnalyticsDateRange) {
@@ -478,6 +561,10 @@ function filterCombinedTransactions(transactions: CombinedTransaction[], filters
   });
 }
 
+function getCombinedTransactionDate(transaction: CombinedTransaction) {
+  return transaction.data.date;
+}
+
 function isPaymentTransaction(transaction: CombinedTransaction): transaction is {
   kind: "paymentTransaction";
   data: PaymentTransactionWithRelations;
@@ -578,6 +665,13 @@ function getDebtTransactionCashImpact(transaction: DebtTransactionWithRelations)
     amount,
     currency,
   };
+}
+
+function isDebtTransactionCashImpactIncome(transaction: DebtTransactionWithRelations) {
+  return (
+    (transaction.debt.type === DEBT_LENT && transaction.type === DEBT_TRANSACTION_CLOSED) ||
+    (transaction.debt.type === DEBT_BORROWED && transaction.type !== DEBT_TRANSACTION_CLOSED)
+  );
 }
 
 function getDebtMovementLabels(transaction: DebtTransactionWithRelations) {
@@ -1129,7 +1223,6 @@ export class AnalyticsService {
         transaction.date,
         rates
       );
-
       movementRows.push(buildDebtMovement(transaction, amountInBaseCurrency, baseCurrency));
     }
 
@@ -1256,6 +1349,149 @@ export class AnalyticsService {
       expenseCategories: expenseCategoryRows,
       debtsByPerson: debtRows,
       largestMovements,
+    };
+  }
+
+  async getAnalyticsCalendar(workspaceId: string, filters: AnalyticsOverviewQueryDto = {}) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { baseCurrency: true },
+    });
+
+    if (!workspace) {
+      throw new NotFoundException("Рабочий стол не найден");
+    }
+
+    const baseCurrency = workspace.baseCurrency;
+    const effectiveRange = resolveAnalyticsCalendarDateRange(filters);
+    const previousRange = resolvePreviousAnalyticsDateRange(effectiveRange);
+    const rangeFilters = applyAnalyticsDateRangeToFilters(filters, effectiveRange);
+    const includeDebtTransactions = shouldIncludeDebtTransactions(filters.transactionTypes);
+
+    const [currentPaymentTransactions, currentTransferTransactions, currentDebtTransactions] = await Promise.all([
+      this.prisma.paymentTransaction.findMany({
+        where: buildCurrentRangeWhere(workspaceId, effectiveRange),
+        include: PAYMENT_TRANSACTION_INCLUDE,
+        orderBy: { date: "desc" },
+      }),
+      this.prisma.transferTransaction.findMany({
+        where: buildCurrentRangeWhere(workspaceId, effectiveRange),
+        include: TRANSFER_TRANSACTION_INCLUDE,
+        orderBy: { date: "desc" },
+      }),
+      includeDebtTransactions
+        ? this.prisma.debtTransaction.findMany({
+            where: {
+              ...buildCurrentRangeWhere(workspaceId, effectiveRange),
+              debt: {
+                is: {
+                  workspaceId,
+                },
+              },
+            },
+            include: DEBT_TRANSACTION_INCLUDE,
+            orderBy: { date: "desc" },
+          })
+        : Promise.resolve([] as DebtTransactionWithRelations[]),
+    ]);
+
+    const currentCombined: CombinedTransaction[] = [
+      ...currentPaymentTransactions.map((transaction) => ({
+        kind: "paymentTransaction" as const,
+        data: transaction as PaymentTransactionWithRelations,
+      })),
+      ...currentTransferTransactions.map((transaction) => ({
+        kind: "transferTransaction" as const,
+        data: transaction as TransferTransactionWithRelations,
+      })),
+      ...currentDebtTransactions.map((transaction) => ({
+        kind: "debtTransaction" as const,
+        data: transaction as DebtTransactionWithRelations,
+      })),
+    ];
+    const filteredCurrentTransactions = filterCombinedTransactions(currentCombined, rangeFilters);
+    const filteredCurrentPayments = filteredCurrentTransactions
+      .filter(isPaymentTransaction)
+      .map((transaction) => transaction.data);
+    const filteredCurrentDebtTransactions = filteredCurrentTransactions
+      .filter(isDebtTransaction)
+      .map((transaction) => transaction.data);
+    const rateRequests: ExchangeRateRequest[] = [
+      ...filteredCurrentPayments.map((transaction) => ({
+        date: transaction.date,
+        fromCurrency: toCurrencyEnum(transaction.account.currency),
+        toCurrency: toCurrencyEnum(baseCurrency),
+      })),
+      ...filteredCurrentDebtTransactions.map((transaction) => {
+        const cashImpact = getDebtTransactionCashImpact(transaction);
+        return {
+          date: transaction.date,
+          fromCurrency: cashImpact.currency,
+          toCurrency: toCurrencyEnum(baseCurrency),
+        };
+      }),
+    ];
+    const rates = await this.loadExchangeRates(rateRequests);
+    const calendarDays = buildCalendarDayBuckets(buildInclusiveDateRangeDates(effectiveRange));
+
+    for (const transaction of filteredCurrentTransactions) {
+      const dayBucket = calendarDays.get(toDateString(getCombinedTransactionDate(transaction)) ?? "");
+
+      if (dayBucket) {
+        dayBucket.transactionCount += 1;
+      }
+    }
+
+    for (const transaction of filteredCurrentPayments) {
+      const amountInBaseCurrency = convertAmountWithRates(
+        transaction.amount,
+        toCurrencyEnum(transaction.account.currency),
+        toCurrencyEnum(baseCurrency),
+        transaction.date,
+        rates
+      );
+      const dayBucket = calendarDays.get(toDateString(transaction.date) ?? "");
+
+      if (dayBucket) {
+        addCalendarCashImpact(
+          dayBucket,
+          amountInBaseCurrency,
+          transaction.type === PAYMENT_INCOME ? "income" : "expense"
+        );
+      }
+    }
+
+    for (const transaction of filteredCurrentDebtTransactions) {
+      const cashImpact = getDebtTransactionCashImpact(transaction);
+      const amountInBaseCurrency = convertAmountWithRates(
+        cashImpact.amount,
+        cashImpact.currency,
+        toCurrencyEnum(baseCurrency),
+        transaction.date,
+        rates
+      );
+      const dayBucket = calendarDays.get(toDateString(transaction.date) ?? "");
+
+      if (dayBucket) {
+        addCalendarCashImpact(
+          dayBucket,
+          amountInBaseCurrency,
+          isDebtTransactionCashImpactIncome(transaction) ? "income" : "expense"
+        );
+      }
+    }
+
+    return {
+      baseCurrency,
+      effectiveRange: {
+        startDate: effectiveRange.startDate,
+        endDate: effectiveRange.endDate,
+        previousStartDate: previousRange.startDate,
+        previousEndDate: previousRange.endDate,
+        dayCount: effectiveRange.dayCount,
+        isImplicit: effectiveRange.isImplicit,
+      },
+      calendarDays: Array.from(calendarDays.values()),
     };
   }
 

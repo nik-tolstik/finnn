@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
-import type { AnalyticsOverviewResponseDto } from "@/shared/api/generated/model";
+import type { AnalyticsCalendarResponseDto, AnalyticsOverviewResponseDto } from "@/shared/api/generated/model";
 import { AnalyticsLargestMovementDtoKind } from "@/shared/api/generated/model";
 
-import { toAnalyticsErrorResult, toAnalyticsOverviewParams, toAnalyticsOverviewResult } from "./analytics.api";
+import {
+  toAnalyticsCalendarParams,
+  toAnalyticsCalendarResult,
+  toAnalyticsErrorResult,
+  toAnalyticsOverviewParams,
+  toAnalyticsOverviewResult,
+} from "./analytics.api";
 
 function createAnalyticsOverviewDto(
   overrides: Partial<AnalyticsOverviewResponseDto> = {}
@@ -105,6 +111,32 @@ function createAnalyticsOverviewDto(
   };
 }
 
+function createAnalyticsCalendarDto(
+  overrides: Partial<AnalyticsCalendarResponseDto> = {}
+): AnalyticsCalendarResponseDto {
+  return {
+    baseCurrency: "BYN",
+    effectiveRange: {
+      startDate: "2026-04-01",
+      endDate: "2026-04-30",
+      previousStartDate: "2026-03-02",
+      previousEndDate: "2026-03-31",
+      dayCount: 30,
+      isImplicit: false,
+    },
+    calendarDays: [
+      {
+        date: "2026-04-01",
+        incomeTotalInBaseCurrency: "300",
+        expenseTotalInBaseCurrency: "120",
+        netTotalInBaseCurrency: "180",
+        transactionCount: 5,
+      },
+    ],
+    ...overrides,
+  };
+}
+
 describe("analytics API helpers", () => {
   it("maps frontend filters to API query params", () => {
     expect(
@@ -137,6 +169,20 @@ describe("analytics API helpers", () => {
     expect(toAnalyticsOverviewParams({})).toBeUndefined();
   });
 
+  it("maps calendar filters to API query params", () => {
+    expect(
+      toAnalyticsCalendarParams({
+        dateFrom: "2026-04-01",
+        dateTo: "2026-04-30",
+        transactionTypes: [PaymentTransactionType.EXPENSE],
+      })
+    ).toEqual({
+      transactionTypes: [PaymentTransactionType.EXPENSE],
+      dateFrom: "2026-04-01",
+      dateTo: "2026-04-30",
+    });
+  });
+
   it("normalizes optional percentage changes and preserves overview arrays", () => {
     expect(toAnalyticsOverviewResult(createAnalyticsOverviewDto())).toEqual(
       expect.objectContaining({
@@ -152,6 +198,15 @@ describe("analytics API helpers", () => {
         expenseCategories: [expect.objectContaining({ id: "category-1" })],
         debtsByPerson: [expect.objectContaining({ personName: "Alex" })],
         largestMovements: [expect.objectContaining({ kind: "paymentTransaction" })],
+      })
+    );
+  });
+
+  it("preserves calendar response data", () => {
+    expect(toAnalyticsCalendarResult(createAnalyticsCalendarDto())).toEqual(
+      expect.objectContaining({
+        baseCurrency: "BYN",
+        calendarDays: [expect.objectContaining({ netTotalInBaseCurrency: "180" })],
       })
     );
   });

@@ -241,7 +241,7 @@ export function TransactionsFilterDrawer({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 md:hidden">
             <Label>Дата транзакции</Label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <DatePicker
