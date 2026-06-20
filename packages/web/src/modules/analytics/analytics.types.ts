@@ -22,6 +22,14 @@ export interface AnalyticsTimeSeriesPoint {
   expenseTotalInBaseCurrency: string;
 }
 
+export interface AnalyticsCalendarDay {
+  date: string;
+  incomeTotalInBaseCurrency: string;
+  expenseTotalInBaseCurrency: string;
+  netTotalInBaseCurrency: string;
+  transactionCount: number;
+}
+
 export interface AnalyticsCapitalTimeSeriesPoint {
   date: string;
   totalInBaseCurrency: string;
@@ -92,4 +100,17 @@ export interface AnalyticsOverviewResult {
   expenseCategories: AnalyticsCategoryTotal[];
   debtsByPerson: AnalyticsDebtByPerson[];
   largestMovements: AnalyticsLargestMovement[];
+}
+
+export interface AnalyticsCalendarResult {
+  baseCurrency: string;
+  effectiveRange: {
+    startDate: string;
+    endDate: string;
+    previousStartDate: string;
+    previousEndDate: string;
+    dayCount: number;
+    isImplicit: boolean;
+  };
+  calendarDays: AnalyticsCalendarDay[];
 }

@@ -67,6 +67,7 @@ Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishi
 - Keep protected app routes (`/dashboard`, `/analytics`, `/debts`) CSR-first: avoid server-side session/data dependencies in their layouts/pages, and use TanStack Query for cached server state.
 - Use the client auth gate for protected app routes; API auth guards remain the security boundary.
 - Do not cache financial documents, API responses, dashboard routes, or data responses in the service worker.
+- Do not use Tailwind's `tabular-nums` class. Use proportional typography for money and numeric UI, and solve alignment with layout instead.
 - For company/product brand logos, use `svgl.app` as the preferred source. Copy only the specific SVGs needed into local assets or small React SVG components; do not add an icon-pack dependency or runtime SVGL fetch for a handful of logos. If a brand has stricter sign-in/button guidelines, such as Google Sign-In, prefer the official approved sign-in mark over a heavier generic SVGL logo.
 
 ## Data And Infrastructure Notes

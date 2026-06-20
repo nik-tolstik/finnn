@@ -1,11 +1,11 @@
 import Big from "big.js";
-import { endOfMonth, startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
+import { addDays, endOfMonth, startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
 
 import type { TransactionViewFilters } from "@/modules/transactions/components/transactions-filters";
 import { toDateString } from "@/modules/transactions/components/transactions-filters/utils/date";
 import { formatMoney } from "@/shared/utils/money";
 
-import type { AnalyticsOverviewResult } from "./analytics.types";
+import type { AnalyticsCalendarResult, AnalyticsOverviewResult } from "./analytics.types";
 
 export type AnalyticsTone = "positive" | "negative" | "neutral";
 export type AnalyticsPeriodPreset = "7d" | "30d" | "90d" | "thisMonth" | "previousMonth";
@@ -54,6 +54,22 @@ export interface AnalyticsDebtViewRow {
   netExposureLabel: string;
   netExposureTone: AnalyticsTone;
   debtCount: number;
+}
+
+export interface AnalyticsCalendarCell {
+  date: string | null;
+  dayNumber: number | null;
+  incomeTotal: string;
+  incomeLabel: string;
+  expenseTotal: string;
+  expenseLabel: string;
+  hasActivity: boolean;
+  netTotal: string;
+  netLabel: string;
+  transactionCount: number;
+  isCurrentMonth: boolean;
+  isSelected: boolean;
+  isToday: boolean;
 }
 
 export interface AnalyticsOverviewViewModel {
@@ -157,6 +173,20 @@ export function applyAnalyticsPeriodPreset(
   };
 }
 
+export function getAnalyticsCalendarMonthRange(monthDate: Date): AnalyticsPeriodRange {
+  const monthStart = startOfMonth(monthDate);
+  const monthEnd = endOfMonth(monthDate);
+
+  return {
+    dateFrom: toDateString(monthStart) ?? "",
+    dateTo: toDateString(monthEnd) ?? "",
+  };
+}
+
+export function getAnalyticsCalendarMonthKey(monthDate: Date) {
+  return toDateString(startOfMonth(monthDate)) ?? "";
+}
+
 export function getActiveAnalyticsPeriodPreset(
   range: AnalyticsPeriodRange,
   referenceDate = new Date()
@@ -167,6 +197,57 @@ export function getActiveAnalyticsPeriodPreset(
   });
 
   return preset?.value ?? null;
+}
+
+export function buildAnalyticsCalendarCells({
+  calendar,
+  monthDate,
+  selectedDate,
+  today = new Date(),
+}: {
+  calendar: AnalyticsCalendarResult;
+  monthDate: Date;
+  selectedDate?: string | null;
+  today?: Date | null;
+}): AnalyticsCalendarCell[] {
+  const monthStart = startOfMonth(monthDate);
+  const firstWeekday = (monthStart.getDay() + 6) % 7;
+  const gridStart = subDays(monthStart, firstWeekday);
+  const gridDayCount = 42;
+  const daysByDate = new Map(calendar.calendarDays.map((day) => [day.date, day]));
+  const todayString = today ? toDateString(today) : null;
+
+  return Array.from({ length: gridDayCount }, (_value, index) => {
+    const date = addDays(gridStart, index);
+    const dateString = toDateString(date) ?? "";
+    const isCurrentMonth = date.getMonth() === monthStart.getMonth() && date.getFullYear() === monthStart.getFullYear();
+    const day = daysByDate.get(dateString) ?? {
+      date: dateString,
+      incomeTotalInBaseCurrency: "0",
+      expenseTotalInBaseCurrency: "0",
+      netTotalInBaseCurrency: "0",
+      transactionCount: 0,
+    };
+    const incomeAmount = toBig(day.incomeTotalInBaseCurrency);
+    const expenseAmount = toBig(day.expenseTotalInBaseCurrency);
+    const activityAmount = incomeAmount.abs().plus(expenseAmount.abs());
+
+    return {
+      date: dateString,
+      dayNumber: date.getDate(),
+      incomeTotal: day.incomeTotalInBaseCurrency,
+      incomeLabel: formatMoney(day.incomeTotalInBaseCurrency, calendar.baseCurrency),
+      expenseTotal: day.expenseTotalInBaseCurrency,
+      expenseLabel: formatMoney(day.expenseTotalInBaseCurrency, calendar.baseCurrency),
+      hasActivity: day.transactionCount > 0 || !activityAmount.eq(0),
+      netTotal: day.netTotalInBaseCurrency,
+      netLabel: formatMoney(day.netTotalInBaseCurrency, calendar.baseCurrency),
+      transactionCount: day.transactionCount,
+      isCurrentMonth,
+      isSelected: selectedDate === dateString,
+      isToday: todayString === dateString,
+    };
+  });
 }
 
 export function selectAnalyticsCapitalTicks(

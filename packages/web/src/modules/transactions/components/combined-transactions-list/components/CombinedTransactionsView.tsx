@@ -28,6 +28,7 @@ interface CombinedTransactionsViewProps {
   showLoadMore?: boolean;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  showDateHeaders?: boolean;
   onTransactionClick: (transaction: ActionableCombinedTransaction) => void;
   onDebtTransactionClick: (debtTransaction: DebtTransactionWithRelations) => void;
 }
@@ -38,6 +39,7 @@ export function CombinedTransactionsView({
   showLoadMore,
   onLoadMore,
   isLoadingMore,
+  showDateHeaders = true,
   onTransactionClick,
   onDebtTransactionClick,
 }: CombinedTransactionsViewProps) {
@@ -48,9 +50,11 @@ export function CombinedTransactionsView({
       ) : (
         groups.map((group) => (
           <div key={group.date.toISOString()} className="space-y-3">
-            <div className="sticky top-16 z-10 bg-background py-2">
-              <h3 className="text-sm font-medium text-muted-foreground">{formatDateHeader(group.date)}</h3>
-            </div>
+            {showDateHeaders ? (
+              <div className="sticky top-16 z-10 bg-background py-2">
+                <h3 className="text-sm font-medium text-muted-foreground">{formatDateHeader(group.date)}</h3>
+              </div>
+            ) : null}
             {group.items.map((item) => (
               <CombinedTransactionItem
                 key={getTransactionKey(item)}

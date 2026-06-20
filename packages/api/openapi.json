@@ -3959,6 +3959,164 @@
         "tags": ["Analytics"]
       }
     },
+    "/workspaces/{workspaceId}/analytics/calendar": {
+      "get": {
+        "operationId": "getAnalyticsCalendar",
+        "parameters": [
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "description",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "categoryIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "transactionTypes",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "userIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "amountTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "amountFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsCalendarResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get workspace analytics calendar",
+        "tags": ["Analytics"]
+      }
+    },
     "/exchange-rates": {
       "get": {
         "operationId": "getLatestExchangeRates",
@@ -6751,6 +6909,53 @@
           "debtsByPerson",
           "largestMovements"
         ]
+      },
+      "AnalyticsCalendarDayDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "incomeTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "expenseTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "netTotalInBaseCurrency": {
+            "type": "string"
+          },
+          "transactionCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "incomeTotalInBaseCurrency",
+          "expenseTotalInBaseCurrency",
+          "netTotalInBaseCurrency",
+          "transactionCount"
+        ]
+      },
+      "AnalyticsCalendarResponseDto": {
+        "type": "object",
+        "properties": {
+          "baseCurrency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "effectiveRange": {
+            "$ref": "#/components/schemas/AnalyticsEffectiveRangeDto"
+          },
+          "calendarDays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsCalendarDayDto"
+            }
+          }
+        },
+        "required": ["baseCurrency", "effectiveRange", "calendarDays"]
       },
       "ExchangeRateQueryDto": {
         "type": "object",

@@ -1,12 +1,14 @@
 import type {
+  AnalyticsCalendarResponseDto,
   AnalyticsOverviewResponseDto,
   AnalyticsSummaryMetricDto,
+  GetAnalyticsCalendarParams,
   GetAnalyticsOverviewParams,
 } from "@/shared/api/generated/model";
 import { fail } from "@/shared/lib/action-result";
 
 import type { TransactionViewFilters } from "../transactions/components/transactions-filters";
-import type { AnalyticsOverviewResult, AnalyticsSummaryMetric } from "./analytics.types";
+import type { AnalyticsCalendarResult, AnalyticsOverviewResult, AnalyticsSummaryMetric } from "./analytics.types";
 
 export function toAnalyticsOverviewParams(filters?: TransactionViewFilters): GetAnalyticsOverviewParams | undefined {
   if (!filters || Object.values(filters).every((value) => value === undefined)) {
@@ -24,6 +26,10 @@ export function toAnalyticsOverviewParams(filters?: TransactionViewFilters): Get
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
   };
+}
+
+export function toAnalyticsCalendarParams(filters?: TransactionViewFilters): GetAnalyticsCalendarParams | undefined {
+  return toAnalyticsOverviewParams(filters) as GetAnalyticsCalendarParams | undefined;
 }
 
 function toSummaryMetric(metric: AnalyticsSummaryMetricDto): AnalyticsSummaryMetric {
@@ -51,6 +57,10 @@ export function toAnalyticsOverviewResult(response: AnalyticsOverviewResponseDto
       kind: movement.kind,
     })),
   };
+}
+
+export function toAnalyticsCalendarResult(response: AnalyticsCalendarResponseDto): AnalyticsCalendarResult {
+  return response;
 }
 
 export function toAnalyticsErrorResult(error: unknown): { error: string } {

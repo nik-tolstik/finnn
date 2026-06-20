@@ -227,7 +227,7 @@ export function DashboardExchangeRatesCards({
             <CurrencyFlag code={rate.flagCode} label={rate.flagLabel} />
             <span className="font-medium text-foreground">{rate.currency}</span>
           </div>
-          <p className="text-base font-semibold tabular-nums">{rate.value}</p>
+          <p className="text-base font-semibold">{rate.value}</p>
         </div>
       ))}
     </div>
