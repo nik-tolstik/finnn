@@ -1,32 +1,14 @@
 import { z } from "zod";
 
 import { DebtType } from "@/modules/debts/debt.constants";
+import { optionalPositiveMoneyString, requiredPositiveMoneyString } from "@/shared/lib/validations/money";
 
 export const createDebtSchema = z
   .object({
     type: z.nativeEnum(DebtType),
     personName: z.string().min(1, "Имя обязательно"),
-    amount: z
-      .string()
-      .min(1, "Сумма обязательна")
-      .refine(
-        (val) => {
-          const num = parseFloat(val);
-          return !Number.isNaN(num) && num > 0;
-        },
-        { message: "Сумма должна быть больше 0" }
-      ),
-    toAmount: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const num = parseFloat(val);
-          return !Number.isNaN(num) && num > 0;
-        },
-        { message: "Сумма должна быть больше 0" }
-      ),
+    amount: requiredPositiveMoneyString("Сумма обязательна"),
+    toAmount: optionalPositiveMoneyString(),
     date: z.date(),
     useAccount: z.boolean(),
     accountId: z.string().optional(),
@@ -47,38 +29,9 @@ export const createDebtSchema = z
 
 export const closeDebtSchema = z
   .object({
-    amount: z
-      .string()
-      .min(1, "Сумма обязательна")
-      .refine(
-        (val) => {
-          const num = parseFloat(val);
-          return !Number.isNaN(num) && num > 0;
-        },
-        { message: "Сумма должна быть больше 0" }
-      ),
-    toAmount: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const num = parseFloat(val);
-          return !Number.isNaN(num) && num > 0;
-        },
-        { message: "Сумма должна быть больше 0" }
-      ),
-    paymentAmount: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const num = parseFloat(val);
-          return !Number.isNaN(num) && num > 0;
-        },
-        { message: "Сумма должна быть больше 0" }
-      ),
+    amount: requiredPositiveMoneyString("Сумма обязательна"),
+    toAmount: optionalPositiveMoneyString(),
+    paymentAmount: optionalPositiveMoneyString(),
     categoryId: z.string().optional(),
     closeEarly: z.boolean().optional(),
     accountId: z.string().optional(),
@@ -98,79 +51,22 @@ export const closeDebtSchema = z
   );
 
 export const addToDebtSchema = z.object({
-  amount: z
-    .string()
-    .min(1, "Сумма обязательна")
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
-  toAmount: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val) return true;
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
+  amount: requiredPositiveMoneyString("Сумма обязательна"),
+  toAmount: optionalPositiveMoneyString(),
   useAccount: z.boolean(),
   accountId: z.string().optional(),
 });
 
 export const updateDebtSchema = z.object({
   personName: z.string().min(1, "Имя обязательно"),
-  amount: z
-    .string()
-    .min(1, "Сумма обязательна")
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
-  toAmount: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val) return true;
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
+  amount: requiredPositiveMoneyString("Сумма обязательна"),
+  toAmount: optionalPositiveMoneyString(),
   date: z.date(),
 });
 
 export const updateDebtTransactionSchema = z.object({
-  amount: z
-    .string()
-    .min(1, "Сумма обязательна")
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
-  toAmount: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val) return true;
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
+  amount: requiredPositiveMoneyString("Сумма обязательна"),
+  toAmount: optionalPositiveMoneyString(),
   accountId: z.string().optional(),
   date: z.date(),
 });

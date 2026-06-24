@@ -26,6 +26,7 @@ import type {
   UpdatePaymentTransactionInput,
   UpdateTransferTransactionInput,
 } from "@/shared/lib/validations/transaction";
+import { normalizeMoneyString, normalizeOptionalMoneyString } from "@/shared/utils/money";
 
 import type { DebtTransactionWithRelations } from "../debts/debt.types";
 import type {
@@ -134,7 +135,7 @@ function toUiCombinedTransaction(
 function toCreatePaymentTransactionDto(input: CreatePaymentTransactionInput): CreatePaymentTransactionDto {
   return {
     accountId: input.accountId,
-    amount: input.amount,
+    amount: normalizeMoneyString(input.amount),
     type: input.type as CreatePaymentTransactionDto["type"],
     description: input.description,
     date: input.date.toISOString(),
@@ -147,8 +148,8 @@ function toCreateTransferTransactionDto(input: CreateTransferTransactionInput): 
   return {
     fromAccountId: input.fromAccountId,
     toAccountId: input.toAccountId,
-    amount: input.amount,
-    toAmount: input.toAmount,
+    amount: normalizeMoneyString(input.amount),
+    toAmount: normalizeMoneyString(input.toAmount),
     description: input.description,
     date: input.date.toISOString(),
   };
@@ -157,7 +158,7 @@ function toCreateTransferTransactionDto(input: CreateTransferTransactionInput): 
 function toUpdatePaymentTransactionDto(input: UpdatePaymentTransactionInput): UpdatePaymentTransactionDto {
   return {
     accountId: input.accountId,
-    amount: input.amount,
+    amount: normalizeOptionalMoneyString(input.amount),
     description: input.description,
     date: input.date?.toISOString(),
     categoryId: input.categoryId,
@@ -168,8 +169,8 @@ function toUpdateTransferTransactionDto(input: UpdateTransferTransactionInput): 
   return {
     fromAccountId: input.fromAccountId,
     toAccountId: input.toAccountId,
-    amount: input.amount,
-    toAmount: input.toAmount,
+    amount: normalizeMoneyString(input.amount),
+    toAmount: normalizeMoneyString(input.toAmount),
     description: input.description,
     date: input.date.toISOString(),
   };

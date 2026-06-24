@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const createApiScheduledPaymentMock = vi.fn();
 const updateApiScheduledPaymentMock = vi.fn();
 
 vi.mock("@/shared/api/generated/scheduled-payments/scheduled-payments", () => ({
-  createScheduledPayment: vi.fn(),
+  createScheduledPayment: createApiScheduledPaymentMock,
   deleteScheduledPayment: vi.fn(),
   getScheduledPaymentHistory: vi.fn(),
   listScheduledPayments: vi.fn(),
@@ -89,6 +90,34 @@ describe("scheduled-payment.api", () => {
         nextDueAt: nextDueAt.toISOString(),
         notes: null,
         scheduleUnit: null,
+      }),
+      undefined
+    );
+  });
+
+  it("normalizes spaced localized create amounts before calling the API", async () => {
+    createApiScheduledPaymentMock.mockResolvedValue({
+      scheduledPayment: createScheduledPaymentDto({ amount: "2276.37" }),
+    });
+
+    const { createScheduledPayment } = await import("./scheduled-payment.api");
+    const nextDueAt = new Date("2026-06-22T09:00:00.000Z");
+
+    await createScheduledPayment("workspace-1", {
+      amount: "2 276,37",
+      amountMode: "fixed",
+      currency: "BYN",
+      name: "Internet",
+      nextDueAt,
+      scheduleKind: "weekly",
+      scheduleInterval: 1,
+    });
+
+    expect(createApiScheduledPaymentMock).toHaveBeenCalledWith(
+      "workspace-1",
+      expect.objectContaining({
+        amount: "2276.37",
+        nextDueAt: nextDueAt.toISOString(),
       }),
       undefined
     );

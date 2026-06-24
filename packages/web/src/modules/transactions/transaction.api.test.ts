@@ -232,7 +232,7 @@ describe("transaction.api", () => {
         "workspace-1",
         {
           accountId: "account-1",
-          amount: "125.50",
+          amount: "2 276,37",
           type: PaymentTransactionType.EXPENSE,
           description: "Groceries",
           date: new Date("2026-04-07T12:00:00.000Z"),
@@ -248,7 +248,7 @@ describe("transaction.api", () => {
       updatePaymentTransaction(
         "payment-1",
         {
-          amount: "99",
+          amount: "1\u00a0099,50",
           date: new Date("2026-04-08T12:00:00.000Z"),
           categoryId: null,
         },
@@ -261,6 +261,7 @@ describe("transaction.api", () => {
     expect(createApiPaymentTransactionMock).toHaveBeenCalledWith(
       "workspace-1",
       expect.objectContaining({
+        amount: "2276.37",
         date: "2026-04-07T12:00:00.000Z",
         newCategory: { name: "Food", type: CategoryType.EXPENSE },
       }),
@@ -269,6 +270,7 @@ describe("transaction.api", () => {
     expect(updateApiPaymentTransactionMock).toHaveBeenCalledWith(
       "payment-1",
       expect.objectContaining({
+        amount: "1099.50",
         date: "2026-04-08T12:00:00.000Z",
         categoryId: null,
       }),
@@ -299,8 +301,8 @@ describe("transaction.api", () => {
         {
           fromAccountId: "account-1",
           toAccountId: "account-2",
-          amount: "50",
-          toAmount: "49.50",
+          amount: "2 000,25",
+          toAmount: "1 999,50",
           description: "Move cash",
           date: new Date("2026-04-09T12:00:00.000Z"),
         },
@@ -315,8 +317,8 @@ describe("transaction.api", () => {
         {
           fromAccountId: "account-1",
           toAccountId: "account-2",
-          amount: "60",
-          toAmount: "59.50",
+          amount: "3\u00a0000,25",
+          toAmount: "2\u00a0999,75",
           date: new Date("2026-04-10T12:00:00.000Z"),
         },
         requestOptions
@@ -327,12 +329,20 @@ describe("transaction.api", () => {
 
     expect(createApiTransferTransactionMock).toHaveBeenCalledWith(
       "workspace-1",
-      expect.objectContaining({ date: "2026-04-09T12:00:00.000Z" }),
+      expect.objectContaining({
+        amount: "2000.25",
+        toAmount: "1999.50",
+        date: "2026-04-09T12:00:00.000Z",
+      }),
       requestOptions
     );
     expect(updateApiTransferTransactionMock).toHaveBeenCalledWith(
       "transfer-1",
-      expect.objectContaining({ date: "2026-04-10T12:00:00.000Z" }),
+      expect.objectContaining({
+        amount: "3000.25",
+        toAmount: "2999.75",
+        date: "2026-04-10T12:00:00.000Z",
+      }),
       requestOptions
     );
     expect(deleteApiTransferTransactionMock).toHaveBeenCalledWith("transfer-1", requestOptions);
