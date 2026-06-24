@@ -16,6 +16,9 @@ Main models:
 - `TransferTransaction` - transfer between two accounts with source and destination amounts.
 - `Debt` - open or closed debt with person, type, amount, remaining amount, and currency.
 - `DebtTransaction` - operation applied to a debt, optionally linked to an account.
+- `ScheduledPayment` - planned one-time or recurring expense obligation with due date, reminder settings, and lifecycle state.
+- `ScheduledPaymentRecord` - paid or skipped occurrence history for a scheduled payment.
+- `ScheduledPaymentReminderDelivery` - idempotent per-channel reminder delivery log.
 - `WorkspaceInvite` - tokenized invite to a workspace.
 - `PendingRegistration` - pre-verification registration state.
 - `PendingEmailVerification` - verification state for an existing user adding or changing email.
@@ -162,6 +165,23 @@ Debt types are defined in `packages/web/src/modules/debts/debt.constants.ts` for
 Debts are not linked to a specific account. Account usage is recorded on individual debt transactions so a debt can be created, increased, and closed through different accounts or without account movement. `DebtTransaction.amount` is always denominated in the debt currency. `DebtTransaction.toAmount` is the account-side amount when the selected account currency differs from the debt currency, and account balance deltas use `toAmount` when it is present.
 
 Debt mutation logic is intentionally centralized in `packages/api/src/debts/debts.service.ts` because several operations need coordinated account and debt updates.
+
+## Scheduled Payments
+
+Scheduled payments track planned expense obligations separately from historical `PaymentTransaction` records.
+
+Important invariants:
+
+- UI display state is computed from `nextDueAt`, timezone, and the latest record for the current occurrence.
+- Amounts remain strings. `amountMode = fixed` uses `amount`; `amountMode = range` uses `amountMin` and `amountMax`; `amountMode = unknown` does not require an amount.
+- Optional `accountId` and `categoryId` must belong to the same workspace; category must be an expense category.
+- Optional `assignedUserId` must be the workspace owner or member.
+- Paid and skipped occurrence history lives in `ScheduledPaymentRecord`.
+- Reminder idempotency is enforced by the unique key on `(scheduledPaymentId, dueAt, daysBefore, channel)`.
+
+Mark-paid may create an expense transaction through `TransactionsService`; the scheduled payment record then stores the resulting `transactionId`. One-time payments remain visible as paid or skipped after pay/skip. Recurring payments advance `nextDueAt`; month-end recurrence clamps to the last valid day of the target month. Manual deletion hard-deletes the scheduled payment and its scheduled-payment history/reminder delivery records.
+
+Reminder recipients resolve to the assigned user first and the creator otherwise. Email reminders require a verified email. Telegram reminders require a linked Telegram bot preference with `telegramChatId`.
 
 ## Exchange Rates
 

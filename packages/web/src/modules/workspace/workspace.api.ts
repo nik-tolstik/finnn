@@ -50,6 +50,10 @@ function toWorkspaceMember(member: WorkspaceMemberDto) {
     name: member.name,
     email: member.email,
     image: member.image ?? null,
+    notificationChannels: {
+      email: member.notificationChannels.email,
+      telegram: member.notificationChannels.telegram,
+    },
   };
 }
 

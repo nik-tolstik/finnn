@@ -41,7 +41,13 @@ const WORKSPACE_SUMMARY_INCLUDE = {
       id: true,
       name: true,
       email: true,
+      emailVerified: true,
       image: true,
+      telegramBotPreference: {
+        select: {
+          telegramChatId: true,
+        },
+      },
     },
   },
   _count: {
@@ -60,7 +66,13 @@ const WORKSPACE_DETAIL_INCLUDE = {
           id: true,
           name: true,
           email: true,
+          emailVerified: true,
           image: true,
+          telegramBotPreference: {
+            select: {
+              telegramChatId: true,
+            },
+          },
         },
       },
     },
@@ -68,7 +80,9 @@ const WORKSPACE_DETAIL_INCLUDE = {
 } satisfies Prisma.WorkspaceInclude;
 
 type WorkspaceWithSummary = Workspace & {
-  owner: Pick<User, "id" | "name" | "email" | "image">;
+  owner: Pick<User, "id" | "name" | "email" | "emailVerified" | "image"> & {
+    telegramBotPreference: { telegramChatId: string | null } | null;
+  };
   _count: {
     members: number;
   };
@@ -77,7 +91,9 @@ type WorkspaceWithSummary = Workspace & {
 type WorkspaceWithDetail = WorkspaceWithSummary & {
   members: Array<{
     role: string;
-    user: Pick<User, "id" | "name" | "email" | "image">;
+    user: Pick<User, "id" | "name" | "email" | "emailVerified" | "image"> & {
+      telegramBotPreference: { telegramChatId: string | null } | null;
+    };
   }>;
 };
 
@@ -95,7 +111,12 @@ function toWorkspaceSummary(workspace: WorkspaceWithSummary) {
     baseCurrency: workspace.baseCurrency,
     ownerId: workspace.ownerId,
     membersCount: workspace._count.members,
-    owner: workspace.owner,
+    owner: {
+      id: workspace.owner.id,
+      name: workspace.owner.name,
+      email: workspace.owner.email,
+      image: workspace.owner.image,
+    },
   };
 }
 
@@ -106,6 +127,10 @@ function toWorkspaceMember(member: WorkspaceWithDetail["members"][number]): Work
     email: member.user.email,
     image: member.user.image,
     role: member.role,
+    notificationChannels: {
+      email: Boolean(member.user.email && member.user.emailVerified),
+      telegram: Boolean(member.user.telegramBotPreference?.telegramChatId),
+    },
   };
 }
 
@@ -117,6 +142,10 @@ function toWorkspaceDetail(workspace: WorkspaceWithDetail) {
     email: workspace.owner.email,
     image: workspace.owner.image,
     role: WORKSPACE_ROLES.OWNER,
+    notificationChannels: {
+      email: Boolean(workspace.owner.email && workspace.owner.emailVerified),
+      telegram: Boolean(workspace.owner.telegramBotPreference?.telegramChatId),
+    },
   });
 
   for (const member of workspace.members) {

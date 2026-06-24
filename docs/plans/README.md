@@ -36,7 +36,8 @@ Include:
 - the goal;
 - explicit requirements;
 - non-goals or constraints;
-- any known commands, branches, links, screenshots, or environment details.
+- the dedicated implementation branch to create or use for the task;
+- any known commands, links, screenshots, or environment details.
 
 Do not turn `prompt.md` into the implementation plan. It should remain the stable input that the plan was based on.
 
@@ -109,6 +110,7 @@ Do not rewrite old log entries except to fix obvious typos. Add a new entry when
 Before implementing from a plan, confirm:
 
 - the branch is correct;
+- the prompt names a dedicated implementation branch;
 - the plan describes the expected user-facing behavior;
 - non-goals are clear;
 - data model and API changes are called out;

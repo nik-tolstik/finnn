@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { WorkspaceMemberDtoRole } from "./workspaceMemberDtoRole";
+import type { WorkspaceMemberNotificationChannelsDto } from "./workspaceMemberNotificationChannelsDto";
 
 export interface WorkspaceMemberDto {
   id: string;
@@ -16,4 +17,5 @@ export interface WorkspaceMemberDto {
   /** @nullable */
   image?: string | null;
   role: WorkspaceMemberDtoRole;
+  notificationChannels: WorkspaceMemberNotificationChannelsDto;
 }

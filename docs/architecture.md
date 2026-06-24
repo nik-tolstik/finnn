@@ -43,6 +43,7 @@ Frontend feature modules live under `packages/web/src/modules`.
 - `categories` - income/expense category CRUD and ordering.
 - `currency` - exchange-rate UI and generated API client usage.
 - `debts` - debt creation, closing, additions, edits, debt transactions, debt UI.
+- `scheduled-payments` - planned payment adapters, status/amount helpers, create and mark-paid UI.
 - `transactions` - payment transactions, transfers, combined transaction feed, filtering.
 - `workspace` - workspace CRUD, members, roles, invites, workspace selection.
 
@@ -59,6 +60,8 @@ module/
 Not every module has every file; follow the local pattern already used by that module.
 
 Backend domain modules live under `packages/api/src`. They own controllers, DTOs, guards, Prisma access, email, cron, OpenAPI metadata, and finance transaction rules.
+
+`packages/api/src/scheduled-payments` owns planned payment obligations. It exposes workspace-scoped CRUD, pay, skip, snooze, hard delete, and history endpoints plus `GET /cron/scheduled-payment-reminders`. Reminder delivery reuses `EmailService`, `TelegramBotClient`, and the existing `CRON_SECRET` bearer pattern.
 
 ## API Adapter Pattern
 
@@ -126,11 +129,11 @@ Authentication is owned by `packages/api/src/auth`:
 
 `packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `packages/web/src/shared/lib/api-session.ts`, which forwards the API session cookie to the backend session endpoint.
 
-Protected app pages (`/dashboard`, `/analytics`, and `/debts`) use a CSR-first shell. The client `DashboardAuthGate`
+Protected app pages (`/dashboard`, `/analytics`, `/debts`, and `/payments`) use a CSR-first shell. The client `DashboardAuthGate`
 confirms the real API session through `GET /auth/session`, shows a global loading screen while the check is pending,
 redirects unauthenticated users to `/login`, and redirects authenticated users without verified email to
 `/email-required`. API auth guards remain the security boundary for private data and workspace access. Workspace,
-account, category, transaction, debt, analytics, and invite-acceptance endpoints run `EmailVerifiedGuard` after
+account, category, transaction, debt, scheduled-payment, analytics, and invite-acceptance endpoints run `EmailVerifiedGuard` after
 `AuthGuard` and return `EMAIL_VERIFICATION_REQUIRED` when the service precondition is not met.
 
 Telegram Mini Apps reuse the same protected routes and UI. `packages/web/src/modules/telegram-mini` runs globally under
@@ -150,6 +153,9 @@ messages; the API creates an `AiFinanceDraft`, asks for missing workspace/accoun
 preview, and commits only after an explicit callback confirmation. Draft payloads are intermediate JSON and expire by
 `TELEGRAM_BOT_DRAFT_TTL_SECONDS`; committed financial records are still created through domain services such as
 `TransactionsService`.
+
+Scheduled payment reminder callbacks also enter through the same Telegram webhook. Callback payloads use short
+`sp:*` values and update the scheduled payment directly for paid, snooze, and skip actions.
 
 Google uses the same backend-owned redirect model. Existing verified email/password users are auto-linked only when
 Google returns a verified email that matches the already verified Finnn email. Google access and refresh tokens are not
@@ -178,6 +184,8 @@ Reusable UI primitives live in `packages/web/src/shared/ui`.
 Reusable composed components live in `packages/web/src/shared/components`.
 
 Prefer existing primitives for dialogs, sheets, selects, popovers, buttons, cards, tables, forms, and date controls. Feature-specific components should stay inside the relevant `packages/web/src/modules/*/components` directory.
+
+App-facing forms should use the shared form controls instead of native browser controls: `shared/ui/select` for dropdowns, `DatePicker` or `DateTimePicker` for dates, `AccountSelector`/`SelectAccountDialog` for account selection, `UserDisplay`/`UserAvatar` for user choices, and `CURRENCY_OPTIONS` for currency choices.
 
 ## Invalidation
 
