@@ -1,8 +1,8 @@
 "use client";
 
 import { ru } from "date-fns/locale";
-import { Bell, CalendarClock, Check, ChevronRight, Clock3, Mail, Repeat2, Send } from "lucide-react";
-import type { FormEvent, ReactNode, Ref } from "react";
+import { Bell, CalendarClock, ChevronRight, Clock3, Mail, Repeat2, Send } from "lucide-react";
+import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import type { Account } from "@/modules/accounts/account.types";
@@ -14,6 +14,7 @@ import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useSession } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
 import { Calendar } from "@/shared/ui/calendar";
+import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -62,6 +63,10 @@ const SCHEDULE_KIND_OPTIONS = [
   { value: "custom", label: "Интервал" },
 ] satisfies SelectOption<ScheduledPaymentFormInput["scheduleKind"]>[];
 
+const REPEAT_SELECT_OPTIONS = SCHEDULE_KIND_OPTIONS.map((option) =>
+  option.value === "one_time" ? { ...option, label: "Не повторять" } : option
+);
+
 const SCHEDULE_UNIT_OPTIONS = [
   { value: "days", label: "Дни" },
   { value: "weeks", label: "Недели" },
@@ -83,113 +88,6 @@ function formatScheduleDate(date: Date) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
-}
-
-function formatTimeInput(date: Date) {
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  return `${hours}:${minutes}`;
-}
-
-function setTimeInput(date: Date, value: string) {
-  const [hours = 0, minutes = 0] = value.split(":").map(Number);
-  const nextDate = new Date(date);
-  nextDate.setHours(hours, minutes, 0, 0);
-  return nextDate;
-}
-
-const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => hour);
-const DEFAULT_MINUTE_OPTIONS = Array.from({ length: 12 }, (_, index) => index * 5);
-
-function getMinuteOptions(date: Date) {
-  const minute = date.getMinutes();
-  if (DEFAULT_MINUTE_OPTIONS.includes(minute)) return DEFAULT_MINUTE_OPTIONS;
-  return [...DEFAULT_MINUTE_OPTIONS, minute].sort((a, b) => a - b);
-}
-
-function TimeOptionButton({
-  active,
-  children,
-  onClick,
-}: {
-  active: boolean;
-  children: ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "h-8 rounded-md px-2 text-sm transition-colors",
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function DesktopTimePicker({ date, onChange }: { date: Date; onChange: (date: Date) => void }) {
-  const [open, setOpen] = useState(false);
-  const minuteOptions = useMemo(() => getMinuteOptions(date), [date]);
-
-  const updateTime = (hours: number, minutes: number) => {
-    const nextDate = new Date(date);
-    nextDate.setHours(hours, minutes, 0, 0);
-    onChange(nextDate);
-  };
-
-  return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      placement="bottom-end"
-      className="w-[188px] rounded-xl p-2"
-      trigger={({ ref, ...triggerProps }) => (
-        <Button
-          ref={ref}
-          type="button"
-          variant="outline"
-          className="hidden h-8 w-[92px] px-2 md:inline-flex"
-          {...triggerProps}
-        >
-          {formatTimeInput(date)}
-        </Button>
-      )}
-    >
-      <div className="grid grid-cols-[1fr_1fr] gap-2">
-        <div>
-          <div className="mb-1 px-1 text-xs text-muted-foreground">Часы</div>
-          <div className="grid max-h-48 grid-cols-2 gap-1 overflow-y-auto pr-1">
-            {HOUR_OPTIONS.map((hour) => (
-              <TimeOptionButton
-                active={date.getHours() === hour}
-                key={hour}
-                onClick={() => updateTime(hour, date.getMinutes())}
-              >
-                {hour.toString().padStart(2, "0")}
-              </TimeOptionButton>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="mb-1 px-1 text-xs text-muted-foreground">Минуты</div>
-          <div className="grid max-h-48 grid-cols-2 gap-1 overflow-y-auto pr-1">
-            {minuteOptions.map((minute) => (
-              <TimeOptionButton
-                active={date.getMinutes() === minute}
-                key={minute}
-                onClick={() => updateTime(date.getHours(), minute)}
-              >
-                {minute.toString().padStart(2, "0")}
-              </TimeOptionButton>
-            ))}
-          </div>
-        </div>
-      </div>
-    </Popover>
-  );
 }
 
 function getReminderLabel(day: number) {
@@ -260,7 +158,6 @@ function ScheduleSettingsDropdown({
   const [draftScheduleKind, setDraftScheduleKind] = useState(scheduleKind);
   const [draftScheduleInterval, setDraftScheduleInterval] = useState(scheduleInterval);
   const [draftScheduleUnit, setDraftScheduleUnit] = useState(scheduleUnit);
-  const [repeatOpen, setRepeatOpen] = useState(false);
   const emailDisabledReason = notificationChannels.email ? null : "У ответственного нет подтверждённого email";
   const telegramDisabledReason = notificationChannels.telegram
     ? null
@@ -269,7 +166,6 @@ function ScheduleSettingsDropdown({
   useEffect(() => {
     if (!open) return;
 
-    setRepeatOpen(false);
     setDraftDate(nextDueAt);
     setDraftNotifyEmail(notificationChannels.email && notifyEmail);
     setDraftNotifyTelegram(notificationChannels.telegram && notifyTelegram);
@@ -312,91 +208,7 @@ function ScheduleSettingsDropdown({
 
   const handleCancel = () => {
     setOpen(false);
-    setRepeatOpen(false);
   };
-
-  const handleScheduleKindSelect = (value: ScheduleKind) => {
-    setDraftScheduleKind(value);
-    if (isMobile && value !== "custom") {
-      setRepeatOpen(false);
-    }
-  };
-
-  const handleScheduleUnitSelect = (value: ScheduleUnit) => {
-    setDraftScheduleUnit(value);
-    if (isMobile) {
-      setRepeatOpen(false);
-    }
-  };
-
-  const repeatContent = (
-    <>
-      <div className="space-y-1">
-        {SCHEDULE_KIND_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => handleScheduleKindSelect(option.value)}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-lg p-3 text-left text-sm transition-colors hover:bg-accent focus:outline-none",
-              draftScheduleKind === option.value && "bg-accent"
-            )}
-          >
-            <span className="min-w-0 flex-1 truncate">
-              {option.value === "one_time" ? "Не повторять" : option.label}
-            </span>
-            {draftScheduleKind === option.value && <Check className="size-4 shrink-0 text-primary" />}
-          </button>
-        ))}
-      </div>
-
-      {draftScheduleKind === "custom" && (
-        <div className="mt-3 space-y-2">
-          <Input
-            min={1}
-            type="number"
-            value={draftScheduleInterval}
-            onChange={(event) => setDraftScheduleInterval(Number(event.target.value) || 1)}
-            className="h-9"
-          />
-          <div className="space-y-1">
-            {SCHEDULE_UNIT_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleScheduleUnitSelect(option.value)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg p-3 text-left text-sm transition-colors hover:bg-accent focus:outline-none",
-                  draftScheduleUnit === option.value && "bg-accent"
-                )}
-              >
-                <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                {draftScheduleUnit === option.value && <Check className="size-4 shrink-0 text-primary" />}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </>
-  );
-
-  const repeatTrigger = (
-    <button
-      type="button"
-      className="flex w-full items-center justify-between gap-3 py-2 text-left text-sm"
-      onClick={() => {
-        if (isMobile) {
-          setRepeatOpen(true);
-        }
-      }}
-    >
-      <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
-        <Repeat2 className="size-4" />
-        {getRepeatLabel(draftScheduleKind, draftScheduleInterval, draftScheduleUnit)}
-      </span>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-    </button>
-  );
 
   const settingsBody = (
     <div className={cn("overflow-hidden bg-background", isMobile ? "rounded-none" : "rounded-2xl")}>
@@ -419,13 +231,13 @@ function ScheduleSettingsDropdown({
             <Clock3 className="size-4" />
             Срок исполнения
           </span>
-          <Input
-            type="time"
-            value={formatTimeInput(draftDate)}
-            onChange={(event) => setDraftDate(setTimeInput(draftDate, event.target.value))}
-            className="h-8 w-[92px] px-2 md:hidden"
+          <DateTimePicker
+            date={draftDate}
+            onSelect={(date) => {
+              if (date) setDraftDate(date);
+            }}
+            showDate={false}
           />
-          <DesktopTimePicker date={draftDate} onChange={setDraftDate} />
         </div>
 
         <div className="space-y-2 py-2">
@@ -506,43 +318,43 @@ function ScheduleSettingsDropdown({
           </div>
         </div>
 
-        {isMobile ? (
-          <>
-            {repeatTrigger}
-            <Dialog open={repeatOpen} onOpenChange={setRepeatOpen}>
-              <DialogWindow mobilePosition="bottom" className="max-h-[80dvh] gap-0 rounded-t-lg p-0">
-                <DialogHeader className="py-4">
-                  <DialogTitle>Повтор</DialogTitle>
-                </DialogHeader>
-                <DialogContent className="px-4 pb-4">{repeatContent}</DialogContent>
-              </DialogWindow>
-            </Dialog>
-          </>
-        ) : (
-          <Popover
-            open={repeatOpen}
-            onOpenChange={setRepeatOpen}
-            placement="right-start"
-            className="w-[252px] rounded-xl p-3"
-            trigger={({ ref, ...triggerProps }) => (
-              <button
-                ref={ref as Ref<HTMLButtonElement>}
-                type="button"
-                className="flex w-full items-center justify-between gap-3 py-2 text-left text-sm"
-                {...triggerProps}
-              >
-                <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
-                  <Repeat2 className="size-4" />
-                  {getRepeatLabel(draftScheduleKind, draftScheduleInterval, draftScheduleUnit)}
-                </span>
-                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-              </button>
-            )}
-          >
-            <div className="mb-3 text-sm font-medium">Повтор</div>
-            {repeatContent}
-          </Popover>
-        )}
+        <div className="space-y-2 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+              <Repeat2 className="size-4" />
+              Повтор
+            </span>
+            <div className="w-[160px] shrink-0">
+              <Select
+                label="Повтор"
+                options={REPEAT_SELECT_OPTIONS}
+                value={draftScheduleKind}
+                valueLabel={getRepeatLabel(draftScheduleKind, draftScheduleInterval, draftScheduleUnit)}
+                onChange={setDraftScheduleKind}
+                multiple={false}
+              />
+            </div>
+          </div>
+
+          {draftScheduleKind === "custom" && (
+            <div className="grid grid-cols-[minmax(0,1fr)_142px] gap-2">
+              <Input
+                min={1}
+                type="number"
+                value={draftScheduleInterval}
+                onChange={(event) => setDraftScheduleInterval(Number(event.target.value) || 1)}
+                className="h-9"
+              />
+              <Select
+                label="Период"
+                options={SCHEDULE_UNIT_OPTIONS}
+                value={draftScheduleUnit}
+                onChange={setDraftScheduleUnit}
+                multiple={false}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

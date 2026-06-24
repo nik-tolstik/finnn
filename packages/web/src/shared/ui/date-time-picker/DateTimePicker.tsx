@@ -7,10 +7,12 @@ import * as React from "react";
 
 import { Button } from "@/shared/ui/button";
 import { Calendar } from "@/shared/ui/calendar";
-import { Input } from "@/shared/ui/input";
 import { Popover } from "@/shared/ui/popover";
 import { Segmented } from "@/shared/ui/segmented";
 import { cn } from "@/shared/utils/cn";
+
+import { TimeAutocomplete } from "./TimeAutocomplete";
+import { applyTimeValue, createTimeOptions, formatTimeValue, normalizeTimeInput } from "./time-options";
 
 interface DateTimePickerProps {
   date?: Date;
@@ -22,7 +24,9 @@ interface DateTimePickerProps {
   locale?: Locale;
   captionLayout?: "dropdown" | "dropdown-months" | "dropdown-years";
   showTime?: boolean;
+  showDate?: boolean;
   showRelativeDatePresets?: boolean;
+  timeStepMinutes?: number;
 }
 
 const relativeDatePresets = [
@@ -49,49 +53,37 @@ export function DateTimePicker({
   locale = ru,
   captionLayout,
   showTime = true,
+  showDate = true,
   showRelativeDatePresets = false,
+  timeStepMinutes = 15,
 }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [timeValue, setTimeValue] = React.useState(() => {
-    if (date) {
-      const hours = date.getHours().toString().padStart(2, "0");
-      const minutes = date.getMinutes().toString().padStart(2, "0");
-      return `${hours}:${minutes}`;
-    }
-    return "00:00";
-  });
+  const [timeValue, setTimeValue] = React.useState(() => (date ? formatTimeValue(date) : "00:00"));
   const [isTimeInputFocused, setIsTimeInputFocused] = React.useState(false);
+  const timeOptions = React.useMemo(() => createTimeOptions(timeStepMinutes), [timeStepMinutes]);
 
   React.useEffect(() => {
-    // Update timeValue only when the time field is not focused to avoid overwriting user input
     if (date && !isTimeInputFocused) {
-      const hours = date.getHours().toString().padStart(2, "0");
-      const minutes = date.getMinutes().toString().padStart(2, "0");
-      setTimeValue(`${hours}:${minutes}`);
+      setTimeValue(formatTimeValue(date));
     }
   }, [date, isTimeInputFocused]);
 
   const applyCurrentTimeToDate = (targetDate: Date) => {
-    const newDate = new Date(targetDate);
+    return applyTimeValue(targetDate, timeValue) ?? applyTimeValue(targetDate, date ? formatTimeValue(date) : "00:00");
+  };
 
-    if (timeValue.match(/^\d{2}:\d{2}$/)) {
-      const [hours, minutes] = timeValue.split(":").map(Number);
-      newDate.setHours(hours, minutes, 0, 0);
-      return newDate;
+  const applyTimeToCurrentDate = (value: string) => {
+    const targetDate = date ? new Date(date) : new Date();
+    const nextDate = applyTimeValue(targetDate, value);
+    if (nextDate) {
+      onSelect?.(nextDate);
     }
-
-    if (date) {
-      newDate.setHours(date.getHours(), date.getMinutes(), 0, 0);
-      return newDate;
-    }
-
-    newDate.setHours(0, 0, 0, 0);
-    return newDate;
   };
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
-      onSelect?.(applyCurrentTimeToDate(selectedDate));
+      const nextDate = applyCurrentTimeToDate(selectedDate);
+      onSelect?.(nextDate);
       setOpen(false);
     } else {
       onSelect?.(undefined);
@@ -114,15 +106,19 @@ export function DateTimePicker({
   const selectedRelativePreset =
     relativeDatePresets.find((preset) => isSameCalendarDay(date, getRelativePresetDate(preset.daysAgo)))?.daysAgo ?? -1;
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleTimeValueChange = (value: string) => {
     setTimeValue(value);
-    // Update the date only when the time is fully entered (HH:mm format)
-    if (date && value.match(/^\d{2}:\d{2}$/)) {
-      const [hours, minutes] = value.split(":").map(Number);
-      const newDate = new Date(date);
-      newDate.setHours(hours, minutes, 0, 0);
-      onSelect?.(newDate);
+
+    const normalizedTime = normalizeTimeInput(value);
+    if (normalizedTime && (date || !showDate)) {
+      applyTimeToCurrentDate(normalizedTime);
+    }
+  };
+
+  const handleTimeSelect = (value: string) => {
+    setTimeValue(value);
+    if (date || !showDate) {
+      applyTimeToCurrentDate(value);
     }
   };
 
@@ -132,24 +128,22 @@ export function DateTimePicker({
 
   const handleTimeBlur = () => {
     setIsTimeInputFocused(false);
-    // Validate and correct the time when the field loses focus
-    if (!timeValue.match(/^\d{2}:\d{2}$/)) {
-      const hours = date?.getHours() || 0;
-      const minutes = date?.getMinutes() || 0;
-      const correctedValue = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-      setTimeValue(correctedValue);
-    } else if (date) {
-      // Ensure the date is synchronized with the entered time
-      const [hours, minutes] = timeValue.split(":").map(Number);
-      const newDate = new Date(date);
-      newDate.setHours(hours, minutes, 0, 0);
-      onSelect?.(newDate);
+    const normalizedTime = normalizeTimeInput(timeValue);
+
+    if (!normalizedTime) {
+      setTimeValue(date ? formatTimeValue(date) : "00:00");
+      return;
+    }
+
+    setTimeValue(normalizedTime);
+    if (date || !showDate) {
+      applyTimeToCurrentDate(normalizedTime);
     }
   };
 
   return (
     <div className={cn(showRelativeDatePresets ? "space-y-2" : "flex items-center gap-2", className)}>
-      {showRelativeDatePresets && (
+      {showDate && showRelativeDatePresets && (
         <Segmented
           options={relativeDatePresets.map((preset) => ({
             value: preset.daysAgo,
@@ -162,46 +156,47 @@ export function DateTimePicker({
         />
       )}
       <div className="flex items-center gap-2">
-        <Popover
-          open={open}
-          onOpenChange={setOpen}
-          placement={align === "center" ? "bottom" : `bottom-${align}`}
-          className="w-auto overflow-hidden p-0"
-          trigger={({ ref, ...triggerProps }) => (
-            <Button
-              ref={ref}
-              type="button"
-              variant="outline"
-              className={cn(
-                "justify-between text-left font-normal border-input w-fit px-2",
-                !date && "text-muted-foreground"
-              )}
-              {...triggerProps}
-            >
-              {date ? format(date, "dd.MM.yyyy", { locale }) : <span>{placeholder}</span>}
-            </Button>
-          )}
-        >
-          <Calendar
-            mode="single"
-            selected={date}
-            defaultMonth={date}
-            onSelect={handleDateSelect}
-            disabled={disabled}
-            locale={locale}
-            initialFocus
-            captionLayout={captionLayout || "dropdown"}
-          />
-        </Popover>
+        {showDate && (
+          <Popover
+            open={open}
+            onOpenChange={setOpen}
+            placement={align === "center" ? "bottom" : `bottom-${align}`}
+            className="w-auto overflow-hidden p-0"
+            trigger={({ ref, ...triggerProps }) => (
+              <Button
+                ref={ref}
+                type="button"
+                variant="outline"
+                className={cn(
+                  "justify-between text-left font-normal border-input w-fit px-2",
+                  !date && "text-muted-foreground"
+                )}
+                {...triggerProps}
+              >
+                {date ? format(date, "dd.MM.yyyy", { locale }) : <span>{placeholder}</span>}
+              </Button>
+            )}
+          >
+            <Calendar
+              mode="single"
+              selected={date}
+              defaultMonth={date}
+              onSelect={handleDateSelect}
+              disabled={disabled}
+              locale={locale}
+              initialFocus
+              captionLayout={captionLayout || "dropdown"}
+            />
+          </Popover>
+        )}
         {showTime && (
-          <Input
-            id="time"
-            type="time"
+          <TimeAutocomplete
+            options={timeOptions}
             value={timeValue}
-            onChange={handleTimeChange}
+            onChange={handleTimeValueChange}
             onFocus={handleTimeFocus}
+            onSelect={handleTimeSelect}
             onBlur={handleTimeBlur}
-            className="h-9 w-fit py-0 px-2 text-sm"
           />
         )}
       </div>
