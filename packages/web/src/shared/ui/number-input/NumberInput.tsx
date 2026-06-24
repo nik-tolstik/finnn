@@ -9,7 +9,7 @@ function NumberInput({ className, onChange, ...props }: NumberInputProps) {
     const input = e.currentTarget;
     let value = input.value;
 
-    value = value.replace(/,/g, ".");
+    value = value.replace(/\s/g, "").replace(/,/g, ".");
     value = value.replace(/[^0-9.]/g, "");
 
     const parts = value.split(".");

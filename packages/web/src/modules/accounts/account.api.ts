@@ -16,6 +16,7 @@ import type {
   UpdateAccountInput,
   UpdateAccountsOrderInput,
 } from "@/shared/lib/validations/account";
+import { normalizeMoneyString, normalizeOptionalMoneyString } from "@/shared/utils/money";
 
 function toUiAccount(account: AccountDto) {
   const owner = account.owner
@@ -49,7 +50,7 @@ function toUiArchivedAccount(account: ArchivedAccountDto) {
 function toCreateAccountDto(input: CreateAccountInput): CreateAccountDto {
   return {
     name: input.name,
-    balance: input.balance,
+    balance: normalizeMoneyString(input.balance),
     currency: input.currency as CreateAccountDto["currency"],
     ownerId: input.ownerId ?? null,
     color: input.color,
@@ -61,7 +62,7 @@ function toCreateAccountDto(input: CreateAccountInput): CreateAccountDto {
 function toUpdateAccountDto(input: UpdateAccountInput): UpdateAccountDto {
   return {
     name: input.name,
-    balance: input.balance,
+    balance: normalizeOptionalMoneyString(input.balance),
     currency: input.currency as UpdateAccountDto["currency"],
     ownerId: input.ownerId,
     color: input.color,

@@ -42,7 +42,7 @@ export function compareMoney(a: MoneyInput, b: MoneyInput): number {
 }
 
 export function normalizeMoneyString(amount: string): string {
-  return amount.trim().replace(/,/g, ".");
+  return amount.trim().replace(/\s/g, "").replace(/,/g, ".");
 }
 
 export function normalizeOptionalMoneyString(amount?: string | null): string | undefined {

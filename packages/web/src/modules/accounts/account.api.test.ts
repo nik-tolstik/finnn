@@ -91,7 +91,7 @@ describe("account.api", () => {
         "workspace-1",
         {
           name: "Cash",
-          balance: "100.00",
+          balance: "2 276,37",
           currency: "BYN",
           ownerId: null,
           color: "#ef4444",
@@ -109,6 +109,7 @@ describe("account.api", () => {
         "account-1",
         {
           name: "Card",
+          balance: "3\u00a0000,50",
           createdAt: new Date("2026-05-04T10:00:00.000Z"),
         },
         requestOptions
@@ -120,6 +121,7 @@ describe("account.api", () => {
     expect(createApiAccountMock).toHaveBeenCalledWith(
       "workspace-1",
       expect.objectContaining({
+        balance: "2276.37",
         createdAt: "2026-05-03T10:00:00.000Z",
         ownerId: null,
       }),
@@ -128,6 +130,7 @@ describe("account.api", () => {
     expect(updateApiAccountMock).toHaveBeenCalledWith(
       "account-1",
       expect.objectContaining({
+        balance: "3000.50",
         createdAt: "2026-05-04T10:00:00.000Z",
       }),
       requestOptions

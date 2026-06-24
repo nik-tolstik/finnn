@@ -17,6 +17,7 @@ import { Calendar } from "@/shared/ui/calendar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Popover } from "@/shared/ui/popover";
 import { type RenderOptionProps, Select, type SelectOption } from "@/shared/ui/select";
 import { Tooltip } from "@/shared/ui/tooltip";
@@ -806,10 +807,9 @@ export function ScheduledPaymentForm({
                   Сумма
                 </Label>
                 <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-2">
-                  <Input
+                  <NumberInput
                     id="amount"
                     name="amount"
-                    inputMode="decimal"
                     placeholder="0.00"
                     required
                     defaultValue={initialPayment?.amount ?? ""}

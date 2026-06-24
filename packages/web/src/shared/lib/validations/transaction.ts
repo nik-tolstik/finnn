@@ -2,19 +2,11 @@ import { z } from "zod";
 
 import { CategoryType } from "@/modules/categories/category.constants";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
+import { optionalPositiveMoneyString, requiredPositiveMoneyString } from "@/shared/lib/validations/money";
 
 export const createPaymentTransactionSchema = z.object({
   accountId: z.string().min(1, "Счёт обязателен"),
-  amount: z
-    .string()
-    .min(1, "Сумма обязательна")
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
+  amount: requiredPositiveMoneyString("Сумма обязательна"),
   type: z.nativeEnum(PaymentTransactionType),
   description: z.string().optional(),
   date: z.date(),
@@ -30,43 +22,15 @@ export const createPaymentTransactionSchema = z.object({
 export const createTransferTransactionSchema = z.object({
   fromAccountId: z.string().min(1, "Счёт отправителя обязателен"),
   toAccountId: z.string().min(1, "Счёт получателя обязателен"),
-  amount: z
-    .string()
-    .min(1, "Сумма отправления обязательна")
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
-  toAmount: z
-    .string()
-    .min(1, "Сумма получения обязательна")
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
+  amount: requiredPositiveMoneyString("Сумма отправления обязательна"),
+  toAmount: requiredPositiveMoneyString("Сумма получения обязательна"),
   description: z.string().optional(),
   date: z.date(),
 });
 
 export const updatePaymentTransactionSchema = z.object({
   accountId: z.string().optional(),
-  amount: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val) return true;
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
+  amount: optionalPositiveMoneyString(),
   description: z.string().optional(),
   date: z.date().optional(),
   categoryId: z.string().optional().nullable(),
@@ -75,26 +39,8 @@ export const updatePaymentTransactionSchema = z.object({
 export const updateTransferTransactionSchema = z.object({
   fromAccountId: z.string().min(1, "Счёт отправителя обязателен"),
   toAccountId: z.string().min(1, "Счёт получателя обязателен"),
-  amount: z
-    .string()
-    .min(1, "Сумма отправления обязательна")
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
-  toAmount: z
-    .string()
-    .min(1, "Сумма получения обязательна")
-    .refine(
-      (val) => {
-        const num = parseFloat(val);
-        return !Number.isNaN(num) && num > 0;
-      },
-      { message: "Сумма должна быть больше 0" }
-    ),
+  amount: requiredPositiveMoneyString("Сумма отправления обязательна"),
+  toAmount: requiredPositiveMoneyString("Сумма получения обязательна"),
   description: z.string().optional(),
   date: z.date(),
 });
