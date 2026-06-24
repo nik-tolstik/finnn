@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
@@ -10,6 +11,7 @@ import { ScheduledPaymentActionsDialog } from "@/modules/scheduled-payments/comp
 import { ScheduledPaymentForm } from "@/modules/scheduled-payments/components/ScheduledPaymentForm";
 import { ScheduledPaymentList } from "@/modules/scheduled-payments/components/ScheduledPaymentList";
 import {
+  createScheduledPayment,
   deleteScheduledPayment,
   getScheduledPayments,
   markScheduledPaymentPaid,
@@ -33,6 +35,7 @@ import {
   transactionKeys,
   workspaceKeys,
 } from "@/shared/lib/query-keys";
+import { Button } from "@/shared/ui/button";
 
 interface PaymentsContentProps {
   workspaceId: string;
@@ -65,7 +68,7 @@ function getQueryData<T>(value: MaybeActionData<T>, fallback: T): T {
 
 export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
   const queryClient = useQueryClient();
-  const formDialog = useDialogState<ScheduledPayment>();
+  const formDialog = useDialogState<ScheduledPayment | null>();
   const paidDialog = useDialogState<ScheduledPayment>();
   const deleteDialog = useDialogState<ScheduledPayment>();
   const actionsDialog = useDialogState<ScheduledPayment>();
@@ -95,6 +98,18 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
   const categories = getQueryData(categoriesQuery.data, []).filter((category) => category.type === "expense");
   const members = getQueryData(membersQuery.data, []);
   const workspace = getQueryData(workspaceQuery.data, null);
+
+  const createMutation = useMutation({
+    mutationFn: (input: ScheduledPaymentFormInput) => createScheduledPayment(workspaceId, input),
+    onSuccess: (result) => {
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Платёж создан");
+      void queryClient.invalidateQueries({ queryKey: scheduledPaymentKeys.all(workspaceId) });
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, input }: { id: string; input: ScheduledPaymentFormInput }) =>
@@ -182,7 +197,13 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] space-y-6">
-      <h1 className="text-2xl font-semibold">Платежи</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold">Платежи</h1>
+        <Button className="hidden md:inline-flex" onClick={() => formDialog.openDialog(null)}>
+          <Plus className="size-4" />
+          Создать платёж
+        </Button>
+      </div>
 
       <ScheduledPaymentList
         isLoading={paymentsQuery.isLoading}
@@ -207,7 +228,7 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
         />
       )}
 
-      {formDialog.mounted && formDialog.data && (
+      {formDialog.mounted && (
         <ScheduledPaymentForm
           accounts={accounts}
           baseCurrency={workspace?.baseCurrency}
@@ -219,7 +240,11 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
           onCloseComplete={formDialog.unmountDialog}
           onOpenChange={formDialog.closeDialog}
           onSubmit={async (input) => {
-            if (!formDialog.data) return;
+            if (!formDialog.data) {
+              const result = await createMutation.mutateAsync(input);
+              if ("error" in result) throw new Error(result.error);
+              return;
+            }
             const result = await updateMutation.mutateAsync({ id: formDialog.data.id, input });
             if ("error" in result) throw new Error(result.error);
           }}
