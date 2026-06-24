@@ -334,9 +334,6 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
             {isSubmitting ? "Создание..." : "Создать"}
           </Button>

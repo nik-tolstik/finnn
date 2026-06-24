@@ -207,9 +207,11 @@ Railway or another backend scheduler should call the API cron endpoint:
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" https://api.example.com/cron/update-exchange-rates
+curl -H "Authorization: Bearer $CRON_SECRET" https://api.example.com/cron/scheduled-payment-reminders
 ```
 
-The API handler is `packages/api/src/currency/currency.controller.ts`.
+The exchange-rate handler is `packages/api/src/currency/currency.controller.ts`.
+The scheduled-payment reminder handler is `packages/api/src/scheduled-payments/scheduled-payments-cron.controller.ts`.
 
 Operational requirements:
 
@@ -221,8 +223,9 @@ Railway setup:
 
 - Keep the API service as a persistent web service.
 - Create a separate Railway cron service in the same environment.
-- Set the cron service schedule to run once per day after NBRB publishes rates. NBRB daily-rate aggregators
+- For exchange rates, set the cron service schedule to run once per day after NBRB publishes rates. NBRB daily-rate aggregators
   report an update schedule around 11:00 Europe/Minsk, so use `30 8 * * *` for 11:30 Minsk time.
+- For scheduled payment reminders, run the scheduler hourly and call `/cron/scheduled-payment-reminders`.
 - Give the cron service `API_BASE_URL` and `CRON_SECRET` variables.
 - Use a start command that calls the API endpoint and then exits.
 
@@ -237,6 +240,12 @@ Example cron service start command:
 
 ```bash
 node -e "fetch(`${process.env.API_BASE_URL}/cron/update-exchange-rates`, { headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` } }).then(async (response) => { const body = await response.text(); console.log(body); if (!response.ok) process.exit(1); }).catch((error) => { console.error(error); process.exit(1); })"
+```
+
+Scheduled payment reminder command:
+
+```bash
+node -e "fetch(`${process.env.API_BASE_URL}/cron/scheduled-payment-reminders`, { headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` } }).then(async (response) => { const body = await response.text(); console.log(body); if (!response.ok) process.exit(1); }).catch((error) => { console.error(error); process.exit(1); })"
 ```
 
 ## MongoDB Import And Export
@@ -314,6 +323,7 @@ Current email use cases:
 
 - Registration verification.
 - Workspace invites.
+- Scheduled payment reminders.
 
 Email depends on:
 
@@ -321,6 +331,10 @@ Email depends on:
 - SMTP variables for transport.
 
 If email delivery fails locally, verify `.env`, SMTP credentials, provider app-password requirements, and whether the SMTP account allows the selected port/security mode.
+
+Scheduled payment reminder delivery records failed email or Telegram channels in `scheduled_payment_reminder_deliveries`.
+Email failures usually mean SMTP is unavailable or the recipient has no verified email. Telegram failures usually mean
+the recipient has not linked Telegram or has no `telegramChatId` in `TelegramBotPreference`.
 
 ## Service Worker
 

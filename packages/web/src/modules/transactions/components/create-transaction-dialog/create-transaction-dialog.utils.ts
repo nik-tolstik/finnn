@@ -94,6 +94,13 @@ export function resolveSelectedAccount({
   accountId?: string;
   fallbackAccount?: Account;
 }) {
+  if (accountId && accounts) {
+    const selectedAccount = accounts.find((account) => account.id === accountId);
+    if (selectedAccount) {
+      return selectedAccount;
+    }
+  }
+
   if (accountProp) {
     if (!hasAccountBalance(accountProp) && accounts) {
       const fullAccount = accounts.find((account) => account.id === accountProp.id);
@@ -103,10 +110,6 @@ export function resolveSelectedAccount({
     }
 
     return hasAccountBalance(accountProp) ? (accountProp as Account) : undefined;
-  }
-
-  if (accountId && accounts) {
-    return accounts.find((account) => account.id === accountId);
   }
 
   return fallbackAccount;

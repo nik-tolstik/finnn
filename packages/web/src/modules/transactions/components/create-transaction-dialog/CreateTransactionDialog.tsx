@@ -72,6 +72,8 @@ interface CreateTransactionDialogProps {
   initialDescription?: string;
   initialDate?: Date;
   initialCategoryId?: string;
+  lockType?: boolean;
+  onPaymentSubmit?: (input: CreatePaymentTransactionInput) => Promise<void> | void;
 }
 
 function toTransactionUser(user: Session["user"] | undefined): TransactionUser | null {
@@ -116,6 +118,8 @@ export function CreateTransactionDialog({
   initialDescription,
   initialDate,
   initialCategoryId,
+  lockType = false,
+  onPaymentSubmit,
 }: CreateTransactionDialogProps) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
@@ -300,6 +304,16 @@ export function CreateTransactionDialog({
       return;
     }
 
+    if (onPaymentSubmit) {
+      try {
+        await onPaymentSubmit(data);
+        onOpenChange(false);
+      } catch {
+        return;
+      }
+      return;
+    }
+
     const balanceDeltas = new Map<string, string>();
     addAccountBalanceDelta(balanceDeltas, data.accountId, getPaymentTransactionBalanceDelta(data.type, data.amount));
     const optimisticAccount = toTransactionAccount(currentAccount as Account);
@@ -415,6 +429,10 @@ export function CreateTransactionDialog({
   };
 
   const handleModeChange = (value: CreateTransactionMode) => {
+    if (lockType) {
+      return;
+    }
+
     setTransactionMode(value);
 
     if (value === TRANSFER_TRANSACTION_MODE) {
@@ -451,34 +469,38 @@ export function CreateTransactionDialog({
           <DialogContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="type" required>
-                  Тип транзакции
-                </Label>
-                <Segmented
-                  options={[
-                    {
-                      value: PaymentTransactionType.EXPENSE,
-                      label: "Расход",
-                      icon: <ArrowDown className="h-4 w-4" />,
-                      selectedClassName: "text-destructive",
-                    },
-                    {
-                      value: PaymentTransactionType.INCOME,
-                      label: "Доход",
-                      icon: <ArrowUp className="h-4 w-4" />,
-                      selectedClassName: "text-success",
-                    },
-                    {
-                      value: TRANSFER_TRANSACTION_MODE,
-                      label: "Перевод",
-                      icon: <ArrowLeftRight className="h-4 w-4" />,
-                      selectedClassName: "text-amber-600 dark:text-amber-400",
-                    },
-                  ]}
-                  value={transactionMode}
-                  onChange={handleModeChange}
-                  layout="fill"
-                />
+                {!lockType && (
+                  <>
+                    <Label htmlFor="type" required>
+                      Тип транзакции
+                    </Label>
+                    <Segmented
+                      options={[
+                        {
+                          value: PaymentTransactionType.EXPENSE,
+                          label: "Расход",
+                          icon: <ArrowDown className="h-4 w-4" />,
+                          selectedClassName: "text-destructive",
+                        },
+                        {
+                          value: PaymentTransactionType.INCOME,
+                          label: "Доход",
+                          icon: <ArrowUp className="h-4 w-4" />,
+                          selectedClassName: "text-success",
+                        },
+                        {
+                          value: TRANSFER_TRANSACTION_MODE,
+                          label: "Перевод",
+                          icon: <ArrowLeftRight className="h-4 w-4" />,
+                          selectedClassName: "text-amber-600 dark:text-amber-400",
+                        },
+                      ]}
+                      value={transactionMode}
+                      onChange={handleModeChange}
+                      layout="fill"
+                    />
+                  </>
+                )}
                 {!isTransferMode && errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
               </div>
 
@@ -669,9 +691,6 @@ export function CreateTransactionDialog({
           </DialogContent>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Отмена
-            </Button>
             <Button
               type="button"
               onClick={isTransferMode ? transferForm.handleSubmit(onTransferSubmit) : handleSubmit(onSubmit)}

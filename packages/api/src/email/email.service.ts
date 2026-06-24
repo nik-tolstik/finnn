@@ -2,6 +2,14 @@ import { Injectable } from "@nestjs/common";
 import nodemailer from "nodemailer";
 
 type EmailResult = { success: true } | { error: string };
+type ScheduledPaymentReminderEmailInput = {
+  email: string;
+  paymentName: string;
+  workspaceName: string;
+  dueAt: Date;
+  amountLabel: string;
+  scheduledPaymentId: string;
+};
 
 function getWebBaseUrl(): string {
   const configuredUrl = process.env.WEB_APP_URL?.trim();
@@ -124,6 +132,44 @@ export class EmailService {
             <p style="font-size: 28px; letter-spacing: 6px; font-weight: 700; margin: 24px 0;">${code}</p>
             <p style="color: #666; font-size: 12px;">
               Код действует ограниченное время. Если вы не запрашивали восстановление пароля, просто проигнорируйте это письмо.
+            </p>
+          </div>
+        `,
+      });
+
+      return { success: true };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : "Не удалось отправить email" };
+    }
+  }
+
+  async sendScheduledPaymentReminderEmail(input: ScheduledPaymentReminderEmailInput): Promise<EmailResult> {
+    try {
+      if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+        return { error: "Email сервис не настроен. Обратитесь к администратору." };
+      }
+
+      const transporter = this.createTransporter();
+      const paymentUrl = `${getWebBaseUrl()}/payments/${input.scheduledPaymentId}`;
+      const dueDate = input.dueAt.toLocaleDateString("ru-RU");
+
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: input.email,
+        subject: `Напоминание о платеже: ${input.paymentName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Напоминание о платеже</h2>
+            <p>Платёж <strong>${input.paymentName}</strong> в рабочем столе <strong>${input.workspaceName}</strong> скоро нужно оплатить.</p>
+            <p><strong>Срок:</strong> ${dueDate}</p>
+            <p><strong>Сумма:</strong> ${input.amountLabel}</p>
+            <p style="margin: 20px 0;">
+              <a href="${paymentUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Открыть платёж
+              </a>
+            </p>
+            <p style="color: #666; font-size: 12px;">
+              Если вы не создавали этот платёж, проверьте участников рабочего стола в Finnn.
             </p>
           </div>
         `,

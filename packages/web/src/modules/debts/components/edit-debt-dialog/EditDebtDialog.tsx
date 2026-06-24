@@ -286,9 +286,6 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
             {isSubmitting ? "Сохранение..." : "Сохранить"}
           </Button>

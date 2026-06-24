@@ -183,7 +183,7 @@ function PopoverInner({
       {trigger(triggerProps)}
       <FloatingNode id={nodeId}>
         {isMounted && (
-          <FloatingPortal root={portalRoot ?? undefined}>
+          <FloatingPortal root={portalRoot ?? undefined} preserveTabOrder={false}>
             <FloatingFocusManager context={context} initialFocus={-1} modal={false}>
               <div
                 {...floatingInteractionProps}

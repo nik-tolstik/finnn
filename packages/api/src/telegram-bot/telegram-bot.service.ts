@@ -13,11 +13,14 @@ import { AiFinanceDraftService } from "@/ai-finance/ai-finance-draft.service";
 import { OpenRouterClient } from "@/ai-finance/openrouter.client";
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { PrismaService } from "@/prisma/prisma.service";
+import { ScheduledPaymentsService } from "@/scheduled-payments/scheduled-payments.service";
 
 import { TelegramBotClient } from "./telegram-bot.client";
 import {
   encodeTelegramCallbackData,
+  type ParsedScheduledPaymentCallbackData,
   type ParsedTelegramCallbackData,
+  parseScheduledPaymentCallbackData,
   parseTelegramCallbackData,
 } from "./telegram-callback-data";
 import type {
@@ -128,7 +131,8 @@ export class TelegramBotService {
     @Inject(TelegramBotClient) private readonly telegram: TelegramBotClient,
     @Inject(AiFinanceService) private readonly aiFinance: AiFinanceService,
     @Inject(AiFinanceDraftService) private readonly drafts: AiFinanceDraftService,
-    @Inject(OpenRouterClient) private readonly openRouter: OpenRouterClient
+    @Inject(OpenRouterClient) private readonly openRouter: OpenRouterClient,
+    @Inject(ScheduledPaymentsService) private readonly scheduledPayments: ScheduledPaymentsService
   ) {}
 
   async handleUpdate(update: TelegramUpdate) {
@@ -383,6 +387,18 @@ export class TelegramBotService {
     await this.safeAnswerCallbackQuery(callbackQuery.id);
 
     try {
+      const scheduledPaymentCallback = this.parseOptionalScheduledPaymentCallback(callbackQuery.data);
+      if (scheduledPaymentCallback) {
+        responseText = await this.applyScheduledPaymentCallbackSelection(scheduledPaymentCallback, resolvedUser.user);
+
+        if (messageId) {
+          await this.safeEditMessageText({ chatId, messageId, text: responseText });
+        } else {
+          await this.telegram.sendMessage({ chatId, text: responseText });
+        }
+        return;
+      }
+
       const parsed = parseTelegramCallbackData(callbackQuery.data);
       draftId = parsed.draftId;
 
@@ -467,6 +483,29 @@ export class TelegramBotService {
     }
 
     throw new BadRequestException("Unsupported Telegram callback action");
+  }
+
+  private parseOptionalScheduledPaymentCallback(data: string | undefined) {
+    if (!data?.startsWith("sp:")) return null;
+    return parseScheduledPaymentCallbackData(data);
+  }
+
+  private async applyScheduledPaymentCallbackSelection(
+    parsed: ParsedScheduledPaymentCallbackData,
+    user: AuthenticatedUser
+  ) {
+    if (parsed.action === "paid") {
+      await this.scheduledPayments.markPaidFromTelegram(parsed.scheduledPaymentId, user);
+      return "Готово. Платёж отмечен как оплаченный.";
+    }
+
+    if (parsed.action === "skip") {
+      await this.scheduledPayments.skipFromTelegram(parsed.scheduledPaymentId, user);
+      return "Готово. Этот платёж пропущен.";
+    }
+
+    await this.scheduledPayments.snoozeFromTelegram(parsed.scheduledPaymentId, parsed.days || 1, user);
+    return "Готово. Напоминание отложено.";
   }
 
   private async sendUnknownUserMessage(chatId: string) {

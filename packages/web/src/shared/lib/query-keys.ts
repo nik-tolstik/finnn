@@ -1,3 +1,4 @@
+import type { ScheduledPaymentFilters } from "@/modules/scheduled-payments/scheduled-payment.types";
 import type { TransactionFilters, TransactionListFilters } from "@/modules/transactions/transaction-filter.types";
 
 export interface DebtListFilters {
@@ -43,6 +44,12 @@ export const analyticsKeys = {
 export const debtKeys = {
   all: (workspaceId: string) => ["debts", workspaceId] as const,
   list: (workspaceId: string, filters: DebtListFilters = {}) => ["debts", workspaceId, filters] as const,
+};
+
+export const scheduledPaymentKeys = {
+  all: (workspaceId: string) => ["scheduled-payments", workspaceId] as const,
+  list: (workspaceId: string, filters: ScheduledPaymentFilters = {}) =>
+    ["scheduled-payments", workspaceId, filters] as const,
 };
 
 export const exchangeRateKeys = {

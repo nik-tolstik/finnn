@@ -3194,6 +3194,768 @@
         "tags": ["Debts"]
       }
     },
+    "/workspaces/{workspaceId}/scheduled-payments": {
+      "get": {
+        "operationId": "listScheduledPayments",
+        "parameters": [
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "skip",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "dueTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dueFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "accountIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "assignedUserIds",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "displayStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledPaymentsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List scheduled payments",
+        "tags": ["Scheduled payments"]
+      },
+      "post": {
+        "operationId": "createScheduledPayment",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateScheduledPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledPaymentSingleResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Create a scheduled payment",
+        "tags": ["Scheduled payments"]
+      }
+    },
+    "/workspaces/{workspaceId}/scheduled-payments/{id}": {
+      "get": {
+        "operationId": "getScheduledPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledPaymentSingleResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get a scheduled payment",
+        "tags": ["Scheduled payments"]
+      },
+      "patch": {
+        "operationId": "updateScheduledPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateScheduledPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledPaymentSingleResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a scheduled payment",
+        "tags": ["Scheduled payments"]
+      },
+      "delete": {
+        "operationId": "deleteScheduledPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a scheduled payment",
+        "tags": ["Scheduled payments"]
+      }
+    },
+    "/workspaces/{workspaceId}/scheduled-payments/{id}/pay": {
+      "post": {
+        "operationId": "markScheduledPaymentPaid",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkScheduledPaymentPaidDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkScheduledPaymentPaidResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Mark a scheduled payment as paid",
+        "tags": ["Scheduled payments"]
+      }
+    },
+    "/workspaces/{workspaceId}/scheduled-payments/{id}/skip": {
+      "post": {
+        "operationId": "skipScheduledPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkipScheduledPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkScheduledPaymentPaidResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Skip the current scheduled payment occurrence",
+        "tags": ["Scheduled payments"]
+      }
+    },
+    "/workspaces/{workspaceId}/scheduled-payments/{id}/snooze": {
+      "post": {
+        "operationId": "snoozeScheduledPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnoozeScheduledPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledPaymentSingleResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Snooze scheduled payment reminders",
+        "tags": ["Scheduled payments"]
+      }
+    },
+    "/workspaces/{workspaceId}/scheduled-payments/{id}/history": {
+      "get": {
+        "operationId": "getScheduledPaymentHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledPaymentRecordsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Get scheduled payment history",
+        "tags": ["Scheduled payments"]
+      }
+    },
+    "/cron/scheduled-payment-reminders": {
+      "get": {
+        "operationId": "runScheduledPaymentRemindersCron",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "description": "Bearer CRON_SECRET",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunScheduledPaymentRemindersResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Send scheduled payment reminders",
+        "tags": ["Cron"]
+      }
+    },
     "/workspaces/{workspaceId}/transactions": {
       "get": {
         "operationId": "getCombinedTransactions",
@@ -4723,6 +5485,20 @@
         },
         "required": ["id", "name"]
       },
+      "WorkspaceMemberNotificationChannelsDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "boolean",
+            "example": true
+          },
+          "telegram": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": ["email", "telegram"]
+      },
       "WorkspaceMemberDto": {
         "type": "object",
         "properties": {
@@ -4749,9 +5525,12 @@
             "type": "string",
             "example": "owner",
             "enum": ["owner", "admin", "member"]
+          },
+          "notificationChannels": {
+            "$ref": "#/components/schemas/WorkspaceMemberNotificationChannelsDto"
           }
         },
-        "required": ["id", "name", "role"]
+        "required": ["id", "name", "role", "notificationChannels"]
       },
       "WorkspaceDetailDto": {
         "type": "object",
@@ -5934,6 +6713,615 @@
           }
         },
         "required": ["debtTransaction"]
+      },
+      "ScheduledPaymentsQueryDto": {
+        "type": "object",
+        "properties": {
+          "displayStatus": {
+            "type": "string",
+            "enum": ["upcoming", "due", "overdue", "paid", "skipped"]
+          },
+          "assignedUserIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dueFrom": {
+            "type": "string",
+            "example": "2026-06-01T00:00:00.000Z"
+          },
+          "dueTo": {
+            "type": "string",
+            "example": "2026-06-30T23:59:59.999Z"
+          },
+          "skip": {
+            "type": "number",
+            "example": 0,
+            "minimum": 0
+          },
+          "take": {
+            "type": "number",
+            "example": 50,
+            "minimum": 1
+          }
+        }
+      },
+      "ScheduledPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "amountMode": {
+            "type": "string",
+            "enum": ["fixed", "unknown", "range"]
+          },
+          "amount": {
+            "type": "string",
+            "nullable": true
+          },
+          "amountMin": {
+            "type": "string",
+            "nullable": true
+          },
+          "amountMax": {
+            "type": "string",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "assignedUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdById": {
+            "type": "string"
+          },
+          "displayStatus": {
+            "type": "string",
+            "enum": ["upcoming", "due", "overdue", "paid", "skipped"]
+          },
+          "scheduleKind": {
+            "type": "string",
+            "enum": ["one_time", "weekly", "monthly", "yearly", "custom"]
+          },
+          "scheduleInterval": {
+            "type": "number"
+          },
+          "scheduleUnit": {
+            "type": "string",
+            "nullable": true
+          },
+          "dueDay": {
+            "type": "number",
+            "nullable": true
+          },
+          "dueMonth": {
+            "type": "number",
+            "nullable": true
+          },
+          "nextDueAt": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "reminderDaysBefore": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "notifyTelegram": {
+            "type": "boolean"
+          },
+          "notifyEmail": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastPaidAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "snoozedUntil": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "name",
+          "amountMode",
+          "createdById",
+          "displayStatus",
+          "scheduleKind",
+          "scheduleInterval",
+          "nextDueAt",
+          "timezone",
+          "reminderDaysBefore",
+          "notifyTelegram",
+          "notifyEmail",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ScheduledPaymentsResponseDto": {
+        "type": "object",
+        "properties": {
+          "scheduledPayments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduledPaymentResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": ["scheduledPayments", "total"]
+      },
+      "CreateScheduledPaymentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "A1 mobile",
+            "minLength": 1
+          },
+          "amountMode": {
+            "type": "string",
+            "enum": ["fixed", "unknown", "range"],
+            "example": "fixed"
+          },
+          "amount": {
+            "type": "string",
+            "example": "35.50"
+          },
+          "amountMin": {
+            "type": "string",
+            "example": "20"
+          },
+          "amountMax": {
+            "type": "string",
+            "example": "60"
+          },
+          "currency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "assignedUserId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f3333"
+          },
+          "scheduleKind": {
+            "type": "string",
+            "enum": ["one_time", "weekly", "monthly", "yearly", "custom"],
+            "example": "monthly"
+          },
+          "scheduleInterval": {
+            "type": "number",
+            "example": 1,
+            "minimum": 1
+          },
+          "scheduleUnit": {
+            "type": "string",
+            "enum": ["days", "weeks", "months", "years"]
+          },
+          "dueDay": {
+            "type": "number",
+            "example": 31,
+            "minimum": 1,
+            "maximum": 31
+          },
+          "dueMonth": {
+            "type": "number",
+            "example": 12,
+            "minimum": 1,
+            "maximum": 12
+          },
+          "nextDueAt": {
+            "type": "string",
+            "example": "2026-06-25T09:00:00.000Z"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Europe/Minsk"
+          },
+          "reminderDaysBefore": {
+            "example": [7, 3, 1, 0],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "notifyTelegram": {
+            "type": "boolean",
+            "example": true
+          },
+          "notifyEmail": {
+            "type": "boolean",
+            "example": true
+          },
+          "notes": {
+            "type": "string",
+            "example": "Contract #42"
+          }
+        },
+        "required": ["name", "amountMode", "scheduleKind", "nextDueAt"]
+      },
+      "ScheduledPaymentSingleResponseDto": {
+        "type": "object",
+        "properties": {
+          "scheduledPayment": {
+            "$ref": "#/components/schemas/ScheduledPaymentResponseDto"
+          }
+        },
+        "required": ["scheduledPayment"]
+      },
+      "UpdateScheduledPaymentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "A1 mobile",
+            "minLength": 1
+          },
+          "amountMode": {
+            "type": "string",
+            "enum": ["fixed", "unknown", "range"]
+          },
+          "amount": {
+            "type": "string",
+            "example": "35.50",
+            "nullable": true
+          },
+          "amountMin": {
+            "type": "string",
+            "example": "20",
+            "nullable": true
+          },
+          "amountMax": {
+            "type": "string",
+            "example": "60",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "example": "BYN",
+            "nullable": true
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "assignedUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "scheduleKind": {
+            "type": "string",
+            "enum": ["one_time", "weekly", "monthly", "yearly", "custom"]
+          },
+          "scheduleInterval": {
+            "type": "number",
+            "minimum": 1
+          },
+          "scheduleUnit": {
+            "type": "string",
+            "enum": ["days", "weeks", "months", "years"],
+            "nullable": true
+          },
+          "dueDay": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 31,
+            "nullable": true
+          },
+          "dueMonth": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 12,
+            "nullable": true
+          },
+          "nextDueAt": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Europe/Minsk"
+          },
+          "reminderDaysBefore": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "notifyTelegram": {
+            "type": "boolean"
+          },
+          "notifyEmail": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "MarkScheduledPaymentPaidDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "35.50"
+          },
+          "currency": {
+            "type": "string",
+            "example": "BYN"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "paidAt": {
+            "type": "string",
+            "example": "2026-06-25T10:00:00.000Z"
+          },
+          "createTransaction": {
+            "type": "boolean",
+            "example": true
+          },
+          "transactionId": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "example": "Paid from mobile app"
+          }
+        },
+        "required": ["amount", "paidAt"]
+      },
+      "ScheduledPaymentRecordResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "scheduledPaymentId": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "transactionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "dueAt": {
+            "type": "string"
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "skippedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "string",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "actionById": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["paid", "skipped"]
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "scheduledPaymentId", "workspaceId", "dueAt", "actionById", "status", "createdAt"]
+      },
+      "MarkScheduledPaymentPaidResponseDto": {
+        "type": "object",
+        "properties": {
+          "scheduledPayment": {
+            "$ref": "#/components/schemas/ScheduledPaymentResponseDto"
+          },
+          "record": {
+            "$ref": "#/components/schemas/ScheduledPaymentRecordResponseDto"
+          },
+          "transactionId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["scheduledPayment", "record"]
+      },
+      "SkipScheduledPaymentDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "example": "Not needed this month"
+          }
+        }
+      },
+      "SnoozeScheduledPaymentDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "number",
+            "example": 2,
+            "minimum": 1
+          }
+        },
+        "required": ["days"]
+      },
+      "ScheduledPaymentRecordsResponseDto": {
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduledPaymentRecordResponseDto"
+            }
+          }
+        },
+        "required": ["records"]
+      },
+      "ScheduledPaymentReminderDeliveryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "scheduledPaymentId": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "dueAt": {
+            "type": "string"
+          },
+          "reminderDate": {
+            "type": "string"
+          },
+          "daysBefore": {
+            "type": "number"
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["telegram", "email"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["sent", "failed"]
+          },
+          "sentAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "scheduledPaymentId",
+          "workspaceId",
+          "userId",
+          "dueAt",
+          "reminderDate",
+          "daysBefore",
+          "channel",
+          "status",
+          "createdAt"
+        ]
+      },
+      "RunScheduledPaymentRemindersResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "processed": {
+            "type": "number"
+          },
+          "sent": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "deliveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduledPaymentReminderDeliveryResponseDto"
+            }
+          }
+        },
+        "required": ["success", "processed", "sent", "failed", "deliveries"]
       },
       "CombinedTransactionsQueryDto": {
         "type": "object",

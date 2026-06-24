@@ -87,6 +87,10 @@ describe("workspace.api", () => {
           email: "finn@example.com",
           image: null,
           role: "owner",
+          notificationChannels: {
+            email: true,
+            telegram: false,
+          },
         },
       ],
     });
@@ -110,6 +114,10 @@ describe("workspace.api", () => {
           name: "Finn",
           email: "finn@example.com",
           image: null,
+          notificationChannels: {
+            email: true,
+            telegram: false,
+          },
         },
       ],
     });
