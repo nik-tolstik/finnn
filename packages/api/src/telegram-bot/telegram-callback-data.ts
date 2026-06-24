@@ -1,6 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 
 export const TELEGRAM_CALLBACK_PREFIX = "ai";
+export const SCHEDULED_PAYMENT_CALLBACK_PREFIX = "sp";
 
 export type TelegramCallbackAction =
   | "confirm"
@@ -15,6 +16,14 @@ export type ParsedTelegramCallbackData = {
   action: TelegramCallbackAction;
   draftId: string;
   value?: string;
+};
+
+export type ScheduledPaymentCallbackAction = "paid" | "snooze" | "skip";
+
+export type ParsedScheduledPaymentCallbackData = {
+  action: ScheduledPaymentCallbackAction;
+  scheduledPaymentId: string;
+  days?: number;
 };
 
 export function encodeTelegramCallbackData(action: TelegramCallbackAction, draftId: string, value?: string) {
@@ -40,4 +49,29 @@ export function parseTelegramCallbackData(data: string | undefined): ParsedTeleg
   }
 
   return { action, draftId, value };
+}
+
+export function encodeScheduledPaymentCallbackData(
+  action: ScheduledPaymentCallbackAction,
+  scheduledPaymentId: string,
+  days?: number
+) {
+  return [SCHEDULED_PAYMENT_CALLBACK_PREFIX, action, scheduledPaymentId, days].filter(Boolean).join(":");
+}
+
+export function parseScheduledPaymentCallbackData(data: string | undefined): ParsedScheduledPaymentCallbackData {
+  const [prefix, action, scheduledPaymentId, days] = (data || "").split(":");
+  if (prefix !== SCHEDULED_PAYMENT_CALLBACK_PREFIX || !action || !scheduledPaymentId) {
+    throw new BadRequestException("Unknown scheduled payment callback");
+  }
+
+  if (action !== "paid" && action !== "snooze" && action !== "skip") {
+    throw new BadRequestException("Unknown scheduled payment callback action");
+  }
+
+  return {
+    action,
+    scheduledPaymentId,
+    days: days ? Number.parseInt(days, 10) : undefined,
+  };
 }

@@ -64,6 +64,7 @@ Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishi
 - Regenerate OpenAPI and the web client after API contract changes with `pnpm api:generate`; verify drift with `pnpm api:check-generated`.
 - Use TanStack Query keys from `packages/web/src/shared/lib/query-keys.ts`; do not invent ad hoc key shapes.
 - When client mutations need immediate UI feedback, prefer the existing optimistic update helpers in `packages/web/src/shared/lib/optimistic-workspace-updates.ts`.
+- For app-facing web forms, use the shared UI controls instead of native browser controls: `shared/ui/select` for option dropdowns, `DatePicker` or `DateTimePicker` for dates, `AccountSelector`/`SelectAccountDialog` for account selection, `UserDisplay`/`UserAvatar` for user choices, and `CURRENCY_OPTIONS` for currency choices.
 - Keep protected app routes (`/dashboard`, `/analytics`, `/debts`) CSR-first: avoid server-side session/data dependencies in their layouts/pages, and use TanStack Query for cached server state.
 - Use the client auth gate for protected app routes; API auth guards remain the security boundary.
 - Do not cache financial documents, API responses, dashboard routes, or data responses in the service worker.

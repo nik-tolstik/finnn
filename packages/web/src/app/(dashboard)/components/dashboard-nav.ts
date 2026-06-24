@@ -1,4 +1,4 @@
-import { BarChart3, HandCoins, type LucideIcon, Wallet } from "lucide-react";
+import { BarChart3, CalendarClock, HandCoins, type LucideIcon, Wallet } from "lucide-react";
 
 export interface DashboardNavItem {
   href: string;
@@ -16,6 +16,11 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     href: "/analytics",
     icon: BarChart3,
     label: "Аналитика",
+  },
+  {
+    href: "/payments",
+    icon: CalendarClock,
+    label: "Платежи",
   },
   {
     href: "/debts",

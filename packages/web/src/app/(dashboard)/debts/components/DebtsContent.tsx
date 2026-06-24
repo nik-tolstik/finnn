@@ -1,9 +1,8 @@
 "use client";
 
-import { History, Plus } from "lucide-react";
+import { History } from "lucide-react";
 
 import { ClosedDebtsHistoryDialog } from "@/modules/debts/components/closed-debts-history-dialog";
-import { CreateDebtDialog } from "@/modules/debts/components/create-debt-dialog";
 import { DebtsList } from "@/modules/debts/components/debts-list";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
@@ -13,7 +12,6 @@ interface DebtsContentProps {
 }
 
 export function DebtsContent({ workspaceId }: DebtsContentProps) {
-  const createDebtDialog = useDialogState();
   const historyDialog = useDialogState();
 
   return (
@@ -21,29 +19,18 @@ export function DebtsContent({ workspaceId }: DebtsContentProps) {
       <div className="space-y-6">
         <div className="flex gap-3 items-center justify-between">
           <h1 className="text-2xl font-semibold">Долги</h1>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" className="px-0" onClick={() => historyDialog.openDialog(null)}>
-              <History className="size-4" />
-              История
-            </Button>
-            <Button className="max-md:hidden" onClick={() => createDebtDialog.openDialog(null)}>
-              <Plus className="size-4" />
-              <span>Добавить долг</span>
-            </Button>
-          </div>
+          <Button
+            aria-label="История закрытых долгов"
+            variant="ghost"
+            size="icon"
+            onClick={() => historyDialog.openDialog(null)}
+          >
+            <History className="size-4" />
+          </Button>
         </div>
 
         <DebtsList workspaceId={workspaceId} />
       </div>
-
-      {createDebtDialog.mounted && (
-        <CreateDebtDialog
-          workspaceId={workspaceId}
-          open={createDebtDialog.open}
-          onOpenChange={createDebtDialog.closeDialog}
-          onCloseComplete={createDebtDialog.unmountDialog}
-        />
-      )}
 
       {historyDialog.mounted && (
         <ClosedDebtsHistoryDialog

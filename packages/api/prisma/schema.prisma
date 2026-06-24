@@ -35,6 +35,10 @@ model User {
   passwordResetCodes PasswordResetCode[]
   telegramBotPreference TelegramBotPreference?
   aiFinanceDrafts AiFinanceDraft[]
+  createdScheduledPayments ScheduledPayment[] @relation("ScheduledPaymentCreatedBy")
+  assignedScheduledPayments ScheduledPayment[] @relation("ScheduledPaymentAssignedTo")
+  scheduledPaymentRecords ScheduledPaymentRecord[] @relation("ScheduledPaymentActionBy")
+  scheduledPaymentReminderDeliveries ScheduledPaymentReminderDelivery[]
 
   @@map("users")
 }
@@ -123,6 +127,9 @@ model Workspace {
   invites          WorkspaceInvite[]
   debts            Debt[]
   debtTransactions DebtTransaction[]
+  scheduledPayments ScheduledPayment[]
+  scheduledPaymentRecords ScheduledPaymentRecord[]
+  scheduledPaymentReminderDeliveries ScheduledPaymentReminderDelivery[]
 
   @@index([ownerId])
   @@map("workspaces")
@@ -164,6 +171,8 @@ model Account {
   outgoingTransfers TransferTransaction[] @relation("TransferFromAccount")
   incomingTransfers TransferTransaction[] @relation("TransferToAccount")
   debtTransactions DebtTransaction[]
+  scheduledPayments ScheduledPayment[]
+  scheduledPaymentRecords ScheduledPaymentRecord[]
 
   @@unique([workspaceId, name, currency])
   @@index([workspaceId, archived])
@@ -183,6 +192,8 @@ model Category {
 
   workspace           Workspace            @relation(fields: [workspaceId], references: [id])
   paymentTransactions PaymentTransaction[]
+  scheduledPayments ScheduledPayment[]
+  scheduledPaymentRecords ScheduledPaymentRecord[]
 
   @@index([workspaceId, type, order])
   @@map("categories")
@@ -204,6 +215,7 @@ model PaymentTransaction {
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   account   Account   @relation(fields: [accountId], references: [id])
   category  Category? @relation(fields: [categoryId], references: [id])
+  scheduledPaymentRecords ScheduledPaymentRecord[]
 
   @@index([workspaceId, date])
   @@index([workspaceId, type, date])
@@ -371,4 +383,101 @@ model AiFinanceDraft {
   @@index([telegramChatId, status, updatedAt])
   @@index([expiresAt])
   @@map("ai_finance_drafts")
+}
+
+model ScheduledPayment {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId        String   @db.ObjectId
+  name               String
+  amountMode         String
+  amount             String?
+  amountMin          String?
+  amountMax          String?
+  currency           String?
+  categoryId         String?  @db.ObjectId
+  accountId          String?  @db.ObjectId
+  assignedUserId     String?  @db.ObjectId
+  createdById        String   @db.ObjectId
+  scheduleKind       String
+  scheduleInterval   Int      @default(1)
+  scheduleUnit       String?
+  dueDay             Int?
+  dueMonth           Int?
+  nextDueAt          DateTime
+  timezone           String   @default("Europe/Minsk")
+  reminderDaysBefore Int[]
+  notifyTelegram     Boolean  @default(false)
+  notifyEmail        Boolean  @default(false)
+  notes              String?
+  lastPaidAt         DateTime?
+  snoozedUntil       DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  account   Account?  @relation(fields: [accountId], references: [id])
+  category  Category? @relation(fields: [categoryId], references: [id])
+  createdBy User     @relation("ScheduledPaymentCreatedBy", fields: [createdById], references: [id])
+  assignedUser User? @relation("ScheduledPaymentAssignedTo", fields: [assignedUserId], references: [id])
+  records ScheduledPaymentRecord[]
+  reminderDeliveries ScheduledPaymentReminderDelivery[]
+
+  @@index([workspaceId, nextDueAt])
+  @@index([assignedUserId, nextDueAt])
+  @@index([nextDueAt])
+  @@map("scheduled_payments")
+}
+
+model ScheduledPaymentRecord {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  scheduledPaymentId String   @db.ObjectId
+  workspaceId        String   @db.ObjectId
+  transactionId      String?  @db.ObjectId
+  dueAt              DateTime
+  paidAt             DateTime?
+  skippedAt          DateTime?
+  amount             String?
+  currency           String?
+  accountId          String?  @db.ObjectId
+  categoryId         String?  @db.ObjectId
+  actionById         String   @db.ObjectId
+  status             String
+  note               String?
+  createdAt          DateTime @default(now())
+
+  scheduledPayment ScheduledPayment @relation(fields: [scheduledPaymentId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  transaction PaymentTransaction? @relation(fields: [transactionId], references: [id])
+  account Account? @relation(fields: [accountId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+  actionBy User @relation("ScheduledPaymentActionBy", fields: [actionById], references: [id])
+
+  @@index([scheduledPaymentId, dueAt])
+  @@index([workspaceId, createdAt])
+  @@index([transactionId])
+  @@map("scheduled_payment_records")
+}
+
+model ScheduledPaymentReminderDelivery {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  scheduledPaymentId String    @db.ObjectId
+  workspaceId        String    @db.ObjectId
+  userId             String    @db.ObjectId
+  dueAt              DateTime
+  reminderDate       DateTime
+  daysBefore         Int
+  channel            String
+  status             String
+  sentAt             DateTime?
+  error              String?
+  createdAt          DateTime  @default(now())
+
+  scheduledPayment ScheduledPayment @relation(fields: [scheduledPaymentId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([scheduledPaymentId, dueAt, daysBefore, channel])
+  @@index([workspaceId, reminderDate])
+  @@index([userId, reminderDate])
+  @@map("scheduled_payment_reminder_deliveries")
 }

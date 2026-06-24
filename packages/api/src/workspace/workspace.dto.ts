@@ -47,6 +47,14 @@ export class WorkspaceOwnerDto {
   image!: string | null;
 }
 
+export class WorkspaceMemberNotificationChannelsDto {
+  @ApiProperty({ example: true, type: Boolean })
+  email!: boolean;
+
+  @ApiProperty({ example: true, type: Boolean })
+  telegram!: boolean;
+}
+
 export class WorkspaceMemberDto {
   @ApiProperty({ example: "665f5d865ef5a20c0d2f3333", type: String })
   id!: string;
@@ -62,6 +70,9 @@ export class WorkspaceMemberDto {
 
   @ApiProperty({ example: "owner", enum: ["owner", "admin", "member"], type: String })
   role!: string;
+
+  @ApiProperty({ type: WorkspaceMemberNotificationChannelsDto })
+  notificationChannels!: WorkspaceMemberNotificationChannelsDto;
 }
 
 export class WorkspaceSummaryDto {

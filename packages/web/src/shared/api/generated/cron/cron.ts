@@ -11,10 +11,65 @@ import { useMutation } from "@tanstack/react-query";
 
 import type { ErrorType } from "../../http-client";
 import { apiClient } from "../../http-client";
-import type { ApiErrorDto, UpdateExchangeRatesResponseDto } from "../model";
+import type { ApiErrorDto, RunScheduledPaymentRemindersResponseDto, UpdateExchangeRatesResponseDto } from "../model";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+export const getRunScheduledPaymentRemindersCronUrl = () => {
+  return `/cron/scheduled-payment-reminders`;
+};
+
+/**
+ * @summary Send scheduled payment reminders
+ */
+export const runScheduledPaymentRemindersCron = async (
+  options?: RequestInit
+): Promise<RunScheduledPaymentRemindersResponseDto> => {
+  return apiClient<RunScheduledPaymentRemindersResponseDto>(getRunScheduledPaymentRemindersCronUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getRunScheduledPaymentRemindersCronMutationOptions = <
+  TError = ErrorType<ApiErrorDto>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<Awaited<ReturnType<typeof runScheduledPaymentRemindersCron>>, TError, void, TContext>;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<Awaited<ReturnType<typeof runScheduledPaymentRemindersCron>>, TError, void, TContext> => {
+  const mutationKey = ["runScheduledPaymentRemindersCron"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof runScheduledPaymentRemindersCron>>, void> = () => {
+    return runScheduledPaymentRemindersCron(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RunScheduledPaymentRemindersCronMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runScheduledPaymentRemindersCron>>
+>;
+
+export type RunScheduledPaymentRemindersCronMutationError = ErrorType<ApiErrorDto>;
+
+/**
+ * @summary Send scheduled payment reminders
+ */
+export const useRunScheduledPaymentRemindersCron = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof runScheduledPaymentRemindersCron>>, TError, void, TContext>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<Awaited<ReturnType<typeof runScheduledPaymentRemindersCron>>, TError, void, TContext> => {
+  return useMutation(getRunScheduledPaymentRemindersCronMutationOptions(options), queryClient);
+};
 export const getUpdateExchangeRatesCronUrl = () => {
   return `/cron/update-exchange-rates`;
 };

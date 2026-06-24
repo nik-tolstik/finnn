@@ -19,18 +19,19 @@ interface AccountCardProps {
     } | null;
   };
   className?: string;
+  contentClassName?: string;
   onClick?: () => void;
   showOwner?: boolean;
 }
 
-export function AccountCard({ account, className, onClick, showOwner = true }: AccountCardProps) {
+export function AccountCard({ account, className, contentClassName, onClick, showOwner = true }: AccountCardProps) {
   const AccountIcon = getAccountIcon(account.icon);
   const accountColor = account.color ?? "";
   const getAccountTint = (alpha: number) => hexToRgba(accountColor, alpha) ?? `rgba(255, 255, 255, ${alpha})`;
 
   const cardContent = (
     <>
-      <div className="flex flex-col items-start gap-0 px-4 py-3">
+      <div className={cn("flex flex-col items-start gap-0 px-4 py-3", contentClassName)}>
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">

@@ -224,14 +224,7 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
 
   if (!debts || debts.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p>Долгов пока нет</p>
-        <p className="text-sm mt-1">
-          {isMobile
-            ? "Создайте первый долг, нажав кнопку с плюсиком внизу справа"
-            : "Создайте первый долг, нажав кнопку выше"}
-        </p>
-      </div>
+      <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">Долгов нет</div>
     );
   }
 

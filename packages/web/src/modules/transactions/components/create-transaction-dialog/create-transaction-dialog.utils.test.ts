@@ -5,7 +5,26 @@ import {
   getCategoryOptions,
   getCreatePaymentDefaultValues,
   getPreviewPaymentAccount,
+  resolveSelectedAccount,
 } from "./create-transaction-dialog.utils";
+
+function createAccount(id: string) {
+  return {
+    id,
+    workspaceId: "workspace-1",
+    ownerId: "user-1",
+    name: id,
+    balance: "100",
+    currency: "BYN",
+    description: null,
+    color: null,
+    icon: null,
+    archived: false,
+    order: 0,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+  };
+}
 
 describe("create transaction dialog utils", () => {
   it("builds compatible default payment form values", () => {
@@ -52,5 +71,18 @@ describe("create transaction dialog utils", () => {
         PaymentTransactionType.EXPENSE
       )
     ).toEqual([{ value: "expense", label: "Food" }]);
+  });
+
+  it("prefers the selected account id over the initial account prop", () => {
+    const initialAccount = createAccount("account-1");
+    const selectedAccount = createAccount("account-2");
+
+    expect(
+      resolveSelectedAccount({
+        accountProp: { id: initialAccount.id },
+        accountId: selectedAccount.id,
+        accounts: [initialAccount, selectedAccount],
+      })
+    ).toEqual(selectedAccount);
   });
 });

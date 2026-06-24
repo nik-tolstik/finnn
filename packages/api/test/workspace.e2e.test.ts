@@ -92,8 +92,12 @@ const currentUser = {
 const workspaceOwner = {
   id: "user-1",
   email: "ada@example.com",
+  emailVerified: new Date("2026-05-25T00:00:00.000Z"),
   name: "Ada",
   image: null,
+  telegramBotPreference: {
+    telegramChatId: "1001",
+  },
 };
 
 const workspaceMember = {
@@ -101,9 +105,18 @@ const workspaceMember = {
   user: {
     id: "user-2",
     email: "grace@example.com",
+    emailVerified: null,
     name: "Grace",
     image: "avatar-02",
+    telegramBotPreference: null,
   },
+};
+
+const workspaceOwnerDto = {
+  id: "user-1",
+  email: "ada@example.com",
+  name: "Ada",
+  image: null,
 };
 
 function createWorkspaceRecord(overrides: Record<string, unknown> = {}) {
@@ -263,7 +276,7 @@ describe("Workspace API", () => {
           baseCurrency: "BYN",
           ownerId: "user-1",
           membersCount: 2,
-          owner: workspaceOwner,
+          owner: workspaceOwnerDto,
         },
       ],
     });
@@ -324,6 +337,10 @@ describe("Workspace API", () => {
         email: "ada@example.com",
         image: null,
         role: "owner",
+        notificationChannels: {
+          email: true,
+          telegram: true,
+        },
       },
       {
         id: "user-2",
@@ -331,6 +348,10 @@ describe("Workspace API", () => {
         email: "grace@example.com",
         image: "avatar-02",
         role: "member",
+        notificationChannels: {
+          email: false,
+          telegram: false,
+        },
       },
     ]);
   });

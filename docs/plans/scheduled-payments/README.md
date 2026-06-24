@@ -35,13 +35,12 @@ finishing.
 - Users can create one-time and recurring payments.
 - Users can configure amount, currency, category, account, due schedule, reminder timing, and notification channels.
 - Users can choose fixed amount, unknown amount, or an estimated amount range.
-- Users can see upcoming, due, overdue, paid, skipped, paused, and archived payment states.
+- Users can see upcoming, due, overdue, paid, and skipped payment states.
 - Users can mark a payment as paid.
 - When marking paid, users can create an expense transaction using the selected account/category/date/amount.
 - Finnn sends Telegram and/or email reminders before and on the due date.
 - Reminder delivery is idempotent and logged.
 - Shared workspaces can assign a responsible member for a payment.
-- Dashboard surfaces the nearest upcoming payments without forcing users to open the full section.
 
 ## Non-Goals For MVP
 
@@ -102,7 +101,6 @@ Each payment should support:
 - `reminderDaysBefore`: list such as `[7, 3, 1, 0]`.
 - `notifyTelegram`: boolean.
 - `notifyEmail`: boolean.
-- `status`: `active`, `paused`, or `archived`.
 - `lastPaidAt`: nullable.
 
 ### Recurrence
@@ -120,15 +118,13 @@ not exist in a target month, use the last day of that month.
 
 ### Status Display
 
-API can persist only lifecycle state (`active`, `paused`, `archived`) and compute display state from dates/history:
+API computes display state from dates/history:
 
-- `upcoming`: active and due in the future.
-- `due`: active and due today in the relevant timezone.
-- `overdue`: active and due date is before today.
+- `upcoming`: due in the future.
+- `due`: due today in the relevant timezone.
+- `overdue`: due date is before today.
 - `paid`: last action for the current due occurrence is paid.
 - `skipped`: last action for the current due occurrence is skipped.
-- `paused`: reminders disabled until resumed.
-- `archived`: hidden from default lists.
 
 ### Mark Paid
 
@@ -294,8 +290,6 @@ PATCH  /workspaces/:workspaceId/scheduled-payments/:id
 POST   /workspaces/:workspaceId/scheduled-payments/:id/pay
 POST   /workspaces/:workspaceId/scheduled-payments/:id/skip
 POST   /workspaces/:workspaceId/scheduled-payments/:id/snooze
-POST   /workspaces/:workspaceId/scheduled-payments/:id/pause
-POST   /workspaces/:workspaceId/scheduled-payments/:id/resume
 DELETE /workspaces/:workspaceId/scheduled-payments/:id
 GET    /workspaces/:workspaceId/scheduled-payments/:id/history
 GET    /cron/scheduled-payment-reminders
@@ -379,19 +373,17 @@ packages/web/src/app/(dashboard)/payments/page.tsx
 Navigation:
 
 - Add `Платежи` to `packages/web/src/app/(dashboard)/components/dashboard-nav.ts`.
-- Add a dashboard widget in `packages/web/src/app/(dashboard)/dashboard/page.tsx` or related dashboard components for
-  nearest upcoming payments.
 
 Query/cache:
 
 - Add `scheduledPaymentKeys` to `packages/web/src/shared/lib/query-keys.ts`.
-- Invalidate scheduled payment queries after create/update/pay/skip/snooze/pause/resume/archive.
+- Invalidate scheduled payment queries after create/update/pay/skip/snooze/delete.
 - Invalidate transaction/account/analytics queries when mark-paid creates an expense transaction.
 
 UX expectations:
 
 - First screen should be the actual payments list, not a marketing or explainer page.
-- Use tabs or segmented controls for `Upcoming`, `Overdue`, `All`, and `Archived`.
+- Group payments by due date. Show overdue groups first naturally by date ordering and use danger color on overdue dates.
 - Use forms with existing selectors for account, category, date, and workspace members.
 - Use switches for Telegram/email notification channels.
 - Use checkboxes or chips for reminder offsets: `7`, `3`, `1`, `0` days.
@@ -431,7 +423,7 @@ UX expectations:
 - Add generated API client by running `pnpm api:generate`.
 - Add scheduled payment module API wrappers and query keys.
 - Build `/payments` list, filters, create/edit form, detail/history view, and mark-paid dialog.
-- Add dashboard upcoming widget and nav item.
+- Add the `Платежи` nav item.
 - Add focused component/unit tests for helpers and API wrappers.
 
 ### Phase 5 - Docs, Verification, Rollout
@@ -525,7 +517,7 @@ Operations should add a scheduled call to `/cron/scheduled-payment-reminders`, i
 ## Open Questions
 
 - Should reminders go only to `assignedUserId`, only to the creator, or to all workspace owners/admins when no assignee is set?
-- Should one-time payments auto-archive after being paid, or remain visible as completed?
+- One-time payments remain visible as completed after being paid/skipped; manual delete is explicit and destructive.
 - Should fixed-amount payments allow editing actual amount during mark-paid?
 - Should a paid scheduled payment always create a transaction by default?
 - Should overdue reminders repeat, and if yes, at what capped cadence?
