@@ -255,20 +255,6 @@ export function FloatingActionButton() {
           </Button>
         </div>
       </div>
-      {(isPaymentsPage || isDebtsPage) && (
-        <div className="pointer-events-none fixed right-6 bottom-6 z-50 hidden md:block">
-          <Button
-            type="button"
-            onClick={handleClick}
-            size="icon"
-            disabled={!workspaceId}
-            aria-label={actionLabel}
-            className="pointer-events-auto size-14 rounded-full border border-white/40 bg-primary text-primary-foreground shadow-[0_18px_50px_rgba(47,107,255,0.28)] backdrop-blur-2xl hover:bg-primary/90 dark:border-white/10"
-          >
-            <Plus className="size-6" />
-          </Button>
-        </div>
-      )}
       {createTransactionDialog.mounted && workspaceId && (
         <CreateTransactionDialog
           workspaceId={workspaceId}
