@@ -14,6 +14,7 @@ export interface UpdateAccountDto {
    */
   name?: string;
   balance?: string;
+  initialBalance?: string;
   currency?: UpdateAccountDtoCurrency;
   /** @nullable */
   ownerId?: string | null;

@@ -16,6 +16,7 @@ import { insertAccountsInCache, runOptimisticWorkspaceMutation } from "@/shared/
 import { accountKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { type CreateAccountInput, createAccountSchema } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
+import { ColorPicker } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
@@ -26,7 +27,6 @@ import {
   DialogTitle,
   DialogWindow,
 } from "@/shared/ui/dialog";
-import { ColorPicker } from "@/shared/ui/color-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
@@ -59,7 +59,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
     resolver: zodResolver(createAccountSchema),
     defaultValues: {
       name: "",
-      balance: "0",
+      initialBalance: "0",
       currency: DEFAULT_CURRENCY,
       ownerId: undefined,
       color: DEFAULT_ACCOUNT_COLOR,
@@ -121,7 +121,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
   const selectedColor = useWatch({ control, name: "color" });
   const selectedIcon = useWatch({ control, name: "icon" });
   const accountName = useWatch({ control, name: "name" });
-  const balance = useWatch({ control, name: "balance" });
+  const initialBalance = useWatch({ control, name: "initialBalance" });
 
   useEffect(() => {
     if (open && currentUserId) {
@@ -133,7 +133,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
     if (open) {
       reset({
         name: "",
-        balance: "0",
+        initialBalance: "0",
         currency: baseCurrency,
         ownerId: currentUserId || null,
         color: DEFAULT_ACCOUNT_COLOR,
@@ -162,7 +162,8 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
       id: `optimistic-account-${Date.now()}`,
       workspaceId,
       name: data.name,
-      balance: data.balance,
+      balance: data.initialBalance,
+      initialBalance: data.initialBalance,
       currency: data.currency,
       ownerId: optimisticOwnerId,
       color: data.color ?? null,
@@ -215,7 +216,8 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                 id: "",
                 workspaceId,
                 name: accountName || "",
-                balance: balance || "0",
+                balance: initialBalance || "0",
+                initialBalance: initialBalance || "0",
                 currency: currency || Currency.USD,
                 color: selectedColor || DEFAULT_ACCOUNT_COLOR,
                 icon: selectedIcon || "Wallet",
@@ -259,16 +261,16 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="balance" required>
+              <Label htmlFor="initialBalance" required>
                 Начальный баланс
               </Label>
               <NumberInput
-                id="balance"
-                {...register("balance")}
+                id="initialBalance"
+                {...register("initialBalance")}
                 placeholder="0.00"
-                aria-invalid={errors.balance ? "true" : "false"}
+                aria-invalid={errors.initialBalance ? "true" : "false"}
               />
-              {errors.balance && <p className="text-sm text-destructive">{errors.balance.message}</p>}
+              {errors.initialBalance && <p className="text-sm text-destructive">{errors.initialBalance.message}</p>}
             </div>
 
             <div className="space-y-2">

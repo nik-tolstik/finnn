@@ -156,6 +156,7 @@ model Account {
   ownerId     String?  @db.ObjectId
   name        String
   balance     String   @default("0")
+  initialBalance String   @default("0")
   currency    String   @default("USD")
   description String?
   color       String?
@@ -174,7 +175,6 @@ model Account {
   scheduledPayments ScheduledPayment[]
   scheduledPaymentRecords ScheduledPaymentRecord[]
 
-  @@unique([workspaceId, name, currency])
   @@index([workspaceId, archived])
   @@index([workspaceId, ownerId, archived, order])
   @@map("accounts")

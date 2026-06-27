@@ -50,7 +50,7 @@ function toUiArchivedAccount(account: ArchivedAccountDto) {
 function toCreateAccountDto(input: CreateAccountInput): CreateAccountDto {
   return {
     name: input.name,
-    balance: normalizeMoneyString(input.balance),
+    initialBalance: normalizeMoneyString(input.initialBalance),
     currency: input.currency as CreateAccountDto["currency"],
     ownerId: input.ownerId ?? null,
     color: input.color,
@@ -63,6 +63,7 @@ function toUpdateAccountDto(input: UpdateAccountInput): UpdateAccountDto {
   return {
     name: input.name,
     balance: normalizeOptionalMoneyString(input.balance),
+    initialBalance: normalizeOptionalMoneyString(input.initialBalance),
     currency: input.currency as UpdateAccountDto["currency"],
     ownerId: input.ownerId,
     color: input.color,

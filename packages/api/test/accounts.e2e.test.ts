@@ -110,6 +110,7 @@ function createAccountRecord(overrides: Record<string, unknown> = {}) {
     ownerId: null,
     name: "Main card",
     balance: "125.50",
+    initialBalance: "125.50",
     currency: "BYN",
     description: null,
     color: "#0f766e",
@@ -191,7 +192,7 @@ describe("Accounts API", () => {
       .expect(403);
   });
 
-  it("creates an account with string balance and appends active account order", async () => {
+  it("creates an account with string initial balance and appends active account order", async () => {
     mockAuthenticatedSession(prisma);
 
     const response = await request(app.getHttpServer())
@@ -199,7 +200,7 @@ describe("Accounts API", () => {
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
       .send({
         name: "Main card",
-        balance: "125.50",
+        initialBalance: "125.50",
         currency: "BYN",
         ownerId: null,
         color: "#0f766e",
@@ -211,6 +212,7 @@ describe("Accounts API", () => {
     expect(response.body.account).toMatchObject({
       id: "account-1",
       balance: "125.50",
+      initialBalance: "125.50",
       currency: "BYN",
       order: 2,
     });
@@ -219,6 +221,7 @@ describe("Accounts API", () => {
       expect.objectContaining({
         data: expect.objectContaining({
           balance: "125.50",
+          initialBalance: "125.50",
           createdAt: new Date("2026-05-25T12:00:00.000Z"),
           order: 2,
           ownerId: null,
@@ -228,7 +231,7 @@ describe("Accounts API", () => {
     );
   });
 
-  it("rejects invalid account balance strings", async () => {
+  it("rejects invalid account initial balance strings", async () => {
     mockAuthenticatedSession(prisma);
 
     await request(app.getHttpServer())
@@ -236,7 +239,7 @@ describe("Accounts API", () => {
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
       .send({
         name: "Main card",
-        balance: "12abc",
+        initialBalance: "12abc",
         currency: "BYN",
         ownerId: null,
         createdAt: "2026-05-25T12:00:00.000Z",
@@ -246,32 +249,24 @@ describe("Accounts API", () => {
     expect(prisma.account.create).not.toHaveBeenCalled();
   });
 
-  it("rejects duplicate account name and currency on create", async () => {
+  it("allows duplicate account name and currency on create", async () => {
     mockAuthenticatedSession(prisma);
     prisma.account.findFirst.mockResolvedValue(createAccountRecord({ id: "account-2" }));
 
-    const response = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post("/workspaces/workspace-1/accounts")
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
       .send({
         name: "Main card",
-        balance: "125.50",
+        initialBalance: "125.50",
         currency: "BYN",
         ownerId: null,
         createdAt: "2026-05-25T12:00:00.000Z",
       })
-      .expect(400);
+      .expect(201);
 
-    expect(response.body.message).toBe("Счёт с таким названием и валютой уже существует");
-    expect(prisma.account.findFirst).toHaveBeenCalledWith({
-      where: {
-        workspaceId: "workspace-1",
-        name: "Main card",
-        currency: "BYN",
-      },
-      select: { id: true },
-    });
-    expect(prisma.account.create).not.toHaveBeenCalled();
+    expect(prisma.account.findFirst).not.toHaveBeenCalled();
+    expect(prisma.account.create).toHaveBeenCalled();
   });
 
   it("rejects account owners outside the workspace", async () => {
@@ -283,7 +278,7 @@ describe("Accounts API", () => {
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
       .send({
         name: "Main card",
-        balance: "125.50",
+        initialBalance: "125.50",
         currency: "BYN",
         ownerId: "user-outside-workspace",
         createdAt: "2026-05-25T12:00:00.000Z",
@@ -375,27 +370,61 @@ describe("Accounts API", () => {
     expect(prisma.account.update).not.toHaveBeenCalled();
   });
 
-  it("rejects duplicate account name and currency on update", async () => {
+  it("updates initial balance and shifts current balance by the same delta", async () => {
     mockAuthenticatedSession(prisma);
-    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ id: "account-2" }));
+    prisma.account.findUnique.mockResolvedValue(
+      createAccountRecord({
+        balance: "125.50",
+        initialBalance: "100.00",
+      })
+    );
+    prisma.account.update.mockResolvedValue(
+      createAccountRecord({
+        balance: "175.50",
+        initialBalance: "150.00",
+      })
+    );
 
     const response = await request(app.getHttpServer())
       .patch("/accounts/account-1")
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
-      .send({ currency: "BYN", name: "Main card" })
-      .expect(400);
+      .send({ initialBalance: "150.00" })
+      .expect(200);
 
-    expect(response.body.message).toBe("Счёт с таким названием и валютой уже существует");
-    expect(prisma.account.findFirst).toHaveBeenCalledWith({
-      where: {
-        workspaceId: "workspace-1",
-        name: "Main card",
-        currency: "BYN",
-        NOT: { id: "account-1" },
-      },
-      select: { id: true },
+    expect(response.body.account).toMatchObject({
+      balance: "175.50",
+      initialBalance: "150.00",
     });
-    expect(prisma.account.update).not.toHaveBeenCalled();
+    expect(prisma.account.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          balance: "175.5",
+          initialBalance: "150.00",
+        }),
+        where: { id: "account-1" },
+      })
+    );
+  });
+
+  it("allows duplicate account name and currency on update", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ id: "account-2" }));
+
+    await request(app.getHttpServer())
+      .patch("/accounts/account-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ currency: "BYN", name: "Main card" })
+      .expect(200);
+
+    expect(prisma.account.findFirst).not.toHaveBeenCalled();
+    expect(prisma.account.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          currency: "BYN",
+          name: "Main card",
+        }),
+      })
+    );
   });
 
   it("rejects account owner updates outside the workspace", async () => {

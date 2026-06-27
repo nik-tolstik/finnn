@@ -15,6 +15,7 @@ function createAccount(id: string) {
     ownerId: "user-1",
     name: id,
     balance: "100",
+    initialBalance: "100",
     currency: "BYN",
     description: null,
     color: null,

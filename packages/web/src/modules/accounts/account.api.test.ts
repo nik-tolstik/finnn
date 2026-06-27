@@ -34,6 +34,7 @@ function createAccountDto(overrides: Record<string, unknown> = {}) {
     ownerId: "user-1",
     name: "Cash",
     balance: "100.00",
+    initialBalance: "100.00",
     currency: "BYN",
     description: null,
     color: "#ef4444",
@@ -80,7 +81,7 @@ describe("account.api", () => {
     });
   });
 
-  it("serializes create and update dates before calling the API", async () => {
+  it("serializes create and update dates and money fields before calling the API", async () => {
     createApiAccountMock.mockResolvedValue({ account: createAccountDto() });
     updateApiAccountMock.mockResolvedValue({ account: createAccountDto({ name: "Card" }) });
 
@@ -91,7 +92,7 @@ describe("account.api", () => {
         "workspace-1",
         {
           name: "Cash",
-          balance: "2 276,37",
+          initialBalance: "2 276,37",
           currency: "BYN",
           ownerId: null,
           color: "#ef4444",
@@ -110,6 +111,7 @@ describe("account.api", () => {
         {
           name: "Card",
           balance: "3\u00a0000,50",
+          initialBalance: "2\u00a0500,25",
           createdAt: new Date("2026-05-04T10:00:00.000Z"),
         },
         requestOptions
@@ -121,7 +123,7 @@ describe("account.api", () => {
     expect(createApiAccountMock).toHaveBeenCalledWith(
       "workspace-1",
       expect.objectContaining({
-        balance: "2276.37",
+        initialBalance: "2276.37",
         createdAt: "2026-05-03T10:00:00.000Z",
         ownerId: null,
       }),
@@ -131,6 +133,7 @@ describe("account.api", () => {
       "account-1",
       expect.objectContaining({
         balance: "3000.50",
+        initialBalance: "2500.25",
         createdAt: "2026-05-04T10:00:00.000Z",
       }),
       requestOptions

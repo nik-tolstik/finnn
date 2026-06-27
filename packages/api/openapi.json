@@ -5780,7 +5780,7 @@
             "maxLength": 100,
             "minLength": 1
           },
-          "balance": {
+          "initialBalance": {
             "type": "string",
             "example": "125.50"
           },
@@ -5808,7 +5808,7 @@
             "format": "date-time"
           }
         },
-        "required": ["name", "balance", "currency", "createdAt"]
+        "required": ["name", "initialBalance", "currency", "createdAt"]
       },
       "AccountOwnerDto": {
         "type": "object",
@@ -5859,6 +5859,10 @@
             "type": "string",
             "example": "125.50"
           },
+          "initialBalance": {
+            "type": "string",
+            "example": "125.50"
+          },
           "currency": {
             "type": "string",
             "example": "BYN"
@@ -5906,7 +5910,18 @@
             ]
           }
         },
-        "required": ["id", "workspaceId", "name", "balance", "currency", "archived", "order", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "workspaceId",
+          "name",
+          "balance",
+          "initialBalance",
+          "currency",
+          "archived",
+          "order",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "AccountResponseDto": {
         "type": "object",
@@ -5967,6 +5982,10 @@
             "type": "string",
             "example": "125.50"
           },
+          "initialBalance": {
+            "type": "string",
+            "example": "125.50"
+          },
           "currency": {
             "type": "string",
             "example": "BYN"
@@ -6022,6 +6041,7 @@
           "workspaceId",
           "name",
           "balance",
+          "initialBalance",
           "currency",
           "archived",
           "order",
@@ -6090,6 +6110,10 @@
           "balance": {
             "type": "string",
             "example": "200.00"
+          },
+          "initialBalance": {
+            "type": "string",
+            "example": "125.50"
           },
           "currency": {
             "type": "string",

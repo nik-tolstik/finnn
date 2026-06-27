@@ -10,7 +10,7 @@ Main models:
 - `AuthIdentity` - external sign-in identity linked to a user, currently used for Telegram and Google.
 - `Workspace` - shared financial space with owner, members, accounts, categories, transactions, transfers, debts, and invites.
 - `WorkspaceMember` - user membership and role inside a workspace.
-- `Account` - balance container with currency, owner, archive state, display metadata, and order.
+- `Account` - balance container with current and initial balances, currency, owner, archive state, display metadata, and order.
 - `Category` - income or expense classification.
 - `PaymentTransaction` - income or expense transaction for one account.
 - `TransferTransaction` - transfer between two accounts with source and destination amounts.
@@ -98,6 +98,18 @@ Do not use raw JavaScript arithmetic for persisted money behavior.
 ## Accounts
 
 Accounts belong to a workspace and can optionally have an owner. Frontend owner visibility rules live in `packages/web/src/modules/accounts/account-visibility.ts`.
+Account names are display labels and are not unique inside a workspace; users can distinguish same-name accounts by
+owner, balance, icon, color, and transaction history.
+
+`Account.balance` stores the current materialized balance. `Account.initialBalance` stores the opening balance before
+payment transactions, transfers, and debt transactions. The expected invariant is:
+
+```text
+current balance = initial balance + transaction balance deltas
+```
+
+When changing `initialBalance` through the API, the current `balance` is shifted by the same delta unless the request
+explicitly also provides a new `balance`.
 
 Accounts are archived instead of deleted for normal user flows. Deletion must account for dependencies:
 
