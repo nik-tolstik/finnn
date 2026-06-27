@@ -31,6 +31,7 @@ import {
   runOptimisticWorkspaceMutation,
   snapshotWorkspaceQueries,
   updateAccountBalancesInCache,
+  updateAccountsInCache,
   updateTransactionsInCache,
   updateUserReferencesInCache,
   updateWorkspaceCaches,
@@ -55,6 +56,7 @@ function makeAccount(id: string, balance: string): AccountWithBalance {
     createdAt: new Date(),
     updatedAt: new Date(),
     balance,
+    initialBalance: balance,
   } as AccountWithBalance;
 }
 
@@ -407,6 +409,31 @@ describe("optimistic workspace updates", () => {
 
     expect(afterRestore.accounts.data).toEqual([{ ...account, archived: false }]);
     expect(afterRestore.archived.data).toHaveLength(0);
+  });
+
+  it("patches account initial balance in active and archived account caches", async () => {
+    const queryClient = new QueryClient();
+    const context = createWorkspaceOptimisticContext(queryClient, WORKSPACE_ID, ["accounts", "archivedAccounts"]);
+
+    queryClient.setQueryData(accountKeys.list(WORKSPACE_ID), {
+      data: [makeAccount("acc-1", "10")],
+    });
+    queryClient.setQueryData(accountKeys.archived(WORKSPACE_ID), {
+      data: [makeAccount("acc-arch", "20")],
+    });
+
+    await snapshotWorkspaceQueries(context);
+
+    updateAccountsInCache(context, [
+      { id: "acc-1", initialBalance: "5" },
+      { id: "acc-arch", initialBalance: "15" },
+    ]);
+
+    const active = queryClient.getQueryData(accountKeys.list(WORKSPACE_ID)) as { data: AccountWithBalance[] };
+    const archived = queryClient.getQueryData(accountKeys.archived(WORKSPACE_ID)) as { data: AccountWithBalance[] };
+
+    expect(active.data[0]).toEqual(expect.objectContaining({ id: "acc-1", initialBalance: "5" }));
+    expect(archived.data[0]).toEqual(expect.objectContaining({ id: "acc-arch", initialBalance: "15" }));
   });
 
   it("removes accounts and totals using the accounts cache remove API", async () => {

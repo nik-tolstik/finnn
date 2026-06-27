@@ -41,8 +41,8 @@ export class CreateAccountDto {
   @ApiProperty({ example: "125.50", type: String })
   @IsString()
   @MinLength(1)
-  @Matches(MONEY_PATTERN, { message: "Баланс должен быть корректной суммой" })
-  balance!: string;
+  @Matches(MONEY_PATTERN, { message: "Изначальный баланс должен быть корректной суммой" })
+  initialBalance!: string;
 
   @ApiProperty({ enum: ACCOUNT_CURRENCIES, example: "BYN", type: String })
   @IsIn(ACCOUNT_CURRENCIES)
@@ -82,6 +82,12 @@ export class UpdateAccountDto {
   @IsString()
   @Matches(MONEY_PATTERN, { message: "Баланс должен быть корректной суммой" })
   balance?: string;
+
+  @ApiPropertyOptional({ example: "125.50", type: String })
+  @IsOptional()
+  @IsString()
+  @Matches(MONEY_PATTERN, { message: "Изначальный баланс должен быть корректной суммой" })
+  initialBalance?: string;
 
   @ApiPropertyOptional({ enum: ACCOUNT_CURRENCIES, example: "USD", type: String })
   @IsOptional()
@@ -150,6 +156,9 @@ export class AccountDto {
 
   @ApiProperty({ example: "125.50", type: String })
   balance!: string;
+
+  @ApiProperty({ example: "125.50", type: String })
+  initialBalance!: string;
 
   @ApiProperty({ example: "BYN", type: String })
   currency!: string;

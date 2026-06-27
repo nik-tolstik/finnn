@@ -14,6 +14,7 @@ import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { type UpdateAccountInput, updateAccountSchema } from "@/shared/lib/validations/account";
 import { Button } from "@/shared/ui/button";
+import { ColorPicker } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
@@ -24,9 +25,9 @@ import {
   DialogTitle,
   DialogWindow,
 } from "@/shared/ui/dialog";
-import { ColorPicker } from "@/shared/ui/color-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
@@ -54,6 +55,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
     resolver: zodResolver(updateAccountSchema),
     defaultValues: {
       name: account.name,
+      initialBalance: account.initialBalance,
       color: account.color || undefined,
       icon: account.icon || "Wallet",
       ownerId: account.ownerId || null,
@@ -98,18 +100,29 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
   const selectedColor = useWatch({ control, name: "color" });
   const selectedIcon = useWatch({ control, name: "icon" });
   const accountName = useWatch({ control, name: "name" });
+  const initialBalance = useWatch({ control, name: "initialBalance" });
 
   useEffect(() => {
     if (open) {
       reset({
         name: account.name,
+        initialBalance: account.initialBalance,
         color: account.color || undefined,
         icon: account.icon || "Wallet",
         ownerId: account.ownerId || null,
         createdAt: new Date(account.createdAt),
       });
     }
-  }, [account.name, account.color, account.icon, account.ownerId, account.createdAt, open, reset]);
+  }, [
+    account.name,
+    account.initialBalance,
+    account.color,
+    account.icon,
+    account.ownerId,
+    account.createdAt,
+    open,
+    reset,
+  ]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
@@ -130,6 +143,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
             {
               id: account.id,
               name: data.name,
+              initialBalance: data.initialBalance,
               color: data.color,
               icon: data.icon,
               ownerId: optimisticOwnerId,
@@ -170,6 +184,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
               account={{
                 ...account,
                 name: accountName || account.name,
+                initialBalance: initialBalance || account.initialBalance,
                 color: selectedColor || account.color,
                 icon: selectedIcon || account.icon || "Wallet",
                 owner: (account as any).owner,
@@ -187,6 +202,17 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
                 aria-invalid={errors.name ? "true" : "false"}
               />
               {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="initialBalance">Изначальный баланс</Label>
+              <NumberInput
+                id="initialBalance"
+                {...register("initialBalance")}
+                placeholder="0.00"
+                aria-invalid={errors.initialBalance ? "true" : "false"}
+              />
+              {errors.initialBalance && <p className="text-sm text-destructive">{errors.initialBalance.message}</p>}
             </div>
 
             <div className="space-y-2">

@@ -13,7 +13,7 @@ export interface CreateAccountDto {
    * @maxLength 100
    */
   name: string;
-  balance: string;
+  initialBalance: string;
   currency: CreateAccountDtoCurrency;
   /** @nullable */
   ownerId?: string | null;

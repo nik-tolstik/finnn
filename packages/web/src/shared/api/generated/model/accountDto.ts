@@ -14,6 +14,7 @@ export interface AccountDto {
   ownerId?: string | null;
   name: string;
   balance: string;
+  initialBalance: string;
   currency: string;
   /** @nullable */
   description?: string | null;

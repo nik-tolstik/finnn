@@ -4,7 +4,7 @@ import { Currency } from "@/shared/constants/currency";
 
 export const createAccountSchema = z.object({
   name: z.string().min(1, "Название обязательно").max(100),
-  balance: z.string().min(1, "Баланс обязателен"),
+  initialBalance: z.string().min(1, "Изначальный баланс обязателен"),
   currency: z.nativeEnum(Currency),
   ownerId: z.string().nullable().optional(),
   color: z.string().optional(),
@@ -15,6 +15,7 @@ export const createAccountSchema = z.object({
 export const updateAccountSchema = z.object({
   name: z.string().min(1, "Название обязательно").max(100, "Название не должно превышать 100 символов").optional(),
   balance: z.string().optional(),
+  initialBalance: z.string().optional(),
   currency: z.nativeEnum(Currency).optional(),
   ownerId: z.string().nullable().optional(),
   color: z.string().optional(),
