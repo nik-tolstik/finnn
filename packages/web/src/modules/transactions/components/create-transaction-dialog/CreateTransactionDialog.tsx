@@ -73,7 +73,9 @@ interface CreateTransactionDialogProps {
   initialDate?: Date;
   initialCategoryId?: string;
   lockType?: boolean;
+  defaultMode?: CreateTransactionMode;
   onPaymentSubmit?: (input: CreatePaymentTransactionInput) => Promise<void> | void;
+  onTransferSubmit?: (input: CreateTransferTransactionInput) => Promise<void> | void;
 }
 
 function toTransactionUser(user: Session["user"] | undefined): TransactionUser | null {
@@ -119,12 +121,14 @@ export function CreateTransactionDialog({
   initialDate,
   initialCategoryId,
   lockType = false,
+  defaultMode,
   onPaymentSubmit,
+  onTransferSubmit,
 }: CreateTransactionDialogProps) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const selectAccountDialog = useDialogState();
-  const [transactionMode, setTransactionMode] = useState<CreateTransactionMode>(defaultType);
+  const [transactionMode, setTransactionMode] = useState<CreateTransactionMode>(defaultMode ?? defaultType);
 
   const { data: accountsData } = useQuery({
     queryKey: accountKeys.list(workspaceId),
@@ -210,7 +214,7 @@ export function CreateTransactionDialog({
       const currentAccount = account;
       const initialAccountId = currentAccount?.id || accountProp?.id || "";
       accountIdRef.current = initialAccountId;
-      setTransactionMode(defaultType);
+      setTransactionMode(defaultMode ?? defaultType);
 
       const resetValues = getCreatePaymentDefaultValues({
         accountId: initialAccountId,
@@ -245,6 +249,7 @@ export function CreateTransactionDialog({
     resetTransferForm,
     setValue,
     defaultType,
+    defaultMode,
     account,
     accountProp,
     initialAmount,
@@ -256,7 +261,7 @@ export function CreateTransactionDialog({
   useEffect(() => {
     if (open && account && account.id !== accountIdRef.current) {
       accountIdRef.current = account.id;
-      setTransactionMode(defaultType);
+      setTransactionMode(defaultMode ?? defaultType);
       reset(
         getCreatePaymentDefaultValues({
           accountId: account.id,
@@ -276,6 +281,7 @@ export function CreateTransactionDialog({
     reset,
     resetTransferForm,
     defaultType,
+    defaultMode,
     initialAmount,
     initialDescription,
     initialDate,
@@ -373,7 +379,17 @@ export function CreateTransactionDialog({
     }
   };
 
-  const onTransferSubmit = async (data: CreateTransferTransactionInput) => {
+  const handleTransferSubmit = async (data: CreateTransferTransactionInput) => {
+    if (onTransferSubmit) {
+      try {
+        await onTransferSubmit(data);
+        onOpenChange(false);
+      } catch {
+        return;
+      }
+      return;
+    }
+
     const balanceDeltas = new Map<string, string>();
     const transferDeltas = getTransferTransactionBalanceDeltas(data.amount, data.toAmount);
     addAccountBalanceDelta(balanceDeltas, data.fromAccountId, transferDeltas.fromDelta);
@@ -509,7 +525,7 @@ export function CreateTransactionDialog({
                   workspaceId={workspaceId}
                   form={transferForm}
                   accounts={accountsData?.data || []}
-                  onSubmit={onTransferSubmit}
+                  onSubmit={handleTransferSubmit}
                 />
               ) : (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -693,7 +709,7 @@ export function CreateTransactionDialog({
           <DialogFooter>
             <Button
               type="button"
-              onClick={isTransferMode ? transferForm.handleSubmit(onTransferSubmit) : handleSubmit(onSubmit)}
+              onClick={isTransferMode ? transferForm.handleSubmit(handleTransferSubmit) : handleSubmit(onSubmit)}
               disabled={isTransferMode ? transferForm.formState.isSubmitting : isSubmitting}
             >
               {isTransferMode

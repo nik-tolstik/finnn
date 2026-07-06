@@ -32,10 +32,10 @@
   --color-card: var(--card);
 
   /* Radius */
-  --radius-sm: 4;
-  --radius-md: 6;
-  --radius-lg: 8;
-  --radius-xl: 10;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
 }
 
 :root,

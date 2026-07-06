@@ -47,9 +47,16 @@ interface CreateDebtDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
+  onDebtSubmit?: (input: CreateDebtInput) => Promise<void> | void;
 }
 
-export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseComplete }: CreateDebtDialogProps) {
+export function CreateDebtDialog({
+  workspaceId,
+  open,
+  onOpenChange,
+  onCloseComplete,
+  onDebtSubmit,
+}: CreateDebtDialogProps) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const selectAccountDialog = useDialogState();
@@ -130,6 +137,16 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
 
     if (selectedAccountIsCrossCurrency && !data.toAmount) {
       toast.error("Укажите сумму в валюте счёта");
+      return;
+    }
+
+    if (onDebtSubmit) {
+      try {
+        await onDebtSubmit(data);
+        onOpenChange(false);
+      } catch {
+        return;
+      }
       return;
     }
 
