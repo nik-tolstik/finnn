@@ -33,8 +33,9 @@ export function getCurrencySymbol(currency: string): string {
 export function formatMoney(amount: string | number, currency = "USD"): string {
   const bigAmount = new Big(amount);
   const [integer, decimal] = bigAmount.toFixed(2).split(".");
-  const formattedInteger = new Intl.NumberFormat("ru-RU").format(Number(integer));
+  const isNegative = bigAmount.lt(0);
+  const formattedInteger = new Intl.NumberFormat("ru-RU").format(BigInt(integer.replace("-", "")));
   const shouldAddSpace = currency === "BYN";
 
-  return `${formattedInteger}${decimal ? `.${decimal}` : ""}${shouldAddSpace ? " " : ""}${getCurrencySymbol(currency)}`;
+  return `${isNegative ? "-" : ""}${formattedInteger}${decimal ? `.${decimal}` : ""}${shouldAddSpace ? " " : ""}${getCurrencySymbol(currency)}`;
 }

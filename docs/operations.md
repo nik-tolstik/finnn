@@ -212,6 +212,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://api.example.com/cron/schedu
 
 The exchange-rate handler is `packages/api/src/currency/currency.controller.ts`.
 The scheduled-payment reminder handler is `packages/api/src/scheduled-payments/scheduled-payments-cron.controller.ts`.
+Exchange-rate date keys follow the `Europe/Minsk` calendar day; run the daily job after NBRB publishes that day's rates.
 
 Operational requirements:
 

@@ -110,6 +110,7 @@ export function CreateDebtDialog({
     fromCurrency: debtCurrency,
     toCurrency: useAccount ? selectedAccount?.currency : undefined,
     date,
+    resetKey: open,
   });
 
   const previewAccount = useMemo(() => {

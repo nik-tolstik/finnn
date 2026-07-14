@@ -439,6 +439,34 @@ describe("Analytics API", () => {
     ]);
   });
 
+  it("uses the Minsk calendar date when looking up exchange rates", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findMany
+      .mockResolvedValueOnce([
+        createPaymentTransactionRecord({
+          amount: "10",
+          type: "income",
+          date: new Date("2026-03-30T22:15:00.000Z"),
+          account: createAccountRecord({
+            id: "account-usd",
+            currency: Currency.USD,
+          }),
+        }),
+      ])
+      .mockResolvedValueOnce([]);
+    exchangeRateService.preloadExchangeRates.mockResolvedValue(
+      new Map([[createRateKey("2026-03-31", Currency.USD, Currency.BYN), 3]])
+    );
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/analytics/overview")
+      .query({ dateFrom: "2026-03-31", dateTo: "2026-03-31" })
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.summary.income.totalInBaseCurrency).toBe("30");
+  });
+
   it("uses a 30-day implicit range and normalizes reversed explicit ranges", async () => {
     mockAuthenticatedSession(prisma);
 

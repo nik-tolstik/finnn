@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -101,7 +101,13 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     if (!accountId || !accounts.length) return undefined;
     return accounts.find((acc) => acc.id === accountId);
   }, [accountId, accounts]);
-  const rateDate = useMemo(() => new Date(), []);
+  const [rateDate, setRateDate] = useState(() => new Date());
+
+  useEffect(() => {
+    if (open) {
+      setRateDate(new Date());
+    }
+  }, [open]);
 
   const currenciesMatch = useMemo(() => {
     if (!selectedAccount) return true;
@@ -113,6 +119,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     fromCurrency: debt.currency,
     toCurrency: selectedAccount?.currency,
     date: rateDate,
+    resetKey: open,
   });
 
   const previewAccount = useMemo(() => {

@@ -3,6 +3,8 @@ import { Currency } from "@prisma/client";
 
 import { PrismaService } from "@/prisma/prisma.service";
 
+import { getExchangeRateDateKey, normalizeExchangeRateDate } from "./exchange-rate-date";
+
 const BASE_CURRENCY = Currency.BYN;
 const NON_BASE_CURRENCIES = [Currency.USD, Currency.EUR, Currency.RUB] as const;
 const NON_BASE_CURRENCY_LABELS = NON_BASE_CURRENCIES.join("/");
@@ -11,7 +13,6 @@ const NBRB_BY_DATE_TIMEOUT_MS = 3000;
 const EXCHANGE_RATE_API_TIMEOUT_MS = 5000;
 const NBRB_COOLDOWN_MS = 5 * 60 * 1000;
 const EXCHANGE_RATE_API_CACHE_TTL_MS = 60 * 60 * 1000;
-
 interface NBRBRate {
   Cur_Abbreviation: string;
   Cur_Scale: number;
@@ -19,7 +20,9 @@ interface NBRBRate {
 }
 
 interface ExchangeRateAPIResponse {
-  rates: Record<string, number>;
+  base?: string;
+  date?: string;
+  rates?: Record<string, unknown>;
 }
 
 type CurrencyRatesResult = { data: Record<string, number> } | { error: string };
@@ -27,6 +30,10 @@ type NonBaseCurrency = (typeof NON_BASE_CURRENCIES)[number];
 type BaseRates = {
   [Currency.BYN]: number;
 } & Partial<Record<NonBaseCurrency, number>>;
+
+function isValidExchangeRate(rate: unknown): rate is number {
+  return typeof rate === "number" && Number.isFinite(rate) && rate > 0;
+}
 
 export interface ExchangeRateRequest {
   date: Date;
@@ -38,21 +45,19 @@ export interface ExchangeRateRequest {
 export class ExchangeRateService {
   private readonly logger = new Logger(ExchangeRateService.name);
   private nbrbUnavailableUntil = 0;
-  private fallbackRatesCache: { expiresAt: number; value: Record<string, number> } | null = null;
-  private fallbackRatesRequest: Promise<CurrencyRatesResult> | null = null;
+  private fallbackRatesCache: { dateKey: string; expiresAt: number; value: Record<string, number> } | null = null;
+  private readonly fallbackRatesRequests = new Map<string, Promise<CurrencyRatesResult>>();
   private readonly ratesByDateRequests = new Map<string, Promise<CurrencyRatesResult>>();
   private readonly baseRatesRequests = new Map<string, Promise<BaseRates>>();
 
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   private normalizeDate(date: Date) {
-    const normalizedDate = new Date(date);
-    normalizedDate.setUTCHours(0, 0, 0, 0);
-    return normalizedDate;
+    return normalizeExchangeRateDate(date);
   }
 
   private getDateKey(date: Date) {
-    return this.normalizeDate(date).toISOString().split("T")[0];
+    return getExchangeRateDateKey(date);
   }
 
   getRequestKey(request: ExchangeRateRequest) {
@@ -65,7 +70,11 @@ export class ExchangeRateService {
     };
 
     for (const rate of rates) {
-      mappedRates[rate.Cur_Abbreviation] = rate.Cur_OfficialRate / rate.Cur_Scale;
+      const normalizedRate = rate.Cur_OfficialRate / rate.Cur_Scale;
+
+      if (isValidExchangeRate(normalizedRate)) {
+        mappedRates[rate.Cur_Abbreviation] = normalizedRate;
+      }
     }
 
     return mappedRates;
@@ -132,16 +141,17 @@ export class ExchangeRateService {
     }
   }
 
-  private async getExchangeRateAPIRates(): Promise<CurrencyRatesResult> {
-    if (this.fallbackRatesCache && this.fallbackRatesCache.expiresAt > Date.now()) {
+  private async getExchangeRateAPIRates(expectedDateKey: string): Promise<CurrencyRatesResult> {
+    if (this.fallbackRatesCache?.dateKey === expectedDateKey && this.fallbackRatesCache.expiresAt > Date.now()) {
       return { data: this.fallbackRatesCache.value };
     }
 
-    if (this.fallbackRatesRequest) {
-      return this.fallbackRatesRequest;
+    const existingRequest = this.fallbackRatesRequests.get(expectedDateKey);
+    if (existingRequest) {
+      return existingRequest;
     }
 
-    this.fallbackRatesRequest = (async () => {
+    const request = (async () => {
       try {
         const response = await this.fetchWithTimeout(
           "https://api.exchangerate-api.com/v4/latest/BYN",
@@ -153,16 +163,23 @@ export class ExchangeRateService {
         }
 
         const data = (await response.json()) as ExchangeRateAPIResponse;
+        if (data.base !== BASE_CURRENCY || data.date !== expectedDateKey || !data.rates) {
+          return { error: `ExchangeRate-API returned rates for an unexpected date or base currency` };
+        }
+
         const rates: Record<string, number> = { BYN: 1 };
 
         for (const currency of NON_BASE_CURRENCIES) {
           const rate = data.rates[currency];
-          if (rate) {
-            rates[currency] = 1 / rate;
+          if (!isValidExchangeRate(rate)) {
+            return { error: `ExchangeRate-API did not return a valid ${currency} rate` };
           }
+
+          rates[currency] = 1 / rate;
         }
 
         this.fallbackRatesCache = {
+          dateKey: expectedDateKey,
           expiresAt: Date.now() + EXCHANGE_RATE_API_CACHE_TTL_MS,
           value: rates,
         };
@@ -175,14 +192,19 @@ export class ExchangeRateService {
             : this.getErrorMessage(error, "ExchangeRate-API error"),
         };
       } finally {
-        this.fallbackRatesRequest = null;
+        this.fallbackRatesRequests.delete(expectedDateKey);
       }
     })();
 
-    return this.fallbackRatesRequest;
+    this.fallbackRatesRequests.set(expectedDateKey, request);
+    return request;
   }
 
-  private async getRatesWithFallback(nbrbResultPromise: Promise<CurrencyRatesResult>, warningMessage: string) {
+  private async getRatesWithFallback(
+    nbrbResultPromise: Promise<CurrencyRatesResult>,
+    warningMessage: string,
+    expectedDateKey: string
+  ) {
     const nbrbResult = await nbrbResultPromise;
 
     if (!("error" in nbrbResult)) {
@@ -191,7 +213,7 @@ export class ExchangeRateService {
 
     this.logger.warn(`${warningMessage} ${nbrbResult.error}`);
 
-    const fallbackResult = await this.getExchangeRateAPIRates();
+    const fallbackResult = await this.getExchangeRateAPIRates(expectedDateKey);
     if (!("error" in fallbackResult)) {
       return fallbackResult;
     }
@@ -208,10 +230,12 @@ export class ExchangeRateService {
     }
 
     const url = `https://www.nbrb.by/api/exrates/rates?periodicity=0&ondate=${dateKey}`;
-    const request = this.getRatesWithFallback(
-      this.requestNBRBRates(url, NBRB_BY_DATE_TIMEOUT_MS),
-      "NBRB unavailable for date, using ExchangeRate-API:"
-    ).finally(() => {
+    const nbrbRequest = this.requestNBRBRates(url, NBRB_BY_DATE_TIMEOUT_MS);
+    const ratesRequest =
+      dateKey === this.getDateKey(new Date())
+        ? this.getRatesWithFallback(nbrbRequest, "NBRB unavailable for today, using ExchangeRate-API:", dateKey)
+        : nbrbRequest;
+    const request = ratesRequest.finally(() => {
       this.ratesByDateRequests.delete(dateKey);
     });
 
@@ -220,9 +244,11 @@ export class ExchangeRateService {
   }
 
   async getNBRBExchangeRates(): Promise<CurrencyRatesResult> {
+    const todayKey = this.getDateKey(new Date());
     const result = await this.getRatesWithFallback(
       this.requestNBRBRates("https://www.nbrb.by/api/exrates/rates?periodicity=0", NBRB_LATEST_TIMEOUT_MS),
-      "NBRB unavailable, using ExchangeRate-API:"
+      "NBRB unavailable, using ExchangeRate-API:",
+      todayKey
     );
 
     if (!("error" in result)) {
@@ -243,7 +269,7 @@ export class ExchangeRateService {
   }
 
   private hasCompleteBaseRates(baseRates: BaseRates) {
-    return NON_BASE_CURRENCIES.every((currency) => typeof baseRates[currency] === "number");
+    return NON_BASE_CURRENCIES.every((currency) => isValidExchangeRate(baseRates[currency]));
   }
 
   private getRateFromBaseRates(baseRates: BaseRates, fromCurrency: Currency, toCurrency: Currency) {
@@ -253,18 +279,18 @@ export class ExchangeRateService {
 
     if (fromCurrency === BASE_CURRENCY) {
       const toRate = baseRates[toCurrency];
-      return typeof toRate === "number" ? 1 / toRate : undefined;
+      return isValidExchangeRate(toRate) ? 1 / toRate : undefined;
     }
 
     if (toCurrency === BASE_CURRENCY) {
       const fromRate = baseRates[fromCurrency];
-      return typeof fromRate === "number" ? fromRate : undefined;
+      return isValidExchangeRate(fromRate) ? fromRate : undefined;
     }
 
     const fromRate = baseRates[fromCurrency];
     const toRate = baseRates[toCurrency];
 
-    if (typeof fromRate !== "number" || typeof toRate !== "number") {
+    if (!isValidExchangeRate(fromRate) || !isValidExchangeRate(toRate)) {
       return undefined;
     }
 
@@ -310,12 +336,12 @@ export class ExchangeRateService {
   private async saveBaseRates(date: Date, baseRates: BaseRates) {
     const normalizedDate = this.normalizeDate(date);
 
-    return Promise.all(
-      NON_BASE_CURRENCIES.map(async (currency) => {
+    return this.prisma.$transaction(
+      NON_BASE_CURRENCIES.map((currency) => {
         const rate = baseRates[currency];
 
-        if (typeof rate !== "number") {
-          return null;
+        if (!isValidExchangeRate(rate)) {
+          throw new Error(`Курс ${currency}/${BASE_CURRENCY} на ${this.getDateKey(date)} некорректен`);
         }
 
         return this.prisma.exchangeRate.upsert({
@@ -512,6 +538,8 @@ export class ExchangeRateService {
   }
 
   async getYesterdayExchangeRates() {
-    return this.getCurrencyRatesForDate(this.normalizeDate(new Date(Date.now() - 24 * 60 * 60 * 1000)));
+    const yesterday = this.normalizeDate(new Date());
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    return this.getCurrencyRatesForDate(yesterday);
   }
 }

@@ -164,6 +164,7 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
     fromCurrency: currency,
     toCurrency: fullAccount?.currency,
     date,
+    resetKey: open,
   });
 
   const previewAccount = useMemo(() => {

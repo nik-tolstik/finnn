@@ -1,14 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FieldValues, Path, PathValue, UseFormReturn } from "react-hook-form";
 
 import { getExchangeRate } from "@/shared/api/generated/currency/currency";
 import type { GetExchangeRateFromCurrency, GetExchangeRateToCurrency } from "@/shared/api/generated/model";
 import type { Currency } from "@/shared/constants/currency";
-import { divideMoney, multiplyMoney } from "@/shared/utils/money";
+import { exchangeRateKeys } from "@/shared/lib/query-keys";
+import { getExchangeRateDateKey } from "@/shared/utils/exchange-rate-date";
+import { divideMoney, multiplyMoney, roundMoney } from "@/shared/utils/money";
 
-type EditedInput = "amount" | "toAmount" | "both" | null;
+import { type CurrencyAmountEditedInput, getRateIdentityTransition } from "./currency-amount-sync";
 
 interface UseCurrencyAmountSyncProps<TFormData extends FieldValues> {
   form: UseFormReturn<TFormData>;
@@ -17,6 +20,7 @@ interface UseCurrencyAmountSyncProps<TFormData extends FieldValues> {
   date: Date;
   amountField?: Path<TFormData>;
   toAmountField?: Path<TFormData>;
+  resetKey?: boolean | number | string;
 }
 
 interface UseCurrencyAmountSyncResult {
@@ -33,58 +37,33 @@ export function useCurrencyAmountSync<TFormData extends FieldValues>({
   date,
   amountField,
   toAmountField,
+  resetKey,
 }: UseCurrencyAmountSyncProps<TFormData>): UseCurrencyAmountSyncResult {
-  const [lastEditedInput, setLastEditedInput] = useState<EditedInput>(null);
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
-  const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const [lastEditedInput, setLastEditedInput] = useState<CurrencyAmountEditedInput>(null);
 
   const amountPath = amountField ?? ("amount" as Path<TFormData>);
   const toAmountPath = toAmountField ?? ("toAmount" as Path<TFormData>);
+  const dateKey = getExchangeRateDateKey(date);
+  const currenciesMatch = Boolean(fromCurrency && toCurrency && fromCurrency === toCurrency);
+  const canLoadRate = Boolean(dateKey && fromCurrency && toCurrency && !currenciesMatch);
 
-  useEffect(() => {
-    let isCurrent = true;
+  const { data: loadedExchangeRate, isPending: isRatePending } = useQuery({
+    queryKey: exchangeRateKeys.rate(dateKey ?? "pending", fromCurrency ?? "pending", toCurrency ?? "pending"),
+    queryFn: async () => {
+      const result = await getExchangeRate({
+        date: `${dateKey}T00:00:00.000Z`,
+        fromCurrency: fromCurrency as GetExchangeRateFromCurrency,
+        toCurrency: toCurrency as GetExchangeRateToCurrency,
+      });
 
-    const loadExchangeRate = async () => {
-      if (!fromCurrency || !toCurrency) {
-        setExchangeRate(null);
-        setIsLoadingRate(false);
-        return;
-      }
+      return result.data;
+    },
+    enabled: canLoadRate,
+    retry: 1,
+    staleTime: 60 * 60_000,
+  });
 
-      if (fromCurrency === toCurrency) {
-        setExchangeRate(1);
-        setIsLoadingRate(false);
-        return;
-      }
-
-      setIsLoadingRate(true);
-      try {
-        const result = await getExchangeRate({
-          date: date.toISOString(),
-          fromCurrency: fromCurrency as GetExchangeRateFromCurrency,
-          toCurrency: toCurrency as GetExchangeRateToCurrency,
-        });
-        if (!isCurrent) return;
-
-        setExchangeRate(result.data);
-      } catch (error) {
-        if (!isCurrent) return;
-
-        console.error("Error fetching exchange rate:", error);
-        setExchangeRate(null);
-      } finally {
-        if (isCurrent) {
-          setIsLoadingRate(false);
-        }
-      }
-    };
-
-    loadExchangeRate();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [fromCurrency, toCurrency, date]);
+  const exchangeRate = currenciesMatch ? 1 : (loadedExchangeRate ?? null);
 
   const setStringValue = useCallback(
     (field: Path<TFormData>, value: string) => {
@@ -93,14 +72,64 @@ export function useCurrencyAmountSync<TFormData extends FieldValues>({
     [form]
   );
 
+  const rateIdentity = `${dateKey ?? "invalid"}:${fromCurrency ?? "none"}:${toCurrency ?? "none"}`;
+  const previousRateIdentity = useRef(rateIdentity);
+  const previousResetKey = useRef(resetKey);
+  const allowPersistedPairHydration = useRef(!fromCurrency || !toCurrency);
+
+  useEffect(() => {
+    if (previousRateIdentity.current === rateIdentity) {
+      return;
+    }
+
+    previousRateIdentity.current = rateIdentity;
+    const amount = String(form.getValues(amountPath) || "");
+    const toAmount = String(form.getValues(toAmountPath) || "");
+    const transition = getRateIdentityTransition({
+      allowPersistedPairHydration: allowPersistedPairHydration.current,
+      amount,
+      lastEditedInput,
+      pairIsComplete: Boolean(fromCurrency && toCurrency),
+      toAmount,
+    });
+
+    allowPersistedPairHydration.current = transition.allowPersistedPairHydration;
+    setLastEditedInput(transition.nextEditedInput);
+
+    if (transition.clearField === "amount") {
+      setStringValue(amountPath, "");
+    } else if (transition.clearField === "toAmount") {
+      setStringValue(toAmountPath, "");
+    }
+  }, [amountPath, form, fromCurrency, lastEditedInput, rateIdentity, setStringValue, toAmountPath, toCurrency]);
+
+  useEffect(() => {
+    if (Object.is(previousResetKey.current, resetKey)) {
+      return;
+    }
+
+    previousResetKey.current = resetKey;
+    allowPersistedPairHydration.current = !fromCurrency || !toCurrency;
+    setLastEditedInput(null);
+  }, [fromCurrency, resetKey, toCurrency]);
+
   const syncToAmount = useCallback(
     (value: string) => {
-      if (!value || exchangeRate === null) {
+      if (!value) {
+        setStringValue(toAmountPath, "");
         return;
       }
 
-      const converted = multiplyMoney(value, exchangeRate.toString());
-      const rounded = parseFloat(converted).toFixed(2);
+      if (exchangeRate === null) {
+        return;
+      }
+
+      let rounded: string;
+      try {
+        rounded = roundMoney(multiplyMoney(value, exchangeRate.toString()));
+      } catch {
+        return;
+      }
       if (form.getValues(toAmountPath) === rounded) {
         return;
       }
@@ -112,12 +141,21 @@ export function useCurrencyAmountSync<TFormData extends FieldValues>({
 
   const syncAmount = useCallback(
     (value: string) => {
-      if (!value || exchangeRate === null) {
+      if (!value) {
+        setStringValue(amountPath, "");
         return;
       }
 
-      const converted = divideMoney(value, exchangeRate.toString());
-      const rounded = parseFloat(converted).toFixed(2);
+      if (exchangeRate === null) {
+        return;
+      }
+
+      let rounded: string;
+      try {
+        rounded = roundMoney(divideMoney(value, exchangeRate.toString()));
+      } catch {
+        return;
+      }
       if (form.getValues(amountPath) === rounded) {
         return;
       }
@@ -178,6 +216,6 @@ export function useCurrencyAmountSync<TFormData extends FieldValues>({
     handleAmountChange,
     handleToAmountChange,
     exchangeRate,
-    isLoadingRate,
+    isLoadingRate: canLoadRate && isRatePending,
   };
 }

@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -75,7 +75,13 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   const toAmount = useWatch({ control, name: "toAmount" });
   const useAccount = useWatch({ control, name: "useAccount" });
   const accountId = useWatch({ control, name: "accountId" });
-  const rateDate = useMemo(() => new Date(), []);
+  const [rateDate, setRateDate] = useState(() => new Date());
+
+  useEffect(() => {
+    if (open) {
+      setRateDate(new Date());
+    }
+  }, [open]);
 
   const selectedAccount = useMemo(() => {
     if (!accountId) {
@@ -93,6 +99,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     fromCurrency: debt.currency,
     toCurrency: useAccount ? selectedAccount?.currency : undefined,
     date: rateDate,
+    resetKey: open,
   });
 
   const previewAccount = useMemo(() => {

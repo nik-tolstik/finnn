@@ -204,6 +204,11 @@ Important files:
 - `packages/api/src/currency/exchange-rate.service.ts` fetches external rates, persists daily exchange rates, and derives cross-rates.
 - `packages/api/src/currency/currency.controller.ts` exposes exchange-rate reads and the protected cron endpoint.
 - `packages/web/src/shared/api/generated/currency` is the frontend contract client for exchange-rate UI.
+- `packages/web/src/shared/hooks/useCurrencyAmountSync.ts` caches dated conversion rates and synchronizes cross-currency form amounts.
+- `packages/web/src/app/(dashboard)/components/dashboard-exchange-rates.tsx` displays the current BYN-based rates.
+
+Exchange-rate dates use the `Europe/Minsk` calendar day and are stored as UTC midnight date keys. A latest-only fallback provider may
+be used for the current Minsk day, but never for historical dates. Daily USD, EUR, and RUB snapshots are written atomically.
 
 Telegram AI finance drafts convert payment entries to the selected account currency during draft resolution, before the
 draft is previewed or committed. The draft keeps `originalAmount`, `originalCurrency`, and `exchangeRate` when a

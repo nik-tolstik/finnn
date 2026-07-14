@@ -41,11 +41,15 @@ Frontend feature modules live under `packages/web/src/modules`.
 - `analytics` - analytics aggregation, date range helpers, chart data.
 - `auth` - registration, verification, user settings.
 - `categories` - income/expense category CRUD and ordering.
-- `currency` - exchange-rate UI and generated API client usage.
 - `debts` - debt creation, closing, additions, edits, debt transactions, debt UI.
 - `scheduled-payments` - planned payment adapters, status/amount helpers, create and mark-paid UI.
 - `transactions` - payment transactions, transfers, combined transaction feed, filtering.
 - `workspace` - workspace CRUD, members, roles, invites, workspace selection.
+
+Exchange-rate UI is cross-cutting rather than a standalone frontend feature module. The shared amount synchronization hook lives in
+`packages/web/src/shared/hooks/useCurrencyAmountSync.ts`, dashboard presentation lives under
+`packages/web/src/app/(dashboard)/components`, and the Orval client lives under
+`packages/web/src/shared/api/generated/currency`.
 
 The typical frontend module shape is:
 

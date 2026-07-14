@@ -9,6 +9,7 @@ import { configureApp } from "../src/main";
 import { PrismaService } from "../src/prisma/prisma.service";
 
 type MockPrisma = {
+  $transaction: ReturnType<typeof vi.fn>;
   exchangeRate: {
     findMany: ReturnType<typeof vi.fn>;
     upsert: ReturnType<typeof vi.fn>;
@@ -45,12 +46,16 @@ function createNBRBResponse(usdRate: number, eurRate: number, rubRate = 3.5, rub
 }
 
 function createPrismaMock(): MockPrisma {
-  return {
+  const mock = {
+    $transaction: vi.fn(),
     exchangeRate: {
       findMany: vi.fn(),
       upsert: vi.fn(),
     },
   };
+
+  mock.$transaction.mockImplementation((operations: Array<Promise<unknown>>) => Promise.all(operations));
+  return mock;
 }
 
 describe("Currency API", () => {
@@ -225,6 +230,86 @@ describe("Currency API", () => {
     expect(prisma.exchangeRate.upsert).toHaveBeenCalledTimes(3);
   });
 
+  it("rejects fallback rates whose effective date does not match the current Minsk day", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-30T22:15:00.000Z"));
+    prisma.exchangeRate.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(createJsonResponse({ error: "unavailable" }, 503))
+        .mockResolvedValueOnce(
+          createJsonResponse({
+            base: "BYN",
+            date: "2026-03-30",
+            rates: {
+              EUR: 0.25,
+              RUB: 100,
+              USD: 0.5,
+            },
+          })
+        )
+    );
+
+    await request(app.getHttpServer()).get("/exchange-rates/today").expect(503);
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(prisma.exchangeRate.upsert).not.toHaveBeenCalled();
+  });
+
+  it("does not persist latest fallback rates for a historical date", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-31T10:15:00.000Z"));
+    prisma.exchangeRate.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse({ error: "unavailable" }, 503))
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          base: "BYN",
+          date: "2026-03-31",
+          rates: {
+            EUR: 0.25,
+            RUB: 100,
+            USD: 0.5,
+          },
+        })
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await request(app.getHttpServer())
+      .get("/exchange-rates/rate")
+      .query({
+        date: "2026-02-16T14:10:00.000Z",
+        fromCurrency: Currency.USD,
+        toCurrency: Currency.BYN,
+      })
+      .expect(503);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(prisma.exchangeRate.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects incomplete provider data instead of persisting invalid rates", async () => {
+    prisma.exchangeRate.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    prisma.exchangeRate.upsert.mockImplementation(({ create }) =>
+      Promise.resolve({ id: create.fromCurrency, ...create })
+    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createNBRBResponse(3, 4, 3.5, 0)));
+
+    await request(app.getHttpServer())
+      .get("/exchange-rates/rate")
+      .query({
+        date: "2026-02-16T14:10:00.000Z",
+        fromCurrency: Currency.USD,
+        toCurrency: Currency.BYN,
+      })
+      .expect(503);
+
+    expect(prisma.exchangeRate.upsert).not.toHaveBeenCalled();
+  });
+
   it("protects the exchange-rate cron endpoint with CRON_SECRET", async () => {
     process.env.CRON_SECRET = "test-cron-secret";
 
@@ -269,6 +354,30 @@ describe("Currency API", () => {
           fromCurrency: Currency.RUB,
           rate: 0.035,
           toCurrency: Currency.BYN,
+        }),
+      })
+    );
+    expect(prisma.$transaction).toHaveBeenCalledOnce();
+  });
+
+  it("uses the Minsk calendar date for daily exchange-rate snapshots", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-30T22:15:00.000Z"));
+    process.env.CRON_SECRET = "test-cron-secret";
+    prisma.exchangeRate.upsert.mockImplementation(({ create }) =>
+      Promise.resolve({ id: create.fromCurrency, ...create })
+    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createNBRBResponse(2.95, 3.25)));
+
+    await request(app.getHttpServer())
+      .get("/cron/update-exchange-rates")
+      .set("Authorization", "Bearer test-cron-secret")
+      .expect(200);
+
+    expect(prisma.exchangeRate.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          date: new Date("2026-03-31T00:00:00.000Z"),
         }),
       })
     );

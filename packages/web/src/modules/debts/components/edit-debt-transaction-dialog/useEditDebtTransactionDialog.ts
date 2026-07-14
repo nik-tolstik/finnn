@@ -90,6 +90,7 @@ export function useEditDebtTransactionDialog({
     fromCurrency: debtTransaction.debt.currency,
     toCurrency: selectedAccount?.currency,
     date,
+    resetKey: open,
   });
 
   const previewAccount = useMemo(
