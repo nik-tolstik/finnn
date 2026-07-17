@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { deleteDebtTransaction } from "@/modules/debts/debt.api";
 import { DebtTransactionType } from "@/modules/debts/debt.constants";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
+import type { ScheduledPaymentFormInitialValues } from "@/modules/scheduled-payments/scheduled-payment.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {
   addAccountBalanceDelta,
@@ -34,6 +35,10 @@ import type {
   TransactionActionsDialogData,
 } from "../types";
 import { getDebtFromTransaction } from "../utils/getDebtFromTransaction";
+import {
+  canCreateScheduledPaymentFromTransaction,
+  getScheduledPaymentInitialValues,
+} from "../utils/scheduledPaymentFromTransaction";
 
 const DIALOG_TRANSITION_DELAY_MS = 200;
 
@@ -52,6 +57,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
   const actionsDialog = useDialogState<TransactionActionsDialogData>();
   const debtActionsDialog = useDialogState<DebtTransactionActionsDialogData>();
   const createTransactionDialog = useDialogState<CreateTransactionDialogData>();
+  const createScheduledPaymentDialog = useDialogState<ScheduledPaymentFormInitialValues>();
 
   const openTransactionActions = (transaction: ActionableCombinedTransaction) => {
     actionsDialog.openDialog({ transaction });
@@ -76,6 +82,18 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
       initialCategoryId: transaction.data.category?.id || undefined,
     });
     actionsDialog.closeDialog();
+  };
+
+  const handleCreateScheduledPayment = (transaction: ActionableCombinedTransaction) => {
+    if (!canCreateScheduledPaymentFromTransaction(transaction)) {
+      return;
+    }
+
+    const initialValues = getScheduledPaymentInitialValues(transaction.data);
+    actionsDialog.closeDialog();
+    setTimeout(() => {
+      createScheduledPaymentDialog.openDialog(initialValues);
+    }, DIALOG_TRANSITION_DELAY_MS);
   };
 
   const handleTransactionDelete = async (transaction: ActionableCombinedTransaction) => {
@@ -223,10 +241,12 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
       actionsDialog,
       debtActionsDialog,
       createTransactionDialog,
+      createScheduledPaymentDialog,
     },
     openTransactionActions,
     openDebtTransactionActions,
     handleTransactionRepeat,
+    handleCreateScheduledPayment,
     handleTransactionDelete,
     handleTransactionEdit,
     handleDebtTransactionDelete,

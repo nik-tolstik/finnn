@@ -4,12 +4,14 @@ import { DebtTransactionActionsDialog } from "@/modules/debts/components/debt-tr
 import { DeleteDebtDialog } from "@/modules/debts/components/delete-debt-dialog";
 import { EditDebtDialog } from "@/modules/debts/components/edit-debt-dialog";
 import { EditDebtTransactionDialog } from "@/modules/debts/components/edit-debt-transaction-dialog";
+import { CreateScheduledPaymentDialog } from "@/modules/scheduled-payments/components/CreateScheduledPaymentDialog";
 
 import { CreateTransactionDialog } from "../../create-transaction-dialog/CreateTransactionDialog";
 import { EditTransactionDialog } from "../../edit-transaction-dialog/EditTransactionDialog";
 import { EditTransferDialog } from "../../edit-transfer-dialog/EditTransferDialog";
 import { TransactionActionsDialog } from "../../transaction-actions-dialog/TransactionActionsDialog";
 import type { CombinedTransactionsController } from "../hooks/useCombinedTransactionsController";
+import { canCreateScheduledPaymentFromTransaction } from "../utils/scheduledPaymentFromTransaction";
 
 interface CombinedTransactionsDialogsProps {
   controller: CombinedTransactionsController;
@@ -27,10 +29,12 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
       actionsDialog,
       debtActionsDialog,
       createTransactionDialog,
+      createScheduledPaymentDialog,
     },
     handleTransactionDelete,
     handleTransactionEdit,
     handleTransactionRepeat,
+    handleCreateScheduledPayment,
     handleDebtTransactionDelete,
     handleDebtTransactionEdit,
   } = controller;
@@ -52,6 +56,13 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
           onRepeat={() => {
             handleTransactionRepeat(actionsDialog.data.transaction);
           }}
+          onCreatePayment={
+            canCreateScheduledPaymentFromTransaction(actionsDialog.data.transaction)
+              ? () => {
+                  handleCreateScheduledPayment(actionsDialog.data.transaction);
+                }
+              : undefined
+          }
         />
       ) : null}
 
@@ -131,6 +142,16 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
           initialDescription={createTransactionDialog.data.initialDescription}
           initialDate={createTransactionDialog.data.initialDate}
           initialCategoryId={createTransactionDialog.data.initialCategoryId}
+        />
+      ) : null}
+
+      {createScheduledPaymentDialog.mounted ? (
+        <CreateScheduledPaymentDialog
+          workspaceId={workspaceId}
+          initialValues={createScheduledPaymentDialog.data}
+          open={createScheduledPaymentDialog.open}
+          onOpenChange={createScheduledPaymentDialog.closeDialog}
+          onCloseComplete={createScheduledPaymentDialog.unmountDialog}
         />
       ) : null}
     </>

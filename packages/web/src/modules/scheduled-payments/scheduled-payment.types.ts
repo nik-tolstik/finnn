@@ -15,6 +15,16 @@ export interface ScheduledPaymentFilters {
   displayStatus?: string;
 }
 
+export interface ScheduledPaymentFormInitialValues {
+  name?: string;
+  amount?: string;
+  currency?: string;
+  categoryId?: string | null;
+  accountId?: string | null;
+  nextDueAt?: Date;
+  scheduleKind?: ScheduledPaymentFormInput["scheduleKind"];
+}
+
 export interface ScheduledPaymentFormInput {
   name: string;
   amountMode: "fixed" | "unknown" | "range";

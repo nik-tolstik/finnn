@@ -25,7 +25,11 @@ import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
 
 import { DEFAULT_REMINDER_DAYS } from "../scheduled-payment.constants";
-import type { ScheduledPayment, ScheduledPaymentFormInput } from "../scheduled-payment.types";
+import type {
+  ScheduledPayment,
+  ScheduledPaymentFormInitialValues,
+  ScheduledPaymentFormInput,
+} from "../scheduled-payment.types";
 
 type MemberOption = {
   id: string;
@@ -45,6 +49,7 @@ interface ScheduledPaymentFormProps {
   baseCurrency?: string;
   categories: Category[];
   initialPayment?: ScheduledPayment | null;
+  initialValues?: ScheduledPaymentFormInitialValues;
   members: MemberOption[];
   onCloseComplete?: () => void;
   onOpenChange: (open: boolean) => void;
@@ -440,6 +445,7 @@ export function ScheduledPaymentForm({
   baseCurrency = "BYN",
   categories,
   initialPayment,
+  initialValues,
   members,
   onCloseComplete,
   onOpenChange,
@@ -475,24 +481,57 @@ export function ScheduledPaymentForm({
     if (!session?.user.id) return undefined;
     return accounts.find((account) => account.ownerId === session.user.id);
   }, [accounts, session?.user.id]);
+  const hasInitialAccountValue = initialValues ? "accountId" in initialValues : false;
+  const initialNextDueAtTimestamp = initialValues?.nextDueAt?.getTime();
 
   useEffect(() => {
     if (!open) return;
 
-    setCurrency(toCurrency(initialPayment?.currency ?? baseCurrency));
-    setNextDueAt(initialPayment?.nextDueAt ?? tomorrow);
-    setScheduleKind((initialPayment?.scheduleKind as ScheduledPaymentFormInput["scheduleKind"]) ?? "one_time");
+    setCurrency(
+      toCurrency(initialPayment ? (initialPayment.currency ?? baseCurrency) : (initialValues?.currency ?? baseCurrency))
+    );
+    setNextDueAt(
+      initialPayment
+        ? initialPayment.nextDueAt
+        : initialNextDueAtTimestamp === undefined
+          ? tomorrow
+          : new Date(initialNextDueAtTimestamp)
+    );
+    setScheduleKind(
+      initialPayment
+        ? (initialPayment.scheduleKind as ScheduledPaymentFormInput["scheduleKind"])
+        : (initialValues?.scheduleKind ?? "one_time")
+    );
     setScheduleInterval(initialPayment?.scheduleInterval ?? 1);
     setScheduleUnit(
       (initialPayment?.scheduleUnit as NonNullable<ScheduledPaymentFormInput["scheduleUnit"]> | null) ?? "months"
     );
-    setAccountId(initialPayment ? (initialPayment.accountId ?? "") : (defaultAccount?.id ?? ""));
-    setCategoryId(initialPayment?.categoryId ?? "");
+    setAccountId(
+      initialPayment
+        ? (initialPayment.accountId ?? "")
+        : hasInitialAccountValue
+          ? (initialValues?.accountId ?? "")
+          : (defaultAccount?.id ?? "")
+    );
+    setCategoryId(initialPayment ? (initialPayment.categoryId ?? "") : (initialValues?.categoryId ?? ""));
     setAssignedUserId(initialPayment?.assignedUserId ?? currentMemberId);
     setReminders(initialPayment?.reminderDaysBefore ?? DEFAULT_REMINDER_DAYS);
     setNotifyTelegram(initialPayment?.notifyTelegram ?? true);
     setNotifyEmail(initialPayment?.notifyEmail ?? false);
-  }, [baseCurrency, currentMemberId, defaultAccount?.id, initialPayment, open, tomorrow]);
+  }, [
+    baseCurrency,
+    currentMemberId,
+    defaultAccount?.id,
+    hasInitialAccountValue,
+    initialNextDueAtTimestamp,
+    initialPayment,
+    initialValues?.accountId,
+    initialValues?.categoryId,
+    initialValues?.currency,
+    initialValues?.scheduleKind,
+    open,
+    tomorrow,
+  ]);
 
   const selectedAccount = useMemo(
     () => accounts.find((account) => account.id === accountId) ?? null,
@@ -609,7 +648,7 @@ export function ScheduledPaymentForm({
                 name="name"
                 required
                 placeholder="A1 mobile"
-                defaultValue={initialPayment?.name}
+                defaultValue={initialPayment ? initialPayment.name : initialValues?.name}
               />
             </div>
 
@@ -624,7 +663,7 @@ export function ScheduledPaymentForm({
                     name="amount"
                     placeholder="0.00"
                     required
-                    defaultValue={initialPayment?.amount ?? ""}
+                    defaultValue={initialPayment ? (initialPayment.amount ?? "") : (initialValues?.amount ?? "")}
                   />
                   <Select
                     options={CURRENCY_OPTIONS}
