@@ -366,7 +366,7 @@ function ScheduleSettingsDropdown({
 
   const settingsFooter = (
     <div className="grid grid-cols-2 gap-2 border-t bg-background p-4">
-      <Button type="button" variant="outline" className="h-auto px-0 py-0 leading-none" onClick={handleCancel}>
+      <Button type="button" variant="secondary" className="h-auto px-0 py-0 leading-none" onClick={handleCancel}>
         Отмена
       </Button>
       <Button type="button" onClick={handleApply}>
@@ -387,7 +387,7 @@ function ScheduleSettingsDropdown({
       <>
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           className="h-auto w-full justify-between px-3 py-2 text-left font-normal"
           aria-expanded={open}
           data-state={open ? "open" : "closed"}
@@ -423,7 +423,7 @@ function ScheduleSettingsDropdown({
         <Button
           ref={ref}
           type="button"
-          variant="outline"
+          variant="secondary"
           className="h-auto w-full justify-between px-3 py-2 text-left font-normal"
           {...triggerProps}
         >
@@ -743,7 +743,7 @@ export function ScheduledPaymentForm({
           <DialogFooter className="shrink-0 border-t bg-background py-4">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               className="hidden md:inline-flex"
               onClick={() => onOpenChange(false)}
             >

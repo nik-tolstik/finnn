@@ -330,7 +330,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
               ) : (
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   className="w-full"
                   onClick={() => selectAccountDialog.openDialog(null)}
                 >
@@ -466,7 +466,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                       </Label>
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="secondary"
                         className="w-full justify-between bg-background"
                         onClick={() => categoryModal.openDialog(true)}
                       >

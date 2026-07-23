@@ -27,7 +27,7 @@ export function AccountsMenu({
   if (isReorderMode) {
     return (
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={onCancelReorder} className="gap-2">
+        <Button variant="secondary" size="sm" onClick={onCancelReorder} className="gap-2">
           <X className="h-4 w-4" />
           Отменить
         </Button>
@@ -46,7 +46,7 @@ export function AccountsMenu({
       placement="bottom-end"
       className="w-54 p-1"
       trigger={({ ref, ...triggerProps }) => (
-        <Button ref={ref} type="button" variant="outline" size="icon-sm" {...triggerProps}>
+        <Button ref={ref} type="button" variant="secondary" size="icon-sm" {...triggerProps}>
           <MoreVertical className="h-5 w-5" />
         </Button>
       )}

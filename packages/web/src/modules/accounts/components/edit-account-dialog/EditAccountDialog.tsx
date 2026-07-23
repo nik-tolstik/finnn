@@ -292,7 +292,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
         <DialogFooter>
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               onOpenChange(false);
               onCancel?.();

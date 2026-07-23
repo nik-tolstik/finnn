@@ -49,7 +49,7 @@ pnpm ...
 - Updated the orchestration prompt to point to the plan as the source of truth instead of duplicating implementation requirements.
 - Moved common orchestration instructions out of the prompt and into `AGENTS.md` or the implementation plan.
 - Rewrote the Orchestrator prompt in English.
-- Added the UI requirement for an outlined ghost-style Telegram button with the Telegram logo and text.
+- Added the UI requirement for a secondary-styled Telegram button with the Telegram logo and text.
 - Added a required commit-and-push checkpoint after every implementation step/phase.
 
 ### Files Changed
@@ -354,7 +354,7 @@ pnpm api:check-generated
 ### Scope
 
 - Phase 6 frontend auth UI and Phase 7 frontend settings/null-email UI.
-- Added a reusable Telegram auth button with Telegram logo and outlined styling.
+- Added a reusable Telegram auth button with Telegram logo and secondary styling.
 - Added Telegram continuation to login and registration pages.
 - Preserved invite flow by returning Telegram sign-in users to `/invite/<token>`.
 - Added Telegram link/unlink controls to account settings.

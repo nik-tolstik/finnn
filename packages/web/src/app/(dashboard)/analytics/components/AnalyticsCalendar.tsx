@@ -231,12 +231,12 @@ export function AnalyticsCalendar({
             <div className="flex items-center justify-between gap-3 lg:justify-start">
               <CardTitle className="text-xl">Календарь</CardTitle>
               <div className="flex shrink-0 items-center gap-1 lg:ml-3">
-                <Button type="button" variant="outline" size="sm" onClick={handleTodayClick}>
+                <Button type="button" variant="secondary" size="sm" onClick={handleTodayClick}>
                   Сегодня
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   size="icon-sm"
                   onClick={() => {
                     handleMonthStep("previous");
@@ -247,7 +247,7 @@ export function AnalyticsCalendar({
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   size="icon-sm"
                   onClick={() => {
                     handleMonthStep("next");

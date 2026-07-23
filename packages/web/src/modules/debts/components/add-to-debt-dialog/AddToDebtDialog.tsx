@@ -268,7 +268,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                   ) : (
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="secondary"
                       className="w-full"
                       onClick={() => selectAccountDialog.openDialog(null)}
                     >
@@ -305,7 +305,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>

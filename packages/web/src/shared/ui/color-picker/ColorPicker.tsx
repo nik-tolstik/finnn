@@ -183,7 +183,7 @@ const ColorPickerEyeDropper = React.forwardRef<HTMLButtonElement, React.Componen
       <Button
         ref={ref}
         type="button"
-        variant="outline"
+        variant="secondary"
         size="icon"
         onClick={handleEyeDropper}
         className={className}
@@ -343,7 +343,7 @@ const ColorPickerInput = React.forwardRef<HTMLInputElement, React.ComponentProps
           className={cn("h-8 text-xs font-mono", className)}
           {...props}
         />
-        <Button type="button" size="icon-sm" variant="outline" onClick={handleCopy} title="Копировать">
+        <Button type="button" size="icon-sm" variant="secondary" onClick={handleCopy} title="Копировать">
           <Copy className="h-3 w-3" />
         </Button>
       </div>

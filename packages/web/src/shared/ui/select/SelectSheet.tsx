@@ -249,7 +249,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
           {multiple && (
             <SheetFooter className="px-4 pb-4 pt-2 gap-2">
               {allowClear && hasSelection && (
-                <Button variant="outline" onClick={handleClear} className="flex-1">
+                <Button variant="secondary" onClick={handleClear} className="flex-1">
                   Очистить
                 </Button>
               )}

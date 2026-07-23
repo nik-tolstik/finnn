@@ -166,7 +166,7 @@ export function DateTimePicker({
               <Button
                 ref={ref}
                 type="button"
-                variant="outline"
+                variant="secondary"
                 className={cn(
                   "justify-between text-left font-normal border-none w-fit px-2",
                   !date && "text-muted-foreground"

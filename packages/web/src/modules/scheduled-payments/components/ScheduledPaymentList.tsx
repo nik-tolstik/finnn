@@ -63,7 +63,7 @@ function groupPaymentsByDate(payments: ScheduledPayment[]): ScheduledPaymentGrou
 function IconAction({ children, label, onClick }: { children: ReactNode; label: string; onClick: () => void }) {
   return (
     <Tooltip content={label}>
-      <Button aria-label={label} onClick={onClick} size="icon-sm" type="button" variant="outline">
+      <Button aria-label={label} onClick={onClick} size="icon-sm" type="button" variant="secondary">
         {children}
       </Button>
     </Tooltip>

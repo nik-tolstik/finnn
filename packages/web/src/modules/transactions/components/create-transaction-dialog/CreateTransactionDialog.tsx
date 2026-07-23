@@ -545,7 +545,7 @@ export function CreateTransactionDialog({
                     <div className="relative">
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="secondary"
                         className="w-full justify-between"
                         onClick={() => categoryModal.openDialog(true)}
                       >

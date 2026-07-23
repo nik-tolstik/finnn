@@ -42,7 +42,7 @@ export function DeleteScheduledPaymentDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button disabled={isDeleting} onClick={() => onOpenChange(false)} variant="outline">
+          <Button disabled={isDeleting} onClick={() => onOpenChange(false)} variant="secondary">
             Отмена
           </Button>
           <Button

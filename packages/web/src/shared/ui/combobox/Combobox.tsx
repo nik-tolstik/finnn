@@ -74,7 +74,7 @@ export function Combobox({
         <Button
           ref={ref}
           type="button"
-          variant="outline"
+          variant="secondary"
           role="combobox"
           className={cn("w-full justify-between", className)}
           disabled={disabled}

@@ -99,7 +99,7 @@ function SortableCategoryItem({
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   onClick={onCancelEdit}
                   disabled={isUpdating}
                   className="h-8 text-xs px-2"
@@ -457,7 +457,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
       <div>
         {renderCategoryList(currentItems, selectedType)}
-        <Button variant="outline" className="mt-4" onClick={() => handleOpenCreateDialog(selectedType)}>
+        <Button variant="secondary" className="mt-4" onClick={() => handleOpenCreateDialog(selectedType)}>
           <Plus className="h-4 w-4 mr-2" />
           Добавить категорию
         </Button>

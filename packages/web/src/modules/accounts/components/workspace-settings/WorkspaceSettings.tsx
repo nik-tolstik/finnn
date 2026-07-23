@@ -133,7 +133,7 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
           <div className="flex justify-end gap-2">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={handleCancel}
               disabled={isSubmitting || updateMutation.isPending}
             >
@@ -152,7 +152,7 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
             </div>
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => setLeaveDialogOpen(true)}
             >

@@ -287,7 +287,7 @@ export function CreateDebtDialog({
                 ) : (
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     className="w-full"
                     onClick={() => selectAccountDialog.openDialog(null)}
                   >

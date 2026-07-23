@@ -12,7 +12,7 @@ export function TelegramAuthButton({ disabled, ...props }: TelegramAuthButtonPro
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="secondary"
       className="group relative h-11 w-full overflow-hidden rounded-lg border-border bg-background px-3 text-foreground shadow-sm hover:border-[#229ED9]/60 hover:bg-background hover:text-foreground hover:shadow-md dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground dark:hover:bg-white/[0.09]"
       disabled={disabled}
       {...props}

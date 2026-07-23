@@ -43,7 +43,7 @@ function SharedUiGallery() {
               <Plus className="size-4" />
               Добавить
             </Button>
-            <Button variant="outline">
+            <Button variant="secondary">
               <Search className="size-4" />
               Найти
             </Button>

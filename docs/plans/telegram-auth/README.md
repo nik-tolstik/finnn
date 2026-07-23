@@ -46,7 +46,7 @@ If a subagent contributes analysis or a patch, the Developer must summarize that
 
 ## UI Requirements
 
-- The "Продолжить с Telegram" button must be an outlined ghost-style button.
+- The "Продолжить с Telegram" button must use secondary styling.
 - The button must include the Telegram logo and the text "Продолжить с Telegram".
 - The button must be visually consistent across login, registration, and account-linking surfaces.
 
@@ -278,7 +278,7 @@ Frontend:
 - Preserve `inviteToken` or equivalent return behavior.
 - Add callback/error handling route or page if backend redirects back with status query params.
 - Refresh session after Telegram login if the frontend handles final redirect.
-- Ensure the Telegram button is outlined ghost-style and includes the Telegram logo plus "Продолжить с Telegram" text.
+- Ensure the Telegram button uses secondary styling and includes the Telegram logo plus "Продолжить с Telegram" text.
 - Commit and push the current branch after completing this phase.
 
 ### Phase 7 - Frontend Settings UI
