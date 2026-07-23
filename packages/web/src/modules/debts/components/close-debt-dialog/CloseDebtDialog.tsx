@@ -489,9 +489,6 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
             {isSubmitting ? "Закрытие..." : "Закрыть долг"}
           </Button>
