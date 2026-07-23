@@ -480,7 +480,7 @@ export function CreateTransactionDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogWindow onCloseComplete={onCloseComplete}>
           <DialogHeader>
-            <DialogTitle>{isTransferMode ? "Создать перевод" : "Создать транзакцию"}</DialogTitle>
+            <DialogTitle>{isTransferMode ? "Новый перевод" : "Новая транзакция"}</DialogTitle>
           </DialogHeader>
           <DialogContent>
             <div className="space-y-4">
@@ -600,6 +600,7 @@ export function CreateTransactionDialog({
                         id="amount"
                         placeholder="0.00"
                         className="pl-9 pr-12"
+                        autoComplete="off"
                         {...register("amount", {
                           onChange: (e) => {
                             const value = e.target.value;
@@ -715,10 +716,10 @@ export function CreateTransactionDialog({
               {isTransferMode
                 ? transferForm.formState.isSubmitting
                   ? "Создание..."
-                  : "Создать перевод"
+                  : "Создать"
                 : isSubmitting
                   ? "Создание..."
-                  : "Создать транзакцию"}
+                  : "Создать"}
             </Button>
           </DialogFooter>
         </DialogWindow>

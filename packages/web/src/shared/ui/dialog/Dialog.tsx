@@ -153,7 +153,7 @@ function DialogWindow({
             aria-describedby={descriptionId}
             className={cn(
               "flex flex-col gap-6",
-              "bg-background fixed z-50 rounded-lg border p-6 shadow-lg outline-none",
+              "bg-card fixed z-50 rounded-lg p-6 shadow-lg outline-none",
               "sm:w-125 max-h-dvh max-w-dvw m-0 py-6 px-0",
               isMobile ? "w-dvw" : "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-fit",
               isMobile &&

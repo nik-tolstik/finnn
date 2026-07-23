@@ -168,7 +168,7 @@ export function DateTimePicker({
                 type="button"
                 variant="outline"
                 className={cn(
-                  "justify-between text-left font-normal border-input w-fit px-2",
+                  "justify-between text-left font-normal border-none w-fit px-2",
                   !date && "text-muted-foreground"
                 )}
                 {...triggerProps}
