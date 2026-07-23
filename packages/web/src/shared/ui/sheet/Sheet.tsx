@@ -147,10 +147,10 @@ function SheetContent({
             aria-describedby={descriptionId}
             className={cn(
               "bg-background fixed z-50 flex flex-col gap-4 shadow-lg outline-none",
-              side === "right" && "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
-              side === "left" && "inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
-              side === "top" && "inset-x-0 top-0 h-auto border-b",
-              side === "bottom" && "inset-x-0 bottom-0 h-auto border-t",
+              side === "right" && "inset-y-0 right-0 h-full w-3/4 sm:max-w-sm",
+              side === "left" && "inset-y-0 left-0 h-full w-3/4 sm:max-w-sm",
+              side === "top" && "inset-x-0 top-0 h-auto",
+              side === "bottom" && "inset-x-0 bottom-0 h-auto",
               className
             )}
             style={{
@@ -168,7 +168,7 @@ function SheetContent({
               <button
                 type="button"
                 data-slot="sheet-close"
-                className="absolute top-4 right-4 text-[20px] active:bg-accent hover:bg-accent p-1 rounded-full transition-all focus:ring focus:ring-accent"
+                className="absolute top-4 right-4 text-[20px] active:bg-accent hover:bg-accent p-1 rounded-full transition-all focus:ring-1 focus:ring-accent"
                 onClick={() => onOpenChange(false)}
               >
                 <XIcon size="1em" />

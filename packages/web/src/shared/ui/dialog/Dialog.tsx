@@ -177,7 +177,7 @@ function DialogWindow({
               <button
                 type="button"
                 data-slot="dialog-close"
-                className="absolute top-4 right-4 text-[20px] active:bg-accent hover:bg-accent p-1 rounded-full transition-all focus:ring focus:ring-accent"
+                className="absolute top-4 right-4 text-[20px] active:bg-accent hover:bg-accent p-1 rounded-full transition-all focus:ring-1 focus:ring-accent"
                 onClick={() => onOpenChange(false)}
               >
                 <XIcon size="1em" />

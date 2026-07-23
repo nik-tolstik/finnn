@@ -151,7 +151,7 @@ export function ScheduledPaymentList({
               {group.payments.map((payment) => (
                 <div key={payment.id}>
                   <button
-                    className="grid w-full gap-3 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+                    className="grid w-full gap-3 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:hidden"
                     onClick={() => onPaymentClick(payment)}
                     type="button"
                   >

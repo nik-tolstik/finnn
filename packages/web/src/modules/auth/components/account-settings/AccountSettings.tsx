@@ -221,7 +221,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
             <button
               type="button"
               onClick={() => setAvatarDialogOpen(true)}
-              className="group relative shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="group relative shrink-0 rounded-full focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
               aria-label="Выбрать аватар"
             >
               <UserAvatar

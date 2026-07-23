@@ -62,7 +62,7 @@ export function AccountSelector({
               "group relative flex min-h-[68px] w-full items-center gap-3 overflow-hidden rounded-xl border border-dashed border-border bg-background px-4 py-3 text-left text-card-foreground transition-[border-color,background-color,box-shadow]",
               "before:absolute before:inset-y-3 before:left-0 before:w-1 before:rounded-r-full before:bg-primary/45 before:transition-colors",
               "hover:border-primary/45 hover:bg-accent/35 hover:shadow-xs hover:before:bg-primary",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2",
               "disabled:pointer-events-none disabled:opacity-50"
             )}
             onClick={() => {

@@ -82,7 +82,7 @@ function ColorPicker({ className, value, onChange, defaultFormat = "hex" }: Colo
             ref={ref}
             type="button"
             className={cn(
-              "h-9 w-9 rounded-md border-2 border-border transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+              "h-9 w-9 rounded-md border-2 border-border transition-all hover:border-primary/50 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2",
               className
             )}
             style={{ backgroundColor: color }}
