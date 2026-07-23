@@ -310,13 +310,10 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="p-3 bg-muted rounded-lg space-y-1">
-              <div className="text-sm text-muted-foreground">
-                {debt.type === DebtType.LENT ? "Должник" : "Кредитор"}
-              </div>
-              <div className="font-medium">{debt.personName}</div>
-              <div className="text-sm text-muted-foreground">
-                Остаток: {formatMoney(debt.remainingAmount, debt.currency)}
+            <div className="flex items-center justify-between gap-4 rounded-lg bg-muted p-3">
+              <div className="truncate font-medium">{debt.personName}</div>
+              <div className="shrink-0 text-right font-semibold text-foreground text-sm">
+                {formatMoney(debt.remainingAmount, debt.currency)}
               </div>
             </div>
 
@@ -490,7 +487,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
 
         <DialogFooter>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-            {isSubmitting ? "Закрытие..." : "Закрыть долг"}
+            {isSubmitting ? "Закрытие..." : "Принять"}
           </Button>
         </DialogFooter>
       </DialogWindow>
