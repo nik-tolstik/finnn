@@ -136,7 +136,7 @@ export function Segmented<TValue extends string | number = string>({
     <div
       ref={containerRef}
       className={cn(
-        "relative isolate min-w-0 max-w-full items-stretch gap-1 rounded-xl border border-border/80 bg-muted/75 p-1 shadow-xs",
+        "relative isolate min-w-0 max-w-full items-stretch gap-1 rounded-xl bg-muted/75 p-1 shadow-xs",
         layout === "fill" ? "flex w-full" : "inline-flex w-fit",
         disabled && "opacity-60",
         className
@@ -153,7 +153,7 @@ export function Segmented<TValue extends string | number = string>({
           transition={
             prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34, mass: 0.7 }
           }
-          className="pointer-events-none absolute rounded-[10px] border border-border/80 bg-background shadow-sm"
+          className="pointer-events-none absolute rounded-[10px] bg-background shadow-sm"
         />
       ) : null}
       {options.map((option, index) => {
