@@ -337,9 +337,59 @@ Scheduled payment reminder delivery records failed email or Telegram channels in
 Email failures usually mean SMTP is unavailable or the recipient has no verified email. Telegram failures usually mean
 the recipient has not linked Telegram or has no `telegramChatId` in `TelegramBotPreference`.
 
+## Mobile browser testing from WSL2
+
+WSL2 normally runs behind a private NAT address such as `172.28.x.x`. That address is reachable from WSL and Windows,
+but it is not normally reachable from a phone on the same Wi-Fi network. Use the Windows host LAN address and forward
+the development ports into WSL.
+
+1. Find the Windows LAN IPv4 address with `ipconfig`. Use the IPv4 address from the active Wi-Fi or Ethernet adapter,
+   for example `192.168.1.102`. The phone and the Windows host must be on the same local network.
+
+2. In WSL, start the API with the Windows LAN origin allowed by CORS:
+
+```bash
+FINNN_LAN_IP=192.168.1.102
+API_ALLOWED_ORIGINS="http://${FINNN_LAN_IP}:3000,http://localhost:3000" pnpm --filter api dev
+```
+
+3. In a second WSL terminal, start the web app with the forwarded API URL:
+
+```bash
+FINNN_LAN_IP=192.168.1.102
+NEXT_PUBLIC_API_URL="http://${FINNN_LAN_IP}:4000" pnpm --filter web exec next dev -H 0.0.0.0 -p 3000
+```
+
+4. In Windows PowerShell started **as Administrator**, create port forwarding and allow only local-subnet traffic:
+
+```powershell
+$wslIp = (wsl.exe hostname -I).Trim().Split()[0]
+
+netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=3000
+netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=4000
+
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=3000 connectaddress=$wslIp connectport=3000
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=4000 connectaddress=$wslIp connectport=4000
+
+New-NetFirewallRule -DisplayName "Finnn WSL Dev" -Direction Inbound -Action Allow `
+  -Protocol TCP -LocalPort 3000,4000 -RemoteAddress LocalSubnet -Profile Any
+```
+
+The port proxy points to the current WSL IP. Re-run the PowerShell block after `wsl --shutdown` or any WSL restart,
+because the `172.28.x.x` address can change. Open `http://192.168.1.102:3000` on the phone; do not use the WSL NAT
+address directly. Stop the API and web processes with `Ctrl+C` in their WSL terminals when testing is finished.
+
+For a quick local check, run `curl http://127.0.0.1:3000/login` and `curl http://127.0.0.1:4000/health` from WSL.
+If the phone cannot connect, verify that the Windows PowerShell commands were run as Administrator, the phone is on
+the same Wi-Fi, and Windows Firewall allows the local-subnet rule.
+
 ## Service Worker
 
 The service worker is intentionally conservative. It caches only static assets and avoids financial data.
+
+On touch screens, the web app provides a custom pull-to-refresh gesture. Pull down from the top of a page and release
+after the content-attached indicator reaches the ready state. The gesture ignores dialogs, nested scrollable containers,
+and interactive controls, then performs a full document reload after release.
 
 After changing `packages/web/public/sw.js`, run:
 

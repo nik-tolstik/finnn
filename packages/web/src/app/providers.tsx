@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { TelegramMiniAppBootstrap } from "@/modules/telegram-mini/TelegramMiniAppBootstrap";
 import { isEmailVerificationRequiredError } from "@/shared/api/http-client";
+import { PullToRefresh } from "@/shared/components/pull-to-refresh";
 import { ServiceWorkerRegistration } from "@/shared/components/ServiceWorkerRegistration";
 import { ApiSessionProvider, apiSessionQueryKey } from "@/shared/lib/api-session-client";
 
@@ -74,7 +75,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <ApiSessionProvider>
           <TelegramMiniAppBootstrap>
             <ThemeClassSync />
-            {children}
+            <div className="pull-to-refresh-content">
+              <PullToRefresh />
+              {children}
+            </div>
             <ServiceWorkerRegistration />
           </TelegramMiniAppBootstrap>
         </ApiSessionProvider>
