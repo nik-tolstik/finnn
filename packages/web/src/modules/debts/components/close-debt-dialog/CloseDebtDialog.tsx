@@ -8,9 +8,8 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
-import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
 import { getCategories } from "@/modules/categories/category.api";
-import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
 import { useDialogState } from "@/shared/hooks/useDialogState";
@@ -55,7 +54,6 @@ interface CloseDebtDialogProps {
 
 export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: CloseDebtDialogProps) {
   const queryClient = useQueryClient();
-  const selectAccountDialog = useDialogState();
   const categoryModal = useDialogState();
 
   const { data: accountsData } = useQuery({
@@ -298,28 +296,14 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="accountId" required>
-                {debt.type === DebtType.LENT ? "Счёт для зачисления" : "Счёт для списания"}{" "}
-              </Label>
-              {selectedAccount && accountId ? (
-                <AccountCard
-                  account={previewAccount || selectedAccount}
-                  onClick={() => selectAccountDialog.openDialog(null)}
-                  showOwner={false}
-                />
-              ) : (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => selectAccountDialog.openDialog(null)}
-                >
-                  Выбрать счёт
-                </Button>
-              )}
-              {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
-            </div>
+            <AccountSelector
+              workspaceId={workspaceId}
+              account={previewAccount || selectedAccount || null}
+              onSelect={handleAccountSelect}
+              label={debt.type === DebtType.LENT ? "Счёт для зачисления" : "Счёт для списания"}
+              required
+              error={errors.accountId?.message}
+            />
 
             {!currenciesMatch && selectedAccount ? (
               <>
@@ -457,15 +441,6 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
         </DialogFooter>
       </DialogWindow>
 
-      {selectAccountDialog.mounted && (
-        <SelectAccountDialog
-          workspaceId={workspaceId}
-          open={selectAccountDialog.open}
-          onOpenChange={selectAccountDialog.closeDialog}
-          onCloseComplete={selectAccountDialog.unmountDialog}
-          onSelect={handleAccountSelect}
-        />
-      )}
       {categoryModal.mounted && (
         <CategorySelectModal
           open={categoryModal.open}

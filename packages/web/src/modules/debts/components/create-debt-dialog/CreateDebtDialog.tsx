@@ -9,11 +9,9 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
-import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
-import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CURRENCY_OPTIONS, type Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
-import { useDialogState } from "@/shared/hooks/useDialogState";
 import { useSession } from "@/shared/lib/api-session-client";
 import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
 import {
@@ -59,7 +57,6 @@ export function CreateDebtDialog({
 }: CreateDebtDialogProps) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const selectAccountDialog = useDialogState();
 
   const { data: accountsData } = useQuery({
     queryKey: accountKeys.list(workspaceId),
@@ -276,26 +273,14 @@ export function CreateDebtDialog({
             </div>
 
             {useAccount ? (
-              <div className="space-y-2">
-                <Label required>{debtType === DebtType.LENT ? "С какого счёта" : "На какой счёт"} </Label>
-                {previewAccount && accountId ? (
-                  <AccountCard
-                    account={previewAccount}
-                    onClick={() => selectAccountDialog.openDialog(null)}
-                    showOwner={false}
-                  />
-                ) : (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full"
-                    onClick={() => selectAccountDialog.openDialog(null)}
-                  >
-                    Выбрать счёт
-                  </Button>
-                )}
-                {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
-              </div>
+              <AccountSelector
+                workspaceId={workspaceId}
+                account={previewAccount || selectedAccount || null}
+                onSelect={handleAccountSelect}
+                label={debtType === DebtType.LENT ? "С какого счёта" : "На какой счёт"}
+                required
+                error={errors.accountId?.message}
+              />
             ) : null}
 
             <div className="space-y-2">
@@ -357,16 +342,6 @@ export function CreateDebtDialog({
           </Button>
         </DialogFooter>
       </DialogWindow>
-
-      {selectAccountDialog.mounted && (
-        <SelectAccountDialog
-          workspaceId={workspaceId}
-          open={selectAccountDialog.open}
-          onOpenChange={selectAccountDialog.closeDialog}
-          onCloseComplete={selectAccountDialog.unmountDialog}
-          onSelect={handleAccountSelect}
-        />
-      )}
     </Dialog>
   );
 }

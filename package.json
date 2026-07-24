@@ -31,5 +31,8 @@
     "db:import": "pnpm --filter api db:import",
     "ngrok": "pnpm --filter api ngrok",
     "telegram:webhook:enable": "pnpm --filter api telegram:webhook:enable"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.9"
   }
 }

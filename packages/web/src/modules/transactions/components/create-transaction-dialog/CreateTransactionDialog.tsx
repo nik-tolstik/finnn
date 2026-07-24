@@ -11,9 +11,8 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
-import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
 import { getCategories } from "@/modules/categories/category.api";
-import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import type { Session } from "@/shared/lib/api-session-client";
@@ -127,7 +126,6 @@ export function CreateTransactionDialog({
 }: CreateTransactionDialogProps) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const selectAccountDialog = useDialogState();
   const [transactionMode, setTransactionMode] = useState<CreateTransactionMode>(defaultMode ?? defaultType);
 
   const { data: accountsData } = useQuery({
@@ -530,17 +528,18 @@ export function CreateTransactionDialog({
                 />
               ) : (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Счёт</Label>
-                    {previewAccount && "balance" in previewAccount && previewAccount.balance !== undefined && (
-                      <AccountCard
-                        account={previewAccount as Account}
-                        onClick={() => selectAccountDialog.openDialog(null)}
-                        showOwner={false}
-                      />
-                    )}
-                    {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
-                  </div>
+                  <AccountSelector
+                    workspaceId={workspaceId}
+                    account={
+                      previewAccount && "balance" in previewAccount && previewAccount.balance !== undefined
+                        ? (previewAccount as Account)
+                        : null
+                    }
+                    onSelect={handleAccountSelect}
+                    label="Счёт"
+                    required
+                    error={errors.accountId?.message}
+                  />
                   <div className="space-y-2">
                     <Label htmlFor="categoryId">Категория</Label>
                     <div className="relative">
@@ -570,18 +569,6 @@ export function CreateTransactionDialog({
                         </button>
                       )}
                     </div>
-                    {categoryModal.mounted && (
-                      <CategorySelectModal
-                        open={categoryModal.open}
-                        onOpenChange={categoryModal.closeDialog}
-                        options={comboboxOptions}
-                        value={categoryId}
-                        onSelect={handleCategorySelect}
-                        placeholder="Выберите категорию"
-                        searchPlaceholder="Поиск категории..."
-                        emptyText="Категории не найдены"
-                      />
-                    )}
                     {(errors.categoryId || errors.newCategory) && (
                       <p className="text-sm text-destructive">
                         {errors.categoryId?.message || errors.newCategory?.message}
@@ -726,13 +713,16 @@ export function CreateTransactionDialog({
         </DialogWindow>
       </Dialog>
 
-      {selectAccountDialog.mounted && (
-        <SelectAccountDialog
-          workspaceId={workspaceId}
-          open={selectAccountDialog.open}
-          onOpenChange={selectAccountDialog.closeDialog}
-          onCloseComplete={selectAccountDialog.unmountDialog}
-          onSelect={handleAccountSelect}
+      {categoryModal.mounted && (
+        <CategorySelectModal
+          open={categoryModal.open}
+          onOpenChange={categoryModal.closeDialog}
+          options={comboboxOptions}
+          value={categoryId}
+          onSelect={handleCategorySelect}
+          placeholder="Выберите категорию"
+          searchPlaceholder="Поиск категории..."
+          emptyText="Категории не найдены"
         />
       )}
     </>
