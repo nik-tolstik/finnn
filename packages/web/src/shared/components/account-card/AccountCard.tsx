@@ -46,7 +46,7 @@ export function AccountCard({ account, className, contentClassName, onClick, sho
             <p className="mt-0.5 truncate text-xs leading-4 text-muted-foreground">{ownerLabel}</p>
           )}
         </div>
-        <p className="max-w-[58%] shrink-0 truncate text-right text-base font-semibold leading-5 tracking-[-0.01em] text-foreground">
+        <p className="max-w-[58%] shrink-0 truncate text-right text-sm font-semibold leading-5 tracking-[-0.01em] text-foreground">
           {formatMoney(account.balance, account.currency)}
         </p>
       </div>
