@@ -26,13 +26,16 @@ import {
   AddToDebtDto,
   CloseDebtDto,
   CreateDebtDto,
+  CreateDebtWriteOffDto,
   DebtEditDataResponseDto,
   DebtListQueryDto,
   DebtListResponseDto,
   DebtResponseDto,
   DebtTransactionResponseDto,
+  DebtWriteOffResponseDto,
   UpdateDebtDto,
   UpdateDebtEntryTransactionDto,
+  UpdateDebtWriteOffDto,
 } from "./debts.dto";
 import { DebtsService } from "./debts.service";
 
@@ -128,6 +131,53 @@ export class DebtsController {
   @ApiForbiddenResponse({ type: ApiErrorDto })
   async closeDebt(@Param("debtId") debtId: string, @Body() body: CloseDebtDto, @CurrentUser() user: AuthenticatedUser) {
     return this.debtsService.closeDebt(debtId, body, user);
+  }
+
+  @Post("debts/:debtId/write-offs")
+  @ApiOperation({ operationId: "createDebtWriteOff", summary: "Write off a debt through a payment transaction" })
+  @ApiParam({ name: "debtId", type: String })
+  @ApiBody({ type: CreateDebtWriteOffDto })
+  @ApiCreatedResponse({ type: DebtWriteOffResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  async createDebtWriteOff(
+    @Param("debtId") debtId: string,
+    @Body() body: CreateDebtWriteOffDto,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.debtsService.createDebtWriteOff(debtId, body, user);
+  }
+
+  @Patch("debt-write-offs/:debtTransactionId")
+  @ApiOperation({ operationId: "updateDebtWriteOff", summary: "Update a debt write-off" })
+  @ApiParam({ name: "debtTransactionId", type: String })
+  @ApiBody({ type: UpdateDebtWriteOffDto })
+  @ApiOkResponse({ type: DebtWriteOffResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  async updateDebtWriteOff(
+    @Param("debtTransactionId") debtTransactionId: string,
+    @Body() body: UpdateDebtWriteOffDto,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.debtsService.updateDebtWriteOff(debtTransactionId, body, user);
+  }
+
+  @Delete("debt-write-offs/:debtTransactionId")
+  @HttpCode(204)
+  @ApiOperation({ operationId: "deleteDebtWriteOff", summary: "Delete a debt write-off" })
+  @ApiParam({ name: "debtTransactionId", type: String })
+  @ApiNoContentResponse()
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  async deleteDebtWriteOff(
+    @Param("debtTransactionId") debtTransactionId: string,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    await this.debtsService.deleteDebtWriteOff(debtTransactionId, user);
   }
 
   @Delete("debts/:debtId")

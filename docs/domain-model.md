@@ -176,6 +176,10 @@ Debt types are defined in `packages/web/src/modules/debts/debt.constants.ts` for
 
 Debts are not linked to a specific account. Account usage is recorded on individual debt transactions so a debt can be created, increased, and closed through different accounts or without account movement. `DebtTransaction.amount` is always denominated in the debt currency. `DebtTransaction.toAmount` is the account-side amount when the selected account currency differs from the debt currency, and account balance deltas use `toAmount` when it is present.
 
+Debt write-offs are represented by a linked pair of records: a closing `DebtTransaction` and a `PaymentTransaction`. A lent-debt write-off is an expense and a borrowed-debt write-off is income. Both records use the same account-side amount with opposite balance effects, so the account balance does not change while the payment transaction remains available for category analytics. Cross-currency write-offs retain the debt-side amount on `DebtTransaction.amount` and the account-side amount on both `DebtTransaction.toAmount` and `PaymentTransaction.amount`.
+
+Linked write-off records are created, edited, and deleted atomically. Changing or deleting the visible payment transaction must update or reopen the debt through the debt write-off API; generic payment/debt transaction mutations reject linked records. Combined transaction lists and cash-flow analytics expose only the payment transaction, while capital reconstruction includes both records so their account deltas cancel. Deleting a debt also deletes its linked payment transactions. Historical debt and payment transactions are not inferred or backfilled into links.
+
 Debt mutation logic is intentionally centralized in `packages/api/src/debts/debts.service.ts` because several operations need coordinated account and debt updates.
 
 ## Scheduled Payments

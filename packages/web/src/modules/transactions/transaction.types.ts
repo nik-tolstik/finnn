@@ -1,4 +1,4 @@
-import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
+import type { DebtTransactionWithRelations, DebtWriteOffMetadata } from "@/modules/debts/debt.types";
 
 export type TransactionUser = {
   id: string;
@@ -34,6 +34,7 @@ export type PaymentTransactionWithRelations = {
     id: string;
     name: string;
   } | null;
+  debtWriteOff: DebtWriteOffMetadata | null;
 };
 
 export type TransferTransactionWithRelations = {

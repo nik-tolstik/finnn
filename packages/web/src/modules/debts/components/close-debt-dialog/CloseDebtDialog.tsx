@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
@@ -28,7 +28,6 @@ import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import { type CloseDebtInput, closeDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
-import { Checkbox } from "@/shared/ui/checkbox";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
@@ -95,7 +94,6 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   const toAmount = useWatch({ control, name: "toAmount" });
   const accountId = useWatch({ control, name: "accountId" });
   const categoryId = useWatch({ control, name: "categoryId" });
-  const closeEarly = useWatch({ control, name: "closeEarly" });
 
   const selectedAccount = useMemo(() => {
     if (!accountId || !accounts.length) return undefined;
@@ -130,7 +128,6 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       closeAmount: amount,
       paymentAmount,
       toAmount,
-      closeEarly: Boolean(closeEarly),
       remainingAmount: debt.remainingAmount,
       currenciesMatch,
     });
@@ -139,36 +136,29 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     amount,
     paymentAmount,
     toAmount,
-    closeEarly,
     currenciesMatch,
     debt.type,
     debt.currency,
     debt.remainingAmount,
   ]);
 
-  const canCloseEarly = useMemo(() => {
-    return Boolean(currenciesMatch && paymentAmount && compareMoney(paymentAmount, debt.remainingAmount) < 0);
-  }, [currenciesMatch, paymentAmount, debt.remainingAmount]);
-
   const categoryType = useMemo(() => {
     return getCloseDebtCategoryType({
       debtType: debt.type,
       remainingAmount: debt.remainingAmount,
       paymentAmount,
-      closeEarly: Boolean(closeEarly),
       currenciesMatch,
     });
-  }, [closeEarly, currenciesMatch, debt.remainingAmount, debt.type, paymentAmount]);
+  }, [currenciesMatch, debt.remainingAmount, debt.type, paymentAmount]);
   const prevCategoryTypeRef = useRef(categoryType);
 
   const categoryAmount = useMemo(() => {
     return getCloseDebtCategoryAmount({
       remainingAmount: debt.remainingAmount,
       paymentAmount,
-      closeEarly: Boolean(closeEarly),
       categoryType,
     });
-  }, [categoryType, closeEarly, debt.remainingAmount, paymentAmount]);
+  }, [categoryType, debt.remainingAmount, paymentAmount]);
 
   const categoryOptions = useMemo<ComboboxOption[]>(() => {
     return getCloseDebtCategoryOptions(categories, categoryType);
@@ -192,16 +182,9 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       return;
     }
 
-    const closeAmount =
-      closeEarly || compareMoney(paymentAmount, debt.remainingAmount) > 0 ? debt.remainingAmount : paymentAmount;
+    const closeAmount = compareMoney(paymentAmount, debt.remainingAmount) > 0 ? debt.remainingAmount : paymentAmount;
     setValue("amount", closeAmount, { shouldValidate: true });
-  }, [closeEarly, currenciesMatch, debt.remainingAmount, paymentAmount, setValue]);
-
-  useEffect(() => {
-    if (!canCloseEarly && closeEarly) {
-      setValue("closeEarly", false);
-    }
-  }, [canCloseEarly, closeEarly, setValue]);
+  }, [currenciesMatch, debt.remainingAmount, paymentAmount, setValue]);
 
   useEffect(() => {
     if (prevCategoryTypeRef.current === categoryType) {
@@ -273,7 +256,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
 
       await invalidateWorkspaceDomains(queryClient, workspaceId, ["categories"]);
     } catch {
-      toast.error("Не удалось закрыть долг");
+      toast.error("Не удалось погасить долг");
     }
   };
 
@@ -284,7 +267,6 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       setValue("paymentAmount", paymentAmount || amount || debt.remainingAmount, { shouldValidate: true });
     } else {
       setValue("paymentAmount", "");
-      setValue("closeEarly", false);
       setValue("categoryId", undefined);
       handleAmountChange(amount || debt.remainingAmount);
     }
@@ -293,7 +275,6 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   const handleCloseAll = () => {
     setValue("amount", debt.remainingAmount);
     setValue("paymentAmount", debt.remainingAmount);
-    setValue("closeEarly", false);
     setValue("categoryId", undefined);
     handleAmountChange(debt.remainingAmount);
   };
@@ -306,7 +287,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow onCloseComplete={onCloseComplete}>
         <DialogHeader>
-          <DialogTitle>Закрыть долг</DialogTitle>
+          <DialogTitle>Погасить долг</DialogTitle>
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -425,22 +406,6 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                   )}
                 </div>
 
-                {canCloseEarly && (
-                  <div className="flex items-center space-x-2">
-                    <Controller
-                      control={control}
-                      name="closeEarly"
-                      render={({ field }) => (
-                        <Checkbox id="closeEarly" checked={Boolean(field.value)} onCheckedChange={field.onChange} />
-                      )}
-                    />
-
-                    <Label htmlFor="closeEarly" className="cursor-pointer">
-                      Закрыть долг заранее
-                    </Label>
-                  </div>
-                )}
-
                 {compareMoney(categoryAmount, "0") > 0 && (
                   <div className="text-base space-y-4 mt-8">
                     <h4 className="font-medium">Дополнительно</h4>
@@ -487,7 +452,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
 
         <DialogFooter>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-            {isSubmitting ? "Закрытие..." : "Принять"}
+            {isSubmitting ? "Погашение..." : "Погасить"}
           </Button>
         </DialogFooter>
       </DialogWindow>

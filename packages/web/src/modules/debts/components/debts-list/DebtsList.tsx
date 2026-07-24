@@ -21,6 +21,7 @@ import { AddToDebtDialog } from "../add-to-debt-dialog/AddToDebtDialog";
 import { CloseDebtDialog } from "../close-debt-dialog/CloseDebtDialog";
 import { DebtActionsDialog } from "../debt-actions-dialog/DebtActionsDialog";
 import { DebtCard } from "../debt-card/DebtCard";
+import { DebtWriteOffDialog } from "../debt-write-off-dialog";
 import { DeleteDebtDialog } from "../delete-debt-dialog/DeleteDebtDialog";
 import { EditDebtDialog } from "../edit-debt-dialog/EditDebtDialog";
 
@@ -157,6 +158,7 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
   const { isMobile } = useBreakpoints();
   const actionsDialog = useDialogState<DebtWithRelations>();
   const closeDialog = useDialogState<DebtWithRelations>();
+  const writeOffDialog = useDialogState<DebtWithRelations>();
   const addMoreDialog = useDialogState<DebtWithRelations>();
   const deleteDialog = useDialogState<DebtWithRelations>();
   const editDialog = useDialogState<DebtWithRelations>();
@@ -186,6 +188,15 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
       actionsDialog.closeDialog();
       setTimeout(() => {
         addMoreDialog.openDialog(actionsDialog.data);
+      }, 200);
+    }
+  };
+
+  const handleWriteOff = () => {
+    if (actionsDialog.data) {
+      actionsDialog.closeDialog();
+      setTimeout(() => {
+        writeOffDialog.openDialog(actionsDialog.data);
       }, 200);
     }
   };
@@ -249,6 +260,7 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
           onOpenChange={actionsDialog.closeDialog}
           onCloseComplete={actionsDialog.unmountDialog}
           onClose={handleClose}
+          onWriteOff={handleWriteOff}
           onAddMore={handleAddMore}
           onDelete={handleDelete}
           onEdit={handleEdit}
@@ -272,6 +284,16 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
           open={closeDialog.open}
           onOpenChange={closeDialog.closeDialog}
           onCloseComplete={closeDialog.unmountDialog}
+        />
+      )}
+
+      {writeOffDialog.mounted && writeOffDialog.data && (
+        <DebtWriteOffDialog
+          debt={writeOffDialog.data}
+          workspaceId={workspaceId}
+          open={writeOffDialog.open}
+          onOpenChange={writeOffDialog.closeDialog}
+          onCloseComplete={writeOffDialog.unmountDialog}
         />
       )}
 

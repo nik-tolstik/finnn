@@ -350,6 +350,7 @@ export function CreateTransactionDialog({
         updatedAt: optimisticNow,
         account: optimisticAccount,
         category: optimisticCategory,
+        debtWriteOff: null,
       },
     };
 

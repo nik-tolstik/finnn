@@ -20,7 +20,6 @@ export function getCloseDebtDefaultValues(debt: Pick<DebtWithRelations, "remaini
     paymentAmount: debt.remainingAmount,
     toAmount: "",
     categoryId: undefined,
-    closeEarly: false,
     accountId: "",
     useAccount: true,
   };
@@ -30,21 +29,15 @@ export function getCloseDebtCategoryType({
   debtType,
   remainingAmount,
   paymentAmount,
-  closeEarly,
   currenciesMatch,
 }: {
   debtType: string;
   remainingAmount: string;
   paymentAmount?: string;
-  closeEarly: boolean;
   currenciesMatch: boolean;
 }) {
   if (!currenciesMatch || !paymentAmount) {
     return null;
-  }
-
-  if (closeEarly && compareMoney(paymentAmount, remainingAmount) < 0) {
-    return debtType === DebtType.LENT ? CategoryType.EXPENSE : CategoryType.INCOME;
   }
 
   if (compareMoney(paymentAmount, remainingAmount) > 0) {
@@ -57,20 +50,14 @@ export function getCloseDebtCategoryType({
 export function getCloseDebtCategoryAmount({
   remainingAmount,
   paymentAmount,
-  closeEarly,
   categoryType,
 }: {
   remainingAmount: string;
   paymentAmount?: string;
-  closeEarly: boolean;
   categoryType: CategoryType | null;
 }) {
   if (!categoryType || !paymentAmount) {
     return "0";
-  }
-
-  if (closeEarly && compareMoney(paymentAmount, remainingAmount) < 0) {
-    return subtractMoney(remainingAmount, paymentAmount);
   }
 
   if (compareMoney(paymentAmount, remainingAmount) > 0) {
@@ -114,7 +101,6 @@ export function getCloseDebtPreviewAccount<TAccount extends Pick<Account, "balan
   closeAmount,
   paymentAmount,
   toAmount,
-  closeEarly,
   remainingAmount,
   currenciesMatch,
 }: {
@@ -124,7 +110,6 @@ export function getCloseDebtPreviewAccount<TAccount extends Pick<Account, "balan
   closeAmount?: string;
   paymentAmount?: string;
   toAmount?: string;
-  closeEarly: boolean;
   remainingAmount: string;
   currenciesMatch: boolean;
 }) {
@@ -146,13 +131,11 @@ export function getCloseDebtPreviewAccount<TAccount extends Pick<Account, "balan
     debtType,
     remainingAmount,
     paymentAmount,
-    closeEarly,
     currenciesMatch,
   });
   const categoryAmount = getCloseDebtCategoryAmount({
     remainingAmount,
     paymentAmount,
-    closeEarly,
     categoryType,
   });
   const categoryPaymentType = getCategoryPaymentType(categoryType);

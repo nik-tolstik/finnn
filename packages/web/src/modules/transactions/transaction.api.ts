@@ -75,6 +75,7 @@ function toUiPaymentTransaction(transaction: PaymentTransactionDto): PaymentTran
     updatedAt: toDate(transaction.updatedAt),
     account: toUiAccount(transaction.account),
     category: transaction.category ?? null,
+    debtWriteOff: transaction.debtWriteOff ?? null,
   };
 }
 

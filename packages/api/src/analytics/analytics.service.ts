@@ -924,6 +924,7 @@ export class AnalyticsService {
         ? this.prisma.debtTransaction.findMany({
             where: {
               ...buildCurrentRangeWhere(workspaceId, effectiveRange),
+              paymentTransactionId: null,
               debt: {
                 is: {
                   workspaceId,
@@ -1378,6 +1379,7 @@ export class AnalyticsService {
         ? this.prisma.debtTransaction.findMany({
             where: {
               ...buildCurrentRangeWhere(workspaceId, effectiveRange),
+              paymentTransactionId: null,
               debt: {
                 is: {
                   workspaceId,

@@ -1,6 +1,7 @@
 "use client";
 
 import { DebtTransactionActionsDialog } from "@/modules/debts/components/debt-transaction-actions-dialog";
+import { DebtWriteOffDialog } from "@/modules/debts/components/debt-write-off-dialog";
 import { DeleteDebtDialog } from "@/modules/debts/components/delete-debt-dialog";
 import { EditDebtDialog } from "@/modules/debts/components/edit-debt-dialog";
 import { EditDebtTransactionDialog } from "@/modules/debts/components/edit-debt-transaction-dialog";
@@ -22,6 +23,7 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
     workspaceId,
     dialogs: {
       editTransactionDialog,
+      editDebtWriteOffDialog,
       editTransferDialog,
       editDebtDialog,
       editDebtTransactionDialog,
@@ -53,9 +55,14 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
           onDelete={() => {
             handleTransactionDelete(actionsDialog.data.transaction);
           }}
-          onRepeat={() => {
-            handleTransactionRepeat(actionsDialog.data.transaction);
-          }}
+          onRepeat={
+            actionsDialog.data.transaction.kind === "paymentTransaction" &&
+            actionsDialog.data.transaction.data.debtWriteOff
+              ? undefined
+              : () => {
+                  handleTransactionRepeat(actionsDialog.data.transaction);
+                }
+          }
           onCreatePayment={
             canCreateScheduledPaymentFromTransaction(actionsDialog.data.transaction)
               ? () => {
@@ -88,6 +95,16 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
           open={editTransactionDialog.open}
           onOpenChange={editTransactionDialog.closeDialog}
           onCloseComplete={editTransactionDialog.unmountDialog}
+        />
+      ) : null}
+
+      {editDebtWriteOffDialog.mounted ? (
+        <DebtWriteOffDialog
+          transaction={editDebtWriteOffDialog.data.transaction}
+          workspaceId={editDebtWriteOffDialog.data.workspaceId}
+          open={editDebtWriteOffDialog.open}
+          onOpenChange={editDebtWriteOffDialog.closeDialog}
+          onCloseComplete={editDebtWriteOffDialog.unmountDialog}
         />
       ) : null}
 

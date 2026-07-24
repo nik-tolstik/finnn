@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, HandCoins, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog";
 
@@ -13,6 +13,7 @@ interface DebtActionsDialogProps {
   onCloseComplete: () => void;
   onOpenChange: (open: boolean) => void;
   onClose: () => void;
+  onWriteOff: () => void;
   onAddMore: () => void;
   onDelete: () => void;
   onEdit: () => void;
@@ -24,6 +25,7 @@ export function DebtActionsDialog({
   onCloseComplete,
   onOpenChange,
   onClose,
+  onWriteOff,
   onAddMore,
   onDelete,
   onEdit,
@@ -41,8 +43,14 @@ export function DebtActionsDialog({
 
     actions.push({
       icon: <Check className="h-3.5 w-3.5" />,
-      label: "Закрыть долг",
+      label: "Погасить долг",
       onClick: onClose,
+    });
+
+    actions.push({
+      icon: <HandCoins className="h-3.5 w-3.5" />,
+      label: "Погасить транзакцией",
+      onClick: onWriteOff,
     });
 
     actions.push({

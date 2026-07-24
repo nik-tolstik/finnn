@@ -5,6 +5,7 @@
  * Backend API for Finnn finance tracking
  * OpenAPI spec version: 0.1.0
  */
+import type { DebtWriteOffMetadataDto } from "./debtWriteOffMetadataDto";
 import type { PaymentTransactionDtoType } from "./paymentTransactionDtoType";
 import type { TransactionAccountDto } from "./transactionAccountDto";
 import type { TransactionCategoryDto } from "./transactionCategoryDto";
@@ -26,4 +27,6 @@ export interface PaymentTransactionDto {
   account: TransactionAccountDto;
   /** @nullable */
   category?: TransactionCategoryDto | null;
+  /** @nullable */
+  debtWriteOff?: DebtWriteOffMetadataDto | null;
 }

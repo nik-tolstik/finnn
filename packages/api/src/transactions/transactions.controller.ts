@@ -106,6 +106,7 @@ export class TransactionsController {
   @ApiOperation({ operationId: "deletePaymentTransaction", summary: "Delete a payment transaction" })
   @ApiParam({ name: "transactionId", type: String })
   @ApiNoContentResponse()
+  @ApiBadRequestResponse({ type: ApiErrorDto })
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
   @ApiForbiddenResponse({ type: ApiErrorDto })
   async deletePaymentTransaction(

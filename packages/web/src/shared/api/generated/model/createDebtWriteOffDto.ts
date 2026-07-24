@@ -6,14 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CloseDebtDto {
+export interface CreateDebtWriteOffDto {
   amount: string;
   toAmount?: string;
-  paymentAmount?: string;
-  categoryId?: string;
-  /** @deprecated */
-  closeEarly?: boolean;
-  accountId?: string;
-  date?: string;
-  useAccount: boolean;
+  accountId: string;
+  categoryId: string;
+  date: string;
+  description?: string;
 }

@@ -36,6 +36,7 @@ function createPaymentTransaction(
       id: "category-1",
       name: "Связь",
     },
+    debtWriteOff: null,
     ...overrides,
   };
 }
@@ -94,6 +95,26 @@ describe("scheduled payment from transaction", () => {
     expect(canCreateScheduledPaymentFromTransaction(expense)).toBe(true);
     expect(canCreateScheduledPaymentFromTransaction(income)).toBe(false);
     expect(canCreateScheduledPaymentFromTransaction(transfer)).toBe(false);
+  });
+
+  it("does not create a scheduled payment from a debt write-off expense", () => {
+    const writeOff: ActionableCombinedTransaction = {
+      kind: "paymentTransaction",
+      data: createPaymentTransaction({
+        debtWriteOff: {
+          debtTransactionId: "debt-transaction-1",
+          debtId: "debt-1",
+          debtType: "lent",
+          personName: "Alex",
+          debtCurrency: "BYN",
+          amount: "42.50",
+          remainingAmount: "0",
+          status: "closed",
+        },
+      }),
+    };
+
+    expect(canCreateScheduledPaymentFromTransaction(writeOff)).toBe(false);
   });
 
   it("copies the expense values into scheduled payment defaults", () => {

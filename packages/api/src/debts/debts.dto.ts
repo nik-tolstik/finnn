@@ -2,6 +2,8 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsBoolean, IsDate, IsIn, IsOptional, IsString, Matches, MinLength } from "class-validator";
 
+import { PaymentTransactionDto } from "@/transactions/transactions.dto";
+
 const DEBT_TYPES = ["lent", "borrowed"] as const;
 const DEBT_STATUSES = ["open", "closed"] as const;
 const DEBT_TRANSACTION_TYPES = ["created", "closed", "added"] as const;
@@ -70,7 +72,7 @@ export class CloseDebtDto {
   @IsString()
   categoryId?: string;
 
-  @ApiPropertyOptional({ example: false, type: Boolean })
+  @ApiPropertyOptional({ deprecated: true, example: false, type: Boolean })
   @IsOptional()
   @IsBoolean()
   closeEarly?: boolean;
@@ -90,6 +92,41 @@ export class CloseDebtDto {
   @IsBoolean()
   useAccount!: boolean;
 }
+
+export class CreateDebtWriteOffDto {
+  @ApiProperty({ example: "80", type: String })
+  @IsString()
+  @Matches(POSITIVE_MONEY_PATTERN, { message: "Сумма должна быть больше 0" })
+  amount!: string;
+
+  @ApiPropertyOptional({ example: "25", type: String })
+  @IsOptional()
+  @IsString()
+  @Matches(POSITIVE_MONEY_PATTERN, { message: "Сумма должна быть больше 0" })
+  toAmount?: string;
+
+  @ApiProperty({ example: "665f5d865ef5a20c0d2f1111", type: String })
+  @IsString()
+  @MinLength(1)
+  accountId!: string;
+
+  @ApiProperty({ example: "665f5d865ef5a20c0d2f2222", type: String })
+  @IsString()
+  @MinLength(1)
+  categoryId!: string;
+
+  @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
+  @Type(() => Date)
+  @IsDate()
+  date!: Date;
+
+  @ApiPropertyOptional({ example: "Погашение долга: Grace", type: String })
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+
+export class UpdateDebtWriteOffDto extends CreateDebtWriteOffDto {}
 
 export class AddToDebtDto {
   @ApiProperty({ example: "20", type: String })
@@ -315,6 +352,9 @@ export class DebtEntryTransactionDto {
   @ApiPropertyOptional({ nullable: true, type: String })
   accountId!: string | null;
 
+  @ApiPropertyOptional({ nullable: true, type: String })
+  paymentTransactionId!: string | null;
+
   @ApiProperty({ enum: DEBT_TRANSACTION_TYPES, type: String })
   type!: string;
 
@@ -358,4 +398,15 @@ export class DebtEditDataResponseDto {
 export class DebtTransactionResponseDto {
   @ApiProperty({ type: DebtEntryTransactionDto })
   debtTransaction!: DebtEntryTransactionDto;
+}
+
+export class DebtWriteOffResponseDto {
+  @ApiProperty({ type: DebtDto })
+  debt!: DebtDto;
+
+  @ApiProperty({ type: DebtEntryTransactionDto })
+  debtTransaction!: DebtEntryTransactionDto;
+
+  @ApiProperty({ type: PaymentTransactionDto })
+  transaction!: PaymentTransactionDto;
 }

@@ -270,6 +270,32 @@ export class TransactionCategoryDto {
   name!: string;
 }
 
+export class DebtWriteOffMetadataDto {
+  @ApiProperty({ type: String })
+  debtTransactionId!: string;
+
+  @ApiProperty({ type: String })
+  debtId!: string;
+
+  @ApiProperty({ enum: ["lent", "borrowed"], type: String })
+  debtType!: string;
+
+  @ApiProperty({ type: String })
+  personName!: string;
+
+  @ApiProperty({ type: String })
+  debtCurrency!: string;
+
+  @ApiProperty({ description: "Written-off amount in the debt currency", type: String })
+  amount!: string;
+
+  @ApiProperty({ type: String })
+  remainingAmount!: string;
+
+  @ApiProperty({ enum: ["open", "closed"], type: String })
+  status!: string;
+}
+
 export class PaymentTransactionDto {
   @ApiProperty({ type: String })
   id!: string;
@@ -309,6 +335,9 @@ export class PaymentTransactionDto {
 
   @ApiPropertyOptional({ nullable: true, type: TransactionCategoryDto })
   category!: TransactionCategoryDto | null;
+
+  @ApiPropertyOptional({ nullable: true, type: DebtWriteOffMetadataDto })
+  debtWriteOff!: DebtWriteOffMetadataDto | null;
 }
 
 export class TransferTransactionDto {

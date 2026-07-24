@@ -57,6 +57,7 @@ const incomeTransaction = {
     id: "category-salary",
     name: "Зарплата",
   },
+  debtWriteOff: null,
 } satisfies PaymentTransactionWithRelations;
 
 const expenseTransaction = {

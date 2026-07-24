@@ -1,4 +1,8 @@
-import type { DebtTransactionWithRelations, DebtWithRelations } from "@/modules/debts/debt.types";
+import type {
+  DebtTransactionWithRelations,
+  DebtWithRelations,
+  DebtWriteOffPaymentTransaction,
+} from "@/modules/debts/debt.types";
 
 import type { PaymentTransactionType } from "../../transaction.constants";
 import type {
@@ -31,6 +35,11 @@ export interface PreparedCombinedTransactionGroup {
 
 export interface EditTransactionDialogData {
   transaction: PaymentTransactionWithRelations;
+  workspaceId: string;
+}
+
+export interface EditDebtWriteOffDialogData {
+  transaction: DebtWriteOffPaymentTransaction;
   workspaceId: string;
 }
 

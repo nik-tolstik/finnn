@@ -7,7 +7,11 @@ import type { ActionableCombinedTransaction } from "../types";
 export function canCreateScheduledPaymentFromTransaction(
   transaction: ActionableCombinedTransaction
 ): transaction is Extract<ActionableCombinedTransaction, { kind: "paymentTransaction" }> {
-  return transaction.kind === "paymentTransaction" && transaction.data.type === PaymentTransactionType.EXPENSE;
+  return (
+    transaction.kind === "paymentTransaction" &&
+    transaction.data.type === PaymentTransactionType.EXPENSE &&
+    !transaction.data.debtWriteOff
+  );
 }
 
 export function getScheduledPaymentInitialValues(

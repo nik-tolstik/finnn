@@ -3075,6 +3075,209 @@
         "tags": ["Debts"]
       }
     },
+    "/debts/{debtId}/write-offs": {
+      "post": {
+        "operationId": "createDebtWriteOff",
+        "parameters": [
+          {
+            "name": "debtId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDebtWriteOffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtWriteOffResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Write off a debt through a payment transaction",
+        "tags": ["Debts"]
+      }
+    },
+    "/debt-write-offs/{debtTransactionId}": {
+      "patch": {
+        "operationId": "updateDebtWriteOff",
+        "parameters": [
+          {
+            "name": "debtTransactionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDebtWriteOffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebtWriteOffResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Update a debt write-off",
+        "tags": ["Debts"]
+      },
+      "delete": {
+        "operationId": "deleteDebtWriteOff",
+        "parameters": [
+          {
+            "name": "debtTransactionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete a debt write-off",
+        "tags": ["Debts"]
+      }
+    },
     "/debt-transactions/{debtTransactionId}": {
       "patch": {
         "operationId": "updateDebtTransaction",
@@ -4290,6 +4493,16 @@
         "responses": {
           "204": {
             "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
           },
           "401": {
             "description": "",
@@ -6577,6 +6790,7 @@
           },
           "closeEarly": {
             "type": "boolean",
+            "deprecated": true,
             "example": false
           },
           "accountId": {
@@ -6595,28 +6809,36 @@
         },
         "required": ["amount", "useAccount"]
       },
-      "UpdateDebtEntryTransactionDto": {
+      "CreateDebtWriteOffDto": {
         "type": "object",
         "properties": {
           "amount": {
             "type": "string",
-            "example": "30"
+            "example": "80"
           },
           "toAmount": {
             "type": "string",
-            "example": "31.50"
+            "example": "25"
           },
           "accountId": {
             "type": "string",
             "example": "665f5d865ef5a20c0d2f1111"
           },
+          "categoryId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
           "date": {
             "type": "string",
             "example": "2026-05-25T12:00:00.000Z",
             "format": "date-time"
+          },
+          "description": {
+            "type": "string",
+            "example": "Погашение долга: Grace"
           }
         },
-        "required": ["amount", "date"]
+        "required": ["amount", "accountId", "categoryId", "date"]
       },
       "DebtEntryTransactionDebtDto": {
         "type": "object",
@@ -6693,6 +6915,10 @@
             "type": "string",
             "nullable": true
           },
+          "paymentTransactionId": {
+            "type": "string",
+            "nullable": true
+          },
           "type": {
             "type": "string",
             "enum": ["created", "closed", "added"]
@@ -6728,6 +6954,263 @@
           }
         },
         "required": ["id", "workspaceId", "debtId", "type", "amount", "date", "createdAt", "debt"]
+      },
+      "TransactionUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id"]
+      },
+      "TransactionAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "owner": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionUserDto"
+              }
+            ]
+          }
+        },
+        "required": ["id", "name", "currency"]
+      },
+      "TransactionCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "DebtWriteOffMetadataDto": {
+        "type": "object",
+        "properties": {
+          "debtTransactionId": {
+            "type": "string"
+          },
+          "debtId": {
+            "type": "string"
+          },
+          "debtType": {
+            "type": "string",
+            "enum": ["lent", "borrowed"]
+          },
+          "personName": {
+            "type": "string"
+          },
+          "debtCurrency": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Written-off amount in the debt currency"
+          },
+          "remainingAmount": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "closed"]
+          }
+        },
+        "required": [
+          "debtTransactionId",
+          "debtId",
+          "debtType",
+          "personName",
+          "debtCurrency",
+          "amount",
+          "remainingAmount",
+          "status"
+        ]
+      },
+      "PaymentTransactionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdByAi": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "account": {
+            "$ref": "#/components/schemas/TransactionAccountDto"
+          },
+          "category": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionCategoryDto"
+              }
+            ]
+          },
+          "debtWriteOff": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DebtWriteOffMetadataDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "accountId",
+          "amount",
+          "type",
+          "date",
+          "createdByAi",
+          "createdAt",
+          "updatedAt",
+          "account"
+        ]
+      },
+      "DebtWriteOffResponseDto": {
+        "type": "object",
+        "properties": {
+          "debt": {
+            "$ref": "#/components/schemas/DebtDto"
+          },
+          "debtTransaction": {
+            "$ref": "#/components/schemas/DebtEntryTransactionDto"
+          },
+          "transaction": {
+            "$ref": "#/components/schemas/PaymentTransactionDto"
+          }
+        },
+        "required": ["debt", "debtTransaction", "transaction"]
+      },
+      "UpdateDebtWriteOffDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "80"
+          },
+          "toAmount": {
+            "type": "string",
+            "example": "25"
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f2222"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string",
+            "example": "Погашение долга: Grace"
+          }
+        },
+        "required": ["amount", "accountId", "categoryId", "date"]
+      },
+      "UpdateDebtEntryTransactionDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "30"
+          },
+          "toAmount": {
+            "type": "string",
+            "example": "31.50"
+          },
+          "accountId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["amount", "date"]
       },
       "DebtTransactionResponseDto": {
         "type": "object",
@@ -7410,143 +7893,6 @@
             "example": true
           }
         }
-      },
-      "TransactionUserDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "image": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": ["id"]
-      },
-      "TransactionAccountDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "color": {
-            "type": "string",
-            "nullable": true
-          },
-          "icon": {
-            "type": "string",
-            "nullable": true
-          },
-          "ownerId": {
-            "type": "string",
-            "nullable": true
-          },
-          "owner": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TransactionUserDto"
-              }
-            ]
-          }
-        },
-        "required": ["id", "name", "currency"]
-      },
-      "TransactionCategoryDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": ["id", "name"]
-      },
-      "PaymentTransactionDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "workspaceId": {
-            "type": "string"
-          },
-          "accountId": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["income", "expense"]
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "date": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "categoryId": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdByAi": {
-            "type": "boolean"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "account": {
-            "$ref": "#/components/schemas/TransactionAccountDto"
-          },
-          "category": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TransactionCategoryDto"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "workspaceId",
-          "accountId",
-          "amount",
-          "type",
-          "date",
-          "createdByAi",
-          "createdAt",
-          "updatedAt",
-          "account"
-        ]
       },
       "PaymentCombinedTransactionDto": {
         "type": "object",

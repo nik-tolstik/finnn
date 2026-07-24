@@ -216,6 +216,7 @@ model PaymentTransaction {
   account   Account   @relation(fields: [accountId], references: [id])
   category  Category? @relation(fields: [categoryId], references: [id])
   scheduledPaymentRecords ScheduledPaymentRecord[]
+  debtTransactions DebtTransaction[]
 
   @@index([workspaceId, date])
   @@index([workspaceId, type, date])
@@ -320,24 +321,27 @@ model Debt {
 }
 
 model DebtTransaction {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId String   @db.ObjectId
-  debtId      String   @db.ObjectId
-  accountId   String?  @db.ObjectId
-  type        String
-  amount      String
-  toAmount    String?
-  date        DateTime @default(now())
-  createdAt   DateTime @default(now())
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId          String   @db.ObjectId
+  debtId               String   @db.ObjectId
+  accountId            String?  @db.ObjectId
+  paymentTransactionId String?  @db.ObjectId
+  type                 String
+  amount               String
+  toAmount             String?
+  date                 DateTime @default(now())
+  createdAt            DateTime @default(now())
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  debt      Debt      @relation(fields: [debtId], references: [id], onDelete: Cascade)
-  account   Account?  @relation(fields: [accountId], references: [id])
+  workspace          Workspace           @relation(fields: [workspaceId], references: [id])
+  debt               Debt                @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  account            Account?            @relation(fields: [accountId], references: [id])
+  paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id])
 
   @@index([workspaceId, date])
   @@index([workspaceId, accountId, date])
   @@index([workspaceId, type, date])
   @@index([debtId])
+  @@index([paymentTransactionId])
   @@map("debt_transactions")
 }
 
