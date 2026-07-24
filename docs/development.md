@@ -307,6 +307,7 @@ pnpm build
 ## Formatting And Style
 
 - Biome is the source of truth for formatting and linting.
+- The root `biome.json` anchors editor configuration for the monorepo. Keep package-level Biome configs connected with `"extends": "//"`; the web config enables Tailwind CSS directives.
 - TypeScript path alias is `@/*` mapped to `src/*`.
 - TypeScript is strict.
 - Comments should be in English.

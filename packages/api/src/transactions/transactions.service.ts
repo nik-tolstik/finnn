@@ -66,6 +66,23 @@ const PAYMENT_TRANSACTION_INCLUDE = {
   category: {
     select: CATEGORY_SELECT,
   },
+  debtTransactions: {
+    take: 1,
+    select: {
+      id: true,
+      debtId: true,
+      amount: true,
+      debt: {
+        select: {
+          type: true,
+          personName: true,
+          currency: true,
+          remainingAmount: true,
+          status: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.PaymentTransactionInclude;
 
 const TRANSFER_TRANSACTION_INCLUDE = {
@@ -110,6 +127,12 @@ type TransactionCategory = Pick<Category, "id" | "name">;
 type PaymentTransactionWithRelations = PaymentTransaction & {
   account: TransactionAccount;
   category: TransactionCategory | null;
+  debtTransactions: Array<{
+    id: string;
+    debtId: string;
+    amount: string;
+    debt: Pick<Debt, "type" | "personName" | "currency" | "remainingAmount" | "status">;
+  }>;
 };
 type TransferTransactionWithRelations = TransferTransaction & {
   fromAccount: TransactionAccount;
@@ -287,6 +310,7 @@ function buildTransferTransactionWhere(workspaceId: string, filters?: CombinedTr
 function buildDebtTransactionWhere(workspaceId: string, filters?: CombinedTransactionsQueryDto) {
   const where: Prisma.DebtTransactionWhereInput = {
     workspaceId,
+    paymentTransactionId: null,
     debt: {
       is: {
         workspaceId,
@@ -347,6 +371,8 @@ function toAccountDto(account: TransactionAccount) {
 }
 
 function toPaymentTransactionDto(transaction: PaymentTransactionWithRelations) {
+  const writeOffTransaction = transaction.debtTransactions?.[0];
+
   return {
     id: transaction.id,
     workspaceId: transaction.workspaceId,
@@ -361,6 +387,18 @@ function toPaymentTransactionDto(transaction: PaymentTransactionWithRelations) {
     updatedAt: toIsoString(transaction.updatedAt),
     account: toAccountDto(transaction.account),
     category: transaction.category,
+    debtWriteOff: writeOffTransaction
+      ? {
+          debtTransactionId: writeOffTransaction.id,
+          debtId: writeOffTransaction.debtId,
+          debtType: writeOffTransaction.debt.type,
+          personName: writeOffTransaction.debt.personName,
+          debtCurrency: writeOffTransaction.debt.currency,
+          amount: writeOffTransaction.amount,
+          remainingAmount: writeOffTransaction.debt.remainingAmount,
+          status: writeOffTransaction.debt.status,
+        }
+      : null,
   };
 }
 
@@ -719,7 +757,13 @@ export class TransactionsService {
     const transaction = await this.prisma.$transaction(async (tx) => {
       const existingTransaction = await tx.paymentTransaction.findUnique({
         where: { id: transactionId },
-        include: { account: true },
+        include: {
+          account: true,
+          debtTransactions: {
+            take: 1,
+            select: { id: true },
+          },
+        },
       });
 
       if (!existingTransaction) {
@@ -727,6 +771,10 @@ export class TransactionsService {
       }
 
       await this.assertWorkspaceAccessWithClient(tx, existingTransaction.workspaceId, currentUser);
+
+      if (existingTransaction.debtTransactions?.length) {
+        throw new BadRequestException("Погашение транзакцией можно изменить только через действие долга");
+      }
 
       if (existingTransaction.account.archived) {
         throw new NotFoundException("Счёт не найден");
@@ -939,7 +987,13 @@ export class TransactionsService {
     await this.prisma.$transaction(async (tx) => {
       const transaction = await tx.paymentTransaction.findUnique({
         where: { id: transactionId },
-        include: { account: true },
+        include: {
+          account: true,
+          debtTransactions: {
+            take: 1,
+            select: { id: true },
+          },
+        },
       });
 
       if (!transaction) {
@@ -947,6 +1001,10 @@ export class TransactionsService {
       }
 
       await this.assertWorkspaceAccessWithClient(tx, transaction.workspaceId, currentUser);
+
+      if (transaction.debtTransactions.length) {
+        throw new BadRequestException("Погашение транзакцией можно удалить только через действие долга");
+      }
 
       await tx.account.update({
         where: { id: transaction.account.id },

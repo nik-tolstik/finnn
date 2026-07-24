@@ -60,7 +60,7 @@ export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenC
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" disabled={leaveMutation.isPending} onClick={() => onOpenChange(false)}>
+          <Button variant="secondary" disabled={leaveMutation.isPending} onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <Button

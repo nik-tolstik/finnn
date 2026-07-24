@@ -118,7 +118,9 @@ export function AvatarPickerDialog({
                   onClick={() => void handleSelect(null)}
                   className={cn(
                     "flex flex-col items-center gap-2 rounded-xl border p-3 transition-colors",
-                    selectedImage === null ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    selectedImage === null
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-foreground/25 dark:hover:border-primary/50"
                   )}
                 >
                   <UserAvatar
@@ -138,7 +140,7 @@ export function AvatarPickerDialog({
                   onClick={() => fileInputRef.current?.click()}
                   className={cn(
                     "flex flex-col items-center gap-2 rounded-xl border p-3 transition-colors disabled:pointer-events-none disabled:opacity-60",
-                    "border-border hover:border-primary/50"
+                    "border-border hover:border-foreground/25 dark:hover:border-primary/50"
                   )}
                 >
                   <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-muted-foreground">
@@ -174,7 +176,9 @@ export function AvatarPickerDialog({
                         onClick={() => void handleSelect(avatar.src)}
                         className={cn(
                           "flex flex-col items-center gap-2 rounded-xl border p-3 transition-colors",
-                          isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                          isSelected
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-foreground/25 dark:hover:border-primary/50"
                         )}
                       >
                         <UserAvatar name={avatar.label} image={avatar.src} size="xl" />

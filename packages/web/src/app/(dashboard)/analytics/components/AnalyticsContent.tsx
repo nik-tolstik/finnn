@@ -134,7 +134,7 @@ function MobileExchangeRates({ workspaceId }: { workspaceId: string }) {
     return (
       <div className="grid grid-cols-3 gap-2 md:hidden">
         {Array.from({ length: 3 }).map((_, index) => (
-          <div className="rounded-md border bg-background p-3" key={index}>
+          <div className="rounded-md bg-background p-3" key={index}>
             <Skeleton className="mb-3 size-5 rounded-full" />
             <Skeleton className="mb-2 h-3 w-14" />
             <Skeleton className="h-4 w-16" />

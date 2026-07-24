@@ -64,6 +64,7 @@ function createPaymentTransactionDto(overrides: Record<string, unknown> = {}) {
       id: "category-1",
       name: "Food",
     },
+    debtWriteOff: null,
     ...overrides,
   };
 }
@@ -134,7 +135,21 @@ describe("transaction.api", () => {
       data: [
         {
           kind: "paymentTransaction",
-          data: createPaymentTransactionDto({ category: null, categoryId: null, createdByAi: true }),
+          data: createPaymentTransactionDto({
+            category: null,
+            categoryId: null,
+            createdByAi: true,
+            debtWriteOff: {
+              debtTransactionId: "debt-transaction-write-off",
+              debtId: "debt-1",
+              debtType: "lent",
+              personName: "Alex",
+              debtCurrency: "USD",
+              amount: "125.50",
+              remainingAmount: "25",
+              status: "open",
+            },
+          }),
         },
         {
           kind: "transferTransaction",
@@ -188,6 +203,10 @@ describe("transaction.api", () => {
             categoryId: null,
             category: null,
             createdByAi: true,
+            debtWriteOff: expect.objectContaining({
+              debtTransactionId: "debt-transaction-write-off",
+              debtId: "debt-1",
+            }),
             date: new Date("2026-04-01T10:00:00.000Z"),
             updatedAt: new Date("2026-04-02T10:00:00.000Z"),
           }),

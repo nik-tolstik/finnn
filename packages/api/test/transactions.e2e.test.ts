@@ -165,6 +165,7 @@ function createPaymentTransactionRecord(overrides: Record<string, unknown> = {})
       id: "category-1",
       name: "Groceries",
     },
+    debtTransactions: [],
     ...overrides,
   };
 }
@@ -329,6 +330,63 @@ describe("Transactions API", () => {
         }),
       })
     );
+    expect(prisma.debtTransaction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          paymentTransactionId: null,
+          workspaceId: "workspace-1",
+        }),
+      })
+    );
+  });
+
+  it("returns debt write-off metadata on the visible payment transaction", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findMany.mockResolvedValue([
+      createPaymentTransactionRecord({
+        debtTransactions: [
+          {
+            id: "debt-transaction-write-off",
+            debtId: "debt-1",
+            amount: "25",
+            debt: {
+              type: "lent",
+              personName: "Grace",
+              currency: "USD",
+              remainingAmount: "75",
+              status: "open",
+            },
+          },
+        ],
+      }),
+    ]);
+    prisma.transferTransaction.findMany.mockResolvedValue([]);
+    prisma.transferTransaction.count.mockResolvedValue(0);
+    prisma.debtTransaction.findMany.mockResolvedValue([]);
+    prisma.debtTransaction.count.mockResolvedValue(0);
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/transactions")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.data).toEqual([
+      expect.objectContaining({
+        kind: "paymentTransaction",
+        data: expect.objectContaining({
+          debtWriteOff: {
+            debtTransactionId: "debt-transaction-write-off",
+            debtId: "debt-1",
+            debtType: "lent",
+            personName: "Grace",
+            debtCurrency: "USD",
+            amount: "25",
+            remainingAmount: "75",
+            status: "open",
+          },
+        }),
+      }),
+    ]);
   });
 
   it("post-filters amount ranges before paginating combined transactions", async () => {
@@ -529,6 +587,39 @@ describe("Transactions API", () => {
       .expect(404);
 
     expect(prisma.paymentTransaction.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects generic updates for payment transactions linked to debt write-offs", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findUnique.mockResolvedValue(
+      createPaymentTransactionRecord({ debtTransactions: [{ id: "debt-transaction-write-off" }] })
+    );
+
+    const response = await request(app.getHttpServer())
+      .patch("/payment-transactions/payment-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ description: "Updated" })
+      .expect(400);
+
+    expect(response.body.message).toBe("Погашение транзакцией можно изменить только через действие долга");
+    expect(prisma.paymentTransaction.update).not.toHaveBeenCalled();
+    expect(prisma.account.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects generic deletion for payment transactions linked to debt write-offs", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findUnique.mockResolvedValue(
+      createPaymentTransactionRecord({ debtTransactions: [{ id: "debt-transaction-write-off" }] })
+    );
+
+    const response = await request(app.getHttpServer())
+      .delete("/payment-transactions/payment-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(400);
+
+    expect(response.body.message).toBe("Погашение транзакцией можно удалить только через действие долга");
+    expect(prisma.paymentTransaction.delete).not.toHaveBeenCalled();
+    expect(prisma.account.update).not.toHaveBeenCalled();
   });
 
   it("creates transfer transactions and applies source and destination deltas", async () => {

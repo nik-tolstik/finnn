@@ -103,7 +103,7 @@ export function WorkspaceDropdown({
     return (
       <>
         <section className={cn("space-y-2", className)}>
-          <div className="rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
+          <div className="rounded-lg bg-card p-3 text-card-foreground shadow-sm">
             <button
               type="button"
               disabled={!currentWorkspaceId}
@@ -226,16 +226,10 @@ export function WorkspaceDropdown({
                 });
               }
             }}
-            className="flex w-full items-start gap-3 rounded-lg border bg-card p-3 text-left text-card-foreground shadow-sm transition-colors enabled:hover:bg-accent enabled:hover:text-accent-foreground disabled:cursor-default"
+            className="flex w-full items-center gap-3 rounded-lg bg-card p-4 text-left text-card-foreground shadow-sm transition-colors enabled:hover:bg-accent enabled:hover:text-accent-foreground disabled:cursor-default"
           >
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-muted-foreground">
-              <Building className="size-4" />
-            </div>
-            <span className="min-w-0 flex-1">
-              <span className="block text-xs font-medium text-muted-foreground">Workspace</span>
-              <span className="block truncate text-sm font-semibold">{triggerLabel}</span>
-            </span>
-            {currentWorkspaceId && <Settings className="mt-1 size-4 shrink-0 text-muted-foreground" />}
+            <Building className="size-4 text-muted-foreground" />
+            <span className="block truncate text-sm font-semibold">{triggerLabel}</span>
           </button>
 
           {currentWorkspaceId ? (

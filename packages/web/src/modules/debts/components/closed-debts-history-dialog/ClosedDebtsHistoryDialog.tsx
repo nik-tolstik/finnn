@@ -94,6 +94,7 @@ export function ClosedDebtsHistoryDialog({
           onOpenChange={actionsDialog.closeDialog}
           onCloseComplete={actionsDialog.unmountDialog}
           onClose={() => {}}
+          onWriteOff={() => {}}
           onAddMore={() => {}}
           onDelete={handleDelete}
           onEdit={() => {}}

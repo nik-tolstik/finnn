@@ -5,23 +5,29 @@ import { DebtStatus, DebtTransactionType, DebtType } from "./debt.constants";
 const addToApiDebtMock = vi.fn();
 const closeApiDebtMock = vi.fn();
 const createApiDebtMock = vi.fn();
+const createApiDebtWriteOffMock = vi.fn();
 const deleteApiDebtMock = vi.fn();
 const deleteApiDebtTransactionMock = vi.fn();
+const deleteApiDebtWriteOffMock = vi.fn();
 const getApiDebtEditDataMock = vi.fn();
 const listApiDebtsMock = vi.fn();
 const updateApiDebtMock = vi.fn();
 const updateApiDebtTransactionMock = vi.fn();
+const updateApiDebtWriteOffMock = vi.fn();
 
 vi.mock("@/shared/api/generated/debts/debts", () => ({
   addToDebt: addToApiDebtMock,
   closeDebt: closeApiDebtMock,
   createDebt: createApiDebtMock,
+  createDebtWriteOff: createApiDebtWriteOffMock,
   deleteDebt: deleteApiDebtMock,
   deleteDebtTransaction: deleteApiDebtTransactionMock,
+  deleteDebtWriteOff: deleteApiDebtWriteOffMock,
   getDebtEditData: getApiDebtEditDataMock,
   listDebts: listApiDebtsMock,
   updateDebt: updateApiDebtMock,
   updateDebtTransaction: updateApiDebtTransactionMock,
+  updateDebtWriteOff: updateApiDebtWriteOffMock,
 }));
 
 const requestOptions = {
@@ -52,6 +58,7 @@ function createDebtTransactionDto(overrides: Record<string, unknown> = {}) {
     workspaceId: "workspace-1",
     debtId: "debt-1",
     accountId: "account-1",
+    paymentTransactionId: null,
     type: DebtTransactionType.CLOSED,
     amount: "25",
     toAmount: null,
@@ -83,6 +90,48 @@ function createDebtTransactionDto(overrides: Record<string, unknown> = {}) {
         email: "finn@example.com",
         image: null,
       },
+    },
+    ...overrides,
+  };
+}
+
+function createPaymentTransactionDto(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "payment-1",
+    workspaceId: "workspace-1",
+    accountId: "account-1",
+    amount: "81.25",
+    type: "expense",
+    description: "Погашение долга: Alex",
+    date: "2026-04-07T12:00:00.000Z",
+    categoryId: "category-1",
+    createdByAi: false,
+    createdAt: "2026-04-07T12:00:00.000Z",
+    updatedAt: "2026-04-07T12:00:00.000Z",
+    account: {
+      id: "account-1",
+      name: "Cash",
+      currency: "BYN",
+      color: null,
+      icon: "Wallet",
+      ownerId: "user-1",
+      owner: {
+        id: "user-1",
+        name: "Finn",
+        email: "finn@example.com",
+        image: null,
+      },
+    },
+    category: { id: "category-1", name: "Gifts" },
+    debtWriteOff: {
+      debtTransactionId: "debt-transaction-1",
+      debtId: "debt-1",
+      debtType: DebtType.LENT,
+      personName: "Alex",
+      debtCurrency: "USD",
+      amount: "25",
+      remainingAmount: "50",
+      status: DebtStatus.OPEN,
     },
     ...overrides,
   };
@@ -322,6 +371,60 @@ describe("debt.api", () => {
       requestOptions
     );
     expect(deleteApiDebtTransactionMock).toHaveBeenCalledWith("debt-transaction-1", requestOptions);
+  });
+
+  it("adapts create, update, and delete debt write-off mutations", async () => {
+    const writeOffResponse = {
+      debt: createDebtDto({ remainingAmount: "50" }),
+      debtTransaction: createDebtTransactionDto({
+        paymentTransactionId: "payment-1",
+        amount: "25",
+        toAmount: "81.25",
+      }),
+      transaction: createPaymentTransactionDto(),
+    };
+    createApiDebtWriteOffMock.mockResolvedValue(writeOffResponse);
+    updateApiDebtWriteOffMock.mockResolvedValue(writeOffResponse);
+    deleteApiDebtWriteOffMock.mockResolvedValue(undefined);
+
+    const { createDebtWriteOff, deleteDebtWriteOff, updateDebtWriteOff } = await import("./debt.api");
+    const input = {
+      amount: "25,00",
+      toAmount: "81,25",
+      accountId: "account-1",
+      categoryId: "category-1",
+      date: new Date("2026-04-07T12:00:00.000Z"),
+      description: "Погашение долга: Alex",
+    };
+
+    await expect(createDebtWriteOff("debt-1", input, requestOptions)).resolves.toEqual({
+      data: {
+        debt: expect.objectContaining({ remainingAmount: "50", date: expect.any(Date) }),
+        debtTransaction: expect.objectContaining({
+          paymentTransactionId: "payment-1",
+          date: expect.any(Date),
+        }),
+        transaction: expect.objectContaining({
+          id: "payment-1",
+          date: new Date("2026-04-07T12:00:00.000Z"),
+          debtWriteOff: expect.objectContaining({ debtTransactionId: "debt-transaction-1" }),
+        }),
+      },
+    });
+    await updateDebtWriteOff("debt-transaction-1", input, requestOptions);
+    await expect(deleteDebtWriteOff("debt-transaction-1", requestOptions)).resolves.toEqual({ success: true });
+
+    const expectedDto = {
+      amount: "25.00",
+      toAmount: "81.25",
+      accountId: "account-1",
+      categoryId: "category-1",
+      date: "2026-04-07T12:00:00.000Z",
+      description: "Погашение долга: Alex",
+    };
+    expect(createApiDebtWriteOffMock).toHaveBeenCalledWith("debt-1", expectedDto, requestOptions);
+    expect(updateApiDebtWriteOffMock).toHaveBeenCalledWith("debt-transaction-1", expectedDto, requestOptions);
+    expect(deleteApiDebtWriteOffMock).toHaveBeenCalledWith("debt-transaction-1", requestOptions);
   });
 
   it("normalizes API failures into UI-facing action errors", async () => {

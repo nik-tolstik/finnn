@@ -15,6 +15,8 @@ export interface DebtEntryTransactionDto {
   debtId: string;
   /** @nullable */
   accountId?: string | null;
+  /** @nullable */
+  paymentTransactionId?: string | null;
   type: DebtEntryTransactionDtoType;
   amount: string;
   /** @nullable */

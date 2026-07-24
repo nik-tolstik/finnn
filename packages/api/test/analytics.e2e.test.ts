@@ -162,6 +162,7 @@ function createDebtTransactionRecord(overrides: Record<string, unknown> = {}) {
     workspaceId: "workspace-1",
     debtId: "debt-alice",
     accountId: "account-byn",
+    paymentTransactionId: null,
     type: "closed",
     amount: "20",
     toAmount: "60",
@@ -437,6 +438,39 @@ describe("Analytics API", () => {
         originalAmount: "60.00 Br",
       }),
     ]);
+    expect(prisma.debtTransaction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ paymentTransactionId: null }),
+      })
+    );
+  });
+
+  it("uses the Minsk calendar date when looking up exchange rates", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findMany
+      .mockResolvedValueOnce([
+        createPaymentTransactionRecord({
+          amount: "10",
+          type: "income",
+          date: new Date("2026-03-30T22:15:00.000Z"),
+          account: createAccountRecord({
+            id: "account-usd",
+            currency: Currency.USD,
+          }),
+        }),
+      ])
+      .mockResolvedValueOnce([]);
+    exchangeRateService.preloadExchangeRates.mockResolvedValue(
+      new Map([[createRateKey("2026-03-31", Currency.USD, Currency.BYN), 3]])
+    );
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/analytics/overview")
+      .query({ dateFrom: "2026-03-31", dateTo: "2026-03-31" })
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.summary.income.totalInBaseCurrency).toBe("30");
   });
 
   it("uses a 30-day implicit range and normalizes reversed explicit ranges", async () => {
@@ -506,6 +540,17 @@ describe("Analytics API", () => {
             currency: Currency.BYN,
           }),
         }),
+        createPaymentTransactionRecord({
+          id: "write-off-payment-capital",
+          accountId: "account-byn",
+          amount: "15",
+          type: "expense",
+          date: new Date("2026-04-02T12:00:00.000Z"),
+          account: createAccountRecord({
+            id: "account-byn",
+            currency: Currency.BYN,
+          }),
+        }),
       ]);
     prisma.transferTransaction.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
       createTransferTransactionRecord({
@@ -525,7 +570,24 @@ describe("Analytics API", () => {
         }),
       }),
     ]);
-    prisma.debtTransaction.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    prisma.debtTransaction.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      createDebtTransactionRecord({
+        id: "write-off-debt-capital",
+        accountId: "account-byn",
+        paymentTransactionId: "write-off-payment-capital",
+        amount: "15",
+        toAmount: null,
+        date: new Date("2026-04-02T12:00:00.000Z"),
+        account: createAccountRecord({
+          id: "account-byn",
+          currency: Currency.BYN,
+        }),
+        debt: {
+          ...createDebtTransactionRecord().debt,
+          currency: Currency.BYN,
+        },
+      }),
+    ]);
     exchangeRateService.preloadExchangeRates.mockResolvedValue(
       new Map([
         [createRateKey("2026-04-02", Currency.USD, Currency.BYN), 3],
@@ -552,6 +614,16 @@ describe("Analytics API", () => {
           id: { in: ["account-byn", "account-usd"] },
           ownerId: { in: [currentUser.id] },
         }),
+      })
+    );
+    expect(prisma.debtTransaction.findMany.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        where: expect.objectContaining({ paymentTransactionId: null }),
+      })
+    );
+    expect(prisma.debtTransaction.findMany.mock.calls[1]?.[0]).toEqual(
+      expect.objectContaining({
+        where: expect.not.objectContaining({ paymentTransactionId: null }),
       })
     );
     expect(response.body.capitalTimeSeries).toEqual([
@@ -700,6 +772,11 @@ describe("Analytics API", () => {
         transactionCount: 1,
       },
     ]);
+    expect(prisma.debtTransaction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ paymentTransactionId: null }),
+      })
+    );
   });
 
   it("uses the current month for calendar reads without dates", async () => {

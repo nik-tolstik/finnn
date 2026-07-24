@@ -74,7 +74,7 @@ export function Combobox({
         <Button
           ref={ref}
           type="button"
-          variant="outline"
+          variant="field"
           role="combobox"
           className={cn("w-full justify-between", className)}
           disabled={disabled}
@@ -95,7 +95,7 @@ export function Combobox({
       )}
     >
       <div className="flex flex-col">
-        <div className="border-b p-2">
+        <div className="p-2 pb-1">
           <Input
             placeholder={searchPlaceholder}
             value={search}
@@ -112,8 +112,8 @@ export function Combobox({
                 key={option.value}
                 type="button"
                 className={cn(
-                  "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                  value === option.value && "bg-accent text-accent-foreground"
+                  "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-option-hover",
+                  value === option.value && "bg-option-selected"
                 )}
                 onClick={() => handleSelect(option)}
               >

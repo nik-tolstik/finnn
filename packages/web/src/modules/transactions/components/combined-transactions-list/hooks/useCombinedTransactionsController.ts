@@ -1,9 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { deleteDebtTransaction } from "@/modules/debts/debt.api";
+import { hasDebtWriteOff } from "@/modules/debts/components/debt-write-off-dialog";
+import { deleteDebtTransaction, deleteDebtWriteOff } from "@/modules/debts/debt.api";
 import { DebtTransactionType } from "@/modules/debts/debt.constants";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
+import type { ScheduledPaymentFormInitialValues } from "@/modules/scheduled-payments/scheduled-payment.types";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {
   addAccountBalanceDelta,
@@ -18,7 +20,7 @@ import {
   updateAccountBalancesInCache,
   updateDebtsInCache,
 } from "@/shared/lib/optimistic-workspace-updates";
-import { compareMoney, subtractMoney } from "@/shared/utils/money";
+import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
 
 import { deletePaymentTransaction, deleteTransferTransaction } from "../../../transaction.api";
 import type { PaymentTransactionType } from "../../../transaction.constants";
@@ -29,11 +31,16 @@ import type {
   DeleteDebtDialogData,
   EditDebtDialogData,
   EditDebtTransactionDialogData,
+  EditDebtWriteOffDialogData,
   EditTransactionDialogData,
   EditTransferDialogData,
   TransactionActionsDialogData,
 } from "../types";
 import { getDebtFromTransaction } from "../utils/getDebtFromTransaction";
+import {
+  canCreateScheduledPaymentFromTransaction,
+  getScheduledPaymentInitialValues,
+} from "../utils/scheduledPaymentFromTransaction";
 
 const DIALOG_TRANSITION_DELAY_MS = 200;
 
@@ -45,6 +52,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
   const queryClient = useQueryClient();
 
   const editTransactionDialog = useDialogState<EditTransactionDialogData>();
+  const editDebtWriteOffDialog = useDialogState<EditDebtWriteOffDialogData>();
   const editTransferDialog = useDialogState<EditTransferDialogData>();
   const editDebtDialog = useDialogState<EditDebtDialogData>();
   const editDebtTransactionDialog = useDialogState<EditDebtTransactionDialogData>();
@@ -52,6 +60,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
   const actionsDialog = useDialogState<TransactionActionsDialogData>();
   const debtActionsDialog = useDialogState<DebtTransactionActionsDialogData>();
   const createTransactionDialog = useDialogState<CreateTransactionDialogData>();
+  const createScheduledPaymentDialog = useDialogState<ScheduledPaymentFormInitialValues>();
 
   const openTransactionActions = (transaction: ActionableCombinedTransaction) => {
     actionsDialog.openDialog({ transaction });
@@ -62,7 +71,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
   };
 
   const handleTransactionRepeat = (transaction: ActionableCombinedTransaction) => {
-    if (transaction.kind !== "paymentTransaction") {
+    if (transaction.kind !== "paymentTransaction" || hasDebtWriteOff(transaction.data)) {
       return;
     }
 
@@ -78,7 +87,55 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
     actionsDialog.closeDialog();
   };
 
+  const handleCreateScheduledPayment = (transaction: ActionableCombinedTransaction) => {
+    if (!canCreateScheduledPaymentFromTransaction(transaction)) {
+      return;
+    }
+
+    const initialValues = getScheduledPaymentInitialValues(transaction.data);
+    actionsDialog.closeDialog();
+    setTimeout(() => {
+      createScheduledPaymentDialog.openDialog(initialValues);
+    }, DIALOG_TRANSITION_DELAY_MS);
+  };
+
   const handleTransactionDelete = async (transaction: ActionableCombinedTransaction) => {
+    if (transaction.kind === "paymentTransaction" && hasDebtWriteOff(transaction.data)) {
+      const { debtWriteOff } = transaction.data;
+      const nextRemainingAmount = addMoney(debtWriteOff.remainingAmount, debtWriteOff.amount);
+
+      try {
+        const result = await runOptimisticWorkspaceMutation({
+          queryClient,
+          workspaceId,
+          domains: ["debts", "transactions"],
+          apply: (context) => {
+            updateDebtsInCache(context, [
+              {
+                id: debtWriteOff.debtId,
+                remainingAmount: nextRemainingAmount,
+                status: "open",
+              },
+            ]);
+            removeTransactionsFromCache(context, [transaction.data.id]);
+          },
+          onApplied: () => actionsDialog.closeDialog(),
+          mutation: () => deleteDebtWriteOff(debtWriteOff.debtTransactionId),
+        });
+
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
+
+        toast.success("Погашение долга удалено");
+      } catch {
+        toast.error("Не удалось удалить погашение долга");
+      }
+
+      return;
+    }
+
     const balanceDeltas = new Map<string, string>();
     if (transaction.kind === "transferTransaction") {
       const transferDeltas = getTransferTransactionBalanceDeltas(transaction.data.amount, transaction.data.toAmount);
@@ -129,6 +186,12 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
         transferTransaction: transaction.data,
         workspaceId,
       });
+      actionsDialog.closeDialog();
+      return;
+    }
+
+    if (hasDebtWriteOff(transaction.data)) {
+      editDebtWriteOffDialog.openDialog({ transaction: transaction.data, workspaceId });
       actionsDialog.closeDialog();
       return;
     }
@@ -216,6 +279,7 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
     workspaceId,
     dialogs: {
       editTransactionDialog,
+      editDebtWriteOffDialog,
       editTransferDialog,
       editDebtDialog,
       editDebtTransactionDialog,
@@ -223,10 +287,12 @@ export function useCombinedTransactionsController({ workspaceId }: UseCombinedTr
       actionsDialog,
       debtActionsDialog,
       createTransactionDialog,
+      createScheduledPaymentDialog,
     },
     openTransactionActions,
     openDebtTransactionActions,
     handleTransactionRepeat,
+    handleCreateScheduledPayment,
     handleTransactionDelete,
     handleTransactionEdit,
     handleDebtTransactionDelete,

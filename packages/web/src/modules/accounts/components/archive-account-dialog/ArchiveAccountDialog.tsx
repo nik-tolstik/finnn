@@ -85,7 +85,7 @@ export function ArchiveAccountDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" disabled={isArchiving} onClick={() => onOpenChange(false)}>
+          <Button variant="secondary" disabled={isArchiving} onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <Button onClick={handleArchive} disabled={isArchiving} type="button">

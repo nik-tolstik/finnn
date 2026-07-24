@@ -72,7 +72,7 @@ export function CombinedTransactionsView({
 
       {showLoadMore && onLoadMore && !isLoadingMore ? (
         <div className="flex justify-center">
-          <Button variant="outline" onClick={onLoadMore}>
+          <Button variant="secondary" onClick={onLoadMore}>
             Показать ещё
           </Button>
         </div>

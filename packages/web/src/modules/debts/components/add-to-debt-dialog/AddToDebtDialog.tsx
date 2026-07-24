@@ -2,16 +2,14 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
-import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
-import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { AccountSelector } from "@/shared/components/AccountSelector";
 import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
-import { useDialogState } from "@/shared/hooks/useDialogState";
 import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
 import {
   runOptimisticWorkspaceMutation,
@@ -41,7 +39,6 @@ interface AddToDebtDialogProps {
 
 export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: AddToDebtDialogProps) {
   const queryClient = useQueryClient();
-  const selectAccountDialog = useDialogState();
 
   const { data: accountsData } = useQuery({
     queryKey: accountKeys.list(workspaceId),
@@ -75,7 +72,13 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   const toAmount = useWatch({ control, name: "toAmount" });
   const useAccount = useWatch({ control, name: "useAccount" });
   const accountId = useWatch({ control, name: "accountId" });
-  const rateDate = useMemo(() => new Date(), []);
+  const [rateDate, setRateDate] = useState(() => new Date());
+
+  useEffect(() => {
+    if (open) {
+      setRateDate(new Date());
+    }
+  }, [open]);
 
   const selectedAccount = useMemo(() => {
     if (!accountId) {
@@ -93,6 +96,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     fromCurrency: debt.currency,
     toCurrency: useAccount ? selectedAccount?.currency : undefined,
     date: rateDate,
+    resetKey: open,
   });
 
   const previewAccount = useMemo(() => {
@@ -250,26 +254,14 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
 
             {useAccount ? (
               <>
-                <div className="space-y-2">
-                  <Label required>{debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}</Label>
-                  {previewAccount && accountId ? (
-                    <AccountCard
-                      account={previewAccount}
-                      onClick={() => selectAccountDialog.openDialog(null)}
-                      showOwner={false}
-                    />
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => selectAccountDialog.openDialog(null)}
-                    >
-                      Выбрать счёт
-                    </Button>
-                  )}
-                  {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
-                </div>
+                <AccountSelector
+                  workspaceId={workspaceId}
+                  account={previewAccount || selectedAccount || null}
+                  onSelect={handleAccountSelect}
+                  label={debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}
+                  required
+                  error={errors.accountId?.message}
+                />
 
                 {selectedAccount && !currenciesMatch ? (
                   <div className="space-y-2">
@@ -298,7 +290,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
@@ -306,16 +298,6 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
           </Button>
         </DialogFooter>
       </DialogWindow>
-
-      {selectAccountDialog.mounted && (
-        <SelectAccountDialog
-          workspaceId={workspaceId}
-          open={selectAccountDialog.open}
-          onOpenChange={selectAccountDialog.closeDialog}
-          onCloseComplete={selectAccountDialog.unmountDialog}
-          onSelect={handleAccountSelect}
-        />
-      )}
     </Dialog>
   );
 }

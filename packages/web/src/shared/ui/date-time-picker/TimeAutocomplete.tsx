@@ -128,7 +128,7 @@ export function TimeAutocomplete({ options, value, onBlur, onChange, onFocus, on
               onClick={() => selectOption(option.value)}
               className={cn(
                 "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none",
-                active && "bg-accent"
+                active && "bg-option-hover"
               )}
             >
               <span className="min-w-0 flex-1 truncate">{option.label}</span>

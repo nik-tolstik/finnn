@@ -263,7 +263,7 @@ export function TransactionsFilterDrawer({
         </div>
 
         <SheetFooter className="border-t px-4 py-4">
-          <Button variant="outline" onClick={onReset}>
+          <Button variant="secondary" onClick={onReset}>
             Сбросить
           </Button>
           <Button

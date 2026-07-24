@@ -53,5 +53,7 @@ export const scheduledPaymentKeys = {
 };
 
 export const exchangeRateKeys = {
-  today: () => ["exchange-rates-today"] as const,
+  rate: (date: string, fromCurrency: string, toCurrency: string) =>
+    ["exchange-rates", "rate", date, fromCurrency, toCurrency] as const,
+  today: () => ["exchange-rates", "today"] as const,
 };

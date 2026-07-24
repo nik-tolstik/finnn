@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, RotateCw, Trash2 } from "lucide-react";
+import { CalendarPlus, Pencil, RotateCw, Trash2 } from "lucide-react";
 
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog";
 
@@ -12,6 +12,7 @@ interface TransactionActionsDialogProps {
   onEdit: () => void;
   onDelete: () => void;
   onRepeat?: () => void;
+  onCreatePayment?: () => void;
 }
 
 export function TransactionActionsDialog({
@@ -22,6 +23,7 @@ export function TransactionActionsDialog({
   onEdit,
   onDelete,
   onRepeat,
+  onCreatePayment,
 }: TransactionActionsDialogProps) {
   const isTransferTransaction = transactionKind === "transferTransaction";
   const transactionType = isTransferTransaction ? "перевода" : "транзакции";
@@ -41,6 +43,14 @@ export function TransactionActionsDialog({
       icon: <RotateCw className="h-3.5 w-3.5" />,
       label: "Повторить",
       onClick: onRepeat,
+    });
+  }
+
+  if (onCreatePayment) {
+    actions.push({
+      icon: <CalendarPlus className="h-3.5 w-3.5" />,
+      label: "Создать платёж",
+      onClick: onCreatePayment,
     });
   }
 

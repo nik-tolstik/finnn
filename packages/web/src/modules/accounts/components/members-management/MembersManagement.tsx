@@ -66,7 +66,7 @@ export function MembersManagement({ workspaceId }: MembersManagementProps) {
         ) : (
           <div className="space-y-1.5">
             {members.map((member) => (
-              <div key={member.id} className="flex items-center gap-3 rounded-md border p-2">
+              <div key={member.id} className="flex items-center gap-3 rounded-md bg-control p-2 shadow-xs">
                 <UserAvatar name={member.name} email={member.email} image={member.image} size="lg" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{member.name || "Без имени"}</p>

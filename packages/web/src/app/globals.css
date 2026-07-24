@@ -14,7 +14,6 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-ring: var(--ring);
-  --color-input: var(--input);
   --color-border: var(--border);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
@@ -31,56 +30,154 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
+  /* Semantic surfaces */
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-control: var(--surface-control);
+  --color-surface-control-hover: var(--surface-control-hover);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
+
+  /* Component colors */
+  --color-dialog: var(--dialog-background);
+  --color-popover: var(--popover-background);
+  --color-control: var(--control-background);
+  --color-control-hover: var(--control-background-hover);
+  --color-control-focus: var(--control-focus);
+  --color-control-placeholder: var(--control-placeholder);
+  --color-segmented: var(--segmented-background);
+  --color-segmented-indicator: var(--segmented-indicator);
+  --color-segmented-hover: var(--segmented-hover);
+  --color-option-hover: var(--option-hover);
+  --color-option-selected: var(--option-selected);
+  --color-account-card: var(--account-card-background);
+  --color-account-card-hover: var(--account-card-background-hover);
+
   /* Radius */
-  --radius-sm: 4;
-  --radius-md: 6;
-  --radius-lg: 8;
-  --radius-xl: 10;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+}
+
+:root {
+  /* Palette: foundational raw color values only. */
+  --palette-white: #ffffff;
+  --palette-neutral-50: #fafafa;
+  --palette-neutral-100: #f7f7f8;
+  --palette-neutral-125: #f4f4f5;
+  --palette-neutral-150: #f1f1f2;
+  --palette-neutral-200: #e5e5e7;
+  --palette-neutral-500: #6b6b70;
+  --palette-neutral-900: #17171a;
+  --palette-blue-600: #2f6bff;
+  --palette-dark-700: oklch(0.3 0 0);
+  --palette-dark-750: oklch(0.269 0 0);
+  --palette-dark-800: oklch(0.23 0 0);
+  --palette-dark-900: oklch(0.19 0 0);
+  --palette-dark-text-secondary: oklch(0.708 0 0);
 }
 
 :root,
 html.light {
-  --background: #f7f9fc;
-  --foreground: #172033;
-  --card: #ffffff;
-  --card-foreground: #172033;
-  --primary: #2f6bff;
-  --primary-foreground: #ffffff;
-  --secondary: #e9eef8;
-  --secondary-foreground: #172033;
-  --muted: #f1f4fa;
-  --muted-foreground: #667085;
-  --accent: #eef3ff;
-  --accent-foreground: #172033;
-  --success: var(--color-green-600);
-  --success-foreground: #ffffff;
-  --destructive: var(--color-red-600);
-  --destructive-foreground: #ffffff;
-  --border: #d8e0f0;
-  --input: #d8e0f0;
-  --ring: #7aa2ff;
+  /* Semantic tokens: product meaning, independent of a component. */
+  --surface-canvas: var(--palette-white);
+  --surface-raised: var(--palette-white);
+  --surface-subtle: var(--palette-neutral-100);
+  --surface-control: var(--palette-neutral-100);
+  --surface-control-hover: var(--palette-neutral-125);
+  --surface-hover: var(--palette-neutral-150);
+  --surface-selected: var(--palette-neutral-150);
+  --text-primary: var(--palette-neutral-900);
+  --text-secondary: var(--palette-neutral-500);
+  --border-default: var(--palette-neutral-200);
+  --focus-ring: var(--palette-blue-600);
+
+  /* Legacy semantic aliases used by the existing Tailwind API. */
+  --background: var(--surface-canvas);
+  --foreground: var(--text-primary);
+  --card: var(--surface-raised);
+  --card-foreground: var(--text-primary);
+  --primary: var(--palette-blue-600);
+  --primary-foreground: var(--palette-white);
+  --secondary: var(--surface-control);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-subtle);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--surface-selected);
+  --accent-foreground: var(--text-primary);
+  --success: var(--color-green-500);
+  --success-foreground: var(--palette-white);
+  --destructive: var(--color-red-500);
+  --destructive-foreground: var(--palette-white);
+  --border: var(--border-default);
+  --ring: var(--focus-ring);
+
+  /* Component tokens: visual contracts for reusable primitives. */
+  --dialog-background: var(--surface-raised);
+  --popover-background: var(--surface-raised);
+  --control-background: var(--surface-control);
+  --control-background-hover: var(--surface-control-hover);
+  --control-focus: var(--focus-ring);
+  --control-placeholder: var(--text-secondary);
+  --segmented-background: var(--surface-control);
+  --segmented-indicator: var(--surface-raised);
+  --segmented-hover: var(--surface-control-hover);
+  --option-hover: var(--surface-hover);
+  --option-selected: var(--surface-selected);
+  --account-card-background: var(--surface-raised);
+  --account-card-background-hover: var(--surface-subtle);
+  --account-card-shadow: 0 1px 2px rgb(23 23 26 / 12%), 0 3px 8px rgb(23 23 26 / 7%);
+  --account-card-shadow-hover: 0 2px 4px rgb(23 23 26 / 14%), 0 5px 12px rgb(23 23 26 / 9%);
 }
 
 html.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --primary: #2f6bff;
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --surface-canvas: var(--palette-dark-900);
+  --surface-raised: var(--palette-dark-800);
+  --surface-subtle: var(--palette-dark-750);
+  --surface-control: var(--palette-dark-800);
+  --surface-control-hover: var(--palette-dark-750);
+  --surface-hover: var(--palette-dark-700);
+  --surface-selected: var(--palette-dark-750);
+  --text-primary: var(--palette-white);
+  --text-secondary: var(--palette-dark-text-secondary);
+  --border-default: oklch(1 0 0 / 10%);
+  --focus-ring: var(--palette-white);
+
+  --background: var(--surface-canvas);
+  --foreground: var(--text-primary);
+  --card: var(--surface-raised);
+  --card-foreground: var(--text-primary);
+  --primary: var(--palette-blue-600);
+  --primary-foreground: var(--palette-white);
+  --secondary: var(--surface-control);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-subtle);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--surface-selected);
+  --accent-foreground: var(--text-primary);
   --destructive: var(--color-red-400);
-  --destructive-foreground: #ffffff;
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: #7aa2ff;
+  --destructive-foreground: var(--palette-white);
+  --border: var(--border-default);
+  --ring: var(--focus-ring);
   --success: var(--color-green-400);
   --success-foreground: oklch(0.145 0 0);
+
+  --dialog-background: var(--surface-canvas);
+  --popover-background: var(--surface-raised);
+  --control-background: var(--surface-control);
+  --control-background-hover: var(--surface-control-hover);
+  --control-focus: var(--focus-ring);
+  --control-placeholder: var(--text-secondary);
+  --segmented-background: var(--surface-control);
+  --segmented-indicator: var(--surface-canvas);
+  --segmented-hover: var(--surface-control-hover);
+  --option-hover: var(--surface-hover);
+  --option-selected: var(--surface-hover);
+  --account-card-background: var(--surface-raised);
+  --account-card-background-hover: var(--surface-subtle);
+  --account-card-shadow: none;
+  --account-card-shadow-hover: none;
 }
 
 @layer base {

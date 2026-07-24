@@ -191,7 +191,7 @@ export function EditTransferDialog({
           />
         </DialogContent>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <TransferFormSubmitButton

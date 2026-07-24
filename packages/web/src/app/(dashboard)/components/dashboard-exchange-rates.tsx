@@ -131,22 +131,20 @@ export function useDashboardExchangeRates(workspaceId?: string) {
     staleTime: 5000,
   });
 
-  const baseCurrency =
-    workspaceData && "data" in workspaceData && workspaceData.data
-      ? (workspaceData.data.baseCurrency as Currency) || DEFAULT_CURRENCY
-      : DEFAULT_CURRENCY;
-  const shouldLoadRates = !!workspaceId && baseCurrency === Currency.BYN;
+  const workspace = workspaceData && "data" in workspaceData ? workspaceData.data : undefined;
+  const baseCurrency = (workspace?.baseCurrency as Currency | undefined) ?? DEFAULT_CURRENCY;
+  const shouldLoadRates = Boolean(workspaceId && workspace && baseCurrency === Currency.BYN);
 
   const { data: ratesData, isLoading: isRatesLoading } = useQuery({
     queryKey: exchangeRateKeys.today(),
     queryFn: () => getTodayExchangeRates(),
     enabled: shouldLoadRates,
-    staleTime: 3600000,
-    refetchInterval: false,
+    staleTime: 60 * 60_000,
+    refetchInterval: 60 * 60_000,
     retry: 1,
     retryDelay: 5000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
     gcTime: 86400000,
   });
 
@@ -222,7 +220,7 @@ export function DashboardExchangeRatesCards({
   return (
     <div className={cn("grid grid-cols-3 gap-2", className)}>
       {rates.map((rate) => (
-        <div className="rounded-md border bg-background p-3 text-sm" key={rate.currency}>
+        <div className="rounded-md bg-background p-3 text-sm" key={rate.currency}>
           <div className="mb-3 flex items-center gap-2">
             <CurrencyFlag code={rate.flagCode} label={rate.flagLabel} />
             <span className="font-medium text-foreground">{rate.currency}</span>

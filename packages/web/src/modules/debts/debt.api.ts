@@ -2,17 +2,21 @@ import {
   addToDebt as addToApiDebt,
   closeDebt as closeApiDebt,
   createDebt as createApiDebt,
+  createDebtWriteOff as createApiDebtWriteOff,
   deleteDebt as deleteApiDebt,
   deleteDebtTransaction as deleteApiDebtTransaction,
+  deleteDebtWriteOff as deleteApiDebtWriteOff,
   getDebtEditData as getApiDebtEditData,
   listDebts as listApiDebts,
   updateDebt as updateApiDebt,
   updateDebtTransaction as updateApiDebtTransaction,
+  updateDebtWriteOff as updateApiDebtWriteOff,
 } from "@/shared/api/generated/debts/debts";
 import type {
   AddToDebtDto,
   CloseDebtDto,
   CreateDebtDto,
+  CreateDebtWriteOffDto,
   DebtAccountWithOwnerDto,
   DebtDto,
   DebtEntryTransactionDto,
@@ -25,13 +29,14 @@ import type {
   AddToDebtInput,
   CloseDebtInput,
   CreateDebtInput,
+  DebtWriteOffInput,
   UpdateDebtInput,
   UpdateDebtTransactionInput,
 } from "@/shared/lib/validations/debt";
 import { normalizeMoneyString, normalizeOptionalMoneyString } from "@/shared/utils/money";
 
 import type { DebtStatus, DebtType } from "./debt.constants";
-import type { DebtTransactionWithRelations, DebtWithRelations } from "./debt.types";
+import type { DebtTransactionWithRelations, DebtWithRelations, DebtWriteOffPaymentTransaction } from "./debt.types";
 
 type ApiOwner = {
   id?: unknown;
@@ -83,6 +88,7 @@ function toUiDebtTransaction(transaction: DebtEntryTransactionDto): DebtTransact
   return {
     ...transaction,
     accountId: transaction.accountId ?? null,
+    paymentTransactionId: transaction.paymentTransactionId ?? null,
     toAmount: transaction.toAmount ?? null,
     date: toDate(transaction.date),
     createdAt: toDate(transaction.createdAt),
@@ -93,6 +99,49 @@ function toUiDebtTransaction(transaction: DebtEntryTransactionDto): DebtTransact
       updatedAt: toDate(transaction.debt.updatedAt),
     },
     account: toUiDebtAccountWithOwner(transaction.account),
+  };
+}
+
+function toDebtWriteOffDto(input: DebtWriteOffInput): CreateDebtWriteOffDto {
+  return {
+    amount: normalizeMoneyString(input.amount),
+    toAmount: normalizeOptionalMoneyString(input.toAmount),
+    accountId: input.accountId,
+    categoryId: input.categoryId,
+    date: input.date.toISOString(),
+    description: input.description || undefined,
+  };
+}
+
+function toUiDebtWriteOffPaymentTransaction(
+  transaction: Awaited<ReturnType<typeof createApiDebtWriteOff>>["transaction"]
+): DebtWriteOffPaymentTransaction {
+  if (!transaction.debtWriteOff) {
+    throw new Error("Debt write-off response is missing linked metadata");
+  }
+
+  return {
+    ...transaction,
+    description: transaction.description ?? null,
+    categoryId: transaction.categoryId ?? null,
+    date: toDate(transaction.date),
+    createdAt: toDate(transaction.createdAt),
+    updatedAt: toDate(transaction.updatedAt),
+    account: {
+      ...transaction.account,
+      color: transaction.account.color ?? null,
+      icon: transaction.account.icon ?? null,
+      ownerId: transaction.account.ownerId ?? null,
+      owner: transaction.account.owner
+        ? {
+            ...transaction.account.owner,
+            name: transaction.account.owner.name ?? null,
+            image: transaction.account.owner.image ?? null,
+          }
+        : null,
+    },
+    category: transaction.category ?? null,
+    debtWriteOff: transaction.debtWriteOff,
   };
 }
 
@@ -115,7 +164,6 @@ function toCloseDebtDto(input: CloseDebtInput): CloseDebtDto {
     toAmount: normalizeOptionalMoneyString(input.toAmount),
     paymentAmount: normalizeOptionalMoneyString(input.paymentAmount),
     categoryId: input.categoryId,
-    closeEarly: input.closeEarly,
     accountId: input.accountId,
     useAccount: input.useAccount,
   };
@@ -174,7 +222,7 @@ export async function closeDebt(id: string, input: CloseDebtInput, options?: Req
     const response = await closeApiDebt(id, toCloseDebtDto(input), options);
     return ok(toUiDebt(response.debt));
   } catch (error: unknown) {
-    return fail(error, "Не удалось закрыть долг");
+    return fail(error, "Не удалось погасить долг");
   }
 }
 
@@ -229,6 +277,41 @@ export async function deleteDebtTransaction(id: string, options?: RequestInit) {
     return success();
   } catch (error: unknown) {
     return fail(error, "Не удалось удалить транзакцию долга");
+  }
+}
+
+export async function createDebtWriteOff(debtId: string, input: DebtWriteOffInput, options?: RequestInit) {
+  try {
+    const response = await createApiDebtWriteOff(debtId, toDebtWriteOffDto(input), options);
+    return ok({
+      debt: toUiDebt(response.debt),
+      debtTransaction: toUiDebtTransaction(response.debtTransaction),
+      transaction: toUiDebtWriteOffPaymentTransaction(response.transaction),
+    });
+  } catch (error: unknown) {
+    return fail(error, "Не удалось погасить долг транзакцией");
+  }
+}
+
+export async function updateDebtWriteOff(id: string, input: DebtWriteOffInput, options?: RequestInit) {
+  try {
+    const response = await updateApiDebtWriteOff(id, toDebtWriteOffDto(input), options);
+    return ok({
+      debt: toUiDebt(response.debt),
+      debtTransaction: toUiDebtTransaction(response.debtTransaction),
+      transaction: toUiDebtWriteOffPaymentTransaction(response.transaction),
+    });
+  } catch (error: unknown) {
+    return fail(error, "Не удалось обновить погашение долга");
+  }
+}
+
+export async function deleteDebtWriteOff(id: string, options?: RequestInit) {
+  try {
+    await deleteApiDebtWriteOff(id, options);
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось удалить погашение долга");
   }
 }
 

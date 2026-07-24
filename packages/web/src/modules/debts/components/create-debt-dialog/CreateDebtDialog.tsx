@@ -2,18 +2,15 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
-import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
-import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CURRENCY_OPTIONS, type Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
-import { useDialogState } from "@/shared/hooks/useDialogState";
 import { useSession } from "@/shared/lib/api-session-client";
 import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
 import {
@@ -47,12 +44,18 @@ interface CreateDebtDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
+  onDebtSubmit?: (input: CreateDebtInput) => Promise<void> | void;
 }
 
-export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseComplete }: CreateDebtDialogProps) {
+export function CreateDebtDialog({
+  workspaceId,
+  open,
+  onOpenChange,
+  onCloseComplete,
+  onDebtSubmit,
+}: CreateDebtDialogProps) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const selectAccountDialog = useDialogState();
 
   const { data: accountsData } = useQuery({
     queryKey: accountKeys.list(workspaceId),
@@ -103,6 +106,7 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
     fromCurrency: debtCurrency,
     toCurrency: useAccount ? selectedAccount?.currency : undefined,
     date,
+    resetKey: open,
   });
 
   const previewAccount = useMemo(() => {
@@ -130,6 +134,16 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
 
     if (selectedAccountIsCrossCurrency && !data.toAmount) {
       toast.error("Укажите сумму в валюте счёта");
+      return;
+    }
+
+    if (onDebtSubmit) {
+      try {
+        await onDebtSubmit(data);
+        onOpenChange(false);
+      } catch {
+        return;
+      }
       return;
     }
 
@@ -200,13 +214,11 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
                   {
                     value: DebtType.LENT,
                     label: "Дать в долг",
-                    icon: <ArrowDownLeft className="h-4 w-4" />,
                     selectedClassName: "text-success",
                   },
                   {
                     value: DebtType.BORROWED,
                     label: "Взять в долг",
-                    icon: <ArrowUpRight className="h-4 w-4" />,
                     selectedClassName: "text-destructive",
                   },
                 ]}
@@ -258,26 +270,14 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
             </div>
 
             {useAccount ? (
-              <div className="space-y-2">
-                <Label required>{debtType === DebtType.LENT ? "С какого счёта" : "На какой счёт"} </Label>
-                {previewAccount && accountId ? (
-                  <AccountCard
-                    account={previewAccount}
-                    onClick={() => selectAccountDialog.openDialog(null)}
-                    showOwner={false}
-                  />
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => selectAccountDialog.openDialog(null)}
-                  >
-                    Выбрать счёт
-                  </Button>
-                )}
-                {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
-              </div>
+              <AccountSelector
+                workspaceId={workspaceId}
+                account={previewAccount || selectedAccount || null}
+                onSelect={handleAccountSelect}
+                label={debtType === DebtType.LENT ? "С какого счёта" : "На какой счёт"}
+                required
+                error={errors.accountId?.message}
+              />
             ) : null}
 
             <div className="space-y-2">
@@ -339,16 +339,6 @@ export function CreateDebtDialog({ workspaceId, open, onOpenChange, onCloseCompl
           </Button>
         </DialogFooter>
       </DialogWindow>
-
-      {selectAccountDialog.mounted && (
-        <SelectAccountDialog
-          workspaceId={workspaceId}
-          open={selectAccountDialog.open}
-          onOpenChange={selectAccountDialog.closeDialog}
-          onCloseComplete={selectAccountDialog.unmountDialog}
-          onSelect={handleAccountSelect}
-        />
-      )}
     </Dialog>
   );
 }

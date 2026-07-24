@@ -88,7 +88,7 @@ export function EmailRequiredScreen() {
           <Button type="button" disabled={!email || emailMutation.isPending} onClick={() => emailMutation.mutate()}>
             {emailMutation.isPending ? "Отправка..." : "Отправить письмо"}
           </Button>
-          <Button type="button" variant="outline" onClick={refreshSession}>
+          <Button type="button" variant="secondary" onClick={refreshSession}>
             <CheckCircle2 className="h-4 w-4" />Я подтвердил email
           </Button>
           <Button type="button" variant="ghost" onClick={() => signOut({ callbackUrl: "/login" })}>

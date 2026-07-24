@@ -1,112 +1,21 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 
-import { getAccounts } from "@/modules/accounts/account.api";
-import { getCategories } from "@/modules/categories/category.api";
 import { CreateDebtDialog } from "@/modules/debts/components/create-debt-dialog";
-import { ScheduledPaymentForm } from "@/modules/scheduled-payments/components/ScheduledPaymentForm";
-import { createScheduledPayment } from "@/modules/scheduled-payments/scheduled-payment.api";
-import type { ScheduledPaymentFormInput } from "@/modules/scheduled-payments/scheduled-payment.types";
+import { CreateScheduledPaymentDialog } from "@/modules/scheduled-payments/components/CreateScheduledPaymentDialog";
 import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
-import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.api";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { accountKeys, categoryKeys, scheduledPaymentKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/utils/cn";
 
 import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
 
 const MotionLink = motion.create(Link);
-
-type MaybeActionData<T> = T | { data?: T; error?: string; success?: boolean } | undefined;
-
-function getQueryData<T>(value: MaybeActionData<T>, fallback: T): T {
-  if (value && typeof value === "object") {
-    if ("data" in value) {
-      return value.data ?? fallback;
-    }
-
-    if ("error" in value || "success" in value) {
-      return fallback;
-    }
-  }
-
-  return (value as T | undefined) ?? fallback;
-}
-
-interface CreateScheduledPaymentFabDialogProps {
-  workspaceId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCloseComplete?: () => void;
-}
-
-function CreateScheduledPaymentFabDialog({
-  workspaceId,
-  open,
-  onOpenChange,
-  onCloseComplete,
-}: CreateScheduledPaymentFabDialogProps) {
-  const queryClient = useQueryClient();
-  const accountsQuery = useQuery({
-    queryKey: accountKeys.list(workspaceId),
-    queryFn: () => getAccounts(workspaceId),
-  });
-  const categoriesQuery = useQuery({
-    queryKey: categoryKeys.list(workspaceId),
-    queryFn: () => getCategories(workspaceId),
-  });
-  const membersQuery = useQuery({
-    queryKey: workspaceKeys.members(workspaceId),
-    queryFn: () => getWorkspaceMembers(workspaceId),
-  });
-  const workspaceQuery = useQuery({
-    queryKey: workspaceKeys.summary(workspaceId),
-    queryFn: () => getWorkspaceSummary(workspaceId),
-  });
-
-  const accounts = getQueryData(accountsQuery.data, []);
-  const categories = getQueryData(categoriesQuery.data, []).filter((category) => category.type === "expense");
-  const members = getQueryData(membersQuery.data, []);
-  const workspace = getQueryData(workspaceQuery.data, null);
-
-  const createMutation = useMutation({
-    mutationFn: (input: ScheduledPaymentFormInput) => createScheduledPayment(workspaceId, input),
-    onSuccess: (result) => {
-      if ("error" in result) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Платёж создан");
-      void queryClient.invalidateQueries({ queryKey: scheduledPaymentKeys.all(workspaceId) });
-    },
-  });
-
-  return (
-    <ScheduledPaymentForm
-      accounts={accounts}
-      baseCurrency={workspace?.baseCurrency}
-      categories={categories}
-      initialPayment={null}
-      members={members}
-      open={open}
-      workspaceId={workspaceId}
-      onCloseComplete={onCloseComplete}
-      onOpenChange={onOpenChange}
-      onSubmit={async (input) => {
-        const result = await createMutation.mutateAsync(input);
-        if ("error" in result) throw new Error(result.error);
-      }}
-    />
-  );
-}
 
 export function FloatingActionButton() {
   const searchParams = useSearchParams();
@@ -124,7 +33,7 @@ export function FloatingActionButton() {
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
   const createTransactionDialog = useDialogState();
   const createDebtDialog = useDialogState();
-  const createScheduledPaymentDialog = useDialogState();
+  const createScheduledPaymentDialog = useDialogState<null>();
   const isDebtsPage = pathname === "/debts";
   const isPaymentsPage = pathname === "/payments";
   const actionLabel = isPaymentsPage ? "Добавить платёж" : isDebtsPage ? "Добавить долг" : "Добавить транзакцию";
@@ -272,7 +181,7 @@ export function FloatingActionButton() {
         />
       )}
       {createScheduledPaymentDialog.mounted && workspaceId && (
-        <CreateScheduledPaymentFabDialog
+        <CreateScheduledPaymentDialog
           workspaceId={workspaceId}
           open={createScheduledPaymentDialog.open}
           onOpenChange={createScheduledPaymentDialog.closeDialog}

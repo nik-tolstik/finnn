@@ -11,6 +11,7 @@ export interface CloseDebtDto {
   toAmount?: string;
   paymentAmount?: string;
   categoryId?: string;
+  /** @deprecated */
   closeEarly?: boolean;
   accountId?: string;
   date?: string;

@@ -221,7 +221,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
             <button
               type="button"
               onClick={() => setAvatarDialogOpen(true)}
-              className="group relative shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="group relative shrink-0 rounded-full focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
               aria-label="Выбрать аватар"
             >
               <UserAvatar
@@ -266,7 +266,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
                   />
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     disabled={!emailValue || emailValue === session.user.email || emailVerificationMutation.isPending}
                     className="sm:w-auto"
                     onClick={() => emailVerificationMutation.mutate({ email: emailValue })}
@@ -302,7 +302,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
             {session.user.google.linked ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => unlinkGoogleMutation.mutate({})}
                 disabled={unlinkGoogleMutation.isPending}
               >
@@ -337,7 +337,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
             {session.user.telegram.linked ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => unlinkTelegramMutation.mutate({})}
                 disabled={unlinkTelegramMutation.isPending}
               >
@@ -357,7 +357,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
         <div className="flex min-h-9 justify-end gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={handleCancel}
             disabled={!showActions || isSubmitting || updateMutation.isPending}
             aria-hidden={!showActions}

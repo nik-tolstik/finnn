@@ -14,6 +14,7 @@ import Big from "big.js";
 
 import { compareMoney, formatMoney } from "@/common/money";
 import { type ExchangeRateRequest, ExchangeRateService } from "@/currency/exchange-rate.service";
+import { getExchangeRateDateKey, normalizeExchangeRateDate } from "@/currency/exchange-rate-date";
 import { PrismaService } from "@/prisma/prisma.service";
 
 import type { AnalyticsOverviewQueryDto } from "./analytics.dto";
@@ -586,14 +587,8 @@ function isDebtTransaction(transaction: CombinedTransaction): transaction is {
   return transaction.kind === "debtTransaction";
 }
 
-function normalizeRateDate(date: Date) {
-  const normalizedDate = new Date(date);
-  normalizedDate.setUTCHours(0, 0, 0, 0);
-  return normalizedDate;
-}
-
 function getRateKey(date: Date, fromCurrency: Currency, toCurrency: Currency) {
-  return `${normalizeRateDate(date).toISOString().split("T")[0]}:${fromCurrency}:${toCurrency}`;
+  return `${getExchangeRateDateKey(date)}:${fromCurrency}:${toCurrency}`;
 }
 
 function convertAmountWithRates(
@@ -611,7 +606,7 @@ function convertAmountWithRates(
 
   if (typeof rate !== "number") {
     throw new ServiceUnavailableException(
-      `Курс для ${fromCurrency}/${toCurrency} на ${normalizeRateDate(date).toISOString()} не найден`
+      `Курс для ${fromCurrency}/${toCurrency} на ${normalizeExchangeRateDate(date).toISOString()} не найден`
     );
   }
 
@@ -929,6 +924,7 @@ export class AnalyticsService {
         ? this.prisma.debtTransaction.findMany({
             where: {
               ...buildCurrentRangeWhere(workspaceId, effectiveRange),
+              paymentTransactionId: null,
               debt: {
                 is: {
                   workspaceId,
@@ -1383,6 +1379,7 @@ export class AnalyticsService {
         ? this.prisma.debtTransaction.findMany({
             where: {
               ...buildCurrentRangeWhere(workspaceId, effectiveRange),
+              paymentTransactionId: null,
               debt: {
                 is: {
                   workspaceId,

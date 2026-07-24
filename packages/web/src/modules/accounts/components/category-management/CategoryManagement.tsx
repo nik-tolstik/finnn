@@ -12,7 +12,7 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -78,7 +78,7 @@ function SortableCategoryItem({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <div className="p-2 border rounded-md">
+      <div className="rounded-md bg-control p-2 shadow-xs">
         {editingCategory?.id === category.id ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -99,7 +99,7 @@ function SortableCategoryItem({
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   onClick={onCancelEdit}
                   disabled={isUpdating}
                   className="h-8 text-xs px-2"
@@ -440,13 +440,11 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
             {
               value: CategoryType.EXPENSE,
               label: "Расходы",
-              icon: <ArrowDown className="h-4 w-4" />,
               selectedClassName: "text-destructive",
             },
             {
               value: CategoryType.INCOME,
               label: "Доходы",
-              icon: <ArrowUp className="h-4 w-4" />,
               selectedClassName: "text-green-500",
             },
           ]}
@@ -457,7 +455,7 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
       <div>
         {renderCategoryList(currentItems, selectedType)}
-        <Button variant="outline" className="mt-4" onClick={() => handleOpenCreateDialog(selectedType)}>
+        <Button variant="secondary" className="mt-4" onClick={() => handleOpenCreateDialog(selectedType)}>
           <Plus className="h-4 w-4 mr-2" />
           Добавить категорию
         </Button>

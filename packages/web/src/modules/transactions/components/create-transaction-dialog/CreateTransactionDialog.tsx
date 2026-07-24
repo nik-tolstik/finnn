@@ -4,16 +4,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ArrowDown, ArrowLeftRight, ArrowUp, X } from "lucide-react";
+import { X } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
-import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
 import { getCategories } from "@/modules/categories/category.api";
-import { AccountCard } from "@/shared/components/account-card/AccountCard";
+import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import type { Session } from "@/shared/lib/api-session-client";
@@ -73,7 +72,9 @@ interface CreateTransactionDialogProps {
   initialDate?: Date;
   initialCategoryId?: string;
   lockType?: boolean;
+  defaultMode?: CreateTransactionMode;
   onPaymentSubmit?: (input: CreatePaymentTransactionInput) => Promise<void> | void;
+  onTransferSubmit?: (input: CreateTransferTransactionInput) => Promise<void> | void;
 }
 
 function toTransactionUser(user: Session["user"] | undefined): TransactionUser | null {
@@ -119,12 +120,13 @@ export function CreateTransactionDialog({
   initialDate,
   initialCategoryId,
   lockType = false,
+  defaultMode,
   onPaymentSubmit,
+  onTransferSubmit,
 }: CreateTransactionDialogProps) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const selectAccountDialog = useDialogState();
-  const [transactionMode, setTransactionMode] = useState<CreateTransactionMode>(defaultType);
+  const [transactionMode, setTransactionMode] = useState<CreateTransactionMode>(defaultMode ?? defaultType);
 
   const { data: accountsData } = useQuery({
     queryKey: accountKeys.list(workspaceId),
@@ -210,7 +212,7 @@ export function CreateTransactionDialog({
       const currentAccount = account;
       const initialAccountId = currentAccount?.id || accountProp?.id || "";
       accountIdRef.current = initialAccountId;
-      setTransactionMode(defaultType);
+      setTransactionMode(defaultMode ?? defaultType);
 
       const resetValues = getCreatePaymentDefaultValues({
         accountId: initialAccountId,
@@ -245,6 +247,7 @@ export function CreateTransactionDialog({
     resetTransferForm,
     setValue,
     defaultType,
+    defaultMode,
     account,
     accountProp,
     initialAmount,
@@ -256,7 +259,7 @@ export function CreateTransactionDialog({
   useEffect(() => {
     if (open && account && account.id !== accountIdRef.current) {
       accountIdRef.current = account.id;
-      setTransactionMode(defaultType);
+      setTransactionMode(defaultMode ?? defaultType);
       reset(
         getCreatePaymentDefaultValues({
           accountId: account.id,
@@ -276,6 +279,7 @@ export function CreateTransactionDialog({
     reset,
     resetTransferForm,
     defaultType,
+    defaultMode,
     initialAmount,
     initialDescription,
     initialDate,
@@ -344,6 +348,7 @@ export function CreateTransactionDialog({
         updatedAt: optimisticNow,
         account: optimisticAccount,
         category: optimisticCategory,
+        debtWriteOff: null,
       },
     };
 
@@ -373,7 +378,17 @@ export function CreateTransactionDialog({
     }
   };
 
-  const onTransferSubmit = async (data: CreateTransferTransactionInput) => {
+  const handleTransferSubmit = async (data: CreateTransferTransactionInput) => {
+    if (onTransferSubmit) {
+      try {
+        await onTransferSubmit(data);
+        onOpenChange(false);
+      } catch {
+        return;
+      }
+      return;
+    }
+
     const balanceDeltas = new Map<string, string>();
     const transferDeltas = getTransferTransactionBalanceDeltas(data.amount, data.toAmount);
     addAccountBalanceDelta(balanceDeltas, data.fromAccountId, transferDeltas.fromDelta);
@@ -464,7 +479,7 @@ export function CreateTransactionDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogWindow onCloseComplete={onCloseComplete}>
           <DialogHeader>
-            <DialogTitle>{isTransferMode ? "Создать перевод" : "Создать транзакцию"}</DialogTitle>
+            <DialogTitle>{isTransferMode ? "Новый перевод" : "Новая транзакция"}</DialogTitle>
           </DialogHeader>
           <DialogContent>
             <div className="space-y-4">
@@ -479,19 +494,16 @@ export function CreateTransactionDialog({
                         {
                           value: PaymentTransactionType.EXPENSE,
                           label: "Расход",
-                          icon: <ArrowDown className="h-4 w-4" />,
                           selectedClassName: "text-destructive",
                         },
                         {
                           value: PaymentTransactionType.INCOME,
                           label: "Доход",
-                          icon: <ArrowUp className="h-4 w-4" />,
                           selectedClassName: "text-success",
                         },
                         {
                           value: TRANSFER_TRANSACTION_MODE,
                           label: "Перевод",
-                          icon: <ArrowLeftRight className="h-4 w-4" />,
                           selectedClassName: "text-amber-600 dark:text-amber-400",
                         },
                       ]}
@@ -509,27 +521,28 @@ export function CreateTransactionDialog({
                   workspaceId={workspaceId}
                   form={transferForm}
                   accounts={accountsData?.data || []}
-                  onSubmit={onTransferSubmit}
+                  onSubmit={handleTransferSubmit}
                 />
               ) : (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Счёт</Label>
-                    {previewAccount && "balance" in previewAccount && previewAccount.balance !== undefined && (
-                      <AccountCard
-                        account={previewAccount as Account}
-                        onClick={() => selectAccountDialog.openDialog(null)}
-                        showOwner={false}
-                      />
-                    )}
-                    {errors.accountId && <p className="text-sm text-destructive">{errors.accountId.message}</p>}
-                  </div>
+                  <AccountSelector
+                    workspaceId={workspaceId}
+                    account={
+                      previewAccount && "balance" in previewAccount && previewAccount.balance !== undefined
+                        ? (previewAccount as Account)
+                        : null
+                    }
+                    onSelect={handleAccountSelect}
+                    label="Счёт"
+                    required
+                    error={errors.accountId?.message}
+                  />
                   <div className="space-y-2">
                     <Label htmlFor="categoryId">Категория</Label>
                     <div className="relative">
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="field"
                         className="w-full justify-between"
                         onClick={() => categoryModal.openDialog(true)}
                       >
@@ -547,24 +560,12 @@ export function CreateTransactionDialog({
                             setValue("categoryId", undefined);
                             setValue("newCategory", undefined);
                           }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2"
                         >
                           <X className="h-4 w-4" />
                         </button>
                       )}
                     </div>
-                    {categoryModal.mounted && (
-                      <CategorySelectModal
-                        open={categoryModal.open}
-                        onOpenChange={categoryModal.closeDialog}
-                        options={comboboxOptions}
-                        value={categoryId}
-                        onSelect={handleCategorySelect}
-                        placeholder="Выберите категорию"
-                        searchPlaceholder="Поиск категории..."
-                        emptyText="Категории не найдены"
-                      />
-                    )}
                     {(errors.categoryId || errors.newCategory) && (
                       <p className="text-sm text-destructive">
                         {errors.categoryId?.message || errors.newCategory?.message}
@@ -584,6 +585,7 @@ export function CreateTransactionDialog({
                         id="amount"
                         placeholder="0.00"
                         className="pl-9 pr-12"
+                        autoComplete="off"
                         {...register("amount", {
                           onChange: (e) => {
                             const value = e.target.value;
@@ -693,28 +695,31 @@ export function CreateTransactionDialog({
           <DialogFooter>
             <Button
               type="button"
-              onClick={isTransferMode ? transferForm.handleSubmit(onTransferSubmit) : handleSubmit(onSubmit)}
+              onClick={isTransferMode ? transferForm.handleSubmit(handleTransferSubmit) : handleSubmit(onSubmit)}
               disabled={isTransferMode ? transferForm.formState.isSubmitting : isSubmitting}
             >
               {isTransferMode
                 ? transferForm.formState.isSubmitting
                   ? "Создание..."
-                  : "Создать перевод"
+                  : "Создать"
                 : isSubmitting
                   ? "Создание..."
-                  : "Создать транзакцию"}
+                  : "Создать"}
             </Button>
           </DialogFooter>
         </DialogWindow>
       </Dialog>
 
-      {selectAccountDialog.mounted && (
-        <SelectAccountDialog
-          workspaceId={workspaceId}
-          open={selectAccountDialog.open}
-          onOpenChange={selectAccountDialog.closeDialog}
-          onCloseComplete={selectAccountDialog.unmountDialog}
-          onSelect={handleAccountSelect}
+      {categoryModal.mounted && (
+        <CategorySelectModal
+          open={categoryModal.open}
+          onOpenChange={categoryModal.closeDialog}
+          options={comboboxOptions}
+          value={categoryId}
+          onSelect={handleCategorySelect}
+          placeholder="Выберите категорию"
+          searchPlaceholder="Поиск категории..."
+          emptyText="Категории не найдены"
         />
       )}
     </>

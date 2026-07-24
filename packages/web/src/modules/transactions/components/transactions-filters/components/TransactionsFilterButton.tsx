@@ -16,7 +16,7 @@ export function TransactionsFilterButton({
   onClick,
 }: TransactionsFilterButtonProps) {
   return (
-    <Button variant="outline" size="sm" className="gap-2" disabled={disabled} onClick={onClick}>
+    <Button variant="secondary" size="sm" className="gap-2" disabled={disabled} onClick={onClick}>
       <Filter className="h-4 w-4" />
       <span className="hidden md:inline">Фильтр</span>
       {appliedFiltersCount > 0 && (

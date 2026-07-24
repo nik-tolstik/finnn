@@ -33,7 +33,6 @@ export const closeDebtSchema = z
     toAmount: optionalPositiveMoneyString(),
     paymentAmount: optionalPositiveMoneyString(),
     categoryId: z.string().optional(),
-    closeEarly: z.boolean().optional(),
     accountId: z.string().optional(),
     useAccount: z.boolean(),
   })
@@ -71,8 +70,18 @@ export const updateDebtTransactionSchema = z.object({
   date: z.date(),
 });
 
+export const debtWriteOffSchema = z.object({
+  amount: requiredPositiveMoneyString("Сумма обязательна"),
+  toAmount: optionalPositiveMoneyString(),
+  accountId: z.string().min(1, "Выберите счёт"),
+  categoryId: z.string().min(1, "Выберите категорию"),
+  date: z.date(),
+  description: z.string().optional(),
+});
+
 export type CreateDebtInput = z.infer<typeof createDebtSchema>;
 export type CloseDebtInput = z.infer<typeof closeDebtSchema>;
 export type AddToDebtInput = z.infer<typeof addToDebtSchema>;
 export type UpdateDebtInput = z.infer<typeof updateDebtSchema>;
 export type UpdateDebtTransactionInput = z.infer<typeof updateDebtTransactionSchema>;
+export type DebtWriteOffInput = z.infer<typeof debtWriteOffSchema>;

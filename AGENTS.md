@@ -4,7 +4,7 @@
 
 Finnn is a personal and shared finance tracker in a `pnpm` monorepo.
 
-- `packages/web` is the Next.js App Router frontend built with React, TypeScript, TanStack Query, Tailwind CSS, and Orval-generated API clients.
+- `packages/web` is the Next.js App Router frontend built with React, TypeScript, TanStack Query, Tailwind CSS, and Orval-generated API clients. Exchange-rate UI is shared across transaction and debt forms rather than owned by a standalone frontend module.
 - `packages/api` is the NestJS backend built with TypeScript, Prisma, MongoDB, OpenAPI, and Vitest.
 
 The app manages workspaces, members, accounts, categories, payment transactions, transfers, debts, analytics, exchange rates, MongoDB import/export, and PWA static asset caching.
@@ -41,7 +41,8 @@ Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishi
 ## Architecture Map
 
 - `packages/web/src/app` contains App Router pages, layouts, and providers.
-- `packages/web/src/modules` contains frontend feature modules: accounts, analytics, auth, categories, currency, debts, transactions, and workspace.
+- `packages/web/src/modules` contains frontend feature modules: accounts, analytics, auth, categories, debts, scheduled payments, transactions, and workspace.
+- `packages/web/src/shared/hooks/useCurrencyAmountSync.ts` and `packages/web/src/app/(dashboard)/components/dashboard-exchange-rates.tsx` contain the cross-cutting frontend exchange-rate behavior.
 - `packages/web/src/shared/api/generated` contains Orval-generated API client functions and types. Do not edit generated files manually.
 - `packages/web/src/shared/lib` contains frontend session, query keys, cache invalidation, optimistic updates, balance helpers, and domain types.
 - `packages/web/src/shared/ui` contains reusable primitive UI components.
@@ -51,6 +52,7 @@ Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishi
 - `packages/api/src` contains NestJS modules, controllers, DTOs, guards, services, auth/session ownership, cron, email, and finance domain logic.
 - `packages/api/prisma/schema.prisma` is the source of truth for database collections, relations, indexes, and enums.
 - `packages/api/scripts` contains seed, MongoDB import/export, and OpenAPI generation scripts.
+- `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
 - `docs` contains human and AI-facing project documentation.
 - `docs/plans` contains feature implementation plans and required work logs for multi-agent tasks.
 

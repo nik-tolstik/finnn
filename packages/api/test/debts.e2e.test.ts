@@ -21,7 +21,12 @@ type MockPrisma = {
     update: ReturnType<typeof vi.fn>;
   };
   category: { findFirst: ReturnType<typeof vi.fn> };
-  paymentTransaction: { create: ReturnType<typeof vi.fn> };
+  paymentTransaction: {
+    create: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+    deleteMany: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
   debt: {
     count: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
@@ -55,7 +60,12 @@ function createPrismaMock(): MockPrisma {
       update: vi.fn(),
     },
     category: { findFirst: vi.fn() },
-    paymentTransaction: { create: vi.fn() },
+    paymentTransaction: {
+      create: vi.fn(),
+      delete: vi.fn(),
+      deleteMany: vi.fn(),
+      update: vi.fn(),
+    },
     debt: {
       count: vi.fn(),
       create: vi.fn(),
@@ -146,6 +156,7 @@ function createDebtTransactionRecord(overrides: Record<string, unknown> = {}) {
     workspaceId: "workspace-1",
     debtId: "debt-1",
     accountId: "account-1",
+    paymentTransactionId: null,
     type: "closed",
     amount: "10",
     toAmount: null,
@@ -153,6 +164,25 @@ function createDebtTransactionRecord(overrides: Record<string, unknown> = {}) {
     createdAt: new Date("2026-05-26T14:01:00.000Z"),
     debt: createDebtRecord(),
     account: createAccountRecord(),
+    ...overrides,
+  };
+}
+
+function createPaymentTransactionRecord(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "payment-transaction-1",
+    workspaceId: "workspace-1",
+    accountId: "account-1",
+    amount: "10",
+    type: "expense",
+    description: "Погашение долга: Grace",
+    date: new Date("2026-05-26T14:00:00.000Z"),
+    categoryId: "category-1",
+    createdByAi: false,
+    createdAt: new Date("2026-05-26T14:01:00.000Z"),
+    updatedAt: new Date("2026-05-26T14:01:00.000Z"),
+    account: createAccountRecord(),
+    category: { id: "category-1", name: "Write-offs" },
     ...overrides,
   };
 }
@@ -201,7 +231,10 @@ describe("Debts API", () => {
     prisma.account.findUnique.mockResolvedValue(createAccountRecord());
     prisma.account.update.mockResolvedValue(createAccountRecord());
     prisma.category.findFirst.mockResolvedValue({ id: "category-1", workspaceId: "workspace-1", type: "income" });
-    prisma.paymentTransaction.create.mockResolvedValue({});
+    prisma.paymentTransaction.create.mockResolvedValue(createPaymentTransactionRecord());
+    prisma.paymentTransaction.update.mockResolvedValue(createPaymentTransactionRecord());
+    prisma.paymentTransaction.delete.mockResolvedValue({});
+    prisma.paymentTransaction.deleteMany.mockResolvedValue({ count: 0 });
     prisma.debt.findMany.mockResolvedValue([createDebtRecord()]);
     prisma.debt.count.mockResolvedValue(1);
     prisma.debt.findUnique.mockResolvedValue(createDebtRecord());
@@ -341,7 +374,7 @@ describe("Debts API", () => {
       data: expect.objectContaining({
         amount: "5",
         date: new Date(closeDate),
-        description: "Закрытие долга: Grace",
+        description: "Погашение долга: Grace",
         type: "income",
       }),
     });
@@ -354,6 +387,189 @@ describe("Debts API", () => {
       data: { balance: "195" },
       where: { id: "account-1" },
     });
+  });
+
+  it("rejects deprecated early debt closing while accepting the legacy false value", async () => {
+    mockAuthenticatedSession(prisma);
+
+    const response = await request(app.getHttpServer())
+      .post("/debts/debt-1/close")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ amount: "30", closeEarly: true, useAccount: false })
+      .expect(400);
+
+    expect(response.body.message).toContain("Погасить транзакцией");
+    expect(prisma.debtTransaction.create).not.toHaveBeenCalled();
+  });
+
+  it("writes off a lent debt through an expense without changing the account balance", async () => {
+    mockAuthenticatedSession(prisma);
+    const writeOffDate = "2026-05-27T12:00:00.000Z";
+    prisma.debt.update.mockResolvedValueOnce(createDebtRecord({ remainingAmount: "50", status: "open" }));
+    prisma.paymentTransaction.create.mockResolvedValueOnce(createPaymentTransactionRecord({ amount: "40" }));
+    prisma.debtTransaction.create.mockResolvedValueOnce(
+      createDebtTransactionRecord({
+        amount: "40",
+        paymentTransactionId: "payment-transaction-1",
+        debt: createDebtRecord({ remainingAmount: "50", status: "open" }),
+      })
+    );
+
+    const response = await request(app.getHttpServer())
+      .post("/debts/debt-1/write-offs")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "40",
+        accountId: "account-1",
+        categoryId: "category-1",
+        date: writeOffDate,
+      })
+      .expect(201);
+
+    expect(response.body).toMatchObject({
+      debt: { remainingAmount: "50", status: "open" },
+      debtTransaction: { amount: "40", paymentTransactionId: "payment-transaction-1" },
+      transaction: {
+        id: "payment-transaction-1",
+        amount: "40",
+        type: "expense",
+        debtWriteOff: {
+          debtTransactionId: "debt-transaction-1",
+          remainingAmount: "50",
+        },
+      },
+    });
+    expect(prisma.category.findFirst).toHaveBeenCalledWith({
+      where: { id: "category-1", type: "expense", workspaceId: "workspace-1" },
+    });
+    expect(prisma.paymentTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ amount: "40", type: "expense" }),
+      })
+    );
+    expect(prisma.debtTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          amount: "40",
+          paymentTransactionId: "payment-transaction-1",
+          toAmount: null,
+          type: "closed",
+        }),
+      })
+    );
+    expect(prisma.account.update).not.toHaveBeenCalled();
+  });
+
+  it("writes off a cross-currency borrowed debt through account-currency income", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.debt.findUnique.mockResolvedValueOnce(createDebtRecord({ type: "borrowed" }));
+    prisma.account.findFirst.mockResolvedValueOnce(createAccountRecord({ currency: "USD" }));
+    prisma.debt.update.mockResolvedValueOnce(
+      createDebtRecord({ type: "borrowed", remainingAmount: "60", status: "open" })
+    );
+    prisma.paymentTransaction.create.mockResolvedValueOnce(
+      createPaymentTransactionRecord({ amount: "9", type: "income" })
+    );
+    prisma.debtTransaction.create.mockResolvedValueOnce(
+      createDebtTransactionRecord({
+        amount: "30",
+        paymentTransactionId: "payment-transaction-1",
+        toAmount: "9",
+        debt: createDebtRecord({ type: "borrowed", remainingAmount: "60", status: "open" }),
+      })
+    );
+
+    await request(app.getHttpServer())
+      .post("/debts/debt-1/write-offs")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "30",
+        toAmount: "9",
+        accountId: "account-1",
+        categoryId: "category-1",
+        date: "2026-05-27T12:00:00.000Z",
+      })
+      .expect(201);
+
+    expect(prisma.category.findFirst).toHaveBeenCalledWith({
+      where: { id: "category-1", type: "income", workspaceId: "workspace-1" },
+    });
+    expect(prisma.paymentTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ amount: "9", type: "income" }) })
+    );
+    expect(prisma.debtTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ amount: "30", toAmount: "9" }) })
+    );
+    expect(prisma.account.update).not.toHaveBeenCalled();
+  });
+
+  it("validates write-off amount, currency conversion, account state, and date", async () => {
+    mockAuthenticatedSession(prisma);
+
+    const overLimitResponse = await request(app.getHttpServer())
+      .post("/debts/debt-1/write-offs")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "91",
+        accountId: "account-1",
+        categoryId: "category-1",
+        date: "2026-05-27T12:00:00.000Z",
+      })
+      .expect(400);
+    expect(overLimitResponse.body.message).toContain("90");
+
+    prisma.account.findFirst.mockResolvedValueOnce(createAccountRecord({ currency: "USD" }));
+    const currencyResponse = await request(app.getHttpServer())
+      .post("/debts/debt-1/write-offs")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "30",
+        accountId: "account-1",
+        categoryId: "category-1",
+        date: "2026-05-27T12:00:00.000Z",
+      })
+      .expect(400);
+    expect(currencyResponse.body.message).toBe("Укажите сумму в валюте счёта");
+
+    prisma.account.findFirst.mockResolvedValueOnce(null);
+    await request(app.getHttpServer())
+      .post("/debts/debt-1/write-offs")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "30",
+        accountId: "archived-account",
+        categoryId: "category-1",
+        date: "2026-05-27T12:00:00.000Z",
+      })
+      .expect(404);
+
+    prisma.account.findFirst.mockResolvedValueOnce(createAccountRecord());
+    const dateResponse = await request(app.getHttpServer())
+      .post("/debts/debt-1/write-offs")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "30",
+        accountId: "account-1",
+        categoryId: "category-1",
+        date: "2026-05-20T12:00:00.000Z",
+      })
+      .expect(400);
+    expect(dateResponse.body.message).toContain("раньше даты создания счета");
+
+    prisma.account.findFirst.mockResolvedValueOnce(createAccountRecord());
+    prisma.category.findFirst.mockResolvedValueOnce(null);
+    const categoryResponse = await request(app.getHttpServer())
+      .post("/debts/debt-1/write-offs")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "30",
+        accountId: "account-1",
+        categoryId: "wrong-category",
+        date: "2026-05-27T12:00:00.000Z",
+      })
+      .expect(400);
+    expect(categoryResponse.body.message).toContain("Категория не найдена");
+    expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
   });
 
   it("rejects cross-currency debt closing without an outgoing amount", async () => {
@@ -542,6 +758,118 @@ describe("Debts API", () => {
     );
   });
 
+  it("updates a linked write-off using the original amount as part of the maximum", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.debtTransaction.findUnique.mockResolvedValueOnce(
+      createDebtTransactionRecord({ paymentTransactionId: "payment-transaction-1" })
+    );
+    prisma.debt.update.mockResolvedValueOnce(createDebtRecord({ remainingAmount: "75", status: "open" }));
+    prisma.paymentTransaction.update.mockResolvedValueOnce(
+      createPaymentTransactionRecord({ amount: "25", description: "Forgiven amount" })
+    );
+    prisma.debtTransaction.update.mockResolvedValueOnce(
+      createDebtTransactionRecord({
+        amount: "25",
+        paymentTransactionId: "payment-transaction-1",
+        debt: createDebtRecord({ remainingAmount: "75", status: "open" }),
+      })
+    );
+
+    const response = await request(app.getHttpServer())
+      .patch("/debt-write-offs/debt-transaction-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "25",
+        accountId: "account-1",
+        categoryId: "category-1",
+        date: "2026-05-27T12:00:00.000Z",
+        description: "Forgiven amount",
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      debt: { remainingAmount: "75" },
+      debtTransaction: { amount: "25", paymentTransactionId: "payment-transaction-1" },
+      transaction: { amount: "25", description: "Forgiven amount" },
+    });
+    expect(prisma.debt.update).toHaveBeenCalledWith({
+      where: { id: "debt-1" },
+      data: { remainingAmount: "75", status: "open" },
+    });
+    expect(prisma.paymentTransaction.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ amount: "25", description: "Forgiven amount" }),
+        where: { id: "payment-transaction-1" },
+      })
+    );
+    expect(prisma.account.update).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockResolvedValue({ ownerId: currentUser.id });
+    prisma.debtTransaction.findUnique.mockResolvedValue(
+      createDebtTransactionRecord({ paymentTransactionId: "payment-transaction-1" })
+    );
+
+    const limitResponse = await request(app.getHttpServer())
+      .patch("/debt-write-offs/debt-transaction-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "101",
+        accountId: "account-1",
+        categoryId: "category-1",
+        date: "2026-05-27T12:00:00.000Z",
+      })
+      .expect(400);
+
+    expect(limitResponse.body.message).toContain("100");
+    expect(prisma.paymentTransaction.update).not.toHaveBeenCalled();
+  });
+
+  it("deletes a linked write-off and reopens the debt without changing account balance", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.debtTransaction.findUnique.mockResolvedValueOnce(
+      createDebtTransactionRecord({
+        amount: "10",
+        paymentTransactionId: "payment-transaction-1",
+        debt: createDebtRecord({ remainingAmount: "0", status: "closed" }),
+      })
+    );
+
+    await request(app.getHttpServer())
+      .delete("/debt-write-offs/debt-transaction-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(204);
+
+    expect(prisma.debt.update).toHaveBeenCalledWith({
+      where: { id: "debt-1" },
+      data: { remainingAmount: "10", status: "open" },
+    });
+    expect(prisma.debtTransaction.delete).toHaveBeenCalledWith({ where: { id: "debt-transaction-1" } });
+    expect(prisma.paymentTransaction.delete).toHaveBeenCalledWith({ where: { id: "payment-transaction-1" } });
+    expect(prisma.account.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects generic edits and deletes of linked write-off debt transactions", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.debtTransaction.findUnique.mockResolvedValue(
+      createDebtTransactionRecord({ paymentTransactionId: "payment-transaction-1" })
+    );
+
+    const updateResponse = await request(app.getHttpServer())
+      .patch("/debt-transactions/debt-transaction-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ amount: "20", accountId: "account-1", date: "2026-05-27T12:00:00.000Z" })
+      .expect(400);
+    expect(updateResponse.body.message).toContain("специальное действие");
+
+    const deleteResponse = await request(app.getHttpServer())
+      .delete("/debt-transactions/debt-transaction-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(400);
+    expect(deleteResponse.body.message).toContain("специальное действие");
+  });
+
   it("rejects direct edits and deletes of created debt transactions", async () => {
     mockAuthenticatedSession(prisma);
     prisma.debtTransaction.findUnique.mockResolvedValue(createDebtTransactionRecord({ type: "created" }));
@@ -596,5 +924,39 @@ describe("Debts API", () => {
     });
     expect(prisma.debtTransaction.deleteMany).toHaveBeenCalledWith({ where: { debtId: "debt-1" } });
     expect(prisma.debt.delete).toHaveBeenCalledWith({ where: { id: "debt-1" } });
+  });
+
+  it("deletes linked write-off payments with the debt and skips their zero-net balance effect", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.debtTransaction.findMany.mockResolvedValue([
+      {
+        accountId: "account-1",
+        paymentTransactionId: null,
+        type: "created",
+        amount: "100",
+        toAmount: null,
+      },
+      {
+        accountId: "account-1",
+        paymentTransactionId: "payment-transaction-1",
+        type: "closed",
+        amount: "10",
+        toAmount: null,
+      },
+    ]);
+    prisma.account.findMany.mockResolvedValue([createAccountRecord({ balance: "90" })]);
+
+    await request(app.getHttpServer())
+      .delete("/debts/debt-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(204);
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "190" },
+      where: { id: "account-1" },
+    });
+    expect(prisma.paymentTransaction.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ["payment-transaction-1"] } },
+    });
   });
 });

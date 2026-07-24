@@ -180,7 +180,7 @@ export function CreateTransferDialog({
           <TransferForm workspaceId={workspaceId} form={form} accounts={accounts} onSubmit={onSubmit} />
         </DialogContent>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
             Отмена
           </Button>
           <TransferFormSubmitButton form={form} onSubmit={onSubmit} />

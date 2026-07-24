@@ -1,84 +1,102 @@
 "use client";
 
-import { Check, GripVertical, MoreVertical, Plus, X } from "lucide-react";
+import { Eye, EyeOff, MoreVertical, Plus } from "lucide-react";
 import { useState } from "react";
 
+import type {
+  AccountDisplayGrouping,
+  AccountDisplaySort,
+} from "@/modules/accounts/components/accounts-cards/account-display";
+import type { AccountDisplayPreferences } from "@/modules/accounts/hooks/useAccountDisplayPreferences";
 import { Button } from "@/shared/ui/button";
-import { Popover } from "@/shared/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { cn } from "@/shared/utils/cn";
 
+import { AccountGroupingOptions, AccountSortOptions, type BalanceSortStatus } from "./AccountDisplayControls";
+
 interface AccountsMenuProps {
-  isReorderMode: boolean;
-  onReorderModeChange: (isReorderMode: boolean) => void;
+  balanceSortStatus: BalanceSortStatus;
   onCreateAccount: () => void;
-  onCancelReorder: () => void;
-  onSaveReorder: () => void;
+  onGroupingChange: (grouping: AccountDisplayGrouping) => void;
+  onShowAllAccountsChange: (showAllAccounts: boolean) => void;
+  onSortChange: (sort: AccountDisplaySort) => void;
+  preferences: AccountDisplayPreferences;
+  showAllAccounts: boolean;
 }
 
 export function AccountsMenu({
-  isReorderMode,
-  onReorderModeChange,
+  balanceSortStatus,
   onCreateAccount,
-  onCancelReorder,
-  onSaveReorder,
+  onGroupingChange,
+  onShowAllAccountsChange,
+  onSortChange,
+  preferences,
+  showAllAccounts,
 }: AccountsMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  if (isReorderMode) {
-    return (
-      <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={onCancelReorder} className="gap-2">
-          <X className="h-4 w-4" />
-          Отменить
-        </Button>
-        <Button size="sm" onClick={onSaveReorder} className="gap-2">
-          <Check className="h-4 w-4" />
-          Сохранить
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <Popover
-      open={menuOpen}
-      onOpenChange={setMenuOpen}
-      placement="bottom-end"
-      className="w-54 p-1"
-      trigger={({ ref, ...triggerProps }) => (
-        <Button ref={ref} type="button" variant="outline" size="icon-sm" {...triggerProps}>
-          <MoreVertical className="h-5 w-5" />
-        </Button>
-      )}
-    >
-      <div className="space-y-1">
-        <button
-          type="button"
-          onClick={() => {
-            onCreateAccount();
-            setMenuOpen(false);
-          }}
-          className={cn(
-            "w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-          )}
-        >
-          <Plus className="h-4 w-4" />
-          Новый
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            onReorderModeChange(true);
-            setMenuOpen(false);
-          }}
-          className={cn(
-            "w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
-          )}
-        >
-          <GripVertical className="h-4 w-4" />
-          Изменить порядок
-        </button>
-      </div>
-    </Popover>
+    <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon-sm"
+        aria-label="Опции счетов"
+        className="md:hidden"
+        onClick={() => setMenuOpen(true)}
+      >
+        <MoreVertical className="h-5 w-5" />
+      </Button>
+      <DialogWindow mobilePosition="bottom" className="gap-4 rounded-t-2xl rounded-b-none pb-4">
+        <DialogHeader className="px-5">
+          <DialogTitle>Опции счетов</DialogTitle>
+        </DialogHeader>
+        <DialogContent className="flex flex-col gap-1 px-5">
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => {
+                onCreateAccount();
+                setMenuOpen(false);
+              }}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm transition-colors hover:bg-accent"
+              )}
+            >
+              <Plus className="h-4 w-4" />
+              Новый
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onShowAllAccountsChange(!showAllAccounts);
+                setMenuOpen(false);
+              }}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm transition-colors hover:bg-accent"
+              )}
+            >
+              {showAllAccounts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showAllAccounts ? "Только мои счета" : "Показать все счета"}
+            </button>
+          </div>
+          <div className="my-1 h-px bg-border" />
+          <div className="space-y-1">
+            <AccountSortOptions
+              balanceSortStatus={balanceSortStatus}
+              preferences={preferences}
+              onSortChange={onSortChange}
+              onSelect={() => setMenuOpen(false)}
+            />
+            <div className="my-1 h-px bg-border" />
+            <AccountGroupingOptions
+              preferences={preferences}
+              onGroupingChange={onGroupingChange}
+              onSelect={() => setMenuOpen(false)}
+            />
+          </div>
+        </DialogContent>
+      </DialogWindow>
+    </Dialog>
   );
 }

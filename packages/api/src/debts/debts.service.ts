@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { Account, Debt, DebtTransaction, Prisma, User } from "@prisma/client";
+import type { Account, Category, Debt, DebtTransaction, PaymentTransaction, Prisma, User } from "@prisma/client";
 import Big from "big.js";
 
 import type { AuthenticatedUser } from "@/auth/auth.types";
@@ -9,9 +9,11 @@ import type {
   AddToDebtDto,
   CloseDebtDto,
   CreateDebtDto,
+  CreateDebtWriteOffDto,
   DebtListQueryDto,
   UpdateDebtDto,
   UpdateDebtEntryTransactionDto,
+  UpdateDebtWriteOffDto,
 } from "./debts.dto";
 
 const DEBT_LENT = "lent";
@@ -46,6 +48,20 @@ const DEBT_TRANSACTION_ACCOUNT_SELECT = {
   },
 } satisfies Prisma.AccountSelect;
 
+const PAYMENT_TRANSACTION_CATEGORY_SELECT = {
+  id: true,
+  name: true,
+} satisfies Prisma.CategorySelect;
+
+const DEBT_WRITE_OFF_PAYMENT_INCLUDE = {
+  account: {
+    select: DEBT_TRANSACTION_ACCOUNT_SELECT,
+  },
+  category: {
+    select: PAYMENT_TRANSACTION_CATEGORY_SELECT,
+  },
+} satisfies Prisma.PaymentTransactionInclude;
+
 const ACCESSIBLE_DEBT_TRANSACTION_INCLUDE = {
   debt: true,
   account: {
@@ -63,6 +79,10 @@ type AccessibleDebt = Debt;
 type AccessibleDebtTransaction = DebtTransaction & {
   debt: Debt;
   account: DebtTransactionAccount | null;
+};
+type DebtWriteOffPaymentTransaction = PaymentTransaction & {
+  account: DebtTransactionAccount;
+  category: Pick<Category, "id" | "name"> | null;
 };
 type DebtTransactionBalanceEffect = Pick<DebtTransaction, "accountId" | "type" | "amount" | "toAmount">;
 
@@ -157,12 +177,8 @@ function getPaymentTransactionBalanceDelta(type: string, amount: string): string
   return "0";
 }
 
-function getCategoryTransactionType(debtType: string, isEarlyClose: boolean) {
-  if (debtType === DEBT_LENT) {
-    return isEarlyClose ? PAYMENT_EXPENSE : PAYMENT_INCOME;
-  }
-
-  return isEarlyClose ? PAYMENT_INCOME : PAYMENT_EXPENSE;
+function getOverpaymentTransactionType(debtType: string) {
+  return debtType === DEBT_LENT ? PAYMENT_INCOME : PAYMENT_EXPENSE;
 }
 
 function getCategoryTypeFromPaymentType(paymentType: string) {
@@ -219,6 +235,7 @@ function toDebtTransactionDto(transaction: AccessibleDebtTransaction) {
     workspaceId: transaction.workspaceId,
     debtId: transaction.debtId,
     accountId: transaction.accountId,
+    paymentTransactionId: transaction.paymentTransactionId,
     type: transaction.type,
     amount: transaction.amount,
     toAmount: transaction.toAmount,
@@ -226,6 +243,37 @@ function toDebtTransactionDto(transaction: AccessibleDebtTransaction) {
     createdAt: toIsoString(transaction.createdAt),
     debt: toDebtTransactionDebtDto(transaction.debt),
     account: transaction.account,
+  };
+}
+
+function toDebtWriteOffPaymentTransactionDto(
+  transaction: DebtWriteOffPaymentTransaction,
+  debtTransaction: AccessibleDebtTransaction
+) {
+  return {
+    id: transaction.id,
+    workspaceId: transaction.workspaceId,
+    accountId: transaction.accountId,
+    amount: transaction.amount,
+    type: transaction.type,
+    description: transaction.description,
+    date: toIsoString(transaction.date),
+    categoryId: transaction.categoryId,
+    createdByAi: transaction.createdByAi ?? false,
+    createdAt: toIsoString(transaction.createdAt),
+    updatedAt: toIsoString(transaction.updatedAt),
+    account: transaction.account,
+    category: transaction.category,
+    debtWriteOff: {
+      debtTransactionId: debtTransaction.id,
+      debtId: debtTransaction.debtId,
+      debtType: debtTransaction.debt.type,
+      personName: debtTransaction.debt.personName,
+      debtCurrency: debtTransaction.debt.currency,
+      amount: debtTransaction.amount,
+      remainingAmount: debtTransaction.debt.remainingAmount,
+      status: debtTransaction.debt.status,
+    },
   };
 }
 
@@ -304,6 +352,48 @@ export class DebtsService {
     }
 
     return category;
+  }
+
+  private async getWorkspaceActiveAccountOrThrow(tx: PrismaTx, workspaceId: string, accountId: string) {
+    const account = await tx.account.findFirst({
+      where: {
+        id: accountId,
+        workspaceId,
+        archived: false,
+      },
+    });
+
+    if (!account) {
+      throw new NotFoundException("Счёт не найден");
+    }
+
+    return account;
+  }
+
+  private assertTransactionDateIsValid(account: Account, date: Date) {
+    const accountCreatedDate = new Date(account.createdAt);
+    accountCreatedDate.setHours(0, 0, 0, 0);
+    const transactionDate = new Date(date);
+    transactionDate.setHours(0, 0, 0, 0);
+
+    if (transactionDate < accountCreatedDate) {
+      throw new BadRequestException(
+        `Дата транзакции не может быть раньше даты создания счета (${accountCreatedDate.toLocaleDateString("ru-RU")})`
+      );
+    }
+  }
+
+  private getDebtWriteOffPaymentType(debtType: string) {
+    return debtType === DEBT_LENT ? PAYMENT_EXPENSE : PAYMENT_INCOME;
+  }
+
+  private getDebtWriteOffAmounts(account: Account, debtCurrency: string, amount: string, inputToAmount?: string) {
+    const toAmount = getDebtTransactionToAmount(account, debtCurrency, inputToAmount);
+
+    return {
+      paymentAmount: toAmount || amount,
+      toAmount,
+    };
   }
 
   private async getAccessibleDebtOrThrow(
@@ -680,6 +770,10 @@ export class DebtsService {
   }
 
   async closeDebt(debtId: string, input: CloseDebtDto, currentUser: AuthenticatedUser) {
+    if (input.closeEarly) {
+      throw new BadRequestException("Досрочное закрытие больше не поддерживается. Используйте «Погасить транзакцией»");
+    }
+
     if (input.useAccount && !input.accountId) {
       throw new BadRequestException("Выберите счёт");
     }
@@ -705,24 +799,16 @@ export class DebtsService {
           throw new BadRequestException("Укажите сумму отправления");
         }
 
-        if (
-          !currenciesMatch &&
-          (input.closeEarly || (input.paymentAmount && compareMoney(input.paymentAmount, input.amount) > 0))
-        ) {
+        if (!currenciesMatch && input.paymentAmount && compareMoney(input.paymentAmount, input.amount) > 0) {
           throw new BadRequestException("Подарок при закрытии долга доступен только в валюте долга");
         }
 
         if (currenciesMatch && input.paymentAmount) {
-          closeAmount = input.closeEarly
-            ? existingDebt.remainingAmount
-            : minMoney(input.paymentAmount, existingDebt.remainingAmount);
+          closeAmount = minMoney(input.paymentAmount, existingDebt.remainingAmount);
 
-          if (input.closeEarly && compareMoney(input.paymentAmount, existingDebt.remainingAmount) < 0) {
-            categoryAmount = subtractMoney(existingDebt.remainingAmount, input.paymentAmount);
-            categoryTransactionType = getCategoryTransactionType(existingDebt.type, true);
-          } else if (compareMoney(input.paymentAmount, existingDebt.remainingAmount) > 0) {
+          if (compareMoney(input.paymentAmount, existingDebt.remainingAmount) > 0) {
             categoryAmount = subtractMoney(input.paymentAmount, existingDebt.remainingAmount);
-            categoryTransactionType = getCategoryTransactionType(existingDebt.type, false);
+            categoryTransactionType = getOverpaymentTransactionType(existingDebt.type);
           }
         }
 
@@ -776,7 +862,7 @@ export class DebtsService {
               accountId: input.accountId,
               amount: categoryAmount,
               type: categoryTransactionType,
-              description: `Закрытие долга: ${existingDebt.personName}`,
+              description: `Погашение долга: ${existingDebt.personName}`,
               date: closeDate,
               categoryId,
             },
@@ -815,6 +901,184 @@ export class DebtsService {
     return { debt: toDebtDto(debt) };
   }
 
+  async createDebtWriteOff(debtId: string, input: CreateDebtWriteOffDto, currentUser: AuthenticatedUser) {
+    const writeOff = await this.prisma.$transaction(async (tx) => {
+      const debt = await this.getAccessibleDebtOrThrow(tx, debtId, currentUser);
+
+      if (debt.status === DEBT_CLOSED) {
+        throw new BadRequestException("Долг уже погашен");
+      }
+
+      if (compareMoney(input.amount, debt.remainingAmount) > 0) {
+        throw new BadRequestException(`Сумма не может превышать остаток долга (${debt.remainingAmount})`);
+      }
+
+      const account = await this.getWorkspaceActiveAccountOrThrow(tx, debt.workspaceId, input.accountId);
+      this.assertTransactionDateIsValid(account, input.date);
+
+      const paymentType = this.getDebtWriteOffPaymentType(debt.type);
+      await this.getWorkspaceCategoryOrThrow(tx, debt.workspaceId, input.categoryId, paymentType);
+
+      const { paymentAmount, toAmount } = this.getDebtWriteOffAmounts(
+        account,
+        debt.currency,
+        input.amount,
+        input.toAmount
+      );
+      const nextRemainingAmount = subtractMoney(debt.remainingAmount, input.amount);
+
+      const updatedDebt = await tx.debt.update({
+        where: { id: debt.id },
+        data: {
+          remainingAmount: nextRemainingAmount,
+          status: getDebtStatusFromRemainingAmount(nextRemainingAmount),
+        },
+      });
+
+      const paymentTransaction = await tx.paymentTransaction.create({
+        data: {
+          workspaceId: debt.workspaceId,
+          accountId: account.id,
+          amount: paymentAmount,
+          type: paymentType,
+          description: input.description ?? `Погашение долга: ${debt.personName}`,
+          date: input.date,
+          categoryId: input.categoryId,
+        },
+        include: DEBT_WRITE_OFF_PAYMENT_INCLUDE,
+      });
+
+      const createdDebtTransaction = await tx.debtTransaction.create({
+        data: {
+          workspaceId: debt.workspaceId,
+          debtId: debt.id,
+          accountId: account.id,
+          paymentTransactionId: paymentTransaction.id,
+          type: DEBT_TRANSACTION_CLOSED,
+          amount: input.amount,
+          toAmount,
+          date: input.date,
+        },
+        include: ACCESSIBLE_DEBT_TRANSACTION_INCLUDE,
+      });
+
+      return {
+        debt: updatedDebt,
+        debtTransaction: createdDebtTransaction as AccessibleDebtTransaction,
+        transaction: paymentTransaction as DebtWriteOffPaymentTransaction,
+      };
+    });
+
+    return {
+      debt: toDebtDto(writeOff.debt),
+      debtTransaction: toDebtTransactionDto(writeOff.debtTransaction),
+      transaction: toDebtWriteOffPaymentTransactionDto(writeOff.transaction, writeOff.debtTransaction),
+    };
+  }
+
+  async updateDebtWriteOff(debtTransactionId: string, input: UpdateDebtWriteOffDto, currentUser: AuthenticatedUser) {
+    const writeOff = await this.prisma.$transaction(async (tx) => {
+      const existingTransaction = await this.getAccessibleDebtTransactionOrThrow(tx, debtTransactionId, currentUser);
+
+      if (!existingTransaction.paymentTransactionId) {
+        throw new BadRequestException("Транзакция не является погашением через транзакцию");
+      }
+
+      const debt = existingTransaction.debt;
+      const maximumAmount = addMoney(debt.remainingAmount, existingTransaction.amount);
+
+      if (compareMoney(input.amount, maximumAmount) > 0) {
+        throw new BadRequestException(`Сумма не может превышать остаток долга (${maximumAmount})`);
+      }
+
+      const account = await this.getWorkspaceActiveAccountOrThrow(tx, debt.workspaceId, input.accountId);
+      this.assertTransactionDateIsValid(account, input.date);
+
+      const paymentType = this.getDebtWriteOffPaymentType(debt.type);
+      await this.getWorkspaceCategoryOrThrow(tx, debt.workspaceId, input.categoryId, paymentType);
+
+      const { paymentAmount, toAmount } = this.getDebtWriteOffAmounts(
+        account,
+        debt.currency,
+        input.amount,
+        input.toAmount
+      );
+      const nextRemainingAmount = subtractMoney(maximumAmount, input.amount);
+
+      const updatedDebt = await tx.debt.update({
+        where: { id: debt.id },
+        data: {
+          remainingAmount: nextRemainingAmount,
+          status: getDebtStatusFromRemainingAmount(nextRemainingAmount),
+        },
+      });
+
+      const updatedPaymentTransaction = await tx.paymentTransaction.update({
+        where: { id: existingTransaction.paymentTransactionId },
+        data: {
+          accountId: account.id,
+          amount: paymentAmount,
+          type: paymentType,
+          description: input.description ?? `Погашение долга: ${debt.personName}`,
+          date: input.date,
+          categoryId: input.categoryId,
+        },
+        include: DEBT_WRITE_OFF_PAYMENT_INCLUDE,
+      });
+
+      const updatedDebtTransaction = await tx.debtTransaction.update({
+        where: { id: debtTransactionId },
+        data: {
+          accountId: account.id,
+          amount: input.amount,
+          toAmount,
+          date: input.date,
+        },
+        include: ACCESSIBLE_DEBT_TRANSACTION_INCLUDE,
+      });
+
+      return {
+        debt: updatedDebt,
+        debtTransaction: updatedDebtTransaction as AccessibleDebtTransaction,
+        transaction: updatedPaymentTransaction as DebtWriteOffPaymentTransaction,
+      };
+    });
+
+    return {
+      debt: toDebtDto(writeOff.debt),
+      debtTransaction: toDebtTransactionDto(writeOff.debtTransaction),
+      transaction: toDebtWriteOffPaymentTransactionDto(writeOff.transaction, writeOff.debtTransaction),
+    };
+  }
+
+  async deleteDebtWriteOff(debtTransactionId: string, currentUser: AuthenticatedUser) {
+    await this.prisma.$transaction(async (tx) => {
+      const debtTransaction = await this.getAccessibleDebtTransactionOrThrow(tx, debtTransactionId, currentUser);
+
+      if (!debtTransaction.paymentTransactionId) {
+        throw new BadRequestException("Транзакция не является погашением через транзакцию");
+      }
+
+      const nextRemainingAmount = addMoney(debtTransaction.debt.remainingAmount, debtTransaction.amount);
+
+      await tx.debt.update({
+        where: { id: debtTransaction.debt.id },
+        data: {
+          remainingAmount: nextRemainingAmount,
+          status: getDebtStatusFromRemainingAmount(nextRemainingAmount),
+        },
+      });
+
+      await tx.debtTransaction.delete({
+        where: { id: debtTransactionId },
+      });
+
+      await tx.paymentTransaction.delete({
+        where: { id: debtTransaction.paymentTransactionId },
+      });
+    });
+  }
+
   async deleteDebt(debtId: string, currentUser: AuthenticatedUser) {
     await this.prisma.$transaction(async (tx) => {
       const debt = await this.getAccessibleDebtOrThrow(tx, debtId, currentUser);
@@ -822,6 +1086,7 @@ export class DebtsService {
         where: { debtId: debt.id },
         select: {
           accountId: true,
+          paymentTransactionId: true,
           type: true,
           amount: true,
           toAmount: true,
@@ -831,7 +1096,7 @@ export class DebtsService {
       const balanceDeltasByAccount = new Map<string, string>();
 
       for (const transaction of debtTransactions) {
-        if (!transaction.accountId) {
+        if (!transaction.accountId || transaction.paymentTransactionId) {
           continue;
         }
 
@@ -847,6 +1112,16 @@ export class DebtsService {
       await tx.debtTransaction.deleteMany({
         where: { debtId: debt.id },
       });
+
+      const paymentTransactionIds = debtTransactions.flatMap((transaction) =>
+        transaction.paymentTransactionId ? [transaction.paymentTransactionId] : []
+      );
+
+      if (paymentTransactionIds.length > 0) {
+        await tx.paymentTransaction.deleteMany({
+          where: { id: { in: paymentTransactionIds } },
+        });
+      }
 
       await tx.debt.delete({
         where: { id: debtId },
@@ -865,6 +1140,10 @@ export class DebtsService {
 
       if (existingTransaction.type === DEBT_TRANSACTION_CREATED) {
         throw new BadRequestException("Начальную транзакцию нужно редактировать через редактирование долга");
+      }
+
+      if (existingTransaction.paymentTransactionId) {
+        throw new BadRequestException("Погашение через транзакцию нужно редактировать через специальное действие");
       }
 
       const currentTotals = getDebtTransactionTotalsDelta(existingTransaction.type, existingTransaction.amount);
@@ -965,6 +1244,10 @@ export class DebtsService {
 
       if (debtTransaction.type === DEBT_TRANSACTION_CREATED) {
         throw new BadRequestException("Начальную транзакцию долга нужно удалять вместе с долгом");
+      }
+
+      if (debtTransaction.paymentTransactionId) {
+        throw new BadRequestException("Погашение через транзакцию нужно удалять через специальное действие");
       }
 
       const totals = getDebtTransactionTotalsDelta(debtTransaction.type, debtTransaction.amount);

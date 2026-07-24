@@ -36,7 +36,7 @@ export function DeleteCategoryDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" disabled={isDeleting} onClick={() => onOpenChange(false)}>
+          <Button variant="secondary" disabled={isDeleting} onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <Button

@@ -29,13 +29,16 @@ import type {
   ApiErrorDto,
   CloseDebtDto,
   CreateDebtDto,
+  CreateDebtWriteOffDto,
   DebtEditDataResponseDto,
   DebtListResponseDto,
   DebtResponseDto,
   DebtTransactionResponseDto,
+  DebtWriteOffResponseDto,
   ListDebtsParams,
   UpdateDebtDto,
   UpdateDebtEntryTransactionDto,
+  UpdateDebtWriteOffDto,
 } from "../model";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -740,6 +743,394 @@ export function useCloseDebt<TData = Awaited<ReturnType<typeof closeDebt>>, TErr
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getCloseDebtQueryOptions(debtId, closeDebtDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateDebtWriteOffUrl = (debtId: string) => {
+  return `/debts/${debtId}/write-offs`;
+};
+
+/**
+ * @summary Write off a debt through a payment transaction
+ */
+export const createDebtWriteOff = async (
+  debtId: string,
+  createDebtWriteOffDto: CreateDebtWriteOffDto,
+  options?: RequestInit
+): Promise<DebtWriteOffResponseDto> => {
+  return apiClient<DebtWriteOffResponseDto>(getCreateDebtWriteOffUrl(debtId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createDebtWriteOffDto),
+  });
+};
+
+export const getCreateDebtWriteOffQueryKey = (
+  debtId: string,
+  createDebtWriteOffDto?: BodyType<CreateDebtWriteOffDto>
+) => {
+  return ["POST", `/debts/${debtId}/write-offs`, createDebtWriteOffDto] as const;
+};
+
+export const getCreateDebtWriteOffQueryOptions = <
+  TData = Awaited<ReturnType<typeof createDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtId: string,
+  createDebtWriteOffDto: BodyType<CreateDebtWriteOffDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof createDebtWriteOff>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getCreateDebtWriteOffQueryKey(debtId, createDebtWriteOffDto);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof createDebtWriteOff>>> = ({ signal }) =>
+    createDebtWriteOff(debtId, createDebtWriteOffDto, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, enabled: debtId !== null && debtId !== undefined, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof createDebtWriteOff>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type CreateDebtWriteOffQueryResult = NonNullable<Awaited<ReturnType<typeof createDebtWriteOff>>>;
+export type CreateDebtWriteOffQueryError = ErrorType<ApiErrorDto>;
+
+export function useCreateDebtWriteOff<
+  TData = Awaited<ReturnType<typeof createDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtId: string,
+  createDebtWriteOffDto: BodyType<CreateDebtWriteOffDto>,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof createDebtWriteOff>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof createDebtWriteOff>>,
+          TError,
+          Awaited<ReturnType<typeof createDebtWriteOff>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useCreateDebtWriteOff<
+  TData = Awaited<ReturnType<typeof createDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtId: string,
+  createDebtWriteOffDto: BodyType<CreateDebtWriteOffDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof createDebtWriteOff>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof createDebtWriteOff>>,
+          TError,
+          Awaited<ReturnType<typeof createDebtWriteOff>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useCreateDebtWriteOff<
+  TData = Awaited<ReturnType<typeof createDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtId: string,
+  createDebtWriteOffDto: BodyType<CreateDebtWriteOffDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof createDebtWriteOff>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Write off a debt through a payment transaction
+ */
+
+export function useCreateDebtWriteOff<
+  TData = Awaited<ReturnType<typeof createDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtId: string,
+  createDebtWriteOffDto: BodyType<CreateDebtWriteOffDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof createDebtWriteOff>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getCreateDebtWriteOffQueryOptions(debtId, createDebtWriteOffDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getUpdateDebtWriteOffUrl = (debtTransactionId: string) => {
+  return `/debt-write-offs/${debtTransactionId}`;
+};
+
+/**
+ * @summary Update a debt write-off
+ */
+export const updateDebtWriteOff = async (
+  debtTransactionId: string,
+  updateDebtWriteOffDto: UpdateDebtWriteOffDto,
+  options?: RequestInit
+): Promise<DebtWriteOffResponseDto> => {
+  return apiClient<DebtWriteOffResponseDto>(getUpdateDebtWriteOffUrl(debtTransactionId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateDebtWriteOffDto),
+  });
+};
+
+export const getUpdateDebtWriteOffQueryKey = (
+  debtTransactionId: string,
+  updateDebtWriteOffDto?: BodyType<UpdateDebtWriteOffDto>
+) => {
+  return ["PATCH", `/debt-write-offs/${debtTransactionId}`, updateDebtWriteOffDto] as const;
+};
+
+export const getUpdateDebtWriteOffQueryOptions = <
+  TData = Awaited<ReturnType<typeof updateDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  updateDebtWriteOffDto: BodyType<UpdateDebtWriteOffDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof updateDebtWriteOff>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getUpdateDebtWriteOffQueryKey(debtTransactionId, updateDebtWriteOffDto);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof updateDebtWriteOff>>> = ({ signal }) =>
+    updateDebtWriteOff(debtTransactionId, updateDebtWriteOffDto, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: debtTransactionId !== null && debtTransactionId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof updateDebtWriteOff>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type UpdateDebtWriteOffQueryResult = NonNullable<Awaited<ReturnType<typeof updateDebtWriteOff>>>;
+export type UpdateDebtWriteOffQueryError = ErrorType<ApiErrorDto>;
+
+export function useUpdateDebtWriteOff<
+  TData = Awaited<ReturnType<typeof updateDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  updateDebtWriteOffDto: BodyType<UpdateDebtWriteOffDto>,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof updateDebtWriteOff>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof updateDebtWriteOff>>,
+          TError,
+          Awaited<ReturnType<typeof updateDebtWriteOff>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUpdateDebtWriteOff<
+  TData = Awaited<ReturnType<typeof updateDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  updateDebtWriteOffDto: BodyType<UpdateDebtWriteOffDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof updateDebtWriteOff>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof updateDebtWriteOff>>,
+          TError,
+          Awaited<ReturnType<typeof updateDebtWriteOff>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUpdateDebtWriteOff<
+  TData = Awaited<ReturnType<typeof updateDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  updateDebtWriteOffDto: BodyType<UpdateDebtWriteOffDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof updateDebtWriteOff>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Update a debt write-off
+ */
+
+export function useUpdateDebtWriteOff<
+  TData = Awaited<ReturnType<typeof updateDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  updateDebtWriteOffDto: BodyType<UpdateDebtWriteOffDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof updateDebtWriteOff>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getUpdateDebtWriteOffQueryOptions(debtTransactionId, updateDebtWriteOffDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getDeleteDebtWriteOffUrl = (debtTransactionId: string) => {
+  return `/debt-write-offs/${debtTransactionId}`;
+};
+
+/**
+ * @summary Delete a debt write-off
+ */
+export const deleteDebtWriteOff = async (debtTransactionId: string, options?: RequestInit): Promise<void> => {
+  return apiClient<void>(getDeleteDebtWriteOffUrl(debtTransactionId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteDebtWriteOffQueryKey = (debtTransactionId: string) => {
+  return ["DELETE", `/debt-write-offs/${debtTransactionId}`] as const;
+};
+
+export const getDeleteDebtWriteOffQueryOptions = <
+  TData = Awaited<ReturnType<typeof deleteDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteDebtWriteOff>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getDeleteDebtWriteOffQueryKey(debtTransactionId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteDebtWriteOff>>> = ({ signal }) =>
+    deleteDebtWriteOff(debtTransactionId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: debtTransactionId !== null && debtTransactionId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof deleteDebtWriteOff>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type DeleteDebtWriteOffQueryResult = NonNullable<Awaited<ReturnType<typeof deleteDebtWriteOff>>>;
+export type DeleteDebtWriteOffQueryError = ErrorType<ApiErrorDto>;
+
+export function useDeleteDebtWriteOff<
+  TData = Awaited<ReturnType<typeof deleteDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteDebtWriteOff>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof deleteDebtWriteOff>>,
+          TError,
+          Awaited<ReturnType<typeof deleteDebtWriteOff>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDeleteDebtWriteOff<
+  TData = Awaited<ReturnType<typeof deleteDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteDebtWriteOff>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof deleteDebtWriteOff>>,
+          TError,
+          Awaited<ReturnType<typeof deleteDebtWriteOff>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDeleteDebtWriteOff<
+  TData = Awaited<ReturnType<typeof deleteDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteDebtWriteOff>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Delete a debt write-off
+ */
+
+export function useDeleteDebtWriteOff<
+  TData = Awaited<ReturnType<typeof deleteDebtWriteOff>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  debtTransactionId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteDebtWriteOff>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getDeleteDebtWriteOffQueryOptions(debtTransactionId, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

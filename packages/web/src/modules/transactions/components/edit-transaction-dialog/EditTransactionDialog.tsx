@@ -319,7 +319,7 @@ export function EditTransactionDialog({
               <div className="relative">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="field"
                   className="w-full justify-between"
                   onClick={() => setCategoryModalOpen(true)}
                 >
@@ -336,7 +336,7 @@ export function EditTransactionDialog({
                       e.stopPropagation();
                       setValue("categoryId", null);
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2"
                   >
                     <X className="h-4 w-4" />
                   </button>

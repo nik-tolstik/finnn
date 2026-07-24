@@ -125,7 +125,7 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>

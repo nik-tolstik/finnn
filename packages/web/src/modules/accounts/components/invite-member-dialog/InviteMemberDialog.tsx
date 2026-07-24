@@ -98,7 +98,7 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <Button type="submit" form={INVITE_MEMBER_FORM_ID} disabled={isSubmitting || inviteMutation.isPending}>

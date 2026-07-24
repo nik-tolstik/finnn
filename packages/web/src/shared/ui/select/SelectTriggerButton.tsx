@@ -20,8 +20,8 @@ export const SelectTriggerButton = React.forwardRef<HTMLButtonElement, SelectTri
         <Button
           ref={ref}
           type="button"
-          variant="outline"
-          className={cn("w-full justify-start", className, "font-normal")}
+          variant="field"
+          className={cn("w-full justify-start font-normal", className)}
           {...props}
         >
           {value ? (
@@ -40,7 +40,7 @@ export const SelectTriggerButton = React.forwardRef<HTMLButtonElement, SelectTri
               e.stopPropagation();
               onClear?.();
             }}
-            className="absolute right-8 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="absolute right-8 top-1/2 -translate-y-1/2 rounded-sm p-1 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2"
           >
             <X className="h-4 w-4" />
           </button>

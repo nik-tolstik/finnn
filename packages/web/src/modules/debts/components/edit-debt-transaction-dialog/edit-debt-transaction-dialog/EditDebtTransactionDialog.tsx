@@ -81,7 +81,7 @@ export function EditDebtTransactionDialog({
           </FormProvider>
         </DialogContent>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <Button type="submit" form={EDIT_DEBT_TRANSACTION_FORM_ID} disabled={form.formState.isSubmitting}>

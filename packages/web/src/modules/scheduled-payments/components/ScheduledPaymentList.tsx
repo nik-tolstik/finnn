@@ -63,7 +63,7 @@ function groupPaymentsByDate(payments: ScheduledPayment[]): ScheduledPaymentGrou
 function IconAction({ children, label, onClick }: { children: ReactNode; label: string; onClick: () => void }) {
   return (
     <Tooltip content={label}>
-      <Button aria-label={label} onClick={onClick} size="icon-sm" type="button" variant="outline">
+      <Button aria-label={label} onClick={onClick} size="icon-sm" type="button" variant="secondary">
         {children}
       </Button>
     </Tooltip>
@@ -119,7 +119,7 @@ export function ScheduledPaymentList({
     return (
       <div className="space-y-2">
         {Array.from({ length: 5 }).map((_, index) => (
-          <div className="h-24 rounded-md border bg-muted/40 animate-pulse" key={index} />
+          <div className="h-24 animate-pulse rounded-md bg-muted/40" key={index} />
         ))}
       </div>
     );
@@ -127,7 +127,7 @@ export function ScheduledPaymentList({
 
   if (payments.length === 0) {
     return (
-      <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">Платежей нет</div>
+      <div className="rounded-md bg-muted/30 p-8 text-center text-sm text-muted-foreground shadow-xs">Платежей нет</div>
     );
   }
 
@@ -146,12 +146,12 @@ export function ScheduledPaymentList({
             <span>{group.dateLabel}</span>
             {group.isOverdue && <span className="text-xs font-normal">Просрочено</span>}
           </div>
-          <div className="overflow-hidden rounded-md border">
+          <div className="overflow-hidden rounded-md bg-card shadow-sm">
             <div className="divide-y">
               {group.payments.map((payment) => (
                 <div key={payment.id}>
                   <button
-                    className="grid w-full gap-3 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+                    className="grid w-full gap-3 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:hidden"
                     onClick={() => onPaymentClick(payment)}
                     type="button"
                   >

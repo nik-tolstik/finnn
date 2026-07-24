@@ -6,7 +6,8 @@ import { asMoneyAmount, type MoneyAmount, type MoneyInput } from "@/shared/lib/d
 export function formatMoney(amount: MoneyInput, currency: string = Currency.USD): string {
   const bigAmount = new Big(amount);
   const [integer, decimal] = bigAmount.toFixed(2).split(".");
-  const formattedInteger = new Intl.NumberFormat("ru-RU").format(Number(integer));
+  const isNegative = bigAmount.lt(0);
+  const formattedInteger = new Intl.NumberFormat("ru-RU").format(BigInt(integer.replace("-", "")));
 
   let shouldAddSpace = false;
 
@@ -14,7 +15,7 @@ export function formatMoney(amount: MoneyInput, currency: string = Currency.USD)
     shouldAddSpace = true;
   }
 
-  return `${formattedInteger}${decimal ? `.${decimal}` : ""}${shouldAddSpace ? " " : ""}${getCurrencySymbol(currency)}`;
+  return `${isNegative ? "-" : ""}${formattedInteger}${decimal ? `.${decimal}` : ""}${shouldAddSpace ? " " : ""}${getCurrencySymbol(currency)}`;
 }
 
 export function addMoney(a: MoneyInput, b: MoneyInput): MoneyAmount {
@@ -31,6 +32,10 @@ export function multiplyMoney(a: MoneyInput, b: MoneyInput): MoneyAmount {
 
 export function divideMoney(a: MoneyInput, b: MoneyInput): MoneyAmount {
   return asMoneyAmount(new Big(a).div(b).toString());
+}
+
+export function roundMoney(amount: MoneyInput, decimalPlaces = 2): MoneyAmount {
+  return asMoneyAmount(new Big(amount).toFixed(decimalPlaces));
 }
 
 export function compareMoney(a: MoneyInput, b: MoneyInput): number {

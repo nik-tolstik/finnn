@@ -207,7 +207,6 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
       <DialogWindow onCloseComplete={onCloseComplete} className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать новый счёт</DialogTitle>
-          <DialogDescription>Добавьте новый счёт для отслеживания ваших финансов</DialogDescription>
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -330,7 +329,9 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                     onClick={() => setValue("icon", name)}
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-all",
-                      selectedIcon === name ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                      selectedIcon === name
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-foreground/25 dark:hover:border-primary/50"
                     )}
                     title={name}
                   >
@@ -355,9 +356,6 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
           </form>
         </DialogContent>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
             {isSubmitting ? "Создание..." : "Создать"}
           </Button>

@@ -25,7 +25,11 @@ import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
 
 import { DEFAULT_REMINDER_DAYS } from "../scheduled-payment.constants";
-import type { ScheduledPayment, ScheduledPaymentFormInput } from "../scheduled-payment.types";
+import type {
+  ScheduledPayment,
+  ScheduledPaymentFormInitialValues,
+  ScheduledPaymentFormInput,
+} from "../scheduled-payment.types";
 
 type MemberOption = {
   id: string;
@@ -45,6 +49,7 @@ interface ScheduledPaymentFormProps {
   baseCurrency?: string;
   categories: Category[];
   initialPayment?: ScheduledPayment | null;
+  initialValues?: ScheduledPaymentFormInitialValues;
   members: MemberOption[];
   onCloseComplete?: () => void;
   onOpenChange: (open: boolean) => void;
@@ -211,14 +216,14 @@ function ScheduleSettingsDropdown({
   };
 
   const settingsBody = (
-    <div className={cn("overflow-hidden bg-background", isMobile ? "rounded-none" : "rounded-2xl")}>
+    <div className={cn("overflow-hidden bg-transparent", isMobile ? "rounded-none" : "rounded-2xl")}>
       <Calendar
         mode="single"
         locale={ru}
         selected={draftDate}
         defaultMonth={draftDate}
         onSelect={handleDateSelect}
-        className="mx-auto bg-background p-3"
+        className="mx-auto bg-transparent p-3"
         classNames={{
           month_caption: "flex h-8 items-center justify-start px-0 text-sm font-medium",
           nav: "absolute top-0 right-0 flex w-auto items-center gap-1",
@@ -258,18 +263,16 @@ function ScheduleSettingsDropdown({
                   disabled={Boolean(emailDisabledReason)}
                   onClick={() => setDraftNotifyEmail((current) => !current)}
                   className={cn(
-                    "group flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors disabled:pointer-events-none disabled:opacity-45",
+                    "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs shadow-xs transition-[color,background-color,box-shadow] disabled:pointer-events-none disabled:opacity-45",
                     draftNotifyEmail
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "bg-background text-muted-foreground hover:bg-accent disabled:hover:bg-background"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-control text-muted-foreground hover:bg-control-hover disabled:hover:bg-control"
                   )}
                 >
                   <span
                     className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded-md border transition-colors",
-                      draftNotifyEmail
-                        ? "border-primary/30 bg-primary text-primary-foreground"
-                        : "border-border bg-muted text-muted-foreground"
+                      "flex size-6 shrink-0 items-center justify-center rounded-md transition-colors",
+                      draftNotifyEmail ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     )}
                   >
                     <Mail className="size-3.5" />
@@ -290,18 +293,16 @@ function ScheduleSettingsDropdown({
                   disabled={Boolean(telegramDisabledReason)}
                   onClick={() => setDraftNotifyTelegram((current) => !current)}
                   className={cn(
-                    "group flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors disabled:pointer-events-none disabled:opacity-45",
+                    "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs shadow-xs transition-[color,background-color,box-shadow] disabled:pointer-events-none disabled:opacity-45",
                     draftNotifyTelegram
-                      ? "border-sky-500 bg-sky-500/10 text-sky-700 dark:text-sky-300"
-                      : "bg-background text-muted-foreground hover:bg-accent disabled:hover:bg-background"
+                      ? "bg-sky-500/10 text-sky-700 dark:text-sky-300"
+                      : "bg-control text-muted-foreground hover:bg-control-hover disabled:hover:bg-control"
                   )}
                 >
                   <span
                     className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded-md border transition-colors",
-                      draftNotifyTelegram
-                        ? "border-sky-500/30 bg-sky-500 text-white"
-                        : "border-border bg-muted text-muted-foreground"
+                      "flex size-6 shrink-0 items-center justify-center rounded-md transition-colors",
+                      draftNotifyTelegram ? "bg-sky-500 text-white" : "bg-muted text-muted-foreground"
                     )}
                   >
                     <Send className="size-3.5" />
@@ -360,8 +361,8 @@ function ScheduleSettingsDropdown({
   );
 
   const settingsFooter = (
-    <div className="grid grid-cols-2 gap-2 border-t bg-background p-4">
-      <Button type="button" variant="outline" className="h-auto px-0 py-0 leading-none" onClick={handleCancel}>
+    <div className="grid grid-cols-2 gap-2 border-t bg-transparent p-4">
+      <Button type="button" variant="secondary" className="h-auto px-0 py-0 leading-none" onClick={handleCancel}>
         Отмена
       </Button>
       <Button type="button" onClick={handleApply}>
@@ -382,7 +383,7 @@ function ScheduleSettingsDropdown({
       <>
         <Button
           type="button"
-          variant="outline"
+          variant="field"
           className="h-auto w-full justify-between px-3 py-2 text-left font-normal"
           aria-expanded={open}
           data-state={open ? "open" : "closed"}
@@ -418,7 +419,7 @@ function ScheduleSettingsDropdown({
         <Button
           ref={ref}
           type="button"
-          variant="outline"
+          variant="field"
           className="h-auto w-full justify-between px-3 py-2 text-left font-normal"
           {...triggerProps}
         >
@@ -440,6 +441,7 @@ export function ScheduledPaymentForm({
   baseCurrency = "BYN",
   categories,
   initialPayment,
+  initialValues,
   members,
   onCloseComplete,
   onOpenChange,
@@ -475,24 +477,57 @@ export function ScheduledPaymentForm({
     if (!session?.user.id) return undefined;
     return accounts.find((account) => account.ownerId === session.user.id);
   }, [accounts, session?.user.id]);
+  const hasInitialAccountValue = initialValues ? "accountId" in initialValues : false;
+  const initialNextDueAtTimestamp = initialValues?.nextDueAt?.getTime();
 
   useEffect(() => {
     if (!open) return;
 
-    setCurrency(toCurrency(initialPayment?.currency ?? baseCurrency));
-    setNextDueAt(initialPayment?.nextDueAt ?? tomorrow);
-    setScheduleKind((initialPayment?.scheduleKind as ScheduledPaymentFormInput["scheduleKind"]) ?? "one_time");
+    setCurrency(
+      toCurrency(initialPayment ? (initialPayment.currency ?? baseCurrency) : (initialValues?.currency ?? baseCurrency))
+    );
+    setNextDueAt(
+      initialPayment
+        ? initialPayment.nextDueAt
+        : initialNextDueAtTimestamp === undefined
+          ? tomorrow
+          : new Date(initialNextDueAtTimestamp)
+    );
+    setScheduleKind(
+      initialPayment
+        ? (initialPayment.scheduleKind as ScheduledPaymentFormInput["scheduleKind"])
+        : (initialValues?.scheduleKind ?? "one_time")
+    );
     setScheduleInterval(initialPayment?.scheduleInterval ?? 1);
     setScheduleUnit(
       (initialPayment?.scheduleUnit as NonNullable<ScheduledPaymentFormInput["scheduleUnit"]> | null) ?? "months"
     );
-    setAccountId(initialPayment ? (initialPayment.accountId ?? "") : (defaultAccount?.id ?? ""));
-    setCategoryId(initialPayment?.categoryId ?? "");
+    setAccountId(
+      initialPayment
+        ? (initialPayment.accountId ?? "")
+        : hasInitialAccountValue
+          ? (initialValues?.accountId ?? "")
+          : (defaultAccount?.id ?? "")
+    );
+    setCategoryId(initialPayment ? (initialPayment.categoryId ?? "") : (initialValues?.categoryId ?? ""));
     setAssignedUserId(initialPayment?.assignedUserId ?? currentMemberId);
     setReminders(initialPayment?.reminderDaysBefore ?? DEFAULT_REMINDER_DAYS);
     setNotifyTelegram(initialPayment?.notifyTelegram ?? true);
     setNotifyEmail(initialPayment?.notifyEmail ?? false);
-  }, [baseCurrency, currentMemberId, defaultAccount?.id, initialPayment, open, tomorrow]);
+  }, [
+    baseCurrency,
+    currentMemberId,
+    defaultAccount?.id,
+    hasInitialAccountValue,
+    initialNextDueAtTimestamp,
+    initialPayment,
+    initialValues?.accountId,
+    initialValues?.categoryId,
+    initialValues?.currency,
+    initialValues?.scheduleKind,
+    open,
+    tomorrow,
+  ]);
 
   const selectedAccount = useMemo(
     () => accounts.find((account) => account.id === accountId) ?? null,
@@ -609,7 +644,7 @@ export function ScheduledPaymentForm({
                 name="name"
                 required
                 placeholder="A1 mobile"
-                defaultValue={initialPayment?.name}
+                defaultValue={initialPayment ? initialPayment.name : initialValues?.name}
               />
             </div>
 
@@ -624,7 +659,7 @@ export function ScheduledPaymentForm({
                     name="amount"
                     placeholder="0.00"
                     required
-                    defaultValue={initialPayment?.amount ?? ""}
+                    defaultValue={initialPayment ? (initialPayment.amount ?? "") : (initialValues?.amount ?? "")}
                   />
                   <Select
                     options={CURRENCY_OPTIONS}
@@ -701,10 +736,10 @@ export function ScheduledPaymentForm({
               </div>
             </div>
           </DialogContent>
-          <DialogFooter className="shrink-0 border-t bg-background py-4">
+          <DialogFooter className="shrink-0 border-t bg-dialog py-4">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               className="hidden md:inline-flex"
               onClick={() => onOpenChange(false)}
             >
