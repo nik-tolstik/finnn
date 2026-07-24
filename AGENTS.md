@@ -52,6 +52,7 @@ Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishi
 - `packages/api/src` contains NestJS modules, controllers, DTOs, guards, services, auth/session ownership, cron, email, and finance domain logic.
 - `packages/api/prisma/schema.prisma` is the source of truth for database collections, relations, indexes, and enums.
 - `packages/api/scripts` contains seed, MongoDB import/export, and OpenAPI generation scripts.
+- `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
 - `docs` contains human and AI-facing project documentation.
 - `docs/plans` contains feature implementation plans and required work logs for multi-agent tasks.
 
