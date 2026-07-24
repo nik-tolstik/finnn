@@ -75,13 +75,14 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
 
   const form = useForm<CloseDebtInput>({
     resolver: zodResolver(closeDebtSchema),
+    mode: "onChange",
     defaultValues: getCloseDebtDefaultValues(debt),
   });
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset,
     setValue,
     control,
@@ -430,7 +431,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
             {isSubmitting ? "Погашение..." : "Погасить"}
           </Button>
         </DialogFooter>

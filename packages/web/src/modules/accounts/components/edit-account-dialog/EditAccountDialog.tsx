@@ -47,12 +47,13 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset,
     control,
     setValue,
   } = useForm<UpdateAccountInput>({
     resolver: zodResolver(updateAccountSchema),
+    mode: "onChange",
     defaultValues: {
       name: account.name,
       initialBalance: account.initialBalance,
@@ -292,7 +293,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
             {isSubmitting ? "Сохранение..." : "Сохранить"}
           </Button>
         </DialogFooter>

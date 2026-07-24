@@ -70,6 +70,7 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
 
   const form = useForm<UpdateDebtInput>({
     resolver: zodResolver(updateDebtSchema),
+    mode: "onChange",
     defaultValues: {
       personName: debt.personName,
       amount: "",
@@ -81,7 +82,7 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset,
     control,
   } = form;
@@ -287,7 +288,7 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
             {isSubmitting ? "Сохранение..." : "Сохранить"}
           </Button>
         </DialogFooter>

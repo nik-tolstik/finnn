@@ -143,7 +143,7 @@ export function CreateTransactionDialog({
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset,
     setValue,
     setError,
@@ -151,6 +151,7 @@ export function CreateTransactionDialog({
     control,
   } = useForm<CreatePaymentTransactionInput>({
     resolver: zodResolver(createPaymentTransactionSchema),
+    mode: "onChange",
     defaultValues: getCreatePaymentDefaultValues({
       accountId: accountProp?.id || account?.id || "",
       defaultType,
@@ -164,6 +165,7 @@ export function CreateTransactionDialog({
 
   const transferForm = useForm<CreateTransferTransactionInput>({
     resolver: zodResolver(createTransferTransactionSchema),
+    mode: "onChange",
     defaultValues: getCreateTransferDefaultValues(accountProp?.id || account?.id || ""),
   });
   const { reset: resetTransferForm, getValues: getTransferFormValues, setValue: setTransferFormValue } = transferForm;
@@ -696,7 +698,12 @@ export function CreateTransactionDialog({
             <Button
               type="button"
               onClick={isTransferMode ? transferForm.handleSubmit(handleTransferSubmit) : handleSubmit(onSubmit)}
-              disabled={isTransferMode ? transferForm.formState.isSubmitting : isSubmitting}
+              disabled={
+                isTransferMode
+                  ? transferForm.formState.isSubmitting || !transferForm.formState.isValid
+                  : isSubmitting || !isValid
+              }
+              size="xl"
             >
               {isTransferMode
                 ? transferForm.formState.isSubmitting

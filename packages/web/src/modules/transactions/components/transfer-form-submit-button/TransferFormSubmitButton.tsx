@@ -24,7 +24,13 @@ export function TransferFormSubmitButton({
   submittingLabel = "Создание...",
 }: TransferFormSubmitButtonProps) {
   return (
-    <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
+    <Button
+      type="button"
+      onClick={form.handleSubmit(onSubmit)}
+      disabled={!form.formState.isValid || form.formState.isSubmitting}
+      size="xl"
+      className="w-full"
+    >
       {form.formState.isSubmitting ? submittingLabel : submitLabel}
     </Button>
   );

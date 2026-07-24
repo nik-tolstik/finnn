@@ -43,12 +43,13 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset,
     setValue,
     control,
   } = useForm<CreateAccountInput>({
     resolver: zodResolver(createAccountSchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       initialBalance: "0",
@@ -348,7 +349,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
           </form>
         </DialogContent>
         <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
             {isSubmitting ? "Создание..." : "Создать"}
           </Button>
         </DialogFooter>

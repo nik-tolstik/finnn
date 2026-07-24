@@ -46,12 +46,13 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isDirty, isSubmitting, isValid },
     reset,
     setValue,
     watch,
   } = useForm<UpdateUserInput>({
     resolver: zodResolver(updateUserSchema) as any,
+    mode: "onChange",
     defaultValues: {
       name: session?.user?.name || "",
       image: session?.user?.image || null,
@@ -354,14 +355,14 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
           </div>
         </div>
 
-        <div className="flex min-h-9 justify-end gap-2">
+        <div className="flex min-h-9 flex-col-reverse gap-2">
           <Button
             type="button"
             variant="secondary"
             onClick={handleCancel}
-            disabled={!showActions || isSubmitting || updateMutation.isPending}
+            disabled={!showActions || !isValid || isSubmitting || updateMutation.isPending}
             aria-hidden={!showActions}
-            className={cn(!showActions && "invisible pointer-events-none")}
+            className={cn("w-full", !showActions && "invisible pointer-events-none")}
           >
             Отменить
           </Button>
@@ -369,7 +370,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
             type="submit"
             disabled={!showActions || isSubmitting || updateMutation.isPending}
             aria-hidden={!showActions}
-            className={cn(!showActions && "invisible pointer-events-none")}
+            className={cn("w-full", !showActions && "invisible pointer-events-none")}
           >
             {isSubmitting || updateMutation.isPending ? "Сохранение..." : "Сохранить"}
           </Button>

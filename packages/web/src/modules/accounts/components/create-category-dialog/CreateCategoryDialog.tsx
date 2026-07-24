@@ -36,10 +36,11 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset,
   } = useForm<CreateCategoryInput>({
     resolver: zodResolver(createCategorySchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       type,
@@ -125,10 +126,7 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
             {isSubmitting ? "Создание..." : "Создать"}
           </Button>
         </DialogFooter>

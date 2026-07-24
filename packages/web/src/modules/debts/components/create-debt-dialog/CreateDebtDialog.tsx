@@ -72,13 +72,14 @@ export function CreateDebtDialog({
 
   const form = useForm<CreateDebtInput>({
     resolver: zodResolver(createDebtSchema),
+    mode: "onChange",
     defaultValues: getCreateDebtDefaultValues(),
   });
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset,
     setValue,
     control,
@@ -334,7 +335,7 @@ export function CreateDebtDialog({
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
             {isSubmitting ? "Создание..." : "Создать"}
           </Button>
         </DialogFooter>

@@ -17,7 +17,6 @@ const THEME_LABELS: Record<ThemeMode, string> = {
 
 interface AppearanceSettingsProps {
   title?: string | null;
-  description?: string | null;
   className?: string;
   segmentedClassName?: string;
   showLabels?: boolean;
@@ -25,7 +24,6 @@ interface AppearanceSettingsProps {
 
 export function AppearanceSettings({
   title = "Тема приложения",
-  description = "Auto следует системной теме устройства.",
   className,
   segmentedClassName,
   showLabels = true,
@@ -46,12 +44,7 @@ export function AppearanceSettings({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {(title || description) && (
-        <div className="space-y-1">
-          {title ? <h3 className="text-sm font-semibold">{title}</h3> : null}
-          {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
-        </div>
-      )}
+      {!!title && <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>}
 
       <Segmented
         className={cn("w-full", segmentedClassName)}

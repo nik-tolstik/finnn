@@ -19,7 +19,6 @@ import {
   type UpdateTransferTransactionInput,
   updateTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
-import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -79,6 +78,7 @@ export function EditTransferDialog({
   const queryClient = useQueryClient();
   const form = useForm<UpdateTransferTransactionInput>({
     resolver: zodResolver(updateTransferTransactionSchema),
+    mode: "onChange",
     defaultValues: {
       fromAccountId: transferTransaction.fromAccount.id,
       toAccountId: transferTransaction.toAccount.id,
@@ -191,9 +191,6 @@ export function EditTransferDialog({
           />
         </DialogContent>
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
           <TransferFormSubmitButton
             form={form}
             onSubmit={onSubmit}

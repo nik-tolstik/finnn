@@ -37,9 +37,10 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
     control,
     setValue,
     reset: _reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
   } = useForm<CreateWorkspaceInput>({
     resolver: zodResolver(createWorkspaceSchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       slug: "",
@@ -51,7 +52,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
   useEffect(() => {
     if (nameValue) {
       const slug = generateSlug(nameValue);
-      setValue("slug", slug, { shouldValidate: false });
+      setValue("slug", slug, { shouldValidate: true });
     }
   }, [nameValue, setValue]);
 
@@ -154,15 +155,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting || createMutation.isPending}
-            >
-              Отмена
-            </Button>
-            <Button type="submit" disabled={isSubmitting || createMutation.isPending}>
+            <Button type="submit" disabled={!isValid || isSubmitting || createMutation.isPending} size="xl">
               {isSubmitting || createMutation.isPending ? "Создание..." : "Создать"}
             </Button>
           </DialogFooter>

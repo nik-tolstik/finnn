@@ -3,7 +3,7 @@
 import { ru } from "date-fns/locale";
 import { Bell, CalendarClock, ChevronRight, Clock3, Mail, Repeat2, Send } from "lucide-react";
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { Account } from "@/modules/accounts/account.types";
 import type { Category } from "@/modules/categories/category.types";
@@ -211,10 +211,6 @@ function ScheduleSettingsDropdown({
     setOpen(false);
   };
 
-  const handleCancel = () => {
-    setOpen(false);
-  };
-
   const settingsBody = (
     <div className={cn("overflow-hidden bg-transparent", isMobile ? "rounded-none" : "rounded-2xl")}>
       <Calendar
@@ -361,11 +357,8 @@ function ScheduleSettingsDropdown({
   );
 
   const settingsFooter = (
-    <div className="grid grid-cols-2 gap-2 border-t bg-transparent p-4">
-      <Button type="button" variant="secondary" className="h-auto px-0 py-0 leading-none" onClick={handleCancel}>
-        Отмена
-      </Button>
-      <Button type="button" onClick={handleApply}>
+    <div className="grid gap-2 border-t bg-transparent p-4">
+      <Button type="button" onClick={handleApply} size="xl">
         OK
       </Button>
     </div>
@@ -457,6 +450,8 @@ export function ScheduledPaymentForm({
     return date;
   }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [isFormValid, setIsFormValid] = useState(false);
   const [currency, setCurrency] = useState<Currency>(() => toCurrency(baseCurrency));
   const [nextDueAt, setNextDueAt] = useState<Date>(tomorrow);
   const [scheduleKind, setScheduleKind] = useState<ScheduledPaymentFormInput["scheduleKind"]>("one_time");
@@ -528,6 +523,18 @@ export function ScheduledPaymentForm({
     open,
     tomorrow,
   ]);
+
+  useEffect(() => {
+    if (!open) {
+      setIsFormValid(false);
+      return;
+    }
+
+    const form = formRef.current;
+    if (form) {
+      setIsFormValid(form.checkValidity());
+    }
+  }, [open]);
 
   const selectedAccount = useMemo(
     () => accounts.find((account) => account.id === accountId) ?? null,
@@ -633,7 +640,12 @@ export function ScheduledPaymentForm({
         <DialogHeader>
           <DialogTitle>{isEditing ? "Редактировать платёж" : "Новый платёж"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+        <form
+          ref={formRef}
+          onInput={(event) => setIsFormValid(event.currentTarget.checkValidity())}
+          onSubmit={handleSubmit}
+          className="flex min-h-0 flex-1 flex-col"
+        >
           <DialogContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-0 md:pb-4">
             <div className={FIELD_CLASS}>
               <Label htmlFor="scheduled-name" required>
@@ -737,15 +749,7 @@ export function ScheduledPaymentForm({
             </div>
           </DialogContent>
           <DialogFooter className="shrink-0 border-t bg-dialog py-4">
-            <Button
-              type="button"
-              variant="secondary"
-              className="hidden md:inline-flex"
-              onClick={() => onOpenChange(false)}
-            >
-              Отмена
-            </Button>
-            <Button disabled={isSubmitting} type="submit" className="w-full md:w-auto">
+            <Button disabled={!isFormValid || isSubmitting} size="xl" type="submit" className="w-full">
               {isEditing ? "Сохранить" : "Создать"}
             </Button>
           </DialogFooter>

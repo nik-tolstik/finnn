@@ -21,7 +21,6 @@ import {
   type CreateTransferTransactionInput,
   createTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
-import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
 import { createTransferTransaction } from "../../transaction.api";
@@ -77,6 +76,7 @@ export function CreateTransferDialog({
   const { data: session } = useSession();
   const form = useForm<CreateTransferTransactionInput>({
     resolver: zodResolver(createTransferTransactionSchema),
+    mode: "onChange",
     defaultValues: {
       fromAccountId: "",
       toAccountId: "",
@@ -180,9 +180,6 @@ export function CreateTransferDialog({
           <TransferForm workspaceId={workspaceId} form={form} accounts={accounts} onSubmit={onSubmit} />
         </DialogContent>
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
-            Отмена
-          </Button>
           <TransferFormSubmitButton form={form} onSubmit={onSubmit} />
         </DialogFooter>
       </DialogWindow>

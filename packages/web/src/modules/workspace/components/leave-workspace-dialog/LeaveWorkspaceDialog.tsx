@@ -60,12 +60,10 @@ export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenC
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="secondary" disabled={leaveMutation.isPending} onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
           <Button
             onClick={handleLeave}
             disabled={leaveMutation.isPending}
+            size="xl"
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {leaveMutation.isPending ? "Покидание..." : "Покинуть"}

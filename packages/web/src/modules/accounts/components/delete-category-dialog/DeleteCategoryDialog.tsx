@@ -36,12 +36,10 @@ export function DeleteCategoryDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="secondary" disabled={isDeleting} onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
           <Button
             onClick={onConfirm}
             disabled={isDeleting}
+            size="xl"
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isDeleting ? "Удаление..." : "Удалить"}
