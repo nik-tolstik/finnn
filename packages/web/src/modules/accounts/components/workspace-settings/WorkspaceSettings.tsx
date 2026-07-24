@@ -125,10 +125,6 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
           {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
         </div>
 
-        {!isOwner && (
-          <p className="text-sm text-muted-foreground">Только владелец может изменять настройки workspace</p>
-        )}
-
         {isOwner && isFormChanged && (
           <div className="flex justify-end gap-2">
             <Button
@@ -146,19 +142,9 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
         )}
 
         {!isOwner && (
-          <div className="space-y-3 border-t pt-5">
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Покинуть</div>
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setLeaveDialogOpen(true)}
-            >
-              Покинуть
-            </Button>
-          </div>
+          <Button type="button" variant="destructive" onClick={() => setLeaveDialogOpen(true)}>
+            Покинуть
+          </Button>
         )}
       </form>
 

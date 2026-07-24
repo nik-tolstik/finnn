@@ -51,8 +51,7 @@ export function AccountSelector({
                 selectDialog.openDialog({ workspaceId });
               }
             }}
-            className={cn("min-h-[68px]", disabled ? "cursor-not-allowed opacity-50" : "")}
-            contentClassName="min-h-[66px] justify-center"
+            className={cn(disabled && "cursor-not-allowed opacity-50")}
             showOwner={showOwner}
           />
         ) : (

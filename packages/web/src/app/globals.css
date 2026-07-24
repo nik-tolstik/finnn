@@ -6,9 +6,11 @@
 @theme inline {
   /* Fonts */
   --font-sans:
-    var(--font-onest), "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    var(--font-onest), "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
 
   /* Colors */
   --color-background: var(--background);
@@ -33,6 +35,8 @@
   /* Semantic surfaces */
   --color-surface-raised: var(--surface-raised);
   --color-surface-subtle: var(--surface-subtle);
+  --color-surface-control: var(--surface-control);
+  --color-surface-control-hover: var(--surface-control-hover);
   --color-surface-hover: var(--surface-hover);
   --color-surface-selected: var(--surface-selected);
 
@@ -48,6 +52,8 @@
   --color-segmented-hover: var(--segmented-hover);
   --color-option-hover: var(--option-hover);
   --color-option-selected: var(--option-selected);
+  --color-account-card: var(--account-card-background);
+  --color-account-card-hover: var(--account-card-background-hover);
 
   /* Radius */
   --radius-sm: 4px;
@@ -61,6 +67,7 @@
   --palette-white: #ffffff;
   --palette-neutral-50: #fafafa;
   --palette-neutral-100: #f7f7f8;
+  --palette-neutral-125: #f4f4f5;
   --palette-neutral-150: #f1f1f2;
   --palette-neutral-200: #e5e5e7;
   --palette-neutral-500: #6b6b70;
@@ -76,9 +83,11 @@
 :root,
 html.light {
   /* Semantic tokens: product meaning, independent of a component. */
-  --surface-canvas: var(--palette-neutral-50);
+  --surface-canvas: var(--palette-white);
   --surface-raised: var(--palette-white);
   --surface-subtle: var(--palette-neutral-100);
+  --surface-control: var(--palette-neutral-100);
+  --surface-control-hover: var(--palette-neutral-125);
   --surface-hover: var(--palette-neutral-150);
   --surface-selected: var(--palette-neutral-150);
   --text-primary: var(--palette-neutral-900);
@@ -93,15 +102,15 @@ html.light {
   --card-foreground: var(--text-primary);
   --primary: var(--palette-blue-600);
   --primary-foreground: var(--palette-white);
-  --secondary: var(--surface-subtle);
+  --secondary: var(--surface-control);
   --secondary-foreground: var(--text-primary);
   --muted: var(--surface-subtle);
   --muted-foreground: var(--text-secondary);
   --accent: var(--surface-selected);
   --accent-foreground: var(--text-primary);
-  --success: var(--color-green-600);
+  --success: var(--color-green-500);
   --success-foreground: var(--palette-white);
-  --destructive: var(--color-red-600);
+  --destructive: var(--color-red-500);
   --destructive-foreground: var(--palette-white);
   --border: var(--border-default);
   --ring: var(--focus-ring);
@@ -109,21 +118,29 @@ html.light {
   /* Component tokens: visual contracts for reusable primitives. */
   --dialog-background: var(--surface-raised);
   --popover-background: var(--surface-raised);
-  --control-background: var(--surface-subtle);
-  --control-background-hover: var(--surface-hover);
+  --control-background: var(--surface-control);
+  --control-background-hover: var(--surface-control-hover);
   --control-focus: var(--focus-ring);
   --control-placeholder: var(--text-secondary);
-  --segmented-background: var(--surface-subtle);
+  --segmented-background: var(--surface-control);
   --segmented-indicator: var(--surface-raised);
-  --segmented-hover: var(--surface-hover);
+  --segmented-hover: var(--surface-control-hover);
   --option-hover: var(--surface-hover);
   --option-selected: var(--surface-selected);
+  --account-card-background: var(--surface-raised);
+  --account-card-background-hover: var(--surface-subtle);
+  --account-card-shadow:
+    0 1px 2px rgb(23 23 26 / 12%), 0 3px 8px rgb(23 23 26 / 7%);
+  --account-card-shadow-hover:
+    0 2px 4px rgb(23 23 26 / 14%), 0 5px 12px rgb(23 23 26 / 9%);
 }
 
 html.dark {
   --surface-canvas: var(--palette-dark-900);
   --surface-raised: var(--palette-dark-800);
   --surface-subtle: var(--palette-dark-750);
+  --surface-control: var(--palette-dark-800);
+  --surface-control-hover: var(--palette-dark-750);
   --surface-hover: var(--palette-dark-700);
   --surface-selected: var(--palette-dark-750);
   --text-primary: var(--palette-white);
@@ -137,7 +154,7 @@ html.dark {
   --card-foreground: var(--text-primary);
   --primary: var(--palette-blue-600);
   --primary-foreground: var(--palette-white);
-  --secondary: var(--surface-subtle);
+  --secondary: var(--surface-control);
   --secondary-foreground: var(--text-primary);
   --muted: var(--surface-subtle);
   --muted-foreground: var(--text-secondary);
@@ -150,17 +167,23 @@ html.dark {
   --success: var(--color-green-400);
   --success-foreground: oklch(0.145 0 0);
 
-  --dialog-background: var(--surface-raised);
+  --dialog-background: var(--surface-canvas);
   --popover-background: var(--surface-raised);
-  --control-background: var(--surface-subtle);
-  --control-background-hover: var(--surface-hover);
+  --control-background: var(--surface-control);
+  --control-background-hover: var(--surface-control-hover);
   --control-focus: var(--focus-ring);
   --control-placeholder: var(--text-secondary);
-  --segmented-background: var(--surface-subtle);
+  --segmented-background: var(--surface-control);
   --segmented-indicator: var(--surface-canvas);
-  --segmented-hover: var(--surface-hover);
+  --segmented-hover: var(--surface-control-hover);
   --option-hover: var(--surface-hover);
   --option-selected: var(--surface-hover);
+  --account-card-background: var(--surface-raised);
+  --account-card-background-hover: var(--surface-subtle);
+  --account-card-shadow:
+    0 1px 3px rgb(0 0 0 / 30%), 0 4px 10px rgb(0 0 0 / 18%);
+  --account-card-shadow-hover:
+    0 2px 4px rgb(0 0 0 / 34%), 0 6px 14px rgb(0 0 0 / 24%);
 }
 
 @layer base {

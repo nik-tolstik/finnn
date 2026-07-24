@@ -158,7 +158,7 @@ function DialogWindow({
               isMobile ? "w-dvw" : "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-fit",
               isMobile &&
                 mobilePosition === "center" &&
-                "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-dvh",
+                "top-[50%] left-[50%] h-dvh translate-x-[-50%] translate-y-[-50%] !rounded-none !border-0 !shadow-none",
               isMobile && mobilePosition === "bottom" && "bottom-0 left-0 h-auto",
               className
             )}

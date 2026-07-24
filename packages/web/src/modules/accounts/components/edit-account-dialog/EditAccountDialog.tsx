@@ -292,16 +292,6 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
         </DialogContent>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              onOpenChange(false);
-              onCancel?.();
-            }}
-          >
-            Отмена
-          </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
             {isSubmitting ? "Сохранение..." : "Сохранить"}
           </Button>

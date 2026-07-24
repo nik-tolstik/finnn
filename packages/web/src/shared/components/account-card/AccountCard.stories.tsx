@@ -19,7 +19,7 @@ const accounts = [
     currency: "RUB",
     description: "Daily spending",
     color: "#2f6bff",
-    icon: "credit-card",
+    icon: "CreditCard",
     archived: false,
     order: 1,
     createdAt: now,
@@ -41,7 +41,7 @@ const accounts = [
     currency: "USD",
     description: null,
     color: "#16a34a",
-    icon: "wallet",
+    icon: "Wallet",
     archived: false,
     order: 2,
     createdAt: now,
@@ -58,7 +58,7 @@ const accounts = [
     currency: "EUR",
     description: null,
     color: "#8b5cf6",
-    icon: "piggy-bank",
+    icon: "HandCoins",
     archived: false,
     order: 3,
     createdAt: now,
@@ -80,7 +80,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="grid max-w-3xl gap-3">
+      <div className="grid max-w-5xl gap-3">
         <Story />
       </div>
     ),
@@ -102,7 +102,7 @@ export const WithoutOwner: Story = {
 
 export const AccountSet: Story = {
   render: () => (
-    <div className="grid gap-3">
+    <div className="grid gap-3 lg:grid-cols-3">
       {accounts.map((account) => (
         <AccountCard key={account.id} account={account} />
       ))}
@@ -122,7 +122,7 @@ export const CompactChips: Story = {
 
 export const LoadingState: Story = {
   render: () => (
-    <div className="grid gap-3">
+    <div className="grid gap-3 lg:grid-cols-3">
       <AccountCardSkeleton />
       <AccountCardSkeleton />
       <AccountCardSkeleton />

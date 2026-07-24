@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -215,13 +214,11 @@ export function CreateDebtDialog({
                   {
                     value: DebtType.LENT,
                     label: "Дать в долг",
-                    icon: <ArrowDownLeft className="h-4 w-4" />,
                     selectedClassName: "text-success",
                   },
                   {
                     value: DebtType.BORROWED,
                     label: "Взять в долг",
-                    icon: <ArrowUpRight className="h-4 w-4" />,
                     selectedClassName: "text-destructive",
                   },
                 ]}
