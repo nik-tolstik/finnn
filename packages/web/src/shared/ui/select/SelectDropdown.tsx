@@ -194,7 +194,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                     handleSelect(option.value);
                   }}
                   className={cn(
-                    "w-full rounded-sm px-2 py-2 text-left text-xs font-semibold text-muted-foreground uppercase  cursor-pointer hover:bg-accent/50",
+                    "w-full cursor-pointer rounded-sm px-2 py-2 text-left text-xs font-semibold text-muted-foreground uppercase hover:bg-option-hover/70",
                     hasPreviousGroup && "mt-2"
                   )}
                 >
@@ -211,9 +211,9 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                   handleSelect(option.value);
                 }}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-sm py-2 px-2 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
+                  "flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-option-hover focus:bg-option-hover focus:outline-none",
                   isInGroup && "pl-4.5 pr-2",
-                  selected && "bg-accent"
+                  selected && "bg-option-selected"
                 )}
               >
                 {renderOption({ option, props, selected })}
@@ -240,9 +240,9 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                 handleSelect(option.value);
               }}
               className={cn(
-                "flex w-full items-center gap-2 rounded-sm py-2 text-sm text-left hover:bg-accent focus:bg-accent focus:outline-none",
+                "flex w-full items-center gap-2 rounded-sm py-2 text-left text-sm hover:bg-option-hover focus:bg-option-hover focus:outline-none",
                 isInGroup ? "px-4" : "px-2",
-                selected && "bg-accent"
+                selected && "bg-option-selected"
               )}
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">

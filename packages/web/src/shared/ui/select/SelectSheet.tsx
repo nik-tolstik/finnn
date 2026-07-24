@@ -202,8 +202,8 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                         key={option.value}
                         onClick={() => handleSelect(option)}
                         className={cn(
-                          "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
-                          selected && "bg-accent"
+                          "flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-option-hover focus:outline-none",
+                          selected && "bg-option-selected"
                         )}
                       >
                         {renderOption({ option, props, selected })}
@@ -224,14 +224,14 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                       key={option.value}
                       onClick={() => handleSelect(option)}
                       className={cn(
-                        "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent cursor-pointer focus:outline-none",
-                        selected && "bg-accent"
+                        "flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-option-hover focus:outline-none",
+                        selected && "bg-option-selected"
                       )}
                     >
                       {multiple && (
                         <span
                           className={cn(
-                            "h-4 w-4 shrink-0 rounded-sm border border-primary shadow text-primary-foreground",
+                            "h-4 w-4 shrink-0 rounded-sm bg-control text-primary-foreground shadow-xs",
                             selected ? "bg-primary text-primary-foreground" : "text-transparent"
                           )}
                         >

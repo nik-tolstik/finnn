@@ -55,7 +55,7 @@ export function DatePicker({
         <Button
           ref={ref}
           type="button"
-          variant="secondary"
+          variant="field"
           className={cn("w-full justify-between text-left font-normal", !date && "text-muted-foreground", className)}
           {...triggerProps}
         >

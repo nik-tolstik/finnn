@@ -264,7 +264,9 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
                     onClick={() => setValue("icon", name)}
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-all",
-                      selectedIcon === name ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                      selectedIcon === name
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-foreground/25 dark:hover:border-primary/50"
                     )}
                     title={name}
                   >

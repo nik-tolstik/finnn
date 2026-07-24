@@ -400,12 +400,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
                           {getCurrencySymbol(debt.currency)}
                         </span>
-                        <NumberInput
-                          id="categoryAmount"
-                          value={categoryAmount}
-                          readOnly
-                          className="pl-9 bg-background"
-                        />
+                        <NumberInput id="categoryAmount" value={categoryAmount} readOnly className="pl-9" />
                       </div>
                     </div>
 
@@ -415,8 +410,8 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                       </Label>
                       <Button
                         type="button"
-                        variant="secondary"
-                        className="w-full justify-between bg-background"
+                        variant="field"
+                        className="w-full justify-between"
                         onClick={() => categoryModal.openDialog(true)}
                       >
                         {selectedCategory ? (

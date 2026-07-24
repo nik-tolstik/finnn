@@ -153,7 +153,7 @@ function DialogWindow({
             aria-describedby={descriptionId}
             className={cn(
               "flex flex-col gap-6",
-              "bg-card fixed z-50 rounded-lg p-6 shadow-lg outline-none",
+              "fixed z-50 rounded-lg bg-dialog p-6 shadow-lg outline-none",
               "sm:w-125 max-h-dvh max-w-dvw m-0 py-6 px-0",
               isMobile ? "w-dvw" : "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-fit",
               isMobile &&
@@ -177,7 +177,7 @@ function DialogWindow({
               <button
                 type="button"
                 data-slot="dialog-close"
-                className="absolute top-4 right-4 text-[20px] active:bg-accent hover:bg-accent p-1 rounded-full transition-all focus:ring-1 focus:ring-accent"
+                className="absolute top-4 right-4 rounded-full p-1 text-[20px] transition-all hover:bg-control-hover active:bg-control-hover focus:ring-1 focus:ring-control-focus/20"
                 onClick={() => onOpenChange(false)}
               >
                 <XIcon size="1em" />

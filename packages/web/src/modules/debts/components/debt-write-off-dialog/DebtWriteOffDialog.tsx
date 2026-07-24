@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Info } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -28,15 +27,7 @@ import { type DebtWriteOffInput, debtWriteOffSchema } from "@/shared/lib/validat
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -330,7 +321,7 @@ export function DebtWriteOffDialog({
               <Button
                 id="debt-write-off-category"
                 type="button"
-                variant="secondary"
+                variant="field"
                 className="w-full justify-between"
                 onClick={() => categoryDialog.openDialog(null)}
               >

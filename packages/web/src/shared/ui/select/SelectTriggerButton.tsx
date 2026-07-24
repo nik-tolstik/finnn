@@ -20,8 +20,8 @@ export const SelectTriggerButton = React.forwardRef<HTMLButtonElement, SelectTri
         <Button
           ref={ref}
           type="button"
-          variant="secondary"
-          className={cn("w-full justify-start border-none", className, "font-normal")}
+          variant="field"
+          className={cn("w-full justify-start font-normal", className)}
           {...props}
         >
           {value ? (

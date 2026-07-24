@@ -166,11 +166,8 @@ export function DateTimePicker({
               <Button
                 ref={ref}
                 type="button"
-                variant="secondary"
-                className={cn(
-                  "justify-between text-left font-normal border-none w-fit px-2",
-                  !date && "text-muted-foreground"
-                )}
+                variant="field"
+                className={cn("w-fit justify-between px-2 text-left font-normal", !date && "text-muted-foreground")}
                 {...triggerProps}
               >
                 {date ? format(date, "dd.MM.yyyy", { locale }) : <span>{placeholder}</span>}

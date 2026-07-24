@@ -82,7 +82,7 @@ function ColorPicker({ className, value, onChange, defaultFormat = "hex" }: Colo
             ref={ref}
             type="button"
             className={cn(
-              "h-9 w-9 rounded-md border-2 border-border transition-all hover:border-primary/50 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2",
+              "h-9 w-9 rounded-md shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-control-focus/30",
               className
             )}
             style={{ backgroundColor: color }}
@@ -131,7 +131,7 @@ const ColorPickerHueSlider = React.forwardRef<HTMLDivElement, React.HTMLAttribut
     return (
       <div ref={ref} className={cn("space-y-2", className)} {...props}>
         <Label className="text-xs">Hue</Label>
-        <div className="relative h-4 w-full rounded border">
+        <div className="relative h-4 w-full rounded shadow-xs">
           <div
             className="absolute inset-0 rounded"
             style={{
@@ -151,7 +151,7 @@ const ColorPickerHueSlider = React.forwardRef<HTMLDivElement, React.HTMLAttribut
             }}
           />
           <div
-            className="pointer-events-none absolute top-0 h-full w-0.5 border border-white shadow-sm"
+            className="pointer-events-none absolute top-0 h-full w-0.5 bg-white shadow-md"
             style={{
               left: `${(hsl.h / 360) * 100}%`,
               transform: "translateX(-50%)",

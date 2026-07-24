@@ -12,7 +12,7 @@ export function AccountsCardsSkeleton() {
       ))}
       <Card
         className={cn(
-          "group relative transition-all hover:shadow-md cursor-pointer border-dashed hover:border-primary hover:bg-accent/50"
+          "group relative cursor-pointer border-dashed transition-all hover:border-foreground/25 hover:bg-accent/50 hover:shadow-md dark:hover:border-primary"
         )}
       >
         <div className="flex items-center justify-center h-full w-full">

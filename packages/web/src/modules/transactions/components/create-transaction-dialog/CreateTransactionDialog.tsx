@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ArrowDown, ArrowLeftRight, ArrowUp, X } from "lucide-react";
+import { X } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -494,19 +494,16 @@ export function CreateTransactionDialog({
                         {
                           value: PaymentTransactionType.EXPENSE,
                           label: "Расход",
-                          icon: <ArrowDown className="h-4 w-4" />,
                           selectedClassName: "text-destructive",
                         },
                         {
                           value: PaymentTransactionType.INCOME,
                           label: "Доход",
-                          icon: <ArrowUp className="h-4 w-4" />,
                           selectedClassName: "text-success",
                         },
                         {
                           value: TRANSFER_TRANSACTION_MODE,
                           label: "Перевод",
-                          icon: <ArrowLeftRight className="h-4 w-4" />,
                           selectedClassName: "text-amber-600 dark:text-amber-400",
                         },
                       ]}
@@ -545,7 +542,7 @@ export function CreateTransactionDialog({
                     <div className="relative">
                       <Button
                         type="button"
-                        variant="secondary"
+                        variant="field"
                         className="w-full justify-between"
                         onClick={() => categoryModal.openDialog(true)}
                       >

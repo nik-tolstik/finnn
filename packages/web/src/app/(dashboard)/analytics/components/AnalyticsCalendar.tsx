@@ -51,22 +51,19 @@ function CalendarAmountLine({ className, isZero, value }: { className: string; i
 
 function CalendarCellButton({
   cell,
-  isRightEdge,
   onSelect,
 }: {
   cell: AnalyticsCalendarCell;
-  isRightEdge: boolean;
   onSelect: (cell: AnalyticsCalendarCell) => void;
 }) {
   return (
     <button
       type="button"
       className={cn(
-        "group flex min-h-[62px] w-full min-w-0 flex-col items-start justify-between rounded-none border border-t-0 border-l-0 bg-background p-1 text-left transition hover:border-primary/45 hover:bg-accent/35 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1 sm:min-h-[96px] sm:rounded-md sm:border-t sm:border-l sm:p-2",
-        isRightEdge && "border-r-0 sm:border-r",
+        "group flex min-h-[62px] w-full min-w-0 flex-col items-start justify-between rounded-none border border-transparent bg-background p-1 text-left transition-[background-color,border-color,box-shadow] hover:bg-accent/35 focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 sm:min-h-[96px] sm:rounded-md sm:p-2",
         !cell.isCurrentMonth && "bg-muted/20 text-muted-foreground/55 opacity-75",
-        cell.isSelected && "bg-primary/8 sm:border-primary sm:ring-2 sm:ring-primary/35",
-        cell.isToday && !cell.isSelected && "sm:border-primary/55"
+        cell.isSelected && "border-primary bg-primary/8 ring-2 ring-primary/35",
+        cell.isToday && !cell.isSelected && "border-primary/55"
       )}
       onClick={() => {
         if (cell.date) {
@@ -121,14 +118,9 @@ function CalendarGrid({
   onSelect: (cell: AnalyticsCalendarCell) => void;
 }) {
   return (
-    <div className="grid grid-cols-7 gap-0 border-t sm:gap-2 sm:border-0">
-      {cells.map((cell, index) => (
-        <CalendarCellButton
-          key={cell.date ?? `empty-${cell.dayNumber}`}
-          cell={cell}
-          isRightEdge={(index + 1) % 7 === 0}
-          onSelect={onSelect}
-        />
+    <div className="grid grid-cols-7 gap-0 sm:gap-2">
+      {cells.map((cell) => (
+        <CalendarCellButton key={cell.date ?? `empty-${cell.dayNumber}`} cell={cell} onSelect={onSelect} />
       ))}
     </div>
   );

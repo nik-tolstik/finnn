@@ -193,7 +193,7 @@ function PopoverInner({
                 data-slot="popover-content"
                 data-state={isOpen ? "open" : "closed"}
                 className={cn(
-                  "bg-card text-card-foreground pointer-events-auto z-50 w-72 rounded-md p-4 shadow-md outline-hidden",
+                  "pointer-events-auto z-50 w-72 rounded-md bg-popover p-4 text-card-foreground shadow-md outline-hidden",
                   className
                 )}
                 style={{

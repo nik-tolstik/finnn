@@ -46,7 +46,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 py-4 text-left transition-colors cursor-pointer",
+        "flex cursor-pointer items-center gap-3 rounded-md px-3 py-4 text-left transition-colors hover:bg-control-hover",
         colorMap[theme],
         className
       )}
@@ -72,14 +72,14 @@ export function ActionsDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <DialogContent className="flex flex-col">
+        <DialogContent className="flex flex-col gap-1">
           {actions.map((action, index) => (
             <ActionButton
               key={index}
               icon={action.icon}
               onClick={action.onClick}
               theme={action.theme}
-              className={cn(action.className, "not-last:border-b border-border")}
+              className={action.className}
             >
               {action.label}
             </ActionButton>

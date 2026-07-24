@@ -89,7 +89,7 @@ function SharedUiGallery() {
                 { value: "EUR", label: "EUR" },
               ]}
             />
-            <div className="flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm">
+            <div className="flex min-h-9 items-center gap-2 rounded-md bg-control px-3 text-sm shadow-xs">
               <Checkbox
                 checked={includeArchived}
                 onCheckedChange={setIncludeArchived}

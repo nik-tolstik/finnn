@@ -60,10 +60,10 @@ const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(
         data-state={currentChecked ? "checked" : "unchecked"}
         data-size={size}
         className={cn(
-          "peer inline-flex shrink-0 items-center justify-center border border-border transition-colors",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+          "peer inline-flex shrink-0 items-center justify-center shadow-xs transition-[color,background-color,box-shadow]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          currentChecked ? "bg-primary text-primary-foreground" : "bg-transparent text-transparent",
+          currentChecked ? "bg-primary text-primary-foreground" : "bg-control text-transparent hover:bg-control-hover",
           sizeClasses.root,
           className
         )}

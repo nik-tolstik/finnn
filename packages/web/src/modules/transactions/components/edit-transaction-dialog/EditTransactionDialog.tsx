@@ -319,7 +319,7 @@ export function EditTransactionDialog({
               <div className="relative">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="field"
                   className="w-full justify-between"
                   onClick={() => setCategoryModalOpen(true)}
                 >

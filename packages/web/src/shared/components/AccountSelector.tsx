@@ -59,10 +59,10 @@ export function AccountSelector({
           <button
             type="button"
             className={cn(
-              "group relative flex min-h-[68px] w-full items-center gap-3 overflow-hidden rounded-xl border border-dashed border-border bg-background px-4 py-3 text-left text-card-foreground transition-[border-color,background-color,box-shadow]",
-              "before:absolute before:inset-y-3 before:left-0 before:w-1 before:rounded-r-full before:bg-primary/45 before:transition-colors",
-              "hover:border-primary/45 hover:bg-accent/35 hover:shadow-xs hover:before:bg-primary",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "group relative flex min-h-[68px] w-full items-center gap-3 overflow-hidden rounded-xl bg-control px-4 py-3 text-left text-card-foreground shadow-xs transition-[background-color,box-shadow]",
+              "before:absolute before:inset-y-3 before:left-0 before:w-1 before:rounded-r-full before:bg-foreground/20 before:transition-colors dark:before:bg-primary/45",
+              "hover:bg-control-hover hover:shadow-sm hover:before:bg-foreground/40 dark:hover:before:bg-primary",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30",
               "disabled:pointer-events-none disabled:opacity-50"
             )}
             onClick={() => {
@@ -72,14 +72,14 @@ export function AccountSelector({
             }}
             disabled={disabled}
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-foreground/5 text-foreground transition-colors group-hover:bg-foreground/10 dark:bg-primary/10 dark:text-primary dark:group-hover:bg-primary dark:group-hover:text-primary-foreground">
               <WalletCards className="size-5" />
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="truncate text-sm font-normal leading-none text-foreground">Выбрать счёт</span>
               <span className="truncate text-xs font-normal leading-none text-muted-foreground">Счёт не выбран</span>
             </span>
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition-colors group-hover:border-primary/35 group-hover:text-primary">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-dialog text-muted-foreground shadow-xs transition-colors group-hover:text-foreground dark:group-hover:text-primary">
               <Plus className="size-3.5 group-hover:hidden" />
               <ChevronRight className="hidden size-3.5 group-hover:block" />
             </span>

@@ -187,6 +187,8 @@ Reusable UI primitives live in `packages/web/src/shared/ui`.
 
 Reusable composed components live in `packages/web/src/shared/components`.
 
+Color architecture and shared control styling follow the palette, semantic token, and component token contracts documented in [Web Design System](./design-system.md).
+
 Prefer existing primitives for dialogs, sheets, selects, popovers, buttons, cards, tables, forms, and date controls. Feature-specific components should stay inside the relevant `packages/web/src/modules/*/components` directory.
 
 App-facing forms should use the shared form controls instead of native browser controls: `shared/ui/select` for dropdowns, `DatePicker` or `DateTimePicker` for dates, `AccountSelector`/`SelectAccountDialog` for account selection, `UserDisplay`/`UserAvatar` for user choices, and `CURRENCY_OPTIONS` for currency choices.
