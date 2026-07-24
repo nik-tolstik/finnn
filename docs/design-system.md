@@ -2,6 +2,10 @@
 
 The Finnn web color system is defined in `packages/web/src/app/globals.css` and has three layers. Keep the layers separate so a theme can change without forcing component-specific overrides.
 
+## Typography and Text Case
+
+Use sentence case for interface text and content. Do not write text in all caps or apply `uppercase`/`text-transform: uppercase` unless the product or design explicitly requires it. This applies to headings, buttons, labels, tabs, table headers, statuses, and menu items. Preserve uppercase only where it is part of a proper name, acronym, or other intentional content.
+
 ## Token Layers
 
 ### Palette
@@ -51,7 +55,7 @@ The light theme distinguishes fields from white dialogs with a near-white neutra
 
 ## Border Policy
 
-Interactive components are borderless. Their hierarchy comes from surface color, elevation, selected fills, and focus rings. Do not add borders to fields, buttons, segmented controls, dialogs, sheets, popovers, tooltips, checkboxes, or selector cards.
+Do not use `border` as a default styling or hierarchy mechanism. Interactive components are borderless; their hierarchy comes from surface color, elevation, selected fills, and focus rings. Do not add borders to fields, buttons, segmented controls, dialogs, sheets, popovers, tooltips, checkboxes, or selector cards unless the design explicitly requires one.
 
 Borders are reserved for rare structural separators where spacing or a surface change cannot communicate the grouping clearly, such as dense table rules or a dialog footer divider. Prefer spacing and surface contrast first.
 

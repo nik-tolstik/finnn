@@ -18,15 +18,7 @@ import { type CreateAccountInput, createAccountSchema } from "@/shared/lib/valid
 import { Button } from "@/shared/ui/button";
 import { ColorPicker } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";

@@ -198,6 +198,39 @@ html.dark {
     @apply bg-background text-foreground;
     scrollbar-gutter: stable;
   }
+
+  html {
+    overscroll-behavior-y: contain;
+  }
+
+  html[data-pull-to-refresh-top] {
+    touch-action: pan-up;
+  }
+
+  html[data-pull-to-refresh-top] body {
+    touch-action: pan-up;
+  }
+}
+
+@layer components {
+  .pull-to-refresh-indicator {
+    position: relative;
+    height: var(--pull-content-offset, 0px);
+    width: 100%;
+    overflow: visible;
+    transition: height 180ms ease-out;
+  }
+
+  .pull-to-refresh-indicator > div {
+    position: absolute;
+    bottom: max(8px, env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  html[data-pull-to-refresh-active] .pull-to-refresh-indicator {
+    transition: none;
+  }
 }
 
 @layer base {
