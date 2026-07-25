@@ -3,6 +3,8 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { XIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
 import type { AnalyticsCalendarCell } from "@/modules/analytics/analytics.view-model";
@@ -13,6 +15,7 @@ import { getCombinedTransactions } from "@/modules/transactions/transaction.api"
 import type { TransactionListFilters } from "@/modules/transactions/transaction-filter.types";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { transactionKeys } from "@/shared/lib/query-keys";
+import { Popover, type PopoverTriggerRenderProps } from "@/shared/ui/popover";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import { Skeleton } from "@/shared/ui/skeleton";
 
@@ -21,6 +24,7 @@ interface AnalyticsDayDetailsProps {
   day: AnalyticsCalendarCell | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  trigger?: (props: PopoverTriggerRenderProps) => ReactNode;
   workspaceId: string;
 }
 
@@ -47,6 +51,7 @@ export function AnalyticsDayDetails({
   day,
   onOpenChange,
   open,
+  trigger,
   workspaceId,
 }: AnalyticsDayDetailsProps) {
   const { isMobile } = useBreakpoints();
@@ -91,6 +96,74 @@ export function AnalyticsDayDetails({
   const dateLabel = day?.date ? format(new Date(`${day.date}T00:00:00`), "d MMMM yyyy", { locale: ru }) : "";
   const showInitialLoading = isLoading && transactions.length === 0;
   const errorMessage = data && "error" in data ? data.error : null;
+  const detailsBody = (
+    <>
+      <div className="grid grid-cols-3 gap-2 px-4">
+        <SummaryItem label="Доход" value={summary.incomeLabel} />
+        <SummaryItem label="Расход" value={summary.expenseLabel} />
+        <SummaryItem label="Итого" value={summary.netLabel} />
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
+        {showInitialLoading ? (
+          <div className="space-y-3 pt-2">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={index} className="h-16 w-full rounded-md" />
+            ))}
+          </div>
+        ) : errorMessage ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">{errorMessage}</div>
+        ) : (
+          <CombinedTransactionsList
+            transactions={transactions}
+            workspaceId={workspaceId}
+            showLoadMore={hasMore}
+            showDateHeaders={false}
+            isLoadingMore={isFetching && transactions.length > 0}
+            onLoadMore={() => {
+              setPagination({
+                key: paginationKey,
+                count: displayedCount + DAY_TRANSACTIONS_PAGE_SIZE,
+              });
+            }}
+          />
+        )}
+      </div>
+    </>
+  );
+
+  if (!isMobile) {
+    return (
+      <Popover
+        open={open}
+        onOpenChange={onOpenChange}
+        placement="bottom-start"
+        className="w-[min(520px,calc(100vw-2rem))] overflow-hidden p-0"
+        trigger={trigger ?? (() => null)}
+      >
+        {({ close }) => (
+          <div className="flex max-h-[var(--popover-content-available-height)] min-h-0 flex-col gap-4 overflow-hidden">
+            <div className="relative flex flex-col gap-1.5 px-4 pt-4 pr-12">
+              <h2 className="text-lg font-semibold">{dateLabel || "День"}</h2>
+              <p className="text-sm text-muted-foreground">
+                {day ? `${day.transactionCount} операций по текущим фильтрам` : "Выберите день календаря"}
+              </p>
+              <button
+                type="button"
+                aria-label="Закрыть"
+                className="absolute top-4 right-4 rounded-full p-1 text-[20px] transition-all hover:bg-control-hover active:bg-control-hover focus:ring-1 focus:ring-control-focus/20"
+                onClick={close}
+              >
+                <XIcon size="1em" />
+              </button>
+            </div>
+
+            {detailsBody}
+          </div>
+        )}
+      </Popover>
+    );
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -108,38 +181,7 @@ export function AnalyticsDayDetails({
             {day ? `${day.transactionCount} операций по текущим фильтрам` : "Выберите день календаря"}
           </SheetDescription>
         </SheetHeader>
-
-        <div className="grid grid-cols-3 gap-2 px-4">
-          <SummaryItem label="Доход" value={summary.incomeLabel} />
-          <SummaryItem label="Расход" value={summary.expenseLabel} />
-          <SummaryItem label="Итого" value={summary.netLabel} />
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
-          {showInitialLoading ? (
-            <div className="space-y-3 pt-2">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <Skeleton key={index} className="h-16 w-full rounded-md" />
-              ))}
-            </div>
-          ) : errorMessage ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">{errorMessage}</div>
-          ) : (
-            <CombinedTransactionsList
-              transactions={transactions}
-              workspaceId={workspaceId}
-              showLoadMore={hasMore}
-              showDateHeaders={false}
-              isLoadingMore={isFetching && transactions.length > 0}
-              onLoadMore={() => {
-                setPagination({
-                  key: paginationKey,
-                  count: displayedCount + DAY_TRANSACTIONS_PAGE_SIZE,
-                });
-              }}
-            />
-          )}
-        </div>
+        {detailsBody}
       </SheetContent>
     </Sheet>
   );
