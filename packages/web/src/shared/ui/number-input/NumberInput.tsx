@@ -1,10 +1,10 @@
 import type * as React from "react";
 
-import { cn } from "@/shared/utils/cn";
+import { Input } from "@/shared/ui/input";
 
-type NumberInputProps = Omit<React.ComponentProps<"input">, "type">;
+type NumberInputProps = Omit<React.ComponentProps<typeof Input>, "type">;
 
-function NumberInput({ className, onChange, ...props }: NumberInputProps) {
+function NumberInput({ onChange, ...props }: NumberInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
     let value = input.value;
@@ -21,21 +21,7 @@ function NumberInput({ className, onChange, ...props }: NumberInputProps) {
     onChange?.(e);
   };
 
-  return (
-    <input
-      {...props}
-      type="text"
-      inputMode="decimal"
-      data-slot="input"
-      className={cn(
-        "file:text-foreground placeholder:text-control-placeholder selection:bg-primary selection:text-primary-foreground h-9 w-full min-w-0 rounded-md bg-control px-3 py-1 text-sm transition-[color,background-color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium hover:bg-control-hover disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-        "ring-inset focus-visible:bg-control focus-visible:ring-2 focus-visible:ring-control-focus/30",
-        "aria-invalid:ring-2 aria-invalid:ring-destructive/35 dark:aria-invalid:ring-destructive/45",
-        className
-      )}
-      onChange={handleChange}
-    />
-  );
+  return <Input {...props} type="text" inputMode="decimal" onChange={handleChange} />;
 }
 
 export { NumberInput };

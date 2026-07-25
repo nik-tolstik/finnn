@@ -1,6 +1,6 @@
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 import { UserDisplay } from "@/shared/components/UserDisplay";
-import { getAccountIcon } from "@/shared/utils/account-icons";
+import { AccountIcon } from "@/shared/utils/account-icons";
 
 import { getTransactionDescriptionSegments } from "../../../utils/transactionDescription";
 import { TransactionDescriptionLine } from "../../transaction-description-line/TransactionDescriptionLine";
@@ -22,7 +22,6 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
     workspaceName
   );
   const amount = getDebtTransactionAmountDisplay(debtTransaction);
-  const DebtAccountIcon = debtTransaction.account ? getAccountIcon(debtTransaction.account.icon) : null;
   const actorAvatar = debtTransaction.account ? (
     <TransactionActorAvatar account={debtTransaction.account} showName workspaceName={workspaceName} />
   ) : (
@@ -34,16 +33,21 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
       segments={segments}
       footer={{
         icon: actorAvatar,
-        chips:
-          debtTransaction.account && DebtAccountIcon
-            ? [
-                {
-                  color: debtTransaction.account.color,
-                  icon: <DebtAccountIcon className="size-3.5" />,
-                  label: debtTransaction.account.name,
-                },
-              ]
-            : undefined,
+        chips: debtTransaction.account
+          ? [
+              {
+                color: debtTransaction.account.color,
+                icon: (
+                  <AccountIcon
+                    iconName={debtTransaction.account.icon}
+                    accountName={debtTransaction.account.name}
+                    className="size-3.5"
+                  />
+                ),
+                label: debtTransaction.account.name,
+              },
+            ]
+          : undefined,
         trailing: amount.secondaryText
           ? {
               text: amount.secondaryText,

@@ -31,6 +31,7 @@ import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select";
 import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
+import { getCurrencySymbol } from "@/shared/utils/money";
 
 import { updateAccount } from "../../account.api";
 
@@ -210,6 +211,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
               <NumberInput
                 id="initialBalance"
                 {...register("initialBalance")}
+                prefix={getCurrencySymbol(account.currency)}
                 placeholder="0.00"
                 aria-invalid={errors.initialBalance ? "true" : "false"}
               />
@@ -257,7 +259,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
 
             <div className="space-y-2">
               <Label>Иконка</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {Object.entries(ACCOUNT_ICONS).map(([name, Icon]) => (
                   <button
                     key={name}
@@ -269,7 +271,9 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
                         ? "border-primary bg-primary/10"
                         : "border-border hover:border-foreground/25 dark:hover:border-primary/50"
                     )}
-                    title={name}
+                    title={name === "Initial" ? "Первая буква названия" : name}
+                    aria-label={name === "Initial" ? "Первая буква названия" : name}
+                    aria-pressed={selectedIcon === name}
                   >
                     <Icon className="h-5 w-5" />
                   </button>

@@ -1,4 +1,4 @@
-import { getAccountIcon } from "@/shared/utils/account-icons";
+import { AccountIcon } from "@/shared/utils/account-icons";
 
 import type { PaymentTransactionWithRelations } from "../../../transaction.types";
 import { getTransactionDescriptionSegments } from "../../../utils/transactionDescription";
@@ -21,7 +21,6 @@ export function RegularTransactionItem({ transaction, workspaceName, onClick }: 
     },
     workspaceName
   );
-  const AccountIcon = getAccountIcon(transaction.account.icon);
   const amount = getPaymentTransactionAmountDisplay(transaction);
 
   return (
@@ -33,7 +32,13 @@ export function RegularTransactionItem({ transaction, workspaceName, onClick }: 
         chips: [
           {
             color: transaction.account.color,
-            icon: <AccountIcon className="size-3.5" />,
+            icon: (
+              <AccountIcon
+                iconName={transaction.account.icon}
+                accountName={transaction.account.name}
+                className="size-3.5"
+              />
+            ),
             label: transaction.account.name,
           },
         ],

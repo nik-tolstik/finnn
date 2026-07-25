@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { Card } from "@/shared/ui/card";
-import { getAccountIcon } from "@/shared/utils/account-icons";
+import { AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { hexToRgba } from "@/shared/utils/color-utils";
 import { formatMoney } from "@/shared/utils/money";
@@ -43,8 +43,6 @@ function TransferAccountChip({ color, icon, label }: TransferAccountChipProps) {
 }
 
 export function TransferTransactionItem({ transaction, onClick }: TransferTransactionItemProps) {
-  const FromAccountIcon = getAccountIcon(transaction.fromAccount.icon);
-  const ToAccountIcon = getAccountIcon(transaction.toAccount.icon);
   const description = transaction.description?.trim();
 
   return (
@@ -68,13 +66,25 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <TransferAccountChip
               color={transaction.fromAccount.color}
-              icon={<FromAccountIcon className="size-3.5" />}
+              icon={
+                <AccountIcon
+                  iconName={transaction.fromAccount.icon}
+                  accountName={transaction.fromAccount.name}
+                  className="size-3.5"
+                />
+              }
               label={transaction.fromAccount.name}
             />
             <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
             <TransferAccountChip
               color={transaction.toAccount.color}
-              icon={<ToAccountIcon className="size-3.5" />}
+              icon={
+                <AccountIcon
+                  iconName={transaction.toAccount.icon}
+                  accountName={transaction.toAccount.name}
+                  className="size-3.5"
+                />
+              }
               label={transaction.toAccount.name}
             />
           </div>

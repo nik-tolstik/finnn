@@ -11,7 +11,7 @@ import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
-import { getAccountIcon } from "@/shared/utils/account-icons";
+import { AccountIcon } from "@/shared/utils/account-icons";
 
 import type {
   TransactionFilterAccount,
@@ -209,12 +209,16 @@ export function TransactionsFilterDrawer({
               options={accountOptions}
               renderOption={({ option, selected, isTrigger }) => {
                 const account = accountsById.get(String(option.value));
-                const AccountIcon = account ? getAccountIcon(account.icon) : null;
 
                 return (
                   <span className="flex min-w-0 flex-1 items-center gap-2">
-                    {AccountIcon && (
-                      <AccountIcon className="size-4 shrink-0" style={{ color: account?.color ?? undefined }} />
+                    {account && (
+                      <AccountIcon
+                        iconName={account.icon}
+                        accountName={account.name}
+                        className="size-4 shrink-0"
+                        style={{ color: account.color ?? undefined }}
+                      />
                     )}
                     <span className="min-w-0 flex-1 truncate font-normal">{option.label}</span>
                     {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}

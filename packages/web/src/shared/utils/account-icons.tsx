@@ -1,8 +1,30 @@
-import { CreditCard, HandCoins, Landmark, type LucideIcon, Wallet } from "lucide-react";
+import {
+  Banknote,
+  BriefcaseBusiness,
+  Building2,
+  Coins,
+  CreditCard,
+  DollarSign,
+  Euro,
+  HandCoins,
+  Handshake,
+  Landmark,
+  type LucideIcon,
+  PiggyBank,
+  ReceiptText,
+  RussianRuble,
+  Smartphone,
+  TrendingUp,
+  Vault,
+  Wallet,
+  WalletCards,
+} from "lucide-react";
 import type React from "react";
 import type { ComponentProps } from "react";
 
-type IconComponent = LucideIcon | ((props: ComponentProps<"svg">) => React.JSX.Element);
+type IconComponent =
+  | LucideIcon
+  | ((props: ComponentProps<"svg"> & { accountName?: string | null; initialFontSize?: number }) => React.JSX.Element);
 
 function VisaIcon({ className, ...props }: ComponentProps<"svg">) {
   return (
@@ -50,11 +72,52 @@ function BitcoinIcon({ className, ...props }: ComponentProps<"svg">) {
   );
 }
 
+function InitialIcon({
+  accountName,
+  className,
+  initialFontSize = 14,
+  ...props
+}: ComponentProps<"svg"> & { accountName?: string | null; initialFontSize?: number }) {
+  const initial = Array.from(accountName?.trim() ?? "")[0]?.toUpperCase() || "A";
+
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} {...props}>
+      <text
+        x="12"
+        y="12"
+        dy="0.35em"
+        textAnchor="middle"
+        fill="currentColor"
+        fontSize={initialFontSize}
+        fontWeight="600"
+      >
+        {initial}
+      </text>
+    </svg>
+  );
+}
+
 export const ACCOUNT_ICONS: Record<string, IconComponent> = {
+  Initial: InitialIcon,
   Wallet,
-  HandCoins,
+  WalletCards,
+  Banknote,
+  Coins,
+  PiggyBank,
   CreditCard,
+  Smartphone,
   Landmark,
+  Building2,
+  Vault,
+  HandCoins,
+  Handshake,
+  TrendingUp,
+  BriefcaseBusiness,
+  ReceiptText,
+  BYN: Banknote,
+  USD: DollarSign,
+  EUR: Euro,
+  RUB: RussianRuble,
   Visa: VisaIcon,
   Mastercard: MastercardIcon,
   Bitcoin: BitcoinIcon,
@@ -62,10 +125,26 @@ export const ACCOUNT_ICONS: Record<string, IconComponent> = {
 
 export type AccountIconName = keyof typeof ACCOUNT_ICONS;
 
+export interface AccountIconProps extends ComponentProps<"svg"> {
+  accountName?: string | null;
+  iconName?: string | null;
+  initialFontSize?: number;
+}
+
 export function getAccountIcon(iconName?: string | null): IconComponent {
   if (iconName && iconName in ACCOUNT_ICONS) {
     return ACCOUNT_ICONS[iconName as AccountIconName];
   }
 
   return HandCoins;
+}
+
+export function AccountIcon({ accountName, iconName, initialFontSize, ...props }: AccountIconProps) {
+  const Icon = getAccountIcon(iconName);
+
+  if (iconName === "Initial") {
+    return <InitialIcon {...props} accountName={accountName} initialFontSize={initialFontSize} />;
+  }
+
+  return <Icon {...props} />;
 }
