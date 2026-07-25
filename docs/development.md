@@ -50,15 +50,11 @@ API_ALLOWED_ORIGINS="http://localhost:3000"
 CRON_SECRET="paste-cron-secret-here"
 ```
 
-Required for registration verification and workspace invite emails:
+Email delivery uses Resend over HTTPS. Create an API key, verify the sender domain in Resend, and set:
 
 ```env
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="your-email@example.com"
-SMTP_PASSWORD="paste-smtp-password-here"
-SMTP_FROM="Finnn <your-email@example.com>"
+RESEND_API_KEY="re_..."
+EMAIL_FROM="Finnn <no-reply@your-verified-domain.example>"
 ```
 
 Required for Telegram login/linking:
@@ -90,7 +86,7 @@ DEV:   https://api-dev.finnn.xyz/auth/google/callback
 PROD:  https://api.finnn.xyz/auth/google/callback
 ```
 
-Password reset uses the same SMTP settings as email verification. Optional tuning:
+Password reset uses the same Resend settings as email verification. Optional tuning:
 
 ```env
 PASSWORD_RESET_CODE_TTL_SECONDS="900"

@@ -484,7 +484,7 @@ describe("Workspace API", () => {
 
   it("rolls back invite creation when the invite email cannot be sent", async () => {
     mockAuthenticatedSession(prisma);
-    emailService.sendInviteEmail.mockResolvedValue({ error: "SMTP unavailable" });
+    emailService.sendInviteEmail.mockResolvedValue({ error: "Email provider unavailable" });
 
     const response = await request(app.getHttpServer())
       .post("/workspaces/workspace-1/invites")

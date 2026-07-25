@@ -51,15 +51,11 @@ API_ALLOWED_ORIGINS="http://localhost:3000"
 CRON_SECRET="paste-cron-secret-here"
 ```
 
-Email-приглашения и подтверждение регистрации используют SMTP:
+Email delivery uses Resend over HTTPS. Verify the sender domain in Resend and set:
 
 ```env
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="your-email@example.com"
-SMTP_PASSWORD="paste-smtp-password-here"
-SMTP_FROM="Finnn <your-email@example.com>"
+RESEND_API_KEY="re_..."
+EMAIL_FROM="Finnn <no-reply@your-verified-domain.example>"
 ```
 
 Минимальный набор для `packages/web/.env`:
@@ -127,7 +123,7 @@ Backend endpoint `/cron/update-exchange-rates` защищен `CRON_SECRET`. П�
 - `API_AUTH_SECRET` и `API_COOKIE_SECRET`.
 - `API_ALLOWED_ORIGINS` с production URL web-приложения.
 - `NEXT_PUBLIC_API_URL` с production URL API.
-- SMTP-переменные, если включены приглашения и подтверждение email.
+- `RESEND_API_KEY` and `EMAIL_FROM` for registration, invites, and password recovery emails.
 
 ## PWA и Service Worker
 

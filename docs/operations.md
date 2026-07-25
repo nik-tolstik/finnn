@@ -91,15 +91,11 @@ BotFather setup:
 - Set the production bot webhook to `https://api.finnn.xyz/telegram/webhook` with the production secret token. Repeat the
   same process for the DEV bot with `https://api-dev.finnn.xyz/telegram/webhook` and separate OpenRouter/bot secrets.
 
-Email variables are required when registration verification and workspace invites should send real email:
+Use Resend over HTTPS for Railway email delivery. The sender domain must be verified in Resend:
 
 ```env
-SMTP_HOST="smtp-host"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="smtp-user"
-SMTP_PASSWORD="smtp-password"
-SMTP_FROM="Finnn <no-reply@example.com>"
+RESEND_API_KEY="re_..."
+EMAIL_FROM="Finnn <no-reply@your-verified-domain.example>"
 PASSWORD_RESET_CODE_TTL_SECONDS="900"
 PASSWORD_RESET_MAX_ATTEMPTS="5"
 PASSWORD_RESET_RESEND_COOLDOWN_SECONDS="60"
@@ -155,12 +151,8 @@ API_COOKIE_DOMAIN=""
 API_ALLOWED_ORIGINS="https://production-app-url"
 WEB_APP_URL="https://production-app-url"
 CRON_SECRET="production-cron-secret"
-SMTP_HOST="smtp-host"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="smtp-user"
-SMTP_PASSWORD="smtp-password"
-SMTP_FROM="Finnn <no-reply@example.com>"
+RESEND_API_KEY="re_..."
+EMAIL_FROM="Finnn <no-reply@your-verified-domain.example>"
 TELEGRAM_CLIENT_ID="bot-or-client-id-from-botfather"
 TELEGRAM_CLIENT_SECRET="telegram-client-secret"
 TELEGRAM_REDIRECT_URI="https://production-api-url/auth/telegram/callback"
@@ -329,13 +321,13 @@ Current email use cases:
 Email depends on:
 
 - API and web public URL variables for generated links.
-- SMTP variables for transport.
+- `RESEND_API_KEY` and `EMAIL_FROM` for Railway HTTPS email delivery.
 
-If email delivery fails locally, verify `.env`, SMTP credentials, provider app-password requirements, and whether the SMTP account allows the selected port/security mode.
+If email delivery fails, verify the Resend API key, sender-domain verification, and `EMAIL_FROM`.
 
 Scheduled payment reminder delivery records failed email or Telegram channels in `scheduled_payment_reminder_deliveries`.
-Email failures usually mean SMTP is unavailable or the recipient has no verified email. Telegram failures usually mean
-the recipient has not linked Telegram or has no `telegramChatId` in `TelegramBotPreference`.
+Email failures usually mean the Resend API key or sender domain is invalid. Telegram failures usually mean the recipient
+has not linked Telegram or has no `telegramChatId` in `TelegramBotPreference`.
 
 ## Mobile browser testing from WSL2
 

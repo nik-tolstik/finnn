@@ -354,7 +354,7 @@ describe("Auth API", () => {
       token: "token",
       expiresAt: new Date(Date.now() + 1000),
     });
-    emailService.sendVerificationEmail.mockResolvedValue({ error: "SMTP unavailable" });
+    emailService.sendVerificationEmail.mockResolvedValue({ error: "Email provider unavailable" });
 
     const response = await request(app.getHttpServer())
       .post("/auth/register")

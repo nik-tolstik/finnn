@@ -82,12 +82,12 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - Local MongoDB should run as a replica set. `docker-compose.yml` starts MongoDB with `--replSet rs0`; initialize the replica set before using Prisma transactions if needed.
 - Run `pnpm db:generate` after schema changes.
 - Run `pnpm db:push` to apply schema/index changes to MongoDB.
-- `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`, SMTP variables, and `CRON_SECRET`.
+- `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`, email variables, and `CRON_SECRET`.
 - `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL`.
 - Vercel web domains: PROD `https://finnn.xyz`, DEV `https://dev.finnn.xyz`.
 - Railway API domains: PROD `https://api.finnn.xyz`, DEV `https://api-dev.finnn.xyz`.
 - Telegram uses two bots: one PROD bot for production domains and one DEV bot for DEV plus localhost/ngrok testing.
-- SMTP variables are required for registration verification and workspace invite email delivery.
+- `RESEND_API_KEY` and `EMAIL_FROM` are required for email delivery in all environments.
 - Backend scheduling should call the API endpoint `/cron/update-exchange-rates` with `Authorization: Bearer <CRON_SECRET>`.
 
 ## Documentation Expectations
