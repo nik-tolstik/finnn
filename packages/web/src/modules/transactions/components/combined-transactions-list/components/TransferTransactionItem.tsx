@@ -47,7 +47,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
 
   return (
     <Card
-      className="cursor-pointer p-3 transition-colors hover:bg-accent/70 sm:p-4"
+      className="bg-transaction-card-background cursor-pointer p-3 transition-colors hover:bg-accent/70 dark:shadow-sm sm:p-4"
       onClick={() => {
         onClick(transaction);
       }}

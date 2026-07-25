@@ -193,7 +193,10 @@ export function TransactionDescriptionLine({
   if (onClick) {
     return (
       <Card
-        className={cn("cursor-pointer p-3 transition-colors hover:bg-accent/70 sm:p-4", className)}
+        className={cn(
+          "bg-transaction-card-background cursor-pointer p-3 shadow-[var(--transaction-card-shadow)] transition-colors hover:bg-accent/70 dark:shadow-sm sm:p-4",
+          className
+        )}
         onClick={onClick}
       >
         <div className="space-y-2">
