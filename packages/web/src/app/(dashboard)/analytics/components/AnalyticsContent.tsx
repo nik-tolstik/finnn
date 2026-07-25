@@ -12,8 +12,6 @@ import {
 } from "@/app/(dashboard)/components/dashboard-exchange-rates";
 import { getAccounts } from "@/modules/accounts/account.api";
 import {
-  toAnalyticsCalendarParams,
-  toAnalyticsCalendarResult,
   toAnalyticsErrorResult,
   toAnalyticsOverviewParams,
   toAnalyticsOverviewResult,
@@ -107,8 +105,7 @@ function getCalendarFiltersForMonth(filters: TransactionViewFilters, monthDate: 
 
 async function getAnalyticsCalendarResult(workspaceId: string, filters: TransactionViewFilters) {
   try {
-    const response = await getApiAnalyticsCalendar(workspaceId, toAnalyticsCalendarParams(filters));
-    return toAnalyticsCalendarResult(response);
+    return await getApiAnalyticsCalendar(workspaceId, toAnalyticsOverviewParams(filters));
   } catch (error: unknown) {
     return toAnalyticsErrorResult(error);
   }

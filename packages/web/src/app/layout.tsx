@@ -26,7 +26,18 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
+      {
+        url: "/logo-dark.svg",
+        type: "image/svg+xml",
+        sizes: "any",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/logo-light.svg",
+        type: "image/svg+xml",
+        sizes: "any",
+        media: "(prefers-color-scheme: dark)",
+      },
       { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
       { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
     ],
@@ -41,8 +52,8 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F7F9FC" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1c1c" },
   ],
 };
 

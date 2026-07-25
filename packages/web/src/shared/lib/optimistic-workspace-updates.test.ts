@@ -152,27 +152,6 @@ function makePaymentTransaction(id: string, date: string, accountId: string, bal
   } as unknown as CombinedTransaction;
 }
 
-function _makePaymentTransactionWithCategory(
-  id: string,
-  date: string,
-  accountId: string,
-  balance: string,
-  category: { id: string; name: string; type: "expense" | "income"; color: string; order: number; isEnabled: boolean }
-): CombinedTransaction {
-  const transaction = makePaymentTransaction(id, date, accountId, balance);
-  if (transaction.kind === "paymentTransaction") {
-    return {
-      ...transaction,
-      data: {
-        ...transaction.data,
-        category,
-      },
-    } as CombinedTransaction;
-  }
-
-  return transaction;
-}
-
 function makeTransferTransaction(
   id: string,
   date: string,
