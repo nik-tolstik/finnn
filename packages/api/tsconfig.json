@@ -7,6 +7,7 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2023",
+    "moduleResolution": "bundler",
     "sourceMap": true,
     "outDir": "./dist",
     "incremental": true,
@@ -14,6 +15,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
+    "types": ["node", "multer"],
     "paths": {
       "@/*": ["./src/*"]
     }
