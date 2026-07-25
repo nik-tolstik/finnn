@@ -1,22 +1,13 @@
 "use client";
 
-import { Monitor, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { useEffect, useId, useState } from "react";
+import { useId } from "react";
 
 import { useAccentColor } from "@/shared/components/accent-color-provider";
 import { ACCENT_COLOR_OPTIONS } from "@/shared/lib/accent-color";
-import { Segmented } from "@/shared/ui/segmented";
 import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
 
-type ThemeMode = "system" | "light" | "dark";
-
-const THEME_LABELS: Record<ThemeMode, string> = {
-  system: "Auto",
-  light: "Светлая",
-  dark: "Тёмная",
-};
+import { ThemeSelector } from "./ThemeSelector";
 
 interface AppearanceSettingsProps {
   title?: string | null;
@@ -31,43 +22,12 @@ export function AppearanceSettings({
   segmentedClassName,
   showLabels = true,
 }: AppearanceSettingsProps) {
-  const { theme, setTheme } = useTheme();
   const { accentColor, isHydrated: isAccentColorHydrated, setAccentColor } = useAccentColor();
-  const [mounted, setMounted] = useState(false);
   const accentColorGroupName = useId();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const selectedTheme: ThemeMode =
-    mounted && (theme === "system" || theme === "light" || theme === "dark") ? theme : "system";
-
-  const optionClassName = showLabels ? "px-2" : "px-0";
-  const getOptionLabel = (mode: ThemeMode) =>
-    showLabels ? THEME_LABELS[mode] : <span className="sr-only">{THEME_LABELS[mode]}</span>;
 
   return (
     <div className={cn("space-y-4", className)}>
-      {!!title && <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>}
-
-      <Segmented
-        className={cn("w-full", segmentedClassName)}
-        disabled={!mounted}
-        layout="fill"
-        value={selectedTheme}
-        onChange={(value) => setTheme(value)}
-        options={[
-          {
-            value: "system",
-            label: getOptionLabel("system"),
-            icon: <Monitor />,
-            className: optionClassName,
-          },
-          { value: "light", label: getOptionLabel("light"), icon: <Sun />, className: optionClassName },
-          { value: "dark", label: getOptionLabel("dark"), icon: <Moon />, className: optionClassName },
-        ]}
-      />
+      <ThemeSelector title={title} segmentedClassName={segmentedClassName} showLabels={showLabels} layout="fill" />
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Основной цвет</h3>

@@ -14,6 +14,7 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 - Use `pnpm` as the package manager. Do not use `npm` or `yarn` unless the repository explicitly requires them.
 - Use Context7 for library and framework documentation when it is relevant.
 - Use subagents for parallel code analysis, implementation, or verification when they can reduce risk or latency.
+- When creating a worktree, transfer the `packages/web/.env` and `packages/api/.env` files as opaque files without reading their contents.
 - Do not revert user changes unless the user explicitly requests it.
 - Do not work directly on `main` unless the user explicitly asks for it. If the current branch is `main`, switch to `develop` before making changes.
 - Prefer existing project patterns over introducing new abstractions.
