@@ -257,13 +257,18 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
               <Label htmlFor="initialBalance" required>
                 Начальный баланс
               </Label>
-              <NumberInput
-                id="initialBalance"
-                {...register("initialBalance")}
-                prefix={getCurrencySymbol(currency || DEFAULT_CURRENCY)}
-                placeholder="0.00"
-                aria-invalid={errors.initialBalance ? "true" : "false"}
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm font-medium text-muted-foreground">
+                  {getCurrencySymbol(currency || DEFAULT_CURRENCY)}
+                </span>
+                <NumberInput
+                  id="initialBalance"
+                  placeholder="0.00"
+                  className="pl-9"
+                  {...register("initialBalance")}
+                  aria-invalid={errors.initialBalance ? "true" : "false"}
+                />
+              </div>
               {errors.initialBalance && <p className="text-sm text-destructive">{errors.initialBalance.message}</p>}
             </div>
 
