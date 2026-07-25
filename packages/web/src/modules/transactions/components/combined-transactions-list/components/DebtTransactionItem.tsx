@@ -40,6 +40,7 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
                 icon: (
                   <AccountIcon
                     iconName={debtTransaction.account.icon}
+                    accountColor={debtTransaction.account.color}
                     accountName={debtTransaction.account.name}
                     className="size-3.5"
                   />

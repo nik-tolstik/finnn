@@ -35,9 +35,9 @@ export function AccountChip({ account, className }: AccountChipProps) {
     >
       <AccountIcon
         iconName={account.icon}
+        accountColor={account.color}
         accountName={account.name}
         className="size-3.5 shrink-0"
-        style={{ color: account.color ?? undefined }}
       />
       <span className="truncate text-xs font-medium">{account.name}</span>
     </div>

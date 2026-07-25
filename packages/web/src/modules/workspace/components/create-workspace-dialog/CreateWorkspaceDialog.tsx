@@ -13,7 +13,7 @@ import { insertWorkspacesInCache, runOptimisticWorkspaceMutation } from "@/share
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { type CreateWorkspaceInput, createWorkspaceSchema } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
@@ -118,7 +118,6 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
       <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Создать новый рабочий стол</DialogTitle>
-          <DialogDescription>Создайте новый рабочий стол для организации ваших финансов</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">

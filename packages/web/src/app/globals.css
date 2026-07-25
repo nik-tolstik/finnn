@@ -276,6 +276,14 @@ html.dark {
     background-color: var(--palette-violet-600);
   }
 
+  .account-icon-adaptive {
+    color: var(--account-icon-color-light, var(--foreground));
+  }
+
+  html.dark .account-icon-adaptive {
+    color: var(--account-icon-color-dark, var(--foreground));
+  }
+
   .pull-to-refresh-indicator {
     position: relative;
     height: var(--pull-content-offset, 0px);

@@ -1,15 +1,5 @@
-import { hexToRgb, hslToRgb, rgbToHex, rgbToHsl } from "@/shared/utils/color-utils";
+import { getAccountIconColors } from "@/shared/utils/account-icon-colors";
 
 export function getLightThemeIconColor(hex: string): string {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return "var(--foreground)";
-
-  const hsl = rgbToHsl(rgb);
-  return rgbToHex(
-    hslToRgb({
-      ...hsl,
-      s: Math.max(hsl.s, 48),
-      l: Math.min(hsl.l, 34),
-    })
-  );
+  return getAccountIconColors(hex).light;
 }

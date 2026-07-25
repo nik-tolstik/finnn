@@ -16,20 +16,12 @@ import { type UpdateAccountInput, updateAccountSchema } from "@/shared/lib/valid
 import { Button } from "@/shared/ui/button";
 import { ColorPicker } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select";
-import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
+import { ACCOUNT_ICON_DEFINITIONS, AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
@@ -178,7 +170,6 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
       <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Редактировать счёт</DialogTitle>
-          <DialogDescription>Измените параметры счёта.</DialogDescription>
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -265,7 +256,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
             <div className="space-y-2">
               <Label>Иконка</Label>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(ACCOUNT_ICONS).map(([name, Icon]) => (
+                {Object.keys(ACCOUNT_ICON_DEFINITIONS).map((name) => (
                   <button
                     key={name}
                     type="button"
@@ -280,7 +271,12 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
                     aria-label={name === "Initial" ? "Первая буква названия" : name}
                     aria-pressed={selectedIcon === name}
                   >
-                    <Icon className="h-5 w-5" />
+                    <AccountIcon
+                      iconName={name}
+                      accountName={accountName}
+                      accountColor={selectedColor}
+                      className="h-5 w-5"
+                    />
                   </button>
                 ))}
               </div>

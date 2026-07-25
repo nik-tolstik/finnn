@@ -338,9 +338,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
         <div>
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <h2 className="truncate text-xl font-semibold md:text-2xl">
-                {showAllAccounts ? "Все счета" : "Ваши счета"}
-              </h2>
+              <h2 className="truncate text-xl font-semibold">{showAllAccounts ? "Все счета" : "Ваши счета"}</h2>
               <Badge variant="secondary" className="text-xs">
                 {visibleAccounts.length}
               </Badge>
@@ -434,7 +432,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
 
         <div>
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-xl md:text-2xl font-semibold">Последние транзакции</h2>
+            <h2 className="text-xl font-semibold">Последние транзакции</h2>
             <TransactionsFilterButton
               appliedFiltersCount={appliedFiltersCount}
               disabled={isFiltersNavigationPending}

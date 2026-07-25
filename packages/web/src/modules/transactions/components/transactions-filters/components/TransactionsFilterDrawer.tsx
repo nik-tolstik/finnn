@@ -215,9 +215,9 @@ export function TransactionsFilterDrawer({
                     {account && (
                       <AccountIcon
                         iconName={account.icon}
+                        accountColor={account.color}
                         accountName={account.name}
                         className="size-4 shrink-0"
-                        style={{ color: account.color ?? undefined }}
                       />
                     )}
                     <span className="min-w-0 flex-1 truncate font-normal">{option.label}</span>

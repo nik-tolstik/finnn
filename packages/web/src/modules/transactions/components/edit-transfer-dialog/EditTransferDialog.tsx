@@ -19,15 +19,7 @@ import {
   type UpdateTransferTransactionInput,
   updateTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { subtractMoney } from "@/shared/utils/money";
 
 import { updateTransferTransaction } from "../../transaction.api";
@@ -179,7 +171,6 @@ export function EditTransferDialog({
       <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Редактировать перевод</DialogTitle>
-          <DialogDescription>Измените параметры перевода</DialogDescription>
         </DialogHeader>
         <DialogContent>
           <TransferForm
