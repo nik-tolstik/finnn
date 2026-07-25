@@ -8,6 +8,7 @@ import { getExchangeRateDateKey, normalizeExchangeRateDate } from "./exchange-ra
 const BASE_CURRENCY = Currency.BYN;
 const NON_BASE_CURRENCIES = [Currency.USD, Currency.EUR, Currency.RUB] as const;
 const NON_BASE_CURRENCY_LABELS = NON_BASE_CURRENCIES.join("/");
+const NBRB_RATES_URL = "https://api.nbrb.by/exrates/rates";
 const NBRB_LATEST_TIMEOUT_MS = 5000;
 const NBRB_BY_DATE_TIMEOUT_MS = 3000;
 const EXCHANGE_RATE_API_TIMEOUT_MS = 5000;
@@ -229,7 +230,7 @@ export class ExchangeRateService {
       return existingRequest;
     }
 
-    const url = `https://www.nbrb.by/api/exrates/rates?periodicity=0&ondate=${dateKey}`;
+    const url = `${NBRB_RATES_URL}?periodicity=0&ondate=${dateKey}`;
     const nbrbRequest = this.requestNBRBRates(url, NBRB_BY_DATE_TIMEOUT_MS);
     const ratesRequest =
       dateKey === this.getDateKey(new Date())
@@ -246,7 +247,7 @@ export class ExchangeRateService {
   async getNBRBExchangeRates(): Promise<CurrencyRatesResult> {
     const todayKey = this.getDateKey(new Date());
     const result = await this.getRatesWithFallback(
-      this.requestNBRBRates("https://www.nbrb.by/api/exrates/rates?periodicity=0", NBRB_LATEST_TIMEOUT_MS),
+      this.requestNBRBRates(`${NBRB_RATES_URL}?periodicity=0`, NBRB_LATEST_TIMEOUT_MS),
       "NBRB unavailable, using ExchangeRate-API:",
       todayKey
     );

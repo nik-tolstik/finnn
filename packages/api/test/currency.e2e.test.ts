@@ -151,7 +151,8 @@ describe("Currency API", () => {
     prisma.exchangeRate.upsert.mockImplementation(({ create }) =>
       Promise.resolve({ id: create.fromCurrency, ...create })
     );
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createNBRBResponse(3, 4)));
+    const fetchMock = vi.fn().mockResolvedValue(createNBRBResponse(3, 4));
+    vi.stubGlobal("fetch", fetchMock);
 
     const response = await request(app.getHttpServer())
       .get("/exchange-rates/rate")
@@ -163,6 +164,10 @@ describe("Currency API", () => {
       .expect(200);
 
     expect(response.body).toEqual({ data: 3 });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.nbrb.by/exrates/rates?periodicity=0&ondate=2026-02-16",
+      expect.objectContaining({ headers: { Accept: "application/json" } })
+    );
     expect(prisma.exchangeRate.upsert).toHaveBeenCalledTimes(3);
     expect(prisma.exchangeRate.upsert).toHaveBeenCalledWith(
       expect.objectContaining({

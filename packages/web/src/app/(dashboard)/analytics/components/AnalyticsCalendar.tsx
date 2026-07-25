@@ -4,7 +4,8 @@ import { addMonths, format, startOfMonth, subMonths } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import type { AnalyticsCalendarResult } from "@/modules/analytics/analytics.types";
 import {
@@ -13,8 +14,10 @@ import {
   getAnalyticsCalendarMonthKey,
 } from "@/modules/analytics/analytics.view-model";
 import type { TransactionViewFilters } from "@/modules/transactions/components/transactions-filters";
+import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import type { PopoverTriggerRenderProps } from "@/shared/ui/popover";
 import { cn } from "@/shared/utils/cn";
 
 import { AnalyticsDayDetails } from "./AnalyticsDayDetails";
@@ -52,21 +55,28 @@ function CalendarAmountLine({ className, isZero, value }: { className: string; i
 function CalendarCellButton({
   cell,
   onSelect,
+  triggerProps,
 }: {
   cell: AnalyticsCalendarCell;
   onSelect: (cell: AnalyticsCalendarCell) => void;
+  triggerProps?: PopoverTriggerRenderProps;
 }) {
+  const { onClick: onTriggerClick, ref: triggerRef, ...popoverTriggerProps } = triggerProps ?? {};
+
   return (
     <button
+      {...popoverTriggerProps}
       type="button"
+      ref={triggerRef}
       className={cn(
         "group flex min-h-[62px] w-full min-w-0 flex-col items-start justify-between rounded-none border border-transparent bg-background p-1 text-left transition-[background-color,border-color,box-shadow] hover:bg-accent/35 focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 sm:min-h-[96px] sm:rounded-md sm:p-2",
         !cell.isCurrentMonth && "bg-muted/20 text-muted-foreground/55 opacity-75",
         cell.isSelected && "border-primary bg-primary/8 ring-2 ring-primary/35",
         cell.isToday && !cell.isSelected && "border-primary/55"
       )}
-      onClick={() => {
-        if (cell.date) {
+      onClick={(event) => {
+        onTriggerClick?.(event);
+        if (cell.date && !triggerProps) {
           onSelect(cell);
         }
       }}
@@ -113,15 +123,25 @@ function CalendarCellButton({
 function CalendarGrid({
   cells,
   onSelect,
+  renderSelectedCell,
+  selectedDate,
 }: {
   cells: AnalyticsCalendarCell[];
   onSelect: (cell: AnalyticsCalendarCell) => void;
+  renderSelectedCell?: (cell: AnalyticsCalendarCell) => ReactNode;
+  selectedDate?: string | null;
 }) {
   return (
     <div className="grid grid-cols-7 gap-0 sm:gap-2">
-      {cells.map((cell) => (
-        <CalendarCellButton key={cell.date ?? `empty-${cell.dayNumber}`} cell={cell} onSelect={onSelect} />
-      ))}
+      {cells.map((cell) => {
+        const selectedCell = cell.date === selectedDate && renderSelectedCell ? renderSelectedCell(cell) : null;
+
+        return (
+          <Fragment key={cell.date ?? `empty-${cell.dayNumber}`}>
+            {selectedCell ?? <CalendarCellButton cell={cell} onSelect={onSelect} />}
+          </Fragment>
+        );
+      })}
     </div>
   );
 }
@@ -135,6 +155,7 @@ export function AnalyticsCalendar({
 }: AnalyticsCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [pendingSelectedDate, setPendingSelectedDate] = useState<string | null>(null);
+  const { isMobile } = useBreakpoints();
   const prefersReducedMotion = useReducedMotion();
   const animationDirectionRef = useRef<CalendarNavigationDirection>("next");
   const visibleMonth = monthDate;
@@ -206,6 +227,27 @@ export function AnalyticsCalendar({
     onMonthChange(() => targetMonth);
   };
 
+  const dayDetails = selectedDay ? (
+    <AnalyticsDayDetails
+      appliedFilters={appliedFilters}
+      day={selectedDay}
+      open={Boolean(selectedDate)}
+      onOpenChange={(open) => {
+        if (!open) {
+          setSelectedDate(null);
+        }
+      }}
+      trigger={
+        isMobile
+          ? undefined
+          : (triggerProps: PopoverTriggerRenderProps) => (
+              <CalendarCellButton cell={selectedDay} onSelect={handleCellSelect} triggerProps={triggerProps} />
+            )
+      }
+      workspaceId={workspaceId}
+    />
+  ) : null;
+
   const monthInitialState = prefersReducedMotion
     ? { opacity: 0 }
     : {
@@ -268,23 +310,18 @@ export function AnalyticsCalendar({
               animate={monthAnimateState}
               transition={monthTransition}
             >
-              <CalendarGrid cells={cells} onSelect={handleCellSelect} />
+              <CalendarGrid
+                cells={cells}
+                onSelect={handleCellSelect}
+                renderSelectedCell={isMobile ? undefined : () => dayDetails}
+                selectedDate={isMobile ? null : selectedDate}
+              />
             </motion.div>
           </div>
         </CardContent>
       </Card>
 
-      <AnalyticsDayDetails
-        appliedFilters={appliedFilters}
-        day={selectedDay}
-        open={Boolean(selectedDate)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedDate(null);
-          }
-        }}
-        workspaceId={workspaceId}
-      />
+      {isMobile ? dayDetails : null}
     </>
   );
 }
