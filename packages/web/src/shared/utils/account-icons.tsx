@@ -75,7 +75,7 @@ function BitcoinIcon({ className, ...props }: ComponentProps<"svg">) {
 function InitialIcon({
   accountName,
   className,
-  initialFontSize = 14,
+  initialFontSize = 18,
   ...props
 }: ComponentProps<"svg"> & { accountName?: string | null; initialFontSize?: number }) {
   const initial = Array.from(accountName?.trim() ?? "")[0]?.toUpperCase() || "A";

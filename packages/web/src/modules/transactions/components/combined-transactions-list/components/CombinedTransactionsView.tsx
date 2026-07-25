@@ -51,7 +51,7 @@ export function CombinedTransactionsView({
         groups.map((group) => (
           <div key={group.date.toISOString()} className="space-y-3">
             {showDateHeaders ? (
-              <div className="sticky top-16 z-10 bg-background py-2">
+              <div className="bg-background py-2">
                 <h3 className="text-sm font-medium text-muted-foreground">{formatDateHeader(group.date)}</h3>
               </div>
             ) : null}

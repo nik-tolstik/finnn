@@ -63,14 +63,11 @@ export function Segmented<TValue extends string | number = string>({
       return;
     }
 
-    const containerRect = container.getBoundingClientRect();
-    const optionRect = selectedOption.getBoundingClientRect();
-
     setIndicatorMetrics({
-      height: optionRect.height,
-      left: optionRect.left - containerRect.left,
-      top: optionRect.top - containerRect.top,
-      width: optionRect.width,
+      height: selectedOption.offsetHeight,
+      left: selectedOption.offsetLeft,
+      top: selectedOption.offsetTop,
+      width: selectedOption.offsetWidth,
     });
   }, [selectedIndex]);
 

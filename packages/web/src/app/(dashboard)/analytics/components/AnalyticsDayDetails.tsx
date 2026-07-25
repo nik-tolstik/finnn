@@ -35,7 +35,7 @@ function isTransactionsSuccess(data: CombinedTransactionsResult | undefined): da
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-md border bg-muted/35 p-3">
+    <div className="min-w-0 rounded-md bg-card p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 truncate text-sm font-semibold">{value}</p>
     </div>

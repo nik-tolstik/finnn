@@ -75,7 +75,7 @@
   --palette-blue-600: #2f6bff;
   --palette-pink-600: #df6b9d;
   --palette-green-600: #059669;
-  --palette-orange-700: #c2410c;
+  --palette-orange-600: #ea580c;
   --palette-violet-600: #7c3aed;
   --app-accent-color: var(--palette-blue-600);
   --palette-dark-700: oklch(0.3 0 0);
@@ -99,7 +99,7 @@ html[data-accent-color="green"] {
 }
 
 html[data-accent-color="orange"] {
-  --app-accent-color: var(--palette-orange-700);
+  --app-accent-color: var(--palette-orange-600);
 }
 
 html[data-accent-color="violet"] {
@@ -258,7 +258,7 @@ html.dark {
   }
 
   .appearance-color-swatch[data-accent-swatch="orange"] {
-    background-color: var(--palette-orange-700);
+    background-color: var(--palette-orange-600);
   }
 
   .appearance-color-swatch[data-accent-swatch="violet"] {
