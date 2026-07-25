@@ -166,7 +166,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
           </SheetHeader>
           <div className="flex-1 space-y-4 px-4 overflow-hidden flex flex-col">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Найти"
                 value={search}

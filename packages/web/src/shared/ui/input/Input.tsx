@@ -12,7 +12,7 @@ function Input({ className, prefix, type, ...props }: InputProps) {
       {prefix && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-3 flex select-none items-center text-xs font-medium text-muted-foreground"
+          className="pointer-events-none absolute inset-y-0 left-3 z-10 flex select-none items-center text-xs font-medium text-muted-foreground"
         >
           {prefix}
         </span>

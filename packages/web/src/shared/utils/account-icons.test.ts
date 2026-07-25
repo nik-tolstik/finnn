@@ -8,6 +8,7 @@ describe("account icon definitions", () => {
   it("classifies currentColor icons as adaptive and fixed-color marks as brand icons", () => {
     expect(ACCOUNT_ICON_DEFINITIONS.Wallet.colorMode).toBe("adaptive");
     expect(ACCOUNT_ICON_DEFINITIONS.Visa.colorMode).toBe("adaptive");
+    expect(ACCOUNT_ICON_DEFINITIONS.BYN.colorMode).toBe("adaptive");
     expect(ACCOUNT_ICON_DEFINITIONS.Mastercard.colorMode).toBe("brand");
     expect(ACCOUNT_ICON_DEFINITIONS.Belkart.colorMode).toBe("brand");
     expect(ACCOUNT_ICON_DEFINITIONS.Mir.colorMode).toBe("brand");
@@ -30,5 +31,12 @@ describe("account icon definitions", () => {
     expect(brandMarkup).not.toContain("account-icon-brand");
     expect(brandMarkup).not.toContain("account-icon-adaptive");
     expect(brandMarkup).toContain('viewBox="0 0 809 229"');
+
+    const bynMarkup = renderToStaticMarkup(
+      createElement(AccountIcon, { iconName: "BYN", accountColor: "#ffffff", className: "size-5" })
+    );
+
+    expect(bynMarkup).toContain('viewBox="0 0 700 700"');
+    expect(bynMarkup).toContain('fill="currentColor"');
   });
 });

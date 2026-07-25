@@ -59,7 +59,7 @@ export function PasswordResetConfirmForm() {
           <div className="space-y-2">
             <Label htmlFor="email">Электронная почта</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Mail className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input id="email" type="email" className="pl-9" {...register("email")} />
             </div>
             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
@@ -68,7 +68,7 @@ export function PasswordResetConfirmForm() {
           <div className="space-y-2">
             <Label htmlFor="code">Код</Label>
             <div className="relative">
-              <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <KeyRound className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input id="code" inputMode="numeric" maxLength={6} className="pl-9" {...register("code")} />
             </div>
             {errors.code && <p className="text-sm text-destructive">{errors.code.message}</p>}
@@ -77,7 +77,7 @@ export function PasswordResetConfirmForm() {
           <div className="space-y-2">
             <Label htmlFor="password">Пароль</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Lock className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -99,7 +99,7 @@ export function PasswordResetConfirmForm() {
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Подтверждение пароля</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Lock className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}

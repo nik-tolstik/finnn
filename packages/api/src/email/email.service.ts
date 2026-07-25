@@ -1,7 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import nodemailer from "nodemailer";
 
 type EmailResult = { success: true } | { error: string };
+type EmailMessage = {
+  to: string;
+  subject: string;
+  html: string;
+};
 type ScheduledPaymentReminderEmailInput = {
   email: string;
   paymentName: string;
@@ -21,35 +25,79 @@ function getWebBaseUrl(): string {
   return "http://localhost:3000";
 }
 
+const RESEND_API_URL = "https://api.resend.com/emails";
+const EMAIL_REQUEST_TIMEOUT_MS = 15_000;
+
 @Injectable()
 export class EmailService {
-  private createTransporter() {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: Number.parseInt(process.env.SMTP_PORT || "587", 10),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
+  private getFromAddress(): string | undefined {
+    return process.env.EMAIL_FROM?.trim();
+  }
+
+  private async sendViaResend(message: EmailMessage, apiKey: string): Promise<EmailResult> {
+    const response = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        from: this.getFromAddress(),
+        to: [message.to],
+        subject: message.subject,
+        html: message.html,
+      }),
+      signal: AbortSignal.timeout(EMAIL_REQUEST_TIMEOUT_MS),
     });
+
+    if (response.ok) {
+      return { success: true };
+    }
+
+    const responseText = await response.text();
+    let providerMessage = response.statusText || `HTTP ${response.status}`;
+
+    if (responseText) {
+      try {
+        const payload: unknown = JSON.parse(responseText);
+        if (typeof payload === "object" && payload !== null && "message" in payload) {
+          const messageValue = payload.message;
+          if (typeof messageValue === "string" && messageValue.trim()) {
+            providerMessage = messageValue;
+          }
+        } else {
+          providerMessage = responseText.slice(0, 500);
+        }
+      } catch {
+        providerMessage = responseText.slice(0, 500);
+      }
+    }
+
+    return { error: `Resend API error (${response.status}): ${providerMessage}` };
+  }
+
+  private async sendEmail(message: EmailMessage): Promise<EmailResult> {
+    try {
+      const resendApiKey = process.env.RESEND_API_KEY?.trim();
+      const fromAddress = this.getFromAddress();
+
+      if (!resendApiKey || !fromAddress) {
+        return { error: "Email сервис не настроен: укажите RESEND_API_KEY и EMAIL_FROM." };
+      }
+
+      return await this.sendViaResend(message, resendApiKey);
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : "Не удалось отправить email" };
+    }
   }
 
   async sendVerificationEmail(email: string, token: string, name?: string | null): Promise<EmailResult> {
-    try {
-      if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-        return { error: "Email сервис не настроен. Обратитесь к администратору." };
-      }
+    const verifyUrl = `${getWebBaseUrl()}/verify-email/${token}`;
 
-      const transporter = this.createTransporter();
-
-      const verifyUrl = `${getWebBaseUrl()}/verify-email/${token}`;
-
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: email,
-        subject: "Подтвердите ваш email",
-        html: `
+    return this.sendEmail({
+      to: email,
+      subject: "Подтвердите ваш email",
+      html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">Подтверждение email</h2>
             <p>${name ? `Здравствуйте, ${name}!` : "Здравствуйте!"}</p>
@@ -68,28 +116,16 @@ export class EmailService {
             </p>
           </div>
         `,
-      });
-
-      return { success: true };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : "Не удалось отправить email" };
-    }
+    });
   }
 
   async sendInviteEmail(email: string, token: string, workspaceName: string): Promise<EmailResult> {
-    try {
-      if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-        return { error: "Email сервис не настроен. Обратитесь к администратору." };
-      }
+    const inviteUrl = `${getWebBaseUrl()}/invite/${token}`;
 
-      const transporter = this.createTransporter();
-      const inviteUrl = `${getWebBaseUrl()}/invite/${token}`;
-
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: email,
-        subject: `Приглашение в рабочий стол "${workspaceName}"`,
-        html: `
+    return this.sendEmail({
+      to: email,
+      subject: `Приглашение в рабочий стол "${workspaceName}"`,
+      html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">Приглашение в рабочий стол</h2>
             <p>Вы были приглашены присоединиться к рабочему столу <strong>${workspaceName}</strong>.</p>
@@ -104,27 +140,14 @@ export class EmailService {
             </p>
           </div>
         `,
-      });
-
-      return { success: true };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : "Не удалось отправить email" };
-    }
+    });
   }
 
   async sendPasswordResetCode(email: string, code: string, name?: string | null): Promise<EmailResult> {
-    try {
-      if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-        return { error: "Email сервис не настроен. Обратитесь к администратору." };
-      }
-
-      const transporter = this.createTransporter();
-
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: email,
-        subject: "Код восстановления пароля Finnn",
-        html: `
+    return this.sendEmail({
+      to: email,
+      subject: "Код восстановления пароля Finnn",
+      html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">Восстановление пароля</h2>
             <p>${name ? `Здравствуйте, ${name}!` : "Здравствуйте!"}</p>
@@ -135,29 +158,17 @@ export class EmailService {
             </p>
           </div>
         `,
-      });
-
-      return { success: true };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : "Не удалось отправить email" };
-    }
+    });
   }
 
   async sendScheduledPaymentReminderEmail(input: ScheduledPaymentReminderEmailInput): Promise<EmailResult> {
-    try {
-      if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-        return { error: "Email сервис не настроен. Обратитесь к администратору." };
-      }
+    const paymentUrl = `${getWebBaseUrl()}/payments/${input.scheduledPaymentId}`;
+    const dueDate = input.dueAt.toLocaleDateString("ru-RU");
 
-      const transporter = this.createTransporter();
-      const paymentUrl = `${getWebBaseUrl()}/payments/${input.scheduledPaymentId}`;
-      const dueDate = input.dueAt.toLocaleDateString("ru-RU");
-
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: input.email,
-        subject: `Напоминание о платеже: ${input.paymentName}`,
-        html: `
+    return this.sendEmail({
+      to: input.email,
+      subject: `Напоминание о платеже: ${input.paymentName}`,
+      html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">Напоминание о платеже</h2>
             <p>Платёж <strong>${input.paymentName}</strong> в рабочем столе <strong>${input.workspaceName}</strong> скоро нужно оплатить.</p>
@@ -173,11 +184,6 @@ export class EmailService {
             </p>
           </div>
         `,
-      });
-
-      return { success: true };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : "Не удалось отправить email" };
-    }
+    });
   }
 }
