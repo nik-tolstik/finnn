@@ -60,7 +60,7 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
             {resolvedEmail && <div className="text-xs text-muted-foreground truncate">{resolvedEmail}</div>}
           </div>
           <div className="mt-1 border-t px-2 py-3">
-            <AppearanceSettings title="Тема" description={null} className="space-y-2" />
+            <AppearanceSettings title="Тема" className="space-y-2" />
           </div>
           <div className="border-t pt-1 space-y-1">
             <button

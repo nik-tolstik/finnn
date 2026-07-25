@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Plus, WalletCards } from "lucide-react";
+import { WalletCards } from "lucide-react";
 
 import type { Account } from "@/modules/accounts/account.types";
 import { SelectAccountDialog } from "@/modules/accounts/components/select-account-dialog";
@@ -77,10 +77,6 @@ export function AccountSelector({
             <span className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="truncate text-sm font-normal leading-none text-foreground">Выбрать счёт</span>
               <span className="truncate text-xs font-normal leading-none text-muted-foreground">Счёт не выбран</span>
-            </span>
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-dialog text-muted-foreground shadow-xs transition-colors group-hover:text-foreground dark:group-hover:text-primary">
-              <Plus className="size-3.5 group-hover:hidden" />
-              <ChevronRight className="hidden size-3.5 group-hover:block" />
             </span>
           </button>
         )}

@@ -30,6 +30,14 @@ If the local database is new and Prisma reports transaction or replica set error
 docker exec -it finnn-mongodb mongosh --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})'
 ```
 
+## TypeScript Toolchain
+
+The API and web packages use the native TypeScript 7 compiler. The `@typescript/native` dependency is an npm alias for TypeScript 7, so package scripts that invoke `tsc` use the TypeScript 7 executable.
+
+TypeScript 7 does not expose the legacy compiler API yet. The `typescript` dependency therefore aliases `@typescript/typescript6` so tools that still load that API, including Nest CLI and Next.js configuration loading, continue to work. This compatibility package is only for tooling; `pnpm typecheck` and the package-local `tsc` commands run TypeScript 7.
+
+Orval 8.12.3 does not parse npm alias ranges as semver. Its config uses `packages/web/orval.package.json`, a small generator-only manifest with a normal TypeScript 7 version, so `pnpm api:generate` remains compatible with the alias setup.
+
 ## Environment Variables
 
 Required in `packages/api/.env` for normal local API operation:
