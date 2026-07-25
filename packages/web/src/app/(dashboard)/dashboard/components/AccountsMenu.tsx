@@ -12,10 +12,9 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { cn } from "@/shared/utils/cn";
 
-import { AccountGroupingOptions, AccountSortOptions, type BalanceSortStatus } from "./AccountDisplayControls";
+import { AccountGroupingOptions, AccountSortOptions } from "./AccountDisplayControls";
 
 interface AccountsMenuProps {
-  balanceSortStatus: BalanceSortStatus;
   onCreateAccount: () => void;
   onGroupingChange: (grouping: AccountDisplayGrouping) => void;
   onShowAllAccountsChange: (showAllAccounts: boolean) => void;
@@ -25,7 +24,6 @@ interface AccountsMenuProps {
 }
 
 export function AccountsMenu({
-  balanceSortStatus,
   onCreateAccount,
   onGroupingChange,
   onShowAllAccountsChange,
@@ -51,7 +49,7 @@ export function AccountsMenu({
         <DialogHeader className="px-5">
           <DialogTitle>Опции счетов</DialogTitle>
         </DialogHeader>
-        <DialogContent className="flex flex-col gap-1 px-5">
+        <DialogContent className="flex flex-col gap-3 px-4">
           <div className="space-y-1">
             <button
               type="button"
@@ -80,15 +78,12 @@ export function AccountsMenu({
               {showAllAccounts ? "Только мои счета" : "Показать все счета"}
             </button>
           </div>
-          <div className="my-1 h-px bg-border" />
           <div className="space-y-1">
             <AccountSortOptions
-              balanceSortStatus={balanceSortStatus}
               preferences={preferences}
               onSortChange={onSortChange}
               onSelect={() => setMenuOpen(false)}
             />
-            <div className="my-1 h-px bg-border" />
             <AccountGroupingOptions
               preferences={preferences}
               onGroupingChange={onGroupingChange}

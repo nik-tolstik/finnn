@@ -87,12 +87,13 @@ export function DebtWriteOffDialog({
 
   const form = useForm<DebtWriteOffInput>({
     resolver: zodResolver(debtWriteOffSchema),
+    mode: "onChange",
     defaultValues: getDebtWriteOffDefaultValues({ debt: debtDetails, transaction }),
   });
   const {
     clearErrors,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     handleSubmit,
     register,
     reset,
@@ -432,7 +433,7 @@ export function DebtWriteOffDialog({
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
             {isSubmitting ? (isEditing ? "Сохранение..." : "Погашение...") : isEditing ? "Сохранить" : "Погасить"}
           </Button>
         </DialogFooter>

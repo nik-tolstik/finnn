@@ -69,13 +69,14 @@ export function EditTransactionDialog({
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     setValue,
     setError,
     clearErrors,
     control,
   } = useForm<UpdatePaymentTransactionInput>({
     resolver: zodResolver(updatePaymentTransactionSchema),
+    mode: "onChange",
     defaultValues: getEditPaymentDefaultValues(transaction),
   });
 
@@ -381,7 +382,7 @@ export function EditTransactionDialog({
           </form>
         </DialogContent>
         <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
             {isSubmitting ? "Сохранение..." : "Сохранить"}
           </Button>
         </DialogFooter>

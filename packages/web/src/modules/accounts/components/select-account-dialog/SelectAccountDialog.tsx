@@ -9,7 +9,7 @@ import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useSession } from "@/shared/lib/api-session-client";
 import { accountKeys } from "@/shared/lib/query-keys";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 
 interface SelectAccountDialogProps {
   workspaceId: string;
@@ -19,7 +19,6 @@ interface SelectAccountDialogProps {
   onSelect: (account: Account) => void;
   excludeAccountIds?: string[];
   title?: string;
-  description?: string;
 }
 
 export function SelectAccountDialog({
@@ -30,7 +29,6 @@ export function SelectAccountDialog({
   onSelect,
   excludeAccountIds = [],
   title = "Выберите счёт",
-  description = "Выберите счёт из списка",
 }: SelectAccountDialogProps) {
   const { data: session } = useSession();
   const { data: accountsData } = useQuery({
@@ -106,7 +104,6 @@ export function SelectAccountDialog({
       <DialogWindow className="sm:max-w-[400px]" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogContent>
           <div className="flex flex-col gap-4">

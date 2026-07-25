@@ -57,12 +57,10 @@ export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: Dele
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="secondary" disabled={isDeleting} onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
           <Button
             onClick={handleDelete}
             disabled={isDeleting}
+            size="xl"
             type="button"
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >

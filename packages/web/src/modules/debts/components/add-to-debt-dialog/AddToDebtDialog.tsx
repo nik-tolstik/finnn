@@ -51,6 +51,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
 
   const form = useForm<AddToDebtInput>({
     resolver: zodResolver(addToDebtSchema),
+    mode: "onChange",
     defaultValues: {
       amount: "",
       toAmount: "",
@@ -62,7 +63,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset,
     setValue,
     control,
@@ -290,10 +291,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
             {isSubmitting ? "Добавление..." : "Добавить"}
           </Button>
         </DialogFooter>

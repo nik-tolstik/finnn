@@ -81,10 +81,12 @@ export function EditDebtTransactionDialog({
           </FormProvider>
         </DialogContent>
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
-          <Button type="submit" form={EDIT_DEBT_TRANSACTION_FORM_ID} disabled={form.formState.isSubmitting}>
+          <Button
+            type="submit"
+            form={EDIT_DEBT_TRANSACTION_FORM_ID}
+            disabled={!form.formState.isValid || form.formState.isSubmitting}
+            size="xl"
+          >
             {form.formState.isSubmitting ? "Сохранение..." : "Сохранить"}
           </Button>
         </DialogFooter>

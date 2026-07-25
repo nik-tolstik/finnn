@@ -3,7 +3,7 @@
 import type { CSSProperties, HTMLAttributes } from "react";
 
 import type { Account } from "@/modules/accounts/account.types";
-import { getAccountIcon } from "@/shared/utils/account-icons";
+import { AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { hexToRgba } from "@/shared/utils/color-utils";
 import { formatMoney } from "@/shared/utils/money";
@@ -23,7 +23,6 @@ interface AccountCardProps {
 }
 
 export function AccountCard({ account, className, contentClassName, onClick, showOwner = true }: AccountCardProps) {
-  const AccountIcon = getAccountIcon(account.icon);
   const accountColor = account.color ?? "";
   const accountTint = hexToRgba(accountColor, 0.1) ?? "var(--surface-subtle)";
   const accountTintHover = hexToRgba(accountColor, 0.16) ?? "var(--surface-hover)";
@@ -37,7 +36,12 @@ export function AccountCard({ account, className, contentClassName, onClick, sho
         aria-hidden="true"
         className="flex w-[52px] shrink-0 items-center justify-center bg-[var(--account-tint)] text-[var(--account-color)] transition-colors duration-200 group-hover:bg-[var(--account-tint-hover)] dark:bg-[var(--account-tint-dark)] dark:group-hover:bg-[var(--account-tint-dark-hover)]"
       >
-        <AccountIcon className="size-5 shrink-0" />
+        <AccountIcon
+          iconName={account.icon}
+          accountName={account.name}
+          initialFontSize={18}
+          className="size-5 shrink-0"
+        />
       </div>
       <div className={cn("flex min-w-0 flex-1 items-center justify-between gap-3 px-3.5 py-2", contentClassName)}>
         <div className="flex min-w-0 flex-col justify-center">

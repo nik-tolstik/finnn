@@ -41,10 +41,11 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset: _reset,
   } = useForm<InviteInput>({
     resolver: zodResolver(inviteSchema),
+    mode: "onChange",
   });
 
   const inviteMutation = useMutation({
@@ -98,10 +99,12 @@ export function InviteMemberDialog({ workspaceId, workspaceName, open, onOpenCha
         </DialogContent>
 
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
-          <Button type="submit" form={INVITE_MEMBER_FORM_ID} disabled={isSubmitting || inviteMutation.isPending}>
+          <Button
+            type="submit"
+            form={INVITE_MEMBER_FORM_ID}
+            disabled={!isValid || isSubmitting || inviteMutation.isPending}
+            size="xl"
+          >
             {isSubmitting || inviteMutation.isPending ? "Отправка..." : "Отправить приглашение"}
           </Button>
         </DialogFooter>

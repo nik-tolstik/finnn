@@ -78,7 +78,7 @@ export function BurgerMenu() {
             </div>
 
             <div className="px-4 mt-6">
-              <AppearanceSettings title="Интерфейс" description={null} className="space-y-3" />
+              <AppearanceSettings title="Интерфейс" className="space-y-3" />
             </div>
 
             <div className="mt-auto border-t p-4 space-y-1">

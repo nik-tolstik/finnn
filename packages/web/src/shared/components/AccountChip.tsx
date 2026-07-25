@@ -1,6 +1,6 @@
 "use client";
 
-import { getAccountIcon } from "@/shared/utils/account-icons";
+import { AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { hexToRgba } from "@/shared/utils/color-utils";
 
@@ -24,8 +24,6 @@ interface AccountChipProps {
 }
 
 export function AccountChip({ account, className }: AccountChipProps) {
-  const AccountIcon = getAccountIcon(account.icon);
-
   return (
     <div
       className={cn(
@@ -35,7 +33,12 @@ export function AccountChip({ account, className }: AccountChipProps) {
       )}
       style={{ backgroundColor: account.color ? hexToRgba(account.color, 0.1) : undefined }}
     >
-      <AccountIcon className="size-3.5 shrink-0" style={{ color: account.color ?? undefined }} />
+      <AccountIcon
+        iconName={account.icon}
+        accountName={account.name}
+        className="size-3.5 shrink-0"
+        style={{ color: account.color ?? undefined }}
+      />
       <span className="truncate text-xs font-medium">{account.name}</span>
     </div>
   );

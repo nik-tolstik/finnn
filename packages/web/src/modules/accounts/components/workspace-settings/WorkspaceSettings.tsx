@@ -43,11 +43,11 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isDirty, isSubmitting, isValid },
     reset,
-    formState: { isDirty },
   } = useForm<WorkspaceSettingsInput>({
     resolver: zodResolver(workspaceSettingsSchema),
+    mode: "onChange",
     defaultValues: {
       name: workspace?.name || "",
     },
@@ -126,16 +126,17 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
         </div>
 
         {isOwner && isFormChanged && (
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2">
             <Button
               type="button"
               variant="secondary"
               onClick={handleCancel}
               disabled={isSubmitting || updateMutation.isPending}
+              className="w-full"
             >
               Отменить
             </Button>
-            <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
+            <Button type="submit" disabled={!isValid || isSubmitting || updateMutation.isPending} className="w-full">
               {isSubmitting || updateMutation.isPending ? "Сохранение..." : "Сохранить"}
             </Button>
           </div>

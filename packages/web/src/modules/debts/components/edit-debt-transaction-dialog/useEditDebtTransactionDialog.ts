@@ -51,6 +51,7 @@ export function useEditDebtTransactionDialog({
   const queryClient = useQueryClient();
   const form = useForm<UpdateDebtTransactionInput>({
     resolver: zodResolver(updateDebtTransactionSchema),
+    mode: "onChange",
     defaultValues: getEditDebtTransactionDefaultValues(debtTransaction),
   });
 
