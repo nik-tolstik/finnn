@@ -53,7 +53,7 @@ export function BurgerMenu() {
                 onClick={() => {
                   setSettingsDialogOpen(true);
                 }}
-                className="flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="flex w-full items-center gap-3 rounded-lg bg-card p-3 text-left text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 <UserAvatar
                   name={session?.user?.name || telegramName}
