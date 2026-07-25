@@ -16,7 +16,7 @@
     "check": "pnpm api:check-generated && pnpm --filter api check && pnpm --filter web check",
     "check:fix": "pnpm --filter web check:fix",
     "test": "pnpm --filter api test && pnpm --filter web test",
-    "test:watch": "pnpm --filter web test:watch",
+    "test:watch": "pnpm -r --parallel --filter api --filter web test:watch",
     "typecheck": "pnpm --filter api typecheck && pnpm --filter web typecheck",
     "storybook": "pnpm --filter web storybook",
     "build:storybook": "pnpm --filter web build:storybook",

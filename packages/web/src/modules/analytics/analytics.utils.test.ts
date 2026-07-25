@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   ANALYTICS_DEFAULT_DAY_COUNT,
@@ -7,6 +7,10 @@ import {
 } from "./analytics.utils";
 
 describe("analytics.utils", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("uses the last 30 days when no explicit date filters are provided", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-05T12:00:00.000Z"));

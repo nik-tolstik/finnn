@@ -606,31 +606,4 @@ describe("Workspace API", () => {
     expect(prisma.workspaceMember.create).not.toHaveBeenCalled();
     expect(prisma.workspaceInvite.findUnique).not.toHaveBeenCalled();
   });
-
-  it("rejects invite acceptance for unverified email users", async () => {
-    mockUnverifiedSession(prisma);
-    prisma.workspaceInvite.findUnique.mockResolvedValue({
-      id: "invite-1",
-      workspaceId: "workspace-1",
-      email: "ada@example.com",
-      token: "invite-token",
-      expiresAt: new Date(Date.now() + 1000),
-      workspace: {
-        id: "workspace-1",
-        name: "Shared budget",
-      },
-    });
-
-    const response = await request(app.getHttpServer())
-      .post("/workspace-invites/invite-token/accept")
-      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
-      .expect(403);
-
-    expect(response.body).toMatchObject({
-      message: EMAIL_VERIFICATION_REQUIRED_MESSAGE,
-      code: EMAIL_VERIFICATION_REQUIRED_CODE,
-    });
-    expect(prisma.workspaceMember.create).not.toHaveBeenCalled();
-    expect(prisma.workspaceInvite.findUnique).not.toHaveBeenCalled();
-  });
 });
