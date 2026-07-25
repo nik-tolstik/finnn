@@ -7,6 +7,7 @@ export default defineConfig({
     },
     output: {
       mode: "tags-split",
+      packageJson: "./orval.package.json",
       target: "src/shared/api/generated/finnn.ts",
       schemas: "src/shared/api/generated/model",
       client: "react-query",

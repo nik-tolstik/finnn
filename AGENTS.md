@@ -38,6 +38,8 @@ pnpm db:import
 
 Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishing non-trivial changes.
 
+The package-local `tsc` commands use TypeScript 7 through the `@typescript/native` alias. The `typescript` dependency intentionally aliases `@typescript/typescript6` for tools that still require the legacy compiler API; keep both aliases unless all Nest, Next, Storybook, and Orval tooling has moved to the TypeScript 7 API.
+
 ## Architecture Map
 
 - `packages/web/src/app` contains App Router pages, layouts, and providers.
