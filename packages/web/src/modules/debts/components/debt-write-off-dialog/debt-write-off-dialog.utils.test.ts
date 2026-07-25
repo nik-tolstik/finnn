@@ -8,6 +8,7 @@ import type { DebtWriteOffPaymentTransaction } from "../../debt.types";
 import {
   getDebtWriteOffCategoryOptions,
   getDebtWriteOffDefaultValues,
+  getDebtWriteOffDebt,
   getDebtWriteOffMaximumAmount,
   getDebtWriteOffRemainingAmount,
   getDebtWriteOffStatus,
@@ -21,6 +22,7 @@ const debt = {
   workspaceId: "workspace-1",
   type: DebtType.LENT,
   personName: "Alex",
+  amount: "100",
   remainingAmount: "75",
   currency: "USD",
   status: DebtStatus.OPEN,
@@ -98,6 +100,13 @@ describe("debt write-off dialog utils", () => {
     });
     expect(getDebtWriteOffMaximumAmount(debt, transaction)).toBe("125");
     expect(getDebtWriteOffRemainingAmount({ debt, transaction, amount: "100" })).toBe("25");
+  });
+
+  it("reconstructs the debt amount for a transaction-based dialog", () => {
+    expect(getDebtWriteOffDebt({ transaction })).toMatchObject({
+      amount: "125",
+      remainingAmount: "75",
+    });
   });
 
   it("validates the cap, derives status, and compares calendar dates", () => {

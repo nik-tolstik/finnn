@@ -9,7 +9,7 @@ import type { DebtWithRelations, DebtWriteOffPaymentTransaction } from "../../de
 
 export type DebtWriteOffDebt = Pick<
   DebtWithRelations,
-  "id" | "workspaceId" | "type" | "personName" | "remainingAmount" | "currency" | "status"
+  "id" | "workspaceId" | "type" | "personName" | "amount" | "remainingAmount" | "currency" | "status"
 >;
 
 export function getDebtWriteOffDebt({
@@ -32,6 +32,7 @@ export function getDebtWriteOffDebt({
     workspaceId: transaction.workspaceId,
     type: transaction.debtWriteOff.debtType,
     personName: transaction.debtWriteOff.personName,
+    amount: addMoney(transaction.debtWriteOff.remainingAmount, transaction.debtWriteOff.amount),
     remainingAmount: transaction.debtWriteOff.remainingAmount,
     currency: transaction.debtWriteOff.debtCurrency,
     status: transaction.debtWriteOff.status,

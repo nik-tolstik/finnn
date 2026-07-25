@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { UserRound } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -31,9 +32,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogW
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
-import { compareMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { cn } from "@/shared/utils/cn";
+import { compareMoney, formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { createDebtWriteOff, updateDebtWriteOff } from "../../debt.api";
+import { DebtType } from "../../debt.constants";
 import type { DebtWriteOffPaymentTransaction } from "../../debt.types";
 import {
   type DebtWriteOffDebt,
@@ -133,6 +136,52 @@ export function DebtWriteOffDialog({
   const maximumAmount = getDebtWriteOffMaximumAmount(debtDetails, transaction);
   const transactionType = getDebtWriteOffType(debtDetails.type);
   const transactionTypeLabel = transactionType === "expense" ? "Расход" : "Доход";
+  const isLent = debtDetails.type === DebtType.LENT;
+  const directionLabel = isLent ? "Мне должны" : "Я должен";
+  const debtTotalAmount = debt?.amount || maximumAmount;
+  const debtCurrentRemainingAmount = debt?.remainingAmount || debtDetails.remainingAmount;
+  const debtAlreadyRepaidAmount =
+    compareMoney(debtTotalAmount, debtCurrentRemainingAmount) > 0
+      ? subtractMoney(debtTotalAmount, debtCurrentRemainingAmount)
+      : "0";
+  const debtProgressPercent = useMemo(() => {
+    const total = Number.parseFloat(debtTotalAmount);
+    const repaid = Number.parseFloat(debtAlreadyRepaidAmount);
+
+    if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(repaid)) {
+      return 0;
+    }
+
+    return Math.min(100, Math.max(0, Math.round((repaid / total) * 100)));
+  }, [debtAlreadyRepaidAmount, debtTotalAmount]);
+  const hasValidAmount = amount.length > 0 && Number.isFinite(Number.parseFloat(amount));
+  const hasPositiveAmount = hasValidAmount && compareMoney(amount, "0") > 0;
+  const paymentProgressPercent = useMemo(() => {
+    const total = Number.parseFloat(debtTotalAmount);
+    const payment = Number.parseFloat(amount);
+
+    if (!hasValidAmount || !Number.isFinite(total) || total <= 0 || !Number.isFinite(payment)) {
+      return 0;
+    }
+
+    return Math.min(100, Math.max(0, Math.round((payment / total) * 100)));
+  }, [amount, debtTotalAmount, hasValidAmount]);
+  const paymentSegmentPercent = Math.min(100 - debtProgressPercent, paymentProgressPercent);
+  const previewRemainingAmount = useMemo(() => {
+    if (!hasValidAmount) {
+      return debtCurrentRemainingAmount;
+    }
+
+    if (compareMoney(amount, maximumAmount) >= 0) {
+      return "0";
+    }
+
+    return getDebtWriteOffRemainingAmount({ debt: debtDetails, transaction, amount });
+  }, [amount, debtCurrentRemainingAmount, debtDetails, hasValidAmount, maximumAmount, transaction]);
+  const submitLabel = isEditing ? "Сохранить" : "Погасить";
+  const submitButtonLabel = hasPositiveAmount
+    ? `${submitLabel} ${formatMoney(amount, debtDetails.currency)}`
+    : submitLabel;
 
   const { handleAmountChange, handleToAmountChange, isLoadingRate } = useCurrencyAmountSync({
     form,
@@ -290,11 +339,105 @@ export function DebtWriteOffDialog({
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex items-center justify-between gap-4 rounded-lg bg-muted p-3">
-              <div className="truncate font-medium">{debtDetails.personName}</div>
-              <div className="shrink-0 text-right font-semibold text-foreground text-sm">
-                {formatMoney(debtDetails.remainingAmount, debtDetails.currency)}
+            <div className="space-y-4 rounded-xl bg-card p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                    <UserRound className="size-6" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <div className="truncate font-medium">{debtDetails.personName}</div>
+                    <div className={cn("text-sm", isLent ? "text-success" : "text-destructive")}>
+                      <span>{directionLabel}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="text-lg font-semibold text-foreground">
+                    {formatMoney(previewRemainingAmount, debtDetails.currency)}
+                  </div>
+                </div>
               </div>
+
+              <fieldset className="space-y-2">
+                <legend className="sr-only">Прогресс погашения долга {debtDetails.personName}</legend>
+                <div
+                  className="h-1.5 overflow-hidden rounded-full bg-muted"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={debtProgressPercent + paymentSegmentPercent}
+                  aria-valuetext={`${debtProgressPercent}% уже закрыто, ${paymentProgressPercent}% закроется этим платежом`}
+                >
+                  <div className="flex h-full w-full">
+                    <div
+                      className={cn("h-full transition-[width]", isLent ? "bg-success" : "bg-destructive")}
+                      style={{ width: `${debtProgressPercent}%` }}
+                    />
+                    <div
+                      className="h-full bg-primary transition-[width]"
+                      style={{ width: `${paymentSegmentPercent}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="relative h-4 text-xs text-muted-foreground">
+                  <span
+                    className={cn(
+                      "absolute top-0 whitespace-nowrap",
+                      debtProgressPercent === 0 ? "left-0" : "-translate-x-1/2",
+                      isLent ? "text-success" : "text-destructive"
+                    )}
+                    style={debtProgressPercent === 0 ? undefined : { left: `${debtProgressPercent / 2}%` }}
+                  >
+                    {formatMoney(debtAlreadyRepaidAmount, debtDetails.currency)}
+                  </span>
+                  <span className="absolute top-0 right-0 whitespace-nowrap">
+                    {formatMoney(debtTotalAmount, debtDetails.currency)}
+                  </span>
+                </div>
+              </fieldset>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="debt-write-off-amount" required>
+                Сумма платежа ({debtDetails.currency})
+              </Label>
+              <div className="relative">
+                <NumberInput
+                  id="debt-write-off-amount"
+                  placeholder="0.00"
+                  className="pr-24"
+                  {...register("amount", {
+                    onChange: (event) => {
+                      const value = event.target.value;
+                      handleAmountChange(value);
+                      const numericValue = Number.parseFloat(value);
+                      if (!Number.isNaN(numericValue) && compareMoney(value, maximumAmount) > 0) {
+                        setError("amount", {
+                          type: "manual",
+                          message: `Сумма не может превышать ${formatMoney(maximumAmount, debtDetails.currency)}`,
+                        });
+                      } else {
+                        clearErrors("amount");
+                      }
+                    },
+                  })}
+                  aria-invalid={errors.amount ? "true" : "false"}
+                />
+                <span className="pointer-events-none absolute right-14 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
+                  {getCurrencySymbol(debtDetails.currency)}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1.5 top-1/2 h-7 -translate-y-1/2 px-2 text-xs text-primary"
+                  onClick={handleUseMaximum}
+                >
+                  Всё
+                </Button>
+              </div>
+              {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
             </div>
 
             <Controller
@@ -314,68 +457,6 @@ export function DebtWriteOffDialog({
             {accountId && !selectedAccount ? (
               <p className="text-sm text-destructive">Текущий счёт недоступен. Выберите другой счёт.</p>
             ) : null}
-
-            <div className="space-y-2">
-              <Label htmlFor="debt-write-off-category" required>
-                Категория ({transactionTypeLabel.toLowerCase()})
-              </Label>
-              <Button
-                id="debt-write-off-category"
-                type="button"
-                variant="field"
-                className="w-full justify-between"
-                onClick={() => categoryDialog.openDialog(null)}
-              >
-                {selectedCategory ? (
-                  <span className="truncate">{selectedCategory.label}</span>
-                ) : (
-                  <span className="text-muted-foreground">Выберите категорию</span>
-                )}
-              </Button>
-              {errors.categoryId ? <p className="text-sm text-destructive">{errors.categoryId.message}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="debt-write-off-amount" required>
-                Сумма погашения ({debtDetails.currency})
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-                  {getCurrencySymbol(debtDetails.currency)}
-                </span>
-                <NumberInput
-                  id="debt-write-off-amount"
-                  placeholder="0.00"
-                  className="pl-9 pr-16"
-                  {...register("amount", {
-                    onChange: (event) => {
-                      const value = event.target.value;
-                      handleAmountChange(value);
-                      const numericValue = Number.parseFloat(value);
-                      if (!Number.isNaN(numericValue) && compareMoney(value, maximumAmount) > 0) {
-                        setError("amount", {
-                          type: "manual",
-                          message: `Сумма не может превышать ${formatMoney(maximumAmount, debtDetails.currency)}`,
-                        });
-                      } else {
-                        clearErrors("amount");
-                      }
-                    },
-                  })}
-                  aria-invalid={errors.amount ? "true" : "false"}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1.5 top-1/2 h-7 -translate-y-1/2 px-2 text-xs"
-                  onClick={handleUseMaximum}
-                >
-                  Всё
-                </Button>
-              </div>
-              {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
-            </div>
 
             {!currenciesMatch && selectedAccount ? (
               <div className="space-y-2">
@@ -399,6 +480,26 @@ export function DebtWriteOffDialog({
                 {errors.toAmount ? <p className="text-sm text-destructive">{errors.toAmount.message}</p> : null}
               </div>
             ) : null}
+
+            <div className="space-y-2">
+              <Label htmlFor="debt-write-off-category" required>
+                Категория ({transactionTypeLabel.toLowerCase()})
+              </Label>
+              <Button
+                id="debt-write-off-category"
+                type="button"
+                variant="field"
+                className="w-full justify-between"
+                onClick={() => categoryDialog.openDialog(null)}
+              >
+                {selectedCategory ? (
+                  <span className="truncate">{selectedCategory.label}</span>
+                ) : (
+                  <span className="text-muted-foreground">Выберите категорию</span>
+                )}
+              </Button>
+              {errors.categoryId ? <p className="text-sm text-destructive">{errors.categoryId.message}</p> : null}
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="debt-write-off-description">Описание</Label>
@@ -434,7 +535,7 @@ export function DebtWriteOffDialog({
 
         <DialogFooter>
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
-            {isSubmitting ? (isEditing ? "Сохранение..." : "Погашение...") : isEditing ? "Сохранить" : "Погасить"}
+            {isSubmitting ? (isEditing ? "Сохранение..." : "Погашение...") : submitButtonLabel}
           </Button>
         </DialogFooter>
       </DialogWindow>
