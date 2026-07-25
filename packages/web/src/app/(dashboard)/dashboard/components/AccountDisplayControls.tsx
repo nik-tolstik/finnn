@@ -50,7 +50,7 @@ function MenuOption({ active, children, onClick }: { active: boolean; children: 
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm font-normal transition-colors hover:bg-accent",
+        "flex min-h-10 w-full items-center rounded-md px-3 py-2 text-left text-sm font-normal transition-colors hover:bg-accent",
         active && "bg-accent text-accent-foreground"
       )}
     >
@@ -60,21 +60,18 @@ function MenuOption({ active, children, onClick }: { active: boolean; children: 
 }
 
 interface AccountSortOptionsProps {
-  balanceSortStatus: BalanceSortStatus;
   onSelect?: () => void;
   onSortChange: (sort: AccountDisplaySort) => void;
   preferences: AccountDisplayPreferences;
 }
 
-export function AccountSortOptions({
-  balanceSortStatus,
-  onSelect,
-  onSortChange,
-  preferences,
-}: AccountSortOptionsProps) {
+export function AccountSortOptions({ onSelect, onSortChange, preferences }: AccountSortOptionsProps) {
   return (
     <div className="space-y-1">
-      <h2 className="px-2 pb-1 pt-1 text-xs text-muted-foreground">Сортировка по</h2>
+      <div className="flex items-center gap-2 pb-2 pt-1 text-sm text-muted-foreground">
+        <ArrowDownUp className="size-4" />
+        <span>Сортировка</span>
+      </div>
       {SORT_OPTIONS.map((option) => (
         <MenuOption
           active={preferences.sort === option.value}
@@ -87,13 +84,6 @@ export function AccountSortOptions({
           {option.label}
         </MenuOption>
       ))}
-      {preferences.sort === "balance" && balanceSortStatus !== "ready" ? (
-        <p className="px-2 pt-1 text-xs text-muted-foreground">
-          {balanceSortStatus === "loading"
-            ? "Загружаем курсы валют…"
-            : "Не удалось загрузить курсы — используется Своя сортировка."}
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -107,7 +97,10 @@ interface AccountGroupingOptionsProps {
 export function AccountGroupingOptions({ onGroupingChange, onSelect, preferences }: AccountGroupingOptionsProps) {
   return (
     <div className="space-y-1">
-      <h2 className="px-2 pb-1 pt-1 text-xs text-muted-foreground">Группировка по</h2>
+      <div className="flex items-center gap-2 pb-2 pt-1 text-sm text-muted-foreground">
+        <Group className="size-4" />
+        <span>Группировка</span>
+      </div>
       {GROUPING_OPTIONS.map((option) => (
         <MenuOption
           active={preferences.grouping === option.value}
@@ -125,7 +118,6 @@ export function AccountGroupingOptions({ onGroupingChange, onSelect, preferences
 }
 
 export function AccountDisplayControls({
-  balanceSortStatus,
   onCreateAccount,
   onGroupingChange,
   onSortChange,
@@ -140,7 +132,7 @@ export function AccountDisplayControls({
         open={sortOpen}
         onOpenChange={setSortOpen}
         placement="bottom-end"
-        className="w-60 p-1"
+        className="w-60 p-2"
         trigger={({ ref, ...triggerProps }) => (
           <Tooltip content={getSortLabel(preferences)} disableHoverableContent>
             <Button
@@ -156,19 +148,14 @@ export function AccountDisplayControls({
           </Tooltip>
         )}
       >
-        <AccountSortOptions
-          balanceSortStatus={balanceSortStatus}
-          preferences={preferences}
-          onSortChange={onSortChange}
-          onSelect={() => setSortOpen(false)}
-        />
+        <AccountSortOptions preferences={preferences} onSortChange={onSortChange} onSelect={() => setSortOpen(false)} />
       </Popover>
 
       <Popover
         open={groupingOpen}
         onOpenChange={setGroupingOpen}
         placement="bottom-end"
-        className="w-52 p-1"
+        className="w-52 p-2"
         trigger={({ ref, ...triggerProps }) => (
           <Tooltip content={getGroupingLabel(preferences.grouping)} disableHoverableContent>
             <Button

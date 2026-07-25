@@ -32,6 +32,7 @@
 
   /* Semantic surfaces */
   --color-surface-raised: var(--surface-raised);
+  --color-surface-inset: var(--surface-inset);
   --color-surface-subtle: var(--surface-subtle);
   --color-surface-control: var(--surface-control);
   --color-surface-control-hover: var(--surface-control-hover);
@@ -52,6 +53,7 @@
   --color-option-selected: var(--option-selected);
   --color-account-card: var(--account-card-background);
   --color-account-card-hover: var(--account-card-background-hover);
+  --color-button-destructive-background: var(--button-destructive-background);
 
   /* Radius */
   --radius-sm: 4px;
@@ -74,6 +76,7 @@
   --palette-dark-700: oklch(0.3 0 0);
   --palette-dark-750: oklch(0.269 0 0);
   --palette-dark-800: oklch(0.23 0 0);
+  --palette-dark-850: oklch(0.21 0 0);
   --palette-dark-900: oklch(0.19 0 0);
   --palette-dark-text-secondary: oklch(0.708 0 0);
 }
@@ -83,6 +86,7 @@ html.light {
   /* Semantic tokens: product meaning, independent of a component. */
   --surface-canvas: var(--palette-white);
   --surface-raised: var(--palette-white);
+  --surface-inset: var(--palette-neutral-100);
   --surface-subtle: var(--palette-neutral-100);
   --surface-control: var(--palette-neutral-100);
   --surface-control-hover: var(--palette-neutral-125);
@@ -115,7 +119,7 @@ html.light {
 
   /* Component tokens: visual contracts for reusable primitives. */
   --dialog-background: var(--surface-raised);
-  --popover-background: var(--surface-raised);
+  --popover-background: var(--surface-inset);
   --control-background: var(--surface-control);
   --control-background-hover: var(--surface-control-hover);
   --control-focus: var(--focus-ring);
@@ -129,10 +133,12 @@ html.light {
   --account-card-background-hover: var(--surface-subtle);
   --account-card-shadow: 0 1px 2px rgb(23 23 26 / 12%), 0 3px 8px rgb(23 23 26 / 7%);
   --account-card-shadow-hover: 0 2px 4px rgb(23 23 26 / 14%), 0 5px 12px rgb(23 23 26 / 9%);
+  --button-destructive-background: var(--color-red-500);
 }
 
 html.dark {
   --surface-canvas: var(--palette-dark-900);
+  --surface-inset: var(--palette-dark-850);
   --surface-raised: var(--palette-dark-800);
   --surface-subtle: var(--palette-dark-750);
   --surface-control: var(--palette-dark-800);
@@ -164,7 +170,7 @@ html.dark {
   --success-foreground: oklch(0.145 0 0);
 
   --dialog-background: var(--surface-canvas);
-  --popover-background: var(--surface-raised);
+  --popover-background: var(--surface-inset);
   --control-background: var(--surface-control);
   --control-background-hover: var(--surface-control-hover);
   --control-focus: var(--focus-ring);
@@ -178,6 +184,7 @@ html.dark {
   --account-card-background-hover: var(--surface-subtle);
   --account-card-shadow: none;
   --account-card-shadow-hover: none;
+  --button-destructive-background: var(--color-red-500);
 }
 
 @layer base {

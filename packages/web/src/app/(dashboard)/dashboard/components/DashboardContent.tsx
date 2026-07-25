@@ -399,7 +399,6 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
                   onSortChange={handleSortChange}
                 />
                 <AccountsMenu
-                  balanceSortStatus={balanceSortStatus}
                   preferences={preferences}
                   showAllAccounts={showAllAccounts}
                   onCreateAccount={() => createAccountDialog.openDialog(null)}
