@@ -56,7 +56,6 @@
   --color-account-card: var(--account-card-background);
   --color-account-card-hover: var(--account-card-background-hover);
   --color-transaction-card-background: var(--transaction-card-background);
-  --color-button-destructive-background: var(--button-destructive-background);
 
   /* Radius */
   --radius-sm: 4px;
@@ -168,7 +167,6 @@ html.light {
   --transaction-card-shadow:
     0 -2px 4px -1px rgb(23 23 26 / 8%), 0 4px 6px -1px rgb(23 23 26 / 10%),
     0 2px 4px -2px rgb(23 23 26 / 10%);
-  --button-destructive-background: var(--color-red-500);
 }
 
 html.dark {
@@ -220,7 +218,6 @@ html.dark {
   --transaction-card-background: var(--surface-raised);
   --account-card-shadow: none;
   --account-card-shadow-hover: none;
-  --button-destructive-background: var(--color-red-500);
 }
 
 @layer base {

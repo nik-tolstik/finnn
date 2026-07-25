@@ -49,7 +49,7 @@ function SharedUiGallery() {
             </Button>
             <Button variant="secondary">Вторичная</Button>
             <Button variant="ghost">Ссылка</Button>
-            <Button variant="destructive">Удалить</Button>
+            <Button variant="danger">Удалить</Button>
             <Button size="icon" aria-label="Cards">
               <WalletCards className="size-4" />
             </Button>

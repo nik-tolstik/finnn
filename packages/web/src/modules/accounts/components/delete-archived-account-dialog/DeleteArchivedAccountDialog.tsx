@@ -70,13 +70,7 @@ export function DeleteArchivedAccountDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            size="xl"
-            type="button"
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
+          <Button onClick={handleDelete} disabled={isDeleting} size="xl" type="button" variant="danger">
             {isDeleting ? "Удаление..." : "Удалить"}
           </Button>
         </DialogFooter>

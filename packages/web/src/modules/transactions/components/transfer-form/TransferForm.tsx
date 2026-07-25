@@ -219,7 +219,7 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
         </Label>
         <div className="relative min-w-0">
           {toAccount && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+            <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-muted-foreground text-sm font-medium">
               {getCurrencySymbol(toAccount.currency)}
             </span>
           )}

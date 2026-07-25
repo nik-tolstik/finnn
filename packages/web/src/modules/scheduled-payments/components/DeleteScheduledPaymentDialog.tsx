@@ -42,13 +42,7 @@ export function DeleteScheduledPaymentDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            disabled={isDeleting}
-            onClick={handleDelete}
-            size="xl"
-            type="button"
-          >
+          <Button disabled={isDeleting} onClick={handleDelete} size="xl" type="button" variant="danger">
             {isDeleting ? "Удаление..." : "Удалить"}
           </Button>
         </DialogFooter>

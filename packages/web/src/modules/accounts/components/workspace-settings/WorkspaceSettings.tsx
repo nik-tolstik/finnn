@@ -143,7 +143,7 @@ export function WorkspaceSettings({ workspaceId }: WorkspaceSettingsProps) {
         )}
 
         {!isOwner && (
-          <Button type="button" variant="destructive" onClick={() => setLeaveDialogOpen(true)}>
+          <Button type="button" variant="danger" onClick={() => setLeaveDialogOpen(true)}>
             Покинуть
           </Button>
         )}
