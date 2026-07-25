@@ -1,7 +1,7 @@
-const CACHE_NAME = "finnn-v2";
+const CACHE_NAME = "finnn-v3";
 const STATIC_FILE_PATTERN = /\.(?:css|js|mjs|png|jpg|jpeg|gif|webp|avif|svg|ico|woff2?|ttf|otf)$/i;
 const STATIC_PATH_PREFIXES = ["/_next/static/", "/images/", "/fonts/"];
-const STATIC_PATHS = new Set(["/favicon.ico", "/manifest.json", "/site.webmanifest", "/apple-icon.png"]);
+const STATIC_PATHS = new Set(["/manifest.json", "/site.webmanifest", "/apple-icon.png", "/logo-adaptive.svg"]);
 
 function isCacheableStaticAsset(request) {
   if (request.method !== "GET") {

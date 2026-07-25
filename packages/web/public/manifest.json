@@ -4,10 +4,16 @@
   "description": "Ведите учёт своих финансов с лёгкостью",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#f7f7f7",
+  "theme_color": "#1c1c1c",
   "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "/logo-adaptive.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",

@@ -10,6 +10,7 @@ import { AccentColorProvider } from "@/shared/components/accent-color-provider";
 import { PullToRefresh } from "@/shared/components/pull-to-refresh";
 import { ServiceWorkerRegistration } from "@/shared/components/ServiceWorkerRegistration";
 import { ApiSessionProvider, apiSessionQueryKey } from "@/shared/lib/api-session-client";
+import { getThemeLogoPath } from "@/shared/lib/theme-logo";
 
 function ThemeClassSync() {
   const { resolvedTheme, theme } = useTheme();
@@ -25,6 +26,18 @@ function ThemeClassSync() {
       root.style.colorScheme = nextTheme;
     } else {
       root.style.removeProperty("color-scheme");
+    }
+
+    const faviconUrl = getThemeLogoPath(nextTheme);
+    if (!faviconUrl) return;
+
+    const faviconLinks = document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]');
+
+    for (const link of faviconLinks) {
+      link.href = faviconUrl;
+      link.type = "image/svg+xml";
+      link.sizes = "any";
+      link.media = "";
     }
   }, [resolvedTheme, theme]);
 
