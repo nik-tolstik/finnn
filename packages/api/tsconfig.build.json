@@ -3,7 +3,8 @@
   "compilerOptions": {
     "declaration": true,
     "rootDir": "./src",
-    "noEmit": false
+    "noEmit": false,
+    "incremental": false
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "test", "**/*.test.ts", "vitest.config.ts"]
