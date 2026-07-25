@@ -344,23 +344,6 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
               <Badge variant="secondary" className="text-xs">
                 {visibleAccounts.length}
               </Badge>
-              {!isReorderMode ? (
-                <Tooltip
-                  content={<p>{showAllAccounts ? "Показать только ваши счета" : "Показать все счета"}</p>}
-                  disableHoverableContent
-                >
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={showAllAccounts ? "Показать только ваши счета" : "Показать все счета"}
-                    onClick={() => setShowAllAccounts((current) => !current)}
-                    className="hidden size-8 md:inline-flex"
-                  >
-                    {showAllAccounts ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </Button>
-                </Tooltip>
-              ) : null}
             </div>
 
             {isReorderMode ? (
@@ -391,6 +374,21 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
               </div>
             ) : (
               <div className="flex shrink-0 items-center gap-2">
+                <Tooltip
+                  content={<p>{showAllAccounts ? "Показать только ваши счета" : "Показать все счета"}</p>}
+                  disableHoverableContent
+                >
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    aria-label={showAllAccounts ? "Показать только ваши счета" : "Показать все счета"}
+                    onClick={() => setShowAllAccounts((current) => !current)}
+                    className="hidden md:inline-flex"
+                  >
+                    {showAllAccounts ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </Button>
+                </Tooltip>
                 <AccountDisplayControls
                   balanceSortStatus={balanceSortStatus}
                   preferences={preferences}
