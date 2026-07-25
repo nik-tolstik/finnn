@@ -20,7 +20,7 @@ export function DebtsContent({ workspaceId }: DebtsContentProps) {
     <div className="w-full max-w-[1440px] mx-auto">
       <div className="space-y-6">
         <div className="flex flex-wrap gap-3 items-center justify-between">
-          <h1 className="text-2xl font-semibold">Долги</h1>
+          <h1 className="text-xl font-semibold">Долги</h1>
           <div className="flex items-center gap-2">
             <Button
               aria-label="История закрытых долгов"

@@ -4,7 +4,7 @@ import { Check, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { ComboboxOption } from "@/shared/ui/combobox";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { cn } from "@/shared/utils/cn";
 
@@ -56,7 +56,6 @@ export function CategorySelectModal({
       <DialogWindow className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>Выберите категорию</DialogTitle>
-          <DialogDescription>Выберите существующую категорию</DialogDescription>
         </DialogHeader>
         <DialogContent className="overflow-hidden flex flex-col">
           <div className="relative">

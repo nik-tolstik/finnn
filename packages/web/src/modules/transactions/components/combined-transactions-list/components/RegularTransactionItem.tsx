@@ -35,6 +35,7 @@ export function RegularTransactionItem({ transaction, workspaceName, onClick }: 
             icon: (
               <AccountIcon
                 iconName={transaction.account.icon}
+                accountColor={transaction.account.color}
                 accountName={transaction.account.name}
                 className="size-3.5"
               />

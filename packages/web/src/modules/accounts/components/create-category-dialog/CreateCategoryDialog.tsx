@@ -12,15 +12,7 @@ import { insertCategoriesInCache, runOptimisticWorkspaceMutation } from "@/share
 import { categoryKeys } from "@/shared/lib/query-keys";
 import { type CreateCategoryInput, createCategorySchema } from "@/shared/lib/validations/category";
 import { Button } from "@/shared/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
@@ -103,9 +95,6 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
       <DialogWindow className="sm:w-[500px]">
         <DialogHeader>
           <DialogTitle>Добавить категорию {type === CategoryType.INCOME ? "дохода" : "расхода"}</DialogTitle>
-          <DialogDescription>
-            Создайте новую категорию для {type === CategoryType.INCOME ? "доходов" : "расходов"}.
-          </DialogDescription>
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

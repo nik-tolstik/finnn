@@ -34,9 +34,7 @@ function TransferAccountChip({ color, icon, label }: TransferAccountChipProps) {
         backgroundColor: color ? hexToRgba(color, 0.08) : undefined,
       }}
     >
-      <span className="shrink-0" style={{ color: color ?? undefined }}>
-        {icon}
-      </span>
+      <span className="shrink-0">{icon}</span>
       <span className="truncate">{label}</span>
     </span>
   );
@@ -69,6 +67,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
               icon={
                 <AccountIcon
                   iconName={transaction.fromAccount.icon}
+                  accountColor={transaction.fromAccount.color}
                   accountName={transaction.fromAccount.name}
                   className="size-3.5"
                 />
@@ -81,6 +80,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
               icon={
                 <AccountIcon
                   iconName={transaction.toAccount.icon}
+                  accountColor={transaction.toAccount.color}
                   accountName={transaction.toAccount.name}
                   className="size-3.5"
                 />

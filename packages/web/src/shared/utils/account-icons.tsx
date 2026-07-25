@@ -20,7 +20,11 @@ import {
   WalletCards,
 } from "lucide-react";
 import type React from "react";
-import type { ComponentProps } from "react";
+import type { ComponentProps, CSSProperties } from "react";
+import { useId } from "react";
+
+import { getAccountIconColors } from "@/shared/utils/account-icon-colors";
+import { cn } from "@/shared/utils/cn";
 
 type IconComponent =
   | LucideIcon
@@ -65,19 +69,40 @@ function BelkartIcon({ className, ...props }: ComponentProps<"svg">) {
 }
 
 function MirIcon({ className, ...props }: ComponentProps<"svg">) {
+  const gradientId = useId();
+
   return (
-    <svg viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
+    <svg viewBox="0 0 809 229" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
       <defs>
-        <linearGradient id="mir-icon-gradient" x1="370" y1="0" x2="290" y2="0" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#1F5CD7" />
-          <stop offset="1" stopColor="#02AEFF" />
+        <linearGradient id={gradientId} x1="570.9194" y1="47" x2="809" y2="47" gradientUnits="userSpaceOnUse">
+          <stop offset="0.3" stopColor="#00B4E6" />
+          <stop offset="1" stopColor="#088CCB" />
         </linearGradient>
       </defs>
       <path
-        fill="#0F754E"
-        d="M31 13h33c3 0 12-1 16 13 3 9 7 23 13 44h2c6-22 11-37 13-44 4-14 14-13 18-13h31v96h-32V52h-2l-17 57H83L66 52h-3v57H31m139-96h32v57h3l21-47c4-9 13-10 13-10h30v96h-32V52h-2l-21 47c-4 9-14 10-14 10h-30m142-29v29h-30V59h98c-4 12-18 21-34 21Z"
+        fill="#4DB45E"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M218 0v.1c-.1 0-31.6-.1-40 30-7.7 27.6-29.4 103.8-30 105.9h-6s-22.2-77.9-30-106C103.6-.1 72 0 72 0H0v229h72V93h3h3l42 136h50l42-135.9h6V229h72V0h-72Z"
       />
-      <path d="M382 53c4-18-8-40-34-40h-68c2 21 20 40 39 40Z" fill="url(#mir-icon-gradient)" />
+      <path
+        fill="#4DB45E"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M481 0s-21.1 1.9-31 24l-51 112h-6V0h-72v229l68 0v0s22.1-2 32-24l50-112h6v136h72V0h-68Z"
+      />
+      <path
+        fill="#4DB45E"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M581 104v125h72v-73h78c34 0 62.8-21.7 73.5-52H581Z"
+      />
+      <path
+        fill={`url(#${gradientId})`}
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M731 0H570.9c8 43.6 40.7 78.6 83 90 9.6 2.6 19.7 4 30.1 4h123.4c1.1-5.2 1.6-10.5 1.6-16C809 34.9 774.1 0 731 0Z"
+      />
     </svg>
   );
 }
@@ -126,56 +151,108 @@ function InitialIcon({
   );
 }
 
-export const ACCOUNT_ICONS: Record<string, IconComponent> = {
-  Initial: InitialIcon,
-  Wallet,
-  WalletCards,
-  Banknote,
-  Coins,
-  PiggyBank,
-  CreditCard,
-  Smartphone,
-  Landmark,
-  Building2,
-  Vault,
-  HandCoins,
-  Handshake,
-  TrendingUp,
-  BriefcaseBusiness,
-  ReceiptText,
-  BYN: Banknote,
-  USD: DollarSign,
-  EUR: Euro,
-  RUB: RussianRuble,
-  Visa: VisaIcon,
-  Mastercard: MastercardIcon,
-  Belkart: BelkartIcon,
-  Mir: MirIcon,
-  Bitcoin: BitcoinIcon,
-} as const;
+export type AccountIconColorMode = "adaptive" | "brand";
 
-export type AccountIconName = keyof typeof ACCOUNT_ICONS;
+interface AccountIconDefinition {
+  Icon: IconComponent;
+  colorMode: AccountIconColorMode;
+}
+
+export const ACCOUNT_ICON_DEFINITIONS = {
+  Initial: { Icon: InitialIcon, colorMode: "adaptive" },
+  Wallet: { Icon: Wallet, colorMode: "adaptive" },
+  WalletCards: { Icon: WalletCards, colorMode: "adaptive" },
+  Banknote: { Icon: Banknote, colorMode: "adaptive" },
+  Coins: { Icon: Coins, colorMode: "adaptive" },
+  PiggyBank: { Icon: PiggyBank, colorMode: "adaptive" },
+  CreditCard: { Icon: CreditCard, colorMode: "adaptive" },
+  Smartphone: { Icon: Smartphone, colorMode: "adaptive" },
+  Landmark: { Icon: Landmark, colorMode: "adaptive" },
+  Building2: { Icon: Building2, colorMode: "adaptive" },
+  Vault: { Icon: Vault, colorMode: "adaptive" },
+  HandCoins: { Icon: HandCoins, colorMode: "adaptive" },
+  Handshake: { Icon: Handshake, colorMode: "adaptive" },
+  TrendingUp: { Icon: TrendingUp, colorMode: "adaptive" },
+  BriefcaseBusiness: { Icon: BriefcaseBusiness, colorMode: "adaptive" },
+  ReceiptText: { Icon: ReceiptText, colorMode: "adaptive" },
+  BYN: { Icon: Banknote, colorMode: "adaptive" },
+  USD: { Icon: DollarSign, colorMode: "adaptive" },
+  EUR: { Icon: Euro, colorMode: "adaptive" },
+  RUB: { Icon: RussianRuble, colorMode: "adaptive" },
+  Visa: { Icon: VisaIcon, colorMode: "adaptive" },
+  Mastercard: { Icon: MastercardIcon, colorMode: "brand" },
+  Belkart: { Icon: BelkartIcon, colorMode: "brand" },
+  Mir: { Icon: MirIcon, colorMode: "brand" },
+  Bitcoin: { Icon: BitcoinIcon, colorMode: "adaptive" },
+} as const satisfies Record<string, AccountIconDefinition>;
+
+export type AccountIconName = keyof typeof ACCOUNT_ICON_DEFINITIONS;
+
+// Keep the component-only registry for consumers that only need to enumerate icons.
+export const ACCOUNT_ICONS = Object.fromEntries(
+  Object.entries(ACCOUNT_ICON_DEFINITIONS).map(([name, definition]) => [name, definition.Icon])
+) as Record<AccountIconName, IconComponent>;
 
 export interface AccountIconProps extends ComponentProps<"svg"> {
+  accountColor?: string | null;
   accountName?: string | null;
   iconName?: string | null;
   initialFontSize?: number;
 }
 
-export function getAccountIcon(iconName?: string | null): IconComponent {
-  if (iconName && iconName in ACCOUNT_ICONS) {
-    return ACCOUNT_ICONS[iconName as AccountIconName];
+export function getAccountIconDefinition(iconName?: string | null): AccountIconDefinition {
+  if (iconName && iconName in ACCOUNT_ICON_DEFINITIONS) {
+    return ACCOUNT_ICON_DEFINITIONS[iconName as AccountIconName];
   }
 
-  return HandCoins;
+  return ACCOUNT_ICON_DEFINITIONS.HandCoins;
 }
 
-export function AccountIcon({ accountName, iconName, initialFontSize, ...props }: AccountIconProps) {
-  const Icon = getAccountIcon(iconName);
+export function getAccountIcon(iconName?: string | null): IconComponent {
+  return getAccountIconDefinition(iconName).Icon;
+}
 
-  if (iconName === "Initial") {
-    return <InitialIcon {...props} accountName={accountName} initialFontSize={initialFontSize} />;
+export function AccountIcon({
+  accountColor,
+  accountName,
+  className,
+  iconName,
+  initialFontSize,
+  style,
+  ...props
+}: AccountIconProps) {
+  const definition = getAccountIconDefinition(iconName);
+  const Icon = definition.Icon;
+  const isAdaptive = definition.colorMode === "adaptive" && accountColor !== undefined;
+  const iconColors = isAdaptive ? getAccountIconColors(accountColor) : null;
+  const { color: _legacyColor, ...styleWithoutColor } = style ?? {};
+  const iconStyle =
+    isAdaptive && iconColors
+      ? ({
+          ...styleWithoutColor,
+          "--account-icon-color-light": iconColors.light,
+          "--account-icon-color-dark": iconColors.dark,
+        } as CSSProperties)
+      : style;
+  const iconClassName = cn(className, isAdaptive && "account-icon-adaptive");
+
+  const renderIcon = (nextClassName: string | undefined, nextStyle: CSSProperties | undefined) => {
+    const iconProps = {
+      ...props,
+      className: nextClassName,
+      style: nextStyle,
+    };
+
+    if (iconName === "Initial") {
+      return <InitialIcon {...iconProps} accountName={accountName} initialFontSize={initialFontSize} />;
+    }
+
+    return <Icon {...iconProps} />;
+  };
+
+  if (definition.colorMode === "brand") {
+    return renderIcon(className, style);
   }
 
-  return <Icon {...props} />;
+  return renderIcon(iconClassName, iconStyle);
 }

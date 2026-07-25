@@ -23,7 +23,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select";
-import { ACCOUNT_ICONS } from "@/shared/utils/account-icons";
+import { ACCOUNT_ICON_DEFINITIONS, AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
@@ -257,13 +257,18 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
               <Label htmlFor="initialBalance" required>
                 Начальный баланс
               </Label>
-              <NumberInput
-                id="initialBalance"
-                {...register("initialBalance")}
-                prefix={getCurrencySymbol(currency || DEFAULT_CURRENCY)}
-                placeholder="0.00"
-                aria-invalid={errors.initialBalance ? "true" : "false"}
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm font-medium text-muted-foreground">
+                  {getCurrencySymbol(currency || DEFAULT_CURRENCY)}
+                </span>
+                <NumberInput
+                  id="initialBalance"
+                  placeholder="0.00"
+                  className="pl-9"
+                  {...register("initialBalance")}
+                  aria-invalid={errors.initialBalance ? "true" : "false"}
+                />
+              </div>
               {errors.initialBalance && <p className="text-sm text-destructive">{errors.initialBalance.message}</p>}
             </div>
 
@@ -317,7 +322,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
             <div className="space-y-2">
               <Label>Иконка</Label>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(ACCOUNT_ICONS).map(([name, Icon]) => (
+                {Object.keys(ACCOUNT_ICON_DEFINITIONS).map((name) => (
                   <button
                     key={name}
                     type="button"
@@ -332,7 +337,12 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                     aria-label={name === "Initial" ? "Первая буква названия" : name}
                     aria-pressed={selectedIcon === name}
                   >
-                    <Icon className="h-5 w-5" />
+                    <AccountIcon
+                      iconName={name}
+                      accountName={accountName}
+                      accountColor={selectedColor}
+                      className="h-5 w-5"
+                    />
                   </button>
                 ))}
               </div>
