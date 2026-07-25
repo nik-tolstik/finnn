@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { TelegramMiniAppBootstrap } from "@/modules/telegram-mini/TelegramMiniAppBootstrap";
 import { isEmailVerificationRequiredError } from "@/shared/api/http-client";
+import { AccentColorProvider } from "@/shared/components/accent-color-provider";
 import { PullToRefresh } from "@/shared/components/pull-to-refresh";
 import { ServiceWorkerRegistration } from "@/shared/components/ServiceWorkerRegistration";
 import { ApiSessionProvider, apiSessionQueryKey } from "@/shared/lib/api-session-client";
@@ -71,18 +72,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <QueryClientProvider client={queryClient}>
-        <ApiSessionProvider>
-          <TelegramMiniAppBootstrap>
-            <ThemeClassSync />
-            <div className="pull-to-refresh-content">
-              <PullToRefresh />
-              {children}
-            </div>
-            <ServiceWorkerRegistration />
-          </TelegramMiniAppBootstrap>
-        </ApiSessionProvider>
-      </QueryClientProvider>
+      <AccentColorProvider>
+        <QueryClientProvider client={queryClient}>
+          <ApiSessionProvider>
+            <TelegramMiniAppBootstrap>
+              <ThemeClassSync />
+              <div className="pull-to-refresh-content">
+                <PullToRefresh />
+                {children}
+              </div>
+              <ServiceWorkerRegistration />
+            </TelegramMiniAppBootstrap>
+          </ApiSessionProvider>
+        </QueryClientProvider>
+      </AccentColorProvider>
     </ThemeProvider>
   );
 }
