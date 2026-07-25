@@ -53,6 +53,35 @@ function MastercardIcon({ className, ...props }: ComponentProps<"svg">) {
   );
 }
 
+function BelkartIcon({ className, ...props }: ComponentProps<"svg">) {
+  return (
+    <svg viewBox="90 0 740 740" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
+      <path
+        fill="#32A8FF"
+        d="M419.1 557.9 303.6 671.2c-7.7 7.6-7.6 17.3-5 23.9 2.7 6.6 9.4 13.6 20.2 13.7l203.3.6c15.6 0 28.6-12.6 28.9-28.3v-2.5c.1-44.5-17.5-88.1-48.8-119.9-22.6-22.9-59.9-23.3-83.1-.8ZM286.4 471.8l-161.8-1.6c-10.8-.1-17.7 6.9-20.4 13.4-2.8 6.6-3 16.3 4.6 24l143.3 144.2c11 11.1 29.2 11.3 40.4.4l1.8-1.8c31.6-31.4 49.9-74.7 50.3-119.3.4-32.3-25.7-59-58.2-59.9ZM130.3 449h2.5c44.5.1 88.1-17.5 119.9-48.8 23.2-22.7 23.5-60 .8-83.2L140.3 201.5c-7.6-7.7-17.3-7.6-23.9-5-6.6 2.7-13.6 9.4-13.7 20.2L102 420.1c0 15.7 12.7 28.6 28.3 28.9ZM161 192.3c31.4 31.6 74.7 49.9 119.3 50.3 32.4.3 59.1-25.8 59.4-58.3l1.6-161.8c.1-10.8-6.9-17.7-13.4-20.4-6.6-2.8-16.3-3-24 4.6L159.7 150.1c-11.1 11-11.3 29.2-.4 40.4l1.7 1.8ZM494.4 151.5 610 38.2c7.7-7.6 7.6-17.3 5-23.9-2.7-6.6-9.4-13.6-20.2-13.7L391.4 0c-15.6 0-28.6 12.6-28.9 28.3v2.5c-.1 44.5 17.5 88.1 48.8 119.9 22.7 23.2 60 23.5 83.1.8ZM627.1 237.7l161.8 1.6c10.8.1 17.7-6.9 20.4-13.4 2.8-6.6 3-16.3-4.6-24L661.4 57.7c-11-11.1-29.2-11.3-40.4-.4l-1.8 1.8c-31.6 31.4-49.9 74.7-50.3 119.3-.4 32.3 25.8 59 58.2 59.3ZM783.2 260.5h-2.5c-44.5-.1-88.1 17.5-119.9 48.8-23.2 22.7-23.5 60-.8 83.2L773.3 508c7.6 7.7 17.3 7.6 23.9 5 6.6-2.7 13.6-9.4 13.7-20.2l.6-203.3c.1-15.8-12.6-28.7-28.3-29ZM752.5 517.1c-31.4-31.6-74.7-49.9-119.3-50.3-32.4-.3-59.1 25.8-59.4 58.3l-1.6 161.8c-.1 10.8 6.9 17.7 13.4 20.4 6.6 2.8 16.3 3 24-4.6l144.2-143.3c11.1-11 11.3-29.2.4-40.4l-1.7-1.9Z"
+      />
+    </svg>
+  );
+}
+
+function MirIcon({ className, ...props }: ComponentProps<"svg">) {
+  return (
+    <svg viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
+      <defs>
+        <linearGradient id="mir-icon-gradient" x1="370" y1="0" x2="290" y2="0" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#1F5CD7" />
+          <stop offset="1" stopColor="#02AEFF" />
+        </linearGradient>
+      </defs>
+      <path
+        fill="#0F754E"
+        d="M31 13h33c3 0 12-1 16 13 3 9 7 23 13 44h2c6-22 11-37 13-44 4-14 14-13 18-13h31v96h-32V52h-2l-17 57H83L66 52h-3v57H31m139-96h32v57h3l21-47c4-9 13-10 13-10h30v96h-32V52h-2l-21 47c-4 9-14 10-14 10h-30m142-29v29h-30V59h98c-4 12-18 21-34 21Z"
+      />
+      <path d="M382 53c4-18-8-40-34-40h-68c2 21 20 40 39 40Z" fill="url(#mir-icon-gradient)" />
+    </svg>
+  );
+}
+
 function BitcoinIcon({ className, ...props }: ComponentProps<"svg">) {
   return (
     <svg
@@ -120,6 +149,8 @@ export const ACCOUNT_ICONS: Record<string, IconComponent> = {
   RUB: RussianRuble,
   Visa: VisaIcon,
   Mastercard: MastercardIcon,
+  Belkart: BelkartIcon,
+  Mir: MirIcon,
   Bitcoin: BitcoinIcon,
 } as const;
 
