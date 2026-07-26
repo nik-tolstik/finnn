@@ -76,15 +76,16 @@ export function ArchiveAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow showCloseButton={false} onCloseComplete={onCloseComplete}>
+      <DialogWindow mobilePosition="bottom" className="rounded-t-2xl rounded-b-none" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Архивировать счёт?</DialogTitle>
           <DialogDescription>
-            Вы уверены, что хотите архивировать счёт &quot;{account.name}&quot;? Счёт будет скрыт из списка, но не будет
-            удалён из базы данных. Вы сможете восстановить его позже.
+            Вы уверены, что хотите архивировать счёт{" "}
+            <span className="font-bold text-primary">&quot;{account.name}&quot;</span>? Счёт будет скрыт из списка, но
+            не будет удалён из базы данных. Вы сможете восстановить его позже.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className="mt-auto">
           <Button onClick={handleArchive} disabled={isArchiving} size="xl" type="button">
             {isArchiving ? "Архивирование..." : "Архивировать"}
           </Button>

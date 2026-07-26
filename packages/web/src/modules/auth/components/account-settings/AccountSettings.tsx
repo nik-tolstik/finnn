@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ShieldCheck } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -20,6 +21,7 @@ import { runOptimisticWorkspaceMutation, updateUserReferencesInCache } from "@/s
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
 
 import { deleteCurrentUserAvatar, uploadCurrentUserAvatar } from "../../auth.api";
@@ -71,6 +73,8 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
       setEmailValue(session.user.email ?? "");
     }
   }, [session?.user, reset]);
+
+  const isEmailChanged = emailValue.trim() !== (session?.user?.email ?? "");
 
   const updateMutation = useMutation({
     mutationFn: async (data: UpdateUserInput) => {
@@ -255,7 +259,16 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Почта</Label>
+                <Label htmlFor="email" className="gap-1.5">
+                  Почта
+                  {session.user.emailVerified && !isEmailChanged && (
+                    <Tooltip content="Подтверждено" delayDuration={0} disableHoverableContent>
+                      <span aria-label="Почта подтверждена" className="inline-flex" role="img">
+                        <ShieldCheck aria-hidden="true" className="size-4 text-primary" />
+                      </span>
+                    </Tooltip>
+                  )}
+                </Label>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Input
                     id="email"
@@ -265,18 +278,21 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
                     placeholder="example@mail.com"
                     disabled={emailVerificationMutation.isPending}
                   />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={!emailValue || emailValue === session.user.email || emailVerificationMutation.isPending}
-                    className="sm:w-auto"
-                    onClick={() => emailVerificationMutation.mutate({ email: emailValue })}
-                  >
-                    {emailVerificationMutation.isPending ? "Отправка..." : "Подтвердить"}
-                  </Button>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {session.user.emailVerified ? "Email подтвержден" : "Email не подтвержден"}
+                  {(!session.user.emailVerified || isEmailChanged) && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={!emailValue.trim() || emailVerificationMutation.isPending}
+                      className="sm:w-auto"
+                      onClick={() => emailVerificationMutation.mutate({ email: emailValue.trim() })}
+                    >
+                      {emailVerificationMutation.isPending
+                        ? "Отправка..."
+                        : isEmailChanged
+                          ? "Изменить почту"
+                          : "Подтвердить"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

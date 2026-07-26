@@ -189,7 +189,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                       return (
                         <div
                           key={option.value}
-                          className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase "
+                          className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground"
                         >
                           {renderOption({ option, props, selected })}
                         </div>
@@ -212,10 +212,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                   }
 
                   return isGroupHeader ? (
-                    <div
-                      key={option.value}
-                      className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase "
-                    >
+                    <div key={option.value} className="w-full px-3 py-2 text-xs font-semibold text-muted-foreground">
                       {option.label}
                     </div>
                   ) : (
@@ -253,7 +250,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                   Очистить
                 </Button>
               )}
-              <Button onClick={handleApply} className={allowClear && hasSelection ? "flex-1" : "w-full"}>
+              <Button size="lg" onClick={handleApply} className={allowClear && hasSelection ? "flex-1" : "w-full"}>
                 Применить
               </Button>
             </SheetFooter>

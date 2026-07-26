@@ -14,7 +14,7 @@ import { cn } from "@/shared/utils/cn";
 
 import { WorkspaceDropdown } from "./WorkspaceDropdown";
 
-export function BurgerMenu() {
+export function MobileUserMenu() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);

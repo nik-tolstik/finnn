@@ -176,10 +176,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                 return (
                   <div
                     key={option.value.toString()}
-                    className={cn(
-                      "px-2 py-2 text-xs font-semibold text-muted-foreground uppercase ",
-                      hasPreviousGroup && "mt-2"
-                    )}
+                    className={cn("px-2 py-2 text-xs font-semibold text-muted-foreground", hasPreviousGroup && "mt-2")}
                   >
                     {renderOption({ option, props, selected })}
                   </div>
@@ -194,7 +191,7 @@ export function SelectDropdown<TValue extends string | number = string>(props: S
                     handleSelect(option.value);
                   }}
                   className={cn(
-                    "w-full cursor-pointer rounded-sm px-2 py-2 text-left text-xs font-semibold text-muted-foreground uppercase hover:bg-option-hover/70",
+                    "w-full cursor-pointer rounded-sm px-2 py-2 text-left text-xs font-semibold text-muted-foreground hover:bg-option-hover/70",
                     hasPreviousGroup && "mt-2"
                   )}
                 >

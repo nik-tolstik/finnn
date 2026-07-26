@@ -11,13 +11,14 @@ import { CreateScheduledPaymentDialog } from "@/modules/scheduled-payments/compo
 import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
+import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
 
 import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
 
 const MotionLink = motion.create(Link);
 
-export function FloatingActionButton() {
+export function MobileDashboardNavigation() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();
@@ -107,62 +108,62 @@ export function FloatingActionButton() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),0.5rem)] z-50 flex items-center justify-start md:hidden">
-        <div className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-2">
-          <nav
-            ref={navRef}
-            className="relative isolate grid min-w-0 flex-1 grid-cols-4 gap-1 rounded-full border border-white/40 bg-background/72 p-1 shadow-[0_18px_50px_rgba(15,23,42,0.20)] backdrop-blur-2xl dark:border-white/10 dark:bg-background/70"
-          >
-            {indicatorMetrics.width > 0 ? (
-              <motion.span
-                aria-hidden="true"
-                initial={false}
-                animate={indicatorMetrics}
-                transition={
-                  prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34, mass: 0.7 }
-                }
-                className="pointer-events-none absolute rounded-full bg-primary shadow-sm"
-              />
-            ) : null}
-            {DASHBOARD_NAV_ITEMS.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
+      <div className="pointer-events-none fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),0.5rem)] z-50 flex items-center justify-between gap-2 md:hidden">
+        <nav
+          ref={navRef}
+          className="pointer-events-auto relative isolate grid min-w-0 max-w-sm flex-1 grid-cols-4 gap-1 rounded-full border border-white/40 bg-background/72 p-1 shadow-[0_18px_50px_rgba(15,23,42,0.20)] backdrop-blur-2xl dark:border-white/10 dark:bg-background/70"
+        >
+          {indicatorMetrics.width > 0 ? (
+            <motion.span
+              aria-hidden="true"
+              initial={false}
+              animate={indicatorMetrics}
+              transition={
+                prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34, mass: 0.7 }
+              }
+              className="pointer-events-none absolute rounded-full bg-primary shadow-sm"
+            />
+          ) : null}
+          {DASHBOARD_NAV_ITEMS.map((item, index) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
 
-              return (
+            return (
+              <Tooltip content={item.label} delayDuration={0} disableHoverableContent key={item.href} side="top">
                 <MotionLink
                   ref={(node) => {
                     linkRefs.current[index] = node;
                   }}
                   href={`${item.href}${basePath}`}
-                  key={item.href}
                   prefetch
                   aria-current={isActive ? "page" : undefined}
                   aria-label={item.label}
                   whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
                   transition={{ type: "spring", stiffness: 520, damping: 32, mass: 0.5 }}
                   className={cn(
-                    "relative z-10 flex h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-full px-1 transition-colors",
+                    "relative z-10 flex h-12 min-w-0 items-center justify-center rounded-full px-1 transition-colors",
                     isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <Icon aria-hidden="true" className="size-4" />
-                  <span className="whitespace-nowrap text-[10px] font-medium leading-none">{item.label}</span>
                 </MotionLink>
-              );
-            })}
-          </nav>
+              </Tooltip>
+            );
+          })}
+        </nav>
 
+        <Tooltip content={actionLabel} delayDuration={0} disableHoverableContent side="top">
           <Button
             type="button"
             onClick={handleClick}
             size="icon"
             disabled={!workspaceId}
             aria-label={actionLabel}
-            className="size-12 rounded-full border border-white/40 bg-primary text-primary-foreground shadow-[0_18px_50px_rgba(47,107,255,0.28)] backdrop-blur-2xl hover:bg-primary/90 dark:border-white/10 sm:size-14"
+            className="pointer-events-auto size-12 rounded-full border border-white/40 bg-primary text-primary-foreground shadow-[0_18px_50px_rgba(47,107,255,0.28)] backdrop-blur-2xl hover:bg-primary/90 dark:border-white/10 sm:size-14"
           >
             <Plus className="size-5 sm:size-6" />
           </Button>
-        </div>
+        </Tooltip>
       </div>
       {createTransactionDialog.mounted && workspaceId && (
         <CreateTransactionDialog
