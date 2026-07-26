@@ -18,6 +18,8 @@ export interface TransactionFilterCategory {
 export interface TransactionFilterAccount {
   id: string;
   name: string;
+  balance: string;
+  currency: string;
   color: string | null;
   icon: string | null;
   ownerId: string | null;

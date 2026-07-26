@@ -6,8 +6,8 @@ import { Suspense } from "react";
 import { cn } from "@/shared/utils/cn";
 import { useUIStore } from "@/stores/ui-store";
 
-import { FloatingActionButton } from "./FloatingActionButton";
 import { Header } from "./Header";
+import { MobileDashboardNavigation } from "./MobileDashboardNavigation";
 import { Sidebar } from "./Sidebar";
 
 export function DashboardShell({ children }: { children: ReactNode }) {
@@ -27,7 +27,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         </Suspense>
         <main className="flex-1 px-4 pb-20 md:p-8">{children}</main>
         <Suspense fallback={null}>
-          <FloatingActionButton />
+          <MobileDashboardNavigation />
         </Suspense>
       </div>
     </div>

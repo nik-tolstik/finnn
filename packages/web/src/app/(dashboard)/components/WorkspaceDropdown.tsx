@@ -2,7 +2,7 @@
 
 import type { Placement } from "@floating-ui/react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, ArrowLeftRight, Building, Check, Plus, Settings } from "lucide-react";
+import { Archive, ArrowLeftRight, Building, Check, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -12,6 +12,7 @@ import { CreateWorkspaceDialog } from "@/modules/workspace/components/create-wor
 import { getWorkspaces } from "@/modules/workspace/workspace.api";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { workspacesKeys } from "@/shared/lib/query-keys";
+import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Popover } from "@/shared/ui/popover";
 import { Tooltip } from "@/shared/ui/tooltip";
@@ -103,66 +104,53 @@ export function WorkspaceDropdown({
     return (
       <>
         <section className={cn("space-y-2", className)}>
-          <div className="rounded-lg bg-card p-3 text-card-foreground shadow-sm">
+          <button
+            type="button"
+            disabled={!currentWorkspaceId}
+            onClick={() => {
+              if (currentWorkspaceId) {
+                settingsDialog.openDialog({
+                  workspaceId: currentWorkspaceId,
+                });
+              }
+            }}
+            className="flex w-full items-center gap-3 rounded-lg bg-card p-4 text-left text-card-foreground shadow-sm transition-colors enabled:hover:bg-accent enabled:hover:text-accent-foreground disabled:cursor-default"
+          >
+            <Building className="size-4 text-muted-foreground" />
+            <span className="block truncate text-sm font-semibold">{triggerLabel}</span>
+          </button>
+
+          {currentWorkspaceId ? (
+            <div className="space-y-1">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setSwitchOpen(true)}
+                className="flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <ArrowLeftRight className="size-4" />
+                <span className="truncate">Перейти</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => archivedAccountsDialog.openDialog(null)}
+                className="flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Archive className="size-4" />
+                <span className="truncate">Архив</span>
+              </Button>
+            </div>
+          ) : (
             <button
               type="button"
-              disabled={!currentWorkspaceId}
-              onClick={() => {
-                if (currentWorkspaceId) {
-                  settingsDialog.openDialog({
-                    workspaceId: currentWorkspaceId,
-                  });
-                }
-              }}
-              className="flex w-full items-start gap-3 rounded-md text-left transition-colors enabled:hover:bg-accent enabled:hover:text-accent-foreground disabled:cursor-default"
+              onClick={handleCreateWorkspace}
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-muted-foreground">
-                <Building className="size-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-medium text-muted-foreground">Workspace</div>
-                <div className="truncate text-sm font-semibold">{triggerLabel}</div>
-              </div>
-              {currentWorkspaceId && (
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground">
-                  <Settings className="size-4" />
-                  <span className="sr-only">Открыть настройки workspace</span>
-                </span>
-              )}
+              <Plus className="size-4 text-muted-foreground" />
+              <span>Создать workspace</span>
             </button>
-
-            {currentWorkspaceId && (
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSwitchOpen(true)}
-                  className="flex min-w-0 items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <ArrowLeftRight className="size-4" />
-                  <span className="truncate">Сменить</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => archivedAccountsDialog.openDialog(null)}
-                  className="flex min-w-0 items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <Archive className="size-4" />
-                  <span className="truncate">Архив</span>
-                </button>
-              </div>
-            )}
-
-            {!currentWorkspaceId && (
-              <button
-                type="button"
-                onClick={handleCreateWorkspace}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-              >
-                <Plus className="size-4 text-muted-foreground" />
-                <span>Создать workspace</span>
-              </button>
-            )}
-          </div>
+          )}
         </section>
 
         <Dialog open={switchOpen} onOpenChange={setSwitchOpen}>

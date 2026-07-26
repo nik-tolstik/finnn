@@ -12,6 +12,8 @@ import { NumberInput } from "@/shared/ui/number-input";
 import { Select } from "@/shared/ui/select";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import { AccountIcon } from "@/shared/utils/account-icons";
+import { cn } from "@/shared/utils/cn";
+import { formatMoney } from "@/shared/utils/money";
 
 import type {
   TransactionFilterAccount,
@@ -156,7 +158,9 @@ export function TransactionsFilterDrawer({
                 return (
                   <span className="flex min-w-0 flex-1 items-center gap-2">
                     {member && <UserAvatar name={member.name} email={member.email} image={member.image} size="sm" />}
-                    <span className="min-w-0 flex-1 truncate font-normal">{option.label}</span>
+                    <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-xs")}>
+                      {option.label}
+                    </span>
                     {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
                   </span>
                 );
@@ -220,7 +224,14 @@ export function TransactionsFilterDrawer({
                         className="size-4 shrink-0"
                       />
                     )}
-                    <span className="min-w-0 flex-1 truncate font-normal">{option.label}</span>
+                    <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-xs")}>
+                      {option.label}
+                    </span>
+                    {account && !isTrigger && (
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {formatMoney(account.balance, account.currency)}
+                      </span>
+                    )}
                     {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
                   </span>
                 );
@@ -267,10 +278,11 @@ export function TransactionsFilterDrawer({
         </div>
 
         <SheetFooter className="border-t px-4 py-4">
-          <Button variant="secondary" onClick={onReset}>
+          <Button variant="secondary" size="lg" onClick={onReset}>
             Сбросить
           </Button>
           <Button
+            size="lg"
             onClick={() => {
               onApply(normalizeTransactionFilters(draftFilters));
             }}
