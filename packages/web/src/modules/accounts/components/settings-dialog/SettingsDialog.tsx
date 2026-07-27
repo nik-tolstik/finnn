@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { cn } from "@/shared/utils/cn";
 
-import { CategoryManagement } from "../category-management/CategoryManagement";
 import { MembersManagement } from "../members-management/MembersManagement";
 import { WorkspaceSettings } from "../workspace-settings/WorkspaceSettings";
 
@@ -15,14 +14,13 @@ interface SettingsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type SettingsSection = "workspace" | "categories" | "members";
+type SettingsSection = "workspace" | "members";
 
 export function SettingsDialog({ workspaceId, open, onOpenChange }: SettingsDialogProps) {
   const [selectedSection, setSelectedSection] = useState<SettingsSection>("workspace");
 
   const sections: { id: SettingsSection; label: string }[] = [
     { id: "workspace", label: "Workspace" },
-    { id: "categories", label: "Категории" },
     { id: "members", label: "Участники" },
   ];
 
@@ -51,7 +49,6 @@ export function SettingsDialog({ workspaceId, open, onOpenChange }: SettingsDial
         </div>
         <DialogContent className="flex-1">
           {selectedSection === "workspace" && <WorkspaceSettings workspaceId={workspaceId} />}
-          {selectedSection === "categories" && <CategoryManagement workspaceId={workspaceId} />}
           {selectedSection === "members" && <MembersManagement workspaceId={workspaceId} />}
         </DialogContent>
       </DialogWindow>

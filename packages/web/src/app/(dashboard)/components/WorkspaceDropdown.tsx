@@ -2,7 +2,7 @@
 
 import type { Placement } from "@floating-ui/react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, ArrowLeftRight, Building, Check, Plus } from "lucide-react";
+import { Archive, ArrowLeftRight, Building, Check, Plus, Tags } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -22,6 +22,7 @@ interface WorkspaceDropdownProps {
   currentWorkspaceId?: string;
   className?: string;
   collapsed?: boolean;
+  onCategorySettingsOpen?: () => void;
   onWorkspaceSelect?: () => void;
   placement?: Placement;
   variant?: "dropdown" | "list";
@@ -31,6 +32,7 @@ export function WorkspaceDropdown({
   currentWorkspaceId,
   className,
   collapsed = false,
+  onCategorySettingsOpen,
   onWorkspaceSelect,
   placement = "bottom-start",
   variant = "dropdown",
@@ -61,6 +63,12 @@ export function WorkspaceDropdown({
   const handleCreateWorkspace = () => {
     setSwitchOpen(false);
     createDialog.openDialog(null);
+  };
+
+  const handleOpenCategorySettings = () => {
+    if (currentWorkspaceId) {
+      onCategorySettingsOpen?.();
+    }
   };
 
   const handleSwitchMouseEnter = () => {
@@ -122,6 +130,15 @@ export function WorkspaceDropdown({
 
           {currentWorkspaceId ? (
             <div className="space-y-1">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleOpenCategorySettings}
+                className="flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Tags className="size-4" />
+                <span className="truncate">Категории</span>
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
@@ -222,6 +239,14 @@ export function WorkspaceDropdown({
 
           {currentWorkspaceId ? (
             <div className="space-y-1">
+              <button
+                type="button"
+                onClick={handleOpenCategorySettings}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Tags className="size-4" />
+                <span className="truncate">Категории</span>
+              </button>
               <Popover
                 open={switchOpen}
                 onOpenChange={setSwitchOpen}
@@ -370,6 +395,16 @@ export function WorkspaceDropdown({
                 </div>
               </div>
             </Popover>
+            <Tooltip content="Категории" delayDuration={0} side="right">
+              <button
+                type="button"
+                aria-label="Категории"
+                onClick={handleOpenCategorySettings}
+                className="flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Tags className="size-5" />
+              </button>
+            </Tooltip>
             <Tooltip content="Архив" delayDuration={0} side="right">
               <button
                 type="button"

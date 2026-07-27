@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 import { ThemeSelector } from "@/modules/auth/components/appearance-settings/ThemeSelector";
 
+import { AuthPageGuard } from "./components/AuthPageGuard";
+
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="relative min-h-[100dvh] bg-background">
@@ -10,7 +12,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <ThemeSelector title={null} showLabels={false} layout="fill" segmentedClassName="w-36 shadow-md" />
         </div>
       </div>
-      {children}
+      <AuthPageGuard>{children}</AuthPageGuard>
     </div>
   );
 }

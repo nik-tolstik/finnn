@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { CategorySettingsDialog } from "@/modules/accounts/components/category-settings-dialog";
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
@@ -49,6 +50,7 @@ export function Sidebar() {
   const { data: session } = useSession();
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
+  const [categorySettingsDialogOpen, setCategorySettingsDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -164,6 +166,7 @@ export function Sidebar() {
               className={cn(sidebarOpen ? "w-full justify-start" : "mx-auto")}
               collapsed={!sidebarOpen}
               currentWorkspaceId={workspaceId}
+              onCategorySettingsOpen={() => setCategorySettingsDialogOpen(true)}
               placement={sidebarOpen ? "bottom-start" : "right-start"}
             />
           </div>
@@ -269,6 +272,13 @@ export function Sidebar() {
       </aside>
 
       <UserSettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
+      {workspaceId && (
+        <CategorySettingsDialog
+          workspaceId={workspaceId}
+          open={categorySettingsDialogOpen}
+          onOpenChange={setCategorySettingsDialogOpen}
+        />
+      )}
     </>
   );
 }
