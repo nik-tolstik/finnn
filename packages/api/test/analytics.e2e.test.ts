@@ -6,7 +6,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import { AnalyticsModule } from "../src/analytics/analytics.module";
 import { AUTH_COOKIE_NAME } from "../src/auth/session-cookie";
-import { ExchangeRateService } from "../src/currency/exchange-rate.service";
+import { type ExchangeRateRequest, ExchangeRateService } from "../src/currency/exchange-rate.service";
+import { getExchangeRateDateKey } from "../src/currency/exchange-rate-date";
 import { configureApp } from "../src/main";
 import { PrismaService } from "../src/prisma/prisma.service";
 
@@ -496,6 +497,45 @@ describe("Analytics API", () => {
       dayCount: 5,
       isImplicit: false,
     });
+  });
+
+  it("keeps implicit analytics ranges on the Minsk calendar near UTC midnight", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-30T22:15:00.000Z"));
+    mockAuthenticatedSession(prisma);
+    prisma.account.findMany.mockResolvedValue([
+      createAccountRecord({
+        id: "account-usd",
+        currency: Currency.USD,
+      }),
+    ]);
+    exchangeRateService.preloadExchangeRates.mockImplementation(async (requests: ExchangeRateRequest[]) => {
+      return new Map(
+        requests.map((request) => [
+          createRateKey(getExchangeRateDateKey(request.date), request.fromCurrency, request.toCurrency),
+          3,
+        ])
+      );
+    });
+
+    try {
+      const response = await request(app.getHttpServer())
+        .get("/workspaces/workspace-1/analytics/overview")
+        .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+        .expect(200);
+
+      expect(response.body.effectiveRange).toMatchObject({
+        startDate: "2026-03-02",
+        endDate: "2026-03-31",
+      });
+      expect(response.body.capitalTimeSeries.at(-1)).toMatchObject({ date: "2026-03-31" });
+      const requestedDateKeys = (
+        exchangeRateService.preloadExchangeRates.mock.calls[0]?.[0] as ExchangeRateRequest[]
+      ).map((request) => getExchangeRateDateKey(request.date));
+      expect(requestedDateKeys.every((dateKey) => dateKey <= response.body.effectiveRange.endDate)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("reconstructs daily workspace capital from current balances and account deltas", async () => {

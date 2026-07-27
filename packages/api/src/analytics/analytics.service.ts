@@ -14,7 +14,12 @@ import Big from "big.js";
 
 import { compareMoney, formatMoney } from "@/common/money";
 import { type ExchangeRateRequest, ExchangeRateService } from "@/currency/exchange-rate.service";
-import { getExchangeRateDateKey, normalizeExchangeRateDate } from "@/currency/exchange-rate-date";
+import {
+  getExchangeRateDateEnd,
+  getExchangeRateDateKey,
+  getExchangeRateDateStart,
+  normalizeExchangeRateDate,
+} from "@/currency/exchange-rate-date";
 import { PrismaService } from "@/prisma/prisma.service";
 
 import type { AnalyticsOverviewQueryDto } from "./analytics.dto";
@@ -188,29 +193,27 @@ type CapitalBalanceDelta = {
 };
 
 function startOfDay(date: Date) {
-  const nextDate = new Date(date);
-  nextDate.setHours(0, 0, 0, 0);
-  return nextDate;
+  return getExchangeRateDateStart(date);
 }
 
 function endOfDay(date: Date) {
-  const nextDate = new Date(date);
-  nextDate.setHours(23, 59, 59, 999);
-  return nextDate;
+  return getExchangeRateDateEnd(date);
 }
 
 function startOfMonth(date: Date) {
-  return startOfDay(new Date(date.getFullYear(), date.getMonth(), 1));
+  const [year, month] = getExchangeRateDateKey(date).split("-").map(Number);
+  return getExchangeRateDateStart(new Date(Date.UTC(year, month - 1, 1)));
 }
 
 function endOfMonth(date: Date) {
-  return endOfDay(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+  const [year, month] = getExchangeRateDateKey(date).split("-").map(Number);
+  return getExchangeRateDateEnd(new Date(Date.UTC(year, month, 0)));
 }
 
 function addDays(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-  return nextDate;
+  const nextDate = normalizeExchangeRateDate(date);
+  nextDate.setUTCDate(nextDate.getUTCDate() + days);
+  return getExchangeRateDateStart(nextDate);
 }
 
 function subDays(date: Date, days: number) {
@@ -228,11 +231,21 @@ function toDateString(value?: Date) {
     return undefined;
   }
 
-  const year = value.getFullYear();
-  const month = `${value.getMonth() + 1}`.padStart(2, "0");
-  const day = `${value.getDate()}`.padStart(2, "0");
+  return getExchangeRateDateKey(value);
+}
 
-  return `${year}-${month}-${day}`;
+function parseDateFilter(value?: string) {
+  if (!value) {
+    return null;
+  }
+
+  const candidate = new Date(`${value}T12:00:00.000Z`);
+
+  if (Number.isNaN(candidate.getTime()) || getExchangeRateDateKey(candidate) !== value) {
+    return null;
+  }
+
+  return startOfDay(candidate);
 }
 
 function normalizeRange(start: Date, end: Date) {
@@ -248,8 +261,9 @@ function resolveAnalyticsDateRange(
   referenceDate = new Date()
 ): AnalyticsDateRange {
   const referenceEnd = endOfDay(referenceDate);
-  const explicitStart = filters.dateFrom ? startOfDay(new Date(`${filters.dateFrom}T00:00:00`)) : null;
-  const explicitEnd = filters.dateTo ? endOfDay(new Date(`${filters.dateTo}T00:00:00`)) : null;
+  const explicitStart = parseDateFilter(filters.dateFrom);
+  const explicitEndDate = parseDateFilter(filters.dateTo);
+  const explicitEnd = explicitEndDate ? endOfDay(explicitEndDate) : null;
 
   let start: Date;
   let end: Date;
@@ -301,8 +315,9 @@ function resolveAnalyticsCalendarDateRange(
   filters: Pick<AnalyticsOverviewQueryDto, "dateFrom" | "dateTo">,
   referenceDate = new Date()
 ): AnalyticsDateRange {
-  const explicitStart = filters.dateFrom ? startOfDay(new Date(`${filters.dateFrom}T00:00:00`)) : null;
-  const explicitEnd = filters.dateTo ? endOfDay(new Date(`${filters.dateTo}T00:00:00`)) : null;
+  const explicitStart = parseDateFilter(filters.dateFrom);
+  const explicitEndDate = parseDateFilter(filters.dateTo);
+  const explicitEnd = explicitEndDate ? endOfDay(explicitEndDate) : null;
 
   if (explicitStart && explicitEnd) {
     const normalized = normalizeRange(explicitStart, explicitEnd);
@@ -488,15 +503,15 @@ function matchesDateRange(date: Date, filters?: AnalyticsOverviewQueryDto) {
   const dateValue = new Date(date).getTime();
 
   if (filters?.dateFrom) {
-    const dateFrom = new Date(`${filters.dateFrom}T00:00:00`);
-    if (dateValue < dateFrom.getTime()) {
+    const dateFrom = parseDateFilter(filters.dateFrom);
+    if (dateFrom && dateValue < dateFrom.getTime()) {
       return false;
     }
   }
 
   if (filters?.dateTo) {
-    const dateTo = new Date(`${filters.dateTo}T23:59:59.999`);
-    if (dateValue > dateTo.getTime()) {
+    const dateTo = parseDateFilter(filters.dateTo);
+    if (dateTo && dateValue > endOfDay(dateTo).getTime()) {
       return false;
     }
   }
