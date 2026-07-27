@@ -12,7 +12,7 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ import {
 } from "@/modules/categories/category.api";
 import { CategoryType } from "@/modules/categories/category.constants";
 import type { Category } from "@/modules/categories/category.types";
+import { CategoryIconPicker } from "@/shared/components/category-icon-picker";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {
   removeCategoriesFromCache,
@@ -32,13 +33,14 @@ import {
   updateCategoriesInCache,
 } from "@/shared/lib/optimistic-workspace-updates";
 import { categoryKeys } from "@/shared/lib/query-keys";
+import type { UpdateCategoryInput } from "@/shared/lib/validations/category";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Segmented } from "@/shared/ui/segmented";
-import { cn } from "@/shared/utils/cn";
 
 import { CreateCategoryDialog } from "../create-category-dialog/CreateCategoryDialog";
 import { DeleteCategoryDialog } from "../delete-category-dialog/DeleteCategoryDialog";
+import { createCategoryUpdateQueue, resolveInlineCategoryNameEdit } from "./category-management.utils";
 
 interface CategoryManagementProps {
   workspaceId: string;
@@ -46,29 +48,39 @@ interface CategoryManagementProps {
 
 function SortableCategoryItem({
   category,
-  editingCategory,
-  editingName,
-  onStartEdit,
-  onCancelEdit,
-  onSaveEdit,
+  onUpdateName,
+  onUpdateIcon,
   onStartDelete,
-  isUpdating,
-  setEditingName,
 }: {
   category: Category;
-  editingCategory: Category | null;
-  editingName: string;
-  onStartEdit: (category: Category) => void;
-  onCancelEdit: () => void;
-  onSaveEdit: () => void;
+  onUpdateName: (category: Category, name: string) => void;
+  onUpdateIcon: (category: Category, selection: { icon: string | null; iconAssetId: string | null }) => void;
   onStartDelete: (category: Category) => void;
-  isUpdating: boolean;
-  setEditingName: (name: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: category.id,
-    disabled: !!editingCategory,
-  });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
+  const [name, setName] = useState(category.name);
+  const wasNameEditCancelledRef = useRef(false);
+
+  useEffect(() => {
+    setName(category.name);
+  }, [category.name]);
+
+  const commitName = () => {
+    const resolvedEdit = resolveInlineCategoryNameEdit({
+      categoryName: category.name,
+      draftName: name,
+      wasCancelled: wasNameEditCancelledRef.current,
+    });
+    wasNameEditCancelledRef.current = false;
+
+    if (resolvedEdit.shouldReset) {
+      setName(category.name);
+    }
+
+    if (resolvedEdit.nextName) {
+      onUpdateName(category, resolvedEdit.nextName);
+    }
+  };
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -78,60 +90,66 @@ function SortableCategoryItem({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <div className="rounded-md bg-control p-2 shadow-xs">
-        {editingCategory?.id === category.id ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Input
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                className="flex-1 h-8 text-sm"
-                placeholder="Название категории"
-              />
-              <div className="flex gap-1.5 shrink-0">
-                <Button
-                  size="sm"
-                  onClick={onSaveEdit}
-                  disabled={isUpdating || !editingName.trim()}
-                  className="h-8 text-xs px-2"
-                >
-                  Сохранить
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={onCancelEdit}
-                  disabled={isUpdating}
-                  className="h-8 text-xs px-2"
-                >
-                  Отмена
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div
-              {...attributes}
-              {...listeners}
-              className={cn(
-                "cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors",
-                editingCategory && "cursor-not-allowed opacity-50"
-              )}
+      <div className="flex items-center gap-2 rounded-md bg-control p-2 shadow-xs">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
+        >
+          <GripVertical className="h-4 w-4" />
+        </div>
+        <div className="group relative size-10 shrink-0">
+          <CategoryIconPicker
+            workspaceId={category.workspaceId}
+            value={{ icon: category.icon, iconAssetId: category.iconAssetId }}
+            onChange={(selection) => onUpdateIcon(category, selection)}
+            className="border-0 bg-transparent hover:border-0 hover:bg-accent"
+          />
+          {(category.icon || category.iconAssetId) && (
+            <button
+              type="button"
+              aria-label="Удалить иконку категории"
+              title="Удалить иконку категории"
+              onClick={() => onUpdateIcon(category, { icon: null, iconAssetId: null })}
+              className="absolute -right-1 -top-1 z-20 flex size-4 items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 shadow-sm transition-[color,background-color,opacity] group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-accent hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30"
             >
-              <GripVertical className="h-4 w-4" />
-            </div>
-            <span className="flex-1 text-sm font-medium">{category.name}</span>
-            <div className="flex gap-1 shrink-0">
-              <Button size="sm" variant="ghost" onClick={() => onStartEdit(category)} className="h-7 w-7 p-0">
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => onStartDelete(category)} className="h-7 w-7 p-0">
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        )}
+              <X className="size-2.5" />
+            </button>
+          )}
+        </div>
+        <div className="-ml-2 min-w-0 flex-1">
+          <Input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onBlur={commitName}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.currentTarget.blur();
+                return;
+              }
+
+              if (event.key === "Escape") {
+                event.preventDefault();
+                wasNameEditCancelledRef.current = true;
+                setName(category.name);
+                event.currentTarget.blur();
+              }
+            }}
+            className="h-8 text-sm"
+            placeholder="Название категории"
+            aria-label={`Название категории: ${category.name}`}
+          />
+        </div>
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          onClick={() => onStartDelete(category)}
+          className="shrink-0"
+          aria-label="Удалить категорию"
+          title="Удалить категорию"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
     </div>
   );
@@ -139,24 +157,26 @@ function SortableCategoryItem({
 
 export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
   const queryClient = useQueryClient();
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const deleteDialog = useDialogState<{
     categoryId: string;
     categoryName: string;
+    categoryIcon: string | null;
+    categoryIconAssetId: string | null;
     transactionCount: number;
   }>();
   const createCategoryDialog = useDialogState<{
     workspaceId: string;
     type: CategoryType;
   }>();
-  const [editingName, setEditingName] = useState("");
   const [selectedType, setSelectedType] = useState<CategoryType>(CategoryType.EXPENSE);
   const [incomeItems, setIncomeItems] = useState<Category[]>([]);
   const [expenseItems, setExpenseItems] = useState<Category[]>([]);
-  const [isUpdatingCategory, setIsUpdatingCategory] = useState(false);
   const [isDeletingCategory, setIsDeletingCategory] = useState(false);
   const incomeItemsRef = useRef<Category[]>([]);
   const expenseItemsRef = useRef<Category[]>([]);
+  const pendingIncomeOrderRef = useRef<string | null>(null);
+  const pendingExpenseOrderRef = useRef<string | null>(null);
+  const queueCategoryUpdate = useRef(createCategoryUpdateQueue()).current;
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -192,6 +212,17 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     const currentIds = incomeItemsRef.current.map((item) => item.id).join(",");
     const newIds = incomeCategories.map((item) => item.id).join(",");
 
+    const pendingOrder = pendingIncomeOrderRef.current;
+    if (pendingOrder) {
+      if (newIds === pendingOrder) {
+        pendingIncomeOrderRef.current = null;
+      } else if (currentIds === pendingOrder) {
+        return;
+      } else {
+        pendingIncomeOrderRef.current = null;
+      }
+    }
+
     if (currentIds !== newIds) {
       setIncomeItems(incomeCategories);
       return;
@@ -207,7 +238,12 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       });
       const hasChanges = updatedItems.some((item, index) => {
         const current = incomeItemsRef.current[index];
-        return !current || item.name !== current.name;
+        return (
+          !current ||
+          item.name !== current.name ||
+          item.icon !== current.icon ||
+          item.iconAssetId !== current.iconAssetId
+        );
       });
       if (hasChanges) {
         setIncomeItems(updatedItems);
@@ -226,6 +262,17 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     const currentIds = expenseItemsRef.current.map((item) => item.id).join(",");
     const newIds = expenseCategories.map((item) => item.id).join(",");
 
+    const pendingOrder = pendingExpenseOrderRef.current;
+    if (pendingOrder) {
+      if (newIds === pendingOrder) {
+        pendingExpenseOrderRef.current = null;
+      } else if (currentIds === pendingOrder) {
+        return;
+      } else {
+        pendingExpenseOrderRef.current = null;
+      }
+    }
+
     if (currentIds !== newIds) {
       setExpenseItems(expenseCategories);
       return;
@@ -241,7 +288,12 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
       });
       const hasChanges = updatedItems.some((item, index) => {
         const current = expenseItemsRef.current[index];
-        return !current || item.name !== current.name;
+        return (
+          !current ||
+          item.name !== current.name ||
+          item.icon !== current.icon ||
+          item.iconAssetId !== current.iconAssetId
+        );
       });
       if (hasChanges) {
         setExpenseItems(updatedItems);
@@ -264,6 +316,13 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
       const newItems = arrayMove(items, oldIndex, newIndex);
       setItems(newItems);
+
+      const nextOrder = newItems.map((item) => item.id).join(",");
+      if (type === CategoryType.INCOME) {
+        pendingIncomeOrderRef.current = nextOrder;
+      } else {
+        pendingExpenseOrderRef.current = nextOrder;
+      }
 
       const categoryOrderUpdates = newItems.map((category, index) => ({
         id: category.id,
@@ -293,63 +352,56 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
 
         if (result.error) {
           toast.error(result.error);
+          if (type === CategoryType.INCOME) {
+            pendingIncomeOrderRef.current = null;
+          } else {
+            pendingExpenseOrderRef.current = null;
+          }
           setItems(previousItems);
           return;
         }
       } catch {
         toast.error("Не удалось обновить порядок категорий");
+        if (type === CategoryType.INCOME) {
+          pendingIncomeOrderRef.current = null;
+        } else {
+          pendingExpenseOrderRef.current = null;
+        }
         setItems(previousItems);
       }
     }
   };
 
-  const handleStartEdit = (category: Category) => {
-    setEditingCategory(category);
-    setEditingName(category.name);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingCategory(null);
-    setEditingName("");
-  };
-
-  const handleSaveEdit = () => {
-    if (!editingCategory) return;
-
-    void (async () => {
-      setIsUpdatingCategory(true);
+  const updateCategoryFields = (categoryId: string, input: UpdateCategoryInput, errorMessage: string) => {
+    void queueCategoryUpdate(categoryId, async () => {
       try {
         const result = await runOptimisticWorkspaceMutation({
           queryClient,
           workspaceId,
           domains: ["categories", "transactions"],
           apply: (context) => {
-            updateCategoriesInCache(context, [
-              {
-                id: editingCategory.id,
-                name: editingName,
-              },
-            ]);
+            updateCategoriesInCache(context, [{ id: categoryId, ...input }]);
           },
-          mutation: () =>
-            updateCategory(editingCategory.id, {
-              name: editingName,
-            }),
+          mutation: () => updateCategory(categoryId, input),
         });
 
         if (result.error) {
           toast.error(result.error);
         } else {
           toast.success("Категория обновлена");
-          setEditingCategory(null);
-          setEditingName("");
         }
       } catch {
-        toast.error("Не удалось обновить категорию");
-      } finally {
-        setIsUpdatingCategory(false);
+        toast.error(errorMessage);
       }
-    })();
+    });
+  };
+
+  const handleUpdateName = (category: Category, name: string) => {
+    updateCategoryFields(category.id, { name }, "Не удалось обновить название категории");
+  };
+
+  const handleUpdateIcon = (category: Category, selection: { icon: string | null; iconAssetId: string | null }) => {
+    updateCategoryFields(category.id, selection, "Не удалось обновить иконку категории");
   };
 
   const handleStartDelete = async (category: Category) => {
@@ -361,6 +413,8 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
     deleteDialog.openDialog({
       categoryId: category.id,
       categoryName: category.name,
+      categoryIcon: category.icon,
+      categoryIconAssetId: category.iconAssetId,
       transactionCount: countResult.data || 0,
     });
   };
@@ -416,14 +470,9 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
             <SortableCategoryItem
               key={category.id}
               category={category}
-              editingCategory={editingCategory}
-              editingName={editingName}
-              onStartEdit={handleStartEdit}
-              onCancelEdit={handleCancelEdit}
-              onSaveEdit={handleSaveEdit}
+              onUpdateName={handleUpdateName}
+              onUpdateIcon={handleUpdateIcon}
               onStartDelete={handleStartDelete}
-              isUpdating={isUpdatingCategory}
-              setEditingName={setEditingName}
             />
           ))}
         </div>
@@ -475,6 +524,8 @@ export function CategoryManagement({ workspaceId }: CategoryManagementProps) {
           open={deleteDialog.open}
           onOpenChange={deleteDialog.closeDialog}
           categoryName={deleteDialog.data.categoryName}
+          categoryIcon={deleteDialog.data.categoryIcon}
+          categoryIconAssetId={deleteDialog.data.categoryIconAssetId}
           transactionCount={deleteDialog.data.transactionCount}
           onConfirm={handleConfirmDelete}
           isDeleting={isDeletingCategory}

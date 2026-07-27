@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { CategoryIcon } from "@/shared/components/category-icon";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { Button } from "@/shared/ui/button";
 import { DatePicker } from "@/shared/ui/date-picker";
@@ -78,6 +79,7 @@ export function TransactionsFilterDrawer({
   const accountOptions = useMemo(() => buildAccountOptions(accounts), [accounts]);
   const membersById = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
   const accountsById = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
+  const categoriesById = useMemo(() => new Map(categories.map((category) => [category.id, category])), [categories]);
   const allowedCategoryTypes = useMemo(
     () => getAllowedCategoryTypes(draftFilters.transactionTypes),
     [draftFilters.transactionTypes]
@@ -197,6 +199,23 @@ export function TransactionsFilterDrawer({
               label="Категории"
               options={categoryOptions}
               value={draftFilters.categoryIds || []}
+              renderOption={({ option, selected, isTrigger }) => {
+                const category = categoriesById.get(String(option.value));
+
+                if (!category) {
+                  return <span className="text-xs font-medium text-muted-foreground">{option.label}</span>;
+                }
+
+                return (
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    <CategoryIcon icon={category.icon} iconAssetId={category.iconAssetId} className="size-4" />
+                    <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-xs")}>
+                      {option.label}
+                    </span>
+                    {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
+                  </span>
+                );
+              }}
               onChange={(categoryIds) => {
                 updateDraftFilter("categoryIds", categoryIds);
               }}

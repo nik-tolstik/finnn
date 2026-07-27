@@ -177,6 +177,7 @@ function DialogWindow({
               <button
                 type="button"
                 data-slot="dialog-close"
+                aria-label="Закрыть"
                 className="absolute top-4 right-4 rounded-full p-1 text-[20px] transition-all hover:bg-control-hover active:bg-control-hover focus:ring-1 focus:ring-control-focus/20"
                 onClick={() => onOpenChange(false)}
               >

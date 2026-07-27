@@ -13,6 +13,8 @@ export interface TransactionFilterCategory {
   id: string;
   name: string;
   type: string;
+  icon: string | null;
+  iconAssetId: string | null;
 }
 
 export interface TransactionFilterAccount {

@@ -51,6 +51,8 @@ const DEBT_TRANSACTION_ACCOUNT_SELECT = {
 const PAYMENT_TRANSACTION_CATEGORY_SELECT = {
   id: true,
   name: true,
+  icon: true,
+  iconAssetId: true,
 } satisfies Prisma.CategorySelect;
 
 const DEBT_WRITE_OFF_PAYMENT_INCLUDE = {
@@ -82,7 +84,7 @@ type AccessibleDebtTransaction = DebtTransaction & {
 };
 type DebtWriteOffPaymentTransaction = PaymentTransaction & {
   account: DebtTransactionAccount;
-  category: Pick<Category, "id" | "name"> | null;
+  category: Pick<Category, "id" | "name" | "icon" | "iconAssetId"> | null;
 };
 type DebtTransactionBalanceEffect = Pick<DebtTransaction, "accountId" | "type" | "amount" | "toAmount">;
 

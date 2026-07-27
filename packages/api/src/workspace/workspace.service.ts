@@ -19,21 +19,21 @@ import type { CreateInviteDto, CreateWorkspaceDto, UpdateWorkspaceDto, Workspace
 
 const INVITE_TOKEN_BYTES = 32;
 const STANDARD_EXPENSE_CATEGORIES = [
-  "Продукты",
-  "Питание",
-  "Подарки",
-  "Машина",
-  "Одежда",
-  "Общ. транспорт",
-  "Развлечения",
-  "Кредит",
-  "Дом",
-  "Спорт",
-  "Здоровье",
-  "Подписки",
-  "Перевод",
+  { name: "Продукты", icon: "🛒" },
+  { name: "Питание", icon: "🍽️" },
+  { name: "Подарки", icon: "🎁" },
+  { name: "Машина", icon: "🚗" },
+  { name: "Одежда", icon: "👕" },
+  { name: "Общ. транспорт", icon: "🚌" },
+  { name: "Развлечения", icon: "🎮" },
+  { name: "Кредит", icon: "💳" },
+  { name: "Дом", icon: "🏠" },
+  { name: "Спорт", icon: "⚽" },
+  { name: "Здоровье", icon: "❤️" },
+  { name: "Подписки", icon: "📺" },
+  { name: "Перевод", icon: "💸" },
 ];
-const STANDARD_INCOME_CATEGORIES = ["Зарплата"];
+const STANDARD_INCOME_CATEGORIES = [{ name: "Зарплата", icon: "💼" }];
 
 const WORKSPACE_SUMMARY_INCLUDE = {
   owner: {
@@ -194,15 +194,17 @@ export class WorkspaceService {
 
       await tx.category.createMany({
         data: [
-          ...STANDARD_EXPENSE_CATEGORIES.map((name) => ({
+          ...STANDARD_EXPENSE_CATEGORIES.map((category) => ({
             workspaceId: created.id,
-            name,
+            name: category.name,
             type: "expense",
+            icon: category.icon,
           })),
-          ...STANDARD_INCOME_CATEGORIES.map((name) => ({
+          ...STANDARD_INCOME_CATEGORIES.map((category) => ({
             workspaceId: created.id,
-            name,
+            name: category.name,
             type: "income",
+            icon: category.icon,
           })),
         ],
       });

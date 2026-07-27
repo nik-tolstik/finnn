@@ -5,13 +5,15 @@ import { CategoryType } from "@/modules/categories/category.constants";
 export const createCategorySchema = z.object({
   name: z.string().min(1, "Название обязательно").max(100),
   type: z.nativeEnum(CategoryType),
-  icon: z.string().optional(),
+  icon: z.string().max(32).nullable().optional(),
+  iconAssetId: z.string().min(1).nullable().optional(),
 });
 
 export const updateCategorySchema = z.object({
   name: z.string().min(1).max(100).optional(),
   type: z.nativeEnum(CategoryType).optional(),
-  icon: z.string().optional(),
+  icon: z.string().max(32).nullable().optional(),
+  iconAssetId: z.string().min(1).nullable().optional(),
   order: z.number().int().optional(),
 });
 

@@ -15,6 +15,7 @@ import { getCategories } from "@/modules/categories/category.api";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
+import { CategoryIcon } from "@/shared/components/category-icon";
 import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {
@@ -132,6 +133,20 @@ export function DebtWriteOffDialog({
     () => categoryOptions.find((category) => category.value === categoryId),
     [categoryId, categoryOptions]
   );
+  const selectedCategoryData = useMemo(
+    () => categories.find((category) => category.id === categoryId),
+    [categories, categoryId]
+  );
+  const renderCategoryOption = (option: ComboboxOption) => {
+    const category = categories.find((item) => item.id === option.value);
+
+    return (
+      <span className="flex min-w-0 items-center gap-2">
+        {category && <CategoryIcon icon={category.icon} iconAssetId={category.iconAssetId} className="size-5" />}
+        <span className="truncate text-sm">{option.label}</span>
+      </span>
+    );
+  };
   const currenciesMatch = !selectedAccount || selectedAccount.currency === debtDetails.currency;
   const maximumAmount = getDebtWriteOffMaximumAmount(debtDetails, transaction);
   const transactionType = getDebtWriteOffType(debtDetails.type);
@@ -276,7 +291,12 @@ export function DebtWriteOffDialog({
       createdAt: transaction?.createdAt || now,
       updatedAt: now,
       account: toOptimisticAccount(selectedAccount),
-      category: { id: selectedCategory.value, name: selectedCategory.label },
+      category: {
+        id: selectedCategory.value,
+        name: selectedCategory.label,
+        icon: selectedCategoryData?.icon,
+        iconAssetId: selectedCategoryData?.iconAssetId,
+      },
       debtWriteOff: {
         debtTransactionId:
           transaction?.debtWriteOff.debtTransactionId || `optimistic-debt-transaction-${now.getTime()}`,
@@ -493,7 +513,16 @@ export function DebtWriteOffDialog({
                 onClick={() => categoryDialog.openDialog(null)}
               >
                 {selectedCategory ? (
-                  <span className="truncate">{selectedCategory.label}</span>
+                  <span className="flex min-w-0 items-center gap-2 truncate">
+                    {selectedCategoryData && (
+                      <CategoryIcon
+                        icon={selectedCategoryData.icon}
+                        iconAssetId={selectedCategoryData.iconAssetId}
+                        className="size-5"
+                      />
+                    )}
+                    <span className="truncate">{selectedCategory.label}</span>
+                  </span>
                 ) : (
                   <span className="text-muted-foreground">Выберите категорию</span>
                 )}
@@ -550,6 +579,7 @@ export function DebtWriteOffDialog({
           placeholder="Выберите категорию"
           searchPlaceholder="Поиск категории..."
           emptyText="Категории не найдены"
+          renderOption={renderCategoryOption}
         />
       ) : null}
     </Dialog>

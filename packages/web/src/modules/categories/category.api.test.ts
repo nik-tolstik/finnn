@@ -4,18 +4,24 @@ import { CategoryType } from "./category.constants";
 
 const createApiCategoryMock = vi.fn();
 const deleteApiCategoryMock = vi.fn();
+const deleteApiCategoryIconMock = vi.fn();
 const getApiCategoryTransactionCountMock = vi.fn();
 const listApiCategoriesMock = vi.fn();
+const listApiCategoryIconsMock = vi.fn();
 const updateApiCategoriesOrderMock = vi.fn();
 const updateApiCategoryMock = vi.fn();
+const uploadApiCategoryIconMock = vi.fn();
 
 vi.mock("@/shared/api/generated/categories/categories", () => ({
   createCategory: createApiCategoryMock,
   deleteCategory: deleteApiCategoryMock,
+  deleteCategoryIcon: deleteApiCategoryIconMock,
   getCategoryTransactionCount: getApiCategoryTransactionCountMock,
   listCategories: listApiCategoriesMock,
+  listCategoryIcons: listApiCategoryIconsMock,
   updateCategoriesOrder: updateApiCategoriesOrderMock,
   updateCategory: updateApiCategoryMock,
+  uploadCategoryIcon: uploadApiCategoryIconMock,
 }));
 
 const requestOptions = {
@@ -75,6 +81,7 @@ describe("category.api", () => {
       category: createCategoryDto({ name: "Food" }),
     });
     deleteApiCategoryMock.mockResolvedValue(undefined);
+    deleteApiCategoryIconMock.mockResolvedValue(undefined);
 
     const { createCategory, deleteCategory, updateCategory } = await import("./category.api");
 
@@ -125,6 +132,51 @@ describe("category.api", () => {
       requestOptions
     );
     expect(getApiCategoryTransactionCountMock).toHaveBeenCalledWith("category-1", requestOptions);
+  });
+
+  it("maps uploaded icons and forwards files during upload", async () => {
+    const file = { name: "icon.png" } as File;
+    listApiCategoryIconsMock.mockResolvedValue({
+      icons: [
+        {
+          id: "asset-1",
+          workspaceId: "workspace-1",
+          url: "/category-icons/asset-1",
+          createdAt: "2026-05-01T00:00:00.000Z",
+        },
+      ],
+    });
+    uploadApiCategoryIconMock.mockResolvedValue({
+      icon: {
+        id: "asset-2",
+        workspaceId: "workspace-1",
+        url: "/category-icons/asset-2",
+        createdAt: "2026-05-02T00:00:00.000Z",
+      },
+    });
+
+    const { getCategoryIcons, uploadCategoryIcon } = await import("./category.api");
+
+    await expect(getCategoryIcons("workspace-1", requestOptions)).resolves.toEqual({
+      data: [
+        expect.objectContaining({
+          id: "asset-1",
+          createdAt: new Date("2026-05-01T00:00:00.000Z"),
+        }),
+      ],
+    });
+    await expect(uploadCategoryIcon("workspace-1", file, requestOptions)).resolves.toEqual({
+      data: expect.objectContaining({ id: "asset-2" }),
+    });
+
+    expect(uploadApiCategoryIconMock).toHaveBeenCalledWith("workspace-1", { file }, requestOptions);
+  });
+
+  it("deletes uploaded category icons through the API adapter", async () => {
+    const { deleteCategoryIcon } = await import("./category.api");
+
+    await expect(deleteCategoryIcon("asset-1", requestOptions)).resolves.toEqual({ success: true });
+    expect(deleteApiCategoryIconMock).toHaveBeenCalledWith("asset-1", requestOptions);
   });
 
   it("normalizes API failures into action errors", async () => {

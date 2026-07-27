@@ -115,7 +115,7 @@ OPENROUTER_VISION_MODEL="google/gemini-2.5-flash"
 OPENROUTER_TRANSCRIPTION_MODEL="openai/gpt-4o-mini-transcribe"
 ```
 
-Required for custom avatar uploads:
+Required for custom avatar and category icon uploads:
 
 ```env
 AVATAR_BUCKET="railway-bucket-name"

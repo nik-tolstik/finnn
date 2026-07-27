@@ -32,14 +32,14 @@ const seedAccounts: SeedAccount[] = [
 ];
 
 const seedCategories: Array<{ name: string; type: CategoryType; icon: string; order: number }> = [
-  { name: "Зарплата", type: "income", icon: "briefcase", order: 1 },
-  { name: "Подработка", type: "income", icon: "wallet", order: 2 },
-  { name: "Кэшбэк", type: "income", icon: "piggy-bank", order: 3 },
-  { name: "Продукты", type: "expense", icon: "shopping-cart", order: 1 },
-  { name: "Транспорт", type: "expense", icon: "car", order: 2 },
-  { name: "Кафе", type: "expense", icon: "coffee", order: 3 },
-  { name: "Коммунальные", type: "expense", icon: "building-2", order: 4 },
-  { name: "Подписки", type: "expense", icon: "tv", order: 5 },
+  { name: "Зарплата", type: "income", icon: "💼", order: 1 },
+  { name: "Подработка", type: "income", icon: "💸", order: 2 },
+  { name: "Кэшбэк", type: "income", icon: "🐷", order: 3 },
+  { name: "Продукты", type: "expense", icon: "🛒", order: 1 },
+  { name: "Транспорт", type: "expense", icon: "🚗", order: 2 },
+  { name: "Кафе", type: "expense", icon: "☕", order: 3 },
+  { name: "Коммунальные", type: "expense", icon: "🏠", order: 4 },
+  { name: "Подписки", type: "expense", icon: "📺", order: 5 },
 ];
 
 type SeedOptions = {

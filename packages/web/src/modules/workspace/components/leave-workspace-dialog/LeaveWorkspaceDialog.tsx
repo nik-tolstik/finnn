@@ -51,7 +51,7 @@ export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow showCloseButton={false}>
+      <DialogWindow>
         <DialogHeader>
           <DialogTitle>Покинуть рабочий стол?</DialogTitle>
           <DialogDescription>

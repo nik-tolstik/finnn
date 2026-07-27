@@ -14,5 +14,11 @@ export interface CreateCategoryDto {
    */
   name: string;
   type: CreateCategoryDtoType;
-  icon?: string;
+  /** @nullable */
+  icon?: string | null;
+  /**
+   * @nullable
+   * @pattern ^[a-fA-F0-9]{24}$
+   */
+  iconAssetId?: string | null;
 }

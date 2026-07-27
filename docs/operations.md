@@ -101,7 +101,7 @@ PASSWORD_RESET_MAX_ATTEMPTS="5"
 PASSWORD_RESET_RESEND_COOLDOWN_SECONDS="60"
 ```
 
-Avatar uploads require a private Railway Bucket exposed through its S3-compatible credentials:
+Avatar and category icon uploads require a private Railway Bucket exposed through its S3-compatible credentials:
 
 ```env
 AVATAR_BUCKET="railway-bucket-name"
@@ -136,7 +136,10 @@ Railway setup:
 
 - Set the service root directory to `/packages/api`.
 - Set the config-as-code file path to `/packages/api/railway.json`.
-- Keep the checked-in config on the Railpack builder with `pnpm --filter api build`, `pnpm --filter api start`, and `/health`.
+- Keep the checked-in config on the Railpack builder with `pnpm --filter api build`, pre-deploy
+  `pnpm --filter api db:push`, `pnpm --filter api start`, and `/health`.
+- The pre-deploy command applies Prisma schema and index changes to the `DATABASE_URL` of the current Railway
+  environment. It covers DEV and PROD automatically; keep their database URLs separate.
 - Confirm the service listens on Railway's injected `PORT`; the NestJS bootstrap already binds `0.0.0.0`.
 
 Required Railway variables:
@@ -273,6 +276,10 @@ Before import/export:
 
 For MongoDB, the project uses Prisma `db push` rather than SQL-style change files.
 
+Railway runs `pnpm --filter api db:push` before each API deployment. Do not run it manually against the target
+Railway database during a normal release, and do not add `--accept-data-loss` or `--force-reset` to the deployment
+command. A destructive schema change, rename, or data backfill needs an explicit, reviewed rollout.
+
 Recommended sequence:
 
 ```bash
@@ -285,6 +292,8 @@ pnpm test
 
 When adding indexes, verify they are represented in `packages/api/prisma/schema.prisma` and applied through `pnpm db:push`.
 For MongoDB partial indexes that Prisma cannot express, add or update an explicit script under `packages/api/scripts`.
+Run `pnpm db:ensure-indexes` explicitly when releasing the optional-email partial-index change; it is intentionally not
+part of every Railway pre-deploy command.
 
 ## Telegram Identity Repair
 
@@ -410,7 +419,8 @@ Also verify:
 
 - Required env vars exist in the target environment.
 - MongoDB accepts Prisma transactions.
-- `pnpm db:push` has been run for schema/index changes.
+- Schema changes are backward compatible while the previous API deployment is still serving traffic; Railway pre-deploy
+  applies `db:push` to the target environment.
 - Railway Bucket avatar variables are present and point at the correct environment bucket.
 - Cron endpoint returns success with a valid secret.
 - API auth cookie variables match the deployed API and web hosts.

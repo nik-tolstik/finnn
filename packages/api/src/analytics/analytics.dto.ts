@@ -204,6 +204,12 @@ export class AnalyticsExpenseCategoryDto {
   @ApiProperty({ type: String })
   name!: string;
 
+  @ApiPropertyOptional({ nullable: true, type: String })
+  icon!: string | null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  iconAssetId!: string | null;
+
   @ApiProperty({ type: String })
   totalInBaseCurrency!: string;
 

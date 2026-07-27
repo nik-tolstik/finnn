@@ -65,6 +65,8 @@ const CAPITAL_ACCOUNT_SELECT = {
 const CATEGORY_SELECT = {
   id: true,
   name: true,
+  icon: true,
+  iconAssetId: true,
 } satisfies Prisma.CategorySelect;
 
 const PAYMENT_TRANSACTION_INCLUDE = {
@@ -114,7 +116,7 @@ type TransactionAccount = Pick<Account, "id" | "name" | "currency" | "color" | "
   owner: TransactionUser | null;
 };
 type CapitalAccount = Pick<Account, "id" | "balance" | "currency" | "ownerId" | "createdAt">;
-type TransactionCategory = Pick<Category, "id" | "name">;
+type TransactionCategory = Pick<Category, "id" | "name" | "icon" | "iconAssetId">;
 type PaymentTransactionWithRelations = PaymentTransaction & {
   account: TransactionAccount;
   category: TransactionCategory | null;
@@ -156,6 +158,8 @@ type AnalyticsDateRange = {
 type AnalyticsCategoryTotal = {
   id: string;
   name: string;
+  icon: string | null;
+  iconAssetId: string | null;
   totalInBaseCurrency: string;
   transactionCount: number;
 };
@@ -1161,6 +1165,8 @@ export class AnalyticsService {
           incomeCategories.set(categoryKey, {
             id: categoryKey,
             name: transaction.category?.name ?? "Без категории",
+            icon: transaction.category?.icon ?? null,
+            iconAssetId: transaction.category?.iconAssetId ?? null,
             totalInBaseCurrency: amountInBaseCurrency,
             transactionCount: 1,
           });
@@ -1187,6 +1193,8 @@ export class AnalyticsService {
           expenseCategories.set(categoryKey, {
             id: categoryKey,
             name: transaction.category?.name ?? "Без категории",
+            icon: transaction.category?.icon ?? null,
+            iconAssetId: transaction.category?.iconAssetId ?? null,
             totalInBaseCurrency: amountInBaseCurrency,
             transactionCount: 1,
           });

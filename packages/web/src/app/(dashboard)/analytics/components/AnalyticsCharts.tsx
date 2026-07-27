@@ -13,6 +13,7 @@ import {
 
 import type { AnalyticsOverviewViewModel } from "@/modules/analytics/analytics.view-model";
 import { selectAnalyticsCapitalTicks } from "@/modules/analytics/analytics.view-model";
+import { CategoryIcon } from "@/shared/components/category-icon";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
@@ -139,7 +140,10 @@ function CategoryBreakdownCard({
             {rows.slice(0, 5).map((category, index) => (
               <div key={category.id} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="min-w-0 truncate font-medium">{category.name}</span>
+                  <span className="flex min-w-0 items-center gap-2 truncate font-medium">
+                    <CategoryIcon icon={category.icon} iconAssetId={category.iconAssetId} className="size-5" />
+                    <span className="truncate">{category.name}</span>
+                  </span>
                   <span className="shrink-0 text-muted-foreground">{category.totalLabel}</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">

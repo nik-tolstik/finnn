@@ -75,6 +75,7 @@ describe("App", () => {
       buildCommand: "pnpm --filter api build",
     });
     expect(railwayConfig.deploy).toMatchObject({
+      preDeployCommand: ["pnpm --filter api db:push"],
       startCommand: "pnpm --filter api start",
       healthcheckPath: "/health",
     });

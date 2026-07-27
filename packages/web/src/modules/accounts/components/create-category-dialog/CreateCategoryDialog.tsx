@@ -2,12 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useId } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { createCategory } from "@/modules/categories/category.api";
 import { CategoryType } from "@/modules/categories/category.constants";
+import { CategoryIconPicker } from "@/shared/components/category-icon-picker";
 import { insertCategoriesInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { categoryKeys } from "@/shared/lib/query-keys";
 import { type CreateCategoryInput, createCategorySchema } from "@/shared/lib/validations/category";
@@ -25,25 +26,34 @@ interface CreateCategoryDialogProps {
 
 export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: CreateCategoryDialogProps) {
   const queryClient = useQueryClient();
+  const nameInputId = useId();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting, isValid },
     reset,
+    setValue,
+    control,
   } = useForm<CreateCategoryInput>({
     resolver: zodResolver(createCategorySchema),
     mode: "onChange",
     defaultValues: {
       name: "",
       type,
+      icon: null,
+      iconAssetId: null,
     },
   });
+  const selectedIcon = useWatch({ control, name: "icon" });
+  const selectedIconAssetId = useWatch({ control, name: "iconAssetId" });
 
   useEffect(() => {
     if (open) {
       reset({
         name: "",
         type,
+        icon: null,
+        iconAssetId: null,
       });
     }
   }, [open, type, reset]);
@@ -62,7 +72,8 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
         name: data.name,
         type: data.type,
         order: nextOrder,
-        icon: null,
+        icon: data.icon ?? null,
+        iconAssetId: data.iconAssetId ?? null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -99,17 +110,33 @@ export function CreateCategoryDialog({ workspaceId, type, open, onOpenChange }: 
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name" required>
+              <Label htmlFor={nameInputId} required>
                 Название
               </Label>
-              <Input
-                id="name"
-                type="text"
-                {...register("name")}
-                placeholder="Название категории"
-                aria-invalid={errors.name ? "true" : "false"}
-              />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+              <div className="flex items-start gap-3">
+                <CategoryIconPicker
+                  workspaceId={workspaceId}
+                  value={{
+                    icon: selectedIcon ?? null,
+                    iconAssetId: selectedIconAssetId ?? null,
+                  }}
+                  onChange={(selection) => {
+                    setValue("icon", selection.icon, { shouldValidate: true });
+                    setValue("iconAssetId", selection.iconAssetId, { shouldValidate: true });
+                  }}
+                  className="border-0 bg-transparent hover:border-0 hover:bg-accent"
+                />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Input
+                    id={nameInputId}
+                    type="text"
+                    {...register("name")}
+                    placeholder="Название категории"
+                    aria-invalid={errors.name ? "true" : "false"}
+                  />
+                  {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                </div>
+              </div>
             </div>
           </form>
         </DialogContent>

@@ -57,6 +57,8 @@ const ACCOUNT_WITH_OWNER_SELECT = {
 const CATEGORY_SELECT = {
   id: true,
   name: true,
+  icon: true,
+  iconAssetId: true,
 } satisfies Prisma.CategorySelect;
 
 const PAYMENT_TRANSACTION_INCLUDE = {
@@ -123,7 +125,7 @@ type TransactionUser = Pick<User, "id" | "name" | "email" | "image">;
 type TransactionAccount = Pick<Account, "id" | "name" | "currency" | "color" | "icon" | "ownerId"> & {
   owner: TransactionUser | null;
 };
-type TransactionCategory = Pick<Category, "id" | "name">;
+type TransactionCategory = Pick<Category, "id" | "name" | "icon" | "iconAssetId">;
 type PaymentTransactionWithRelations = PaymentTransaction & {
   account: TransactionAccount;
   category: TransactionCategory | null;

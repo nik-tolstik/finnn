@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsArray, IsIn, IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from "class-validator";
+import { IsArray, IsIn, IsInt, IsMongoId, IsOptional, IsString, MaxLength, Min, MinLength } from "class-validator";
 
 const CATEGORY_TYPES = ["income", "expense"] as const;
 
@@ -14,10 +14,22 @@ export class CreateCategoryDto {
   @IsIn(CATEGORY_TYPES)
   type!: string;
 
-  @ApiPropertyOptional({ example: "shopping-cart", type: String })
+  @ApiPropertyOptional({ example: "🛒", nullable: true, type: String })
   @IsOptional()
   @IsString()
-  icon?: string;
+  @MaxLength(32)
+  icon?: string | null;
+
+  @ApiPropertyOptional({
+    example: "665f5d865ef5a20c0d2f4444",
+    nullable: true,
+    pattern: "^[a-fA-F0-9]{24}$",
+    type: String,
+  })
+  @IsOptional()
+  @IsString()
+  @IsMongoId()
+  iconAssetId?: string | null;
 }
 
 export class UpdateCategoryDto {
@@ -33,10 +45,22 @@ export class UpdateCategoryDto {
   @IsIn(CATEGORY_TYPES)
   type?: string;
 
-  @ApiPropertyOptional({ example: "briefcase", type: String })
+  @ApiPropertyOptional({ example: "💼", nullable: true, type: String })
   @IsOptional()
   @IsString()
-  icon?: string;
+  @MaxLength(32)
+  icon?: string | null;
+
+  @ApiPropertyOptional({
+    example: "665f5d865ef5a20c0d2f4444",
+    nullable: true,
+    pattern: "^[a-fA-F0-9]{24}$",
+    type: String,
+  })
+  @IsOptional()
+  @IsString()
+  @IsMongoId()
+  iconAssetId?: string | null;
 
   @ApiPropertyOptional({ example: 0, type: Number })
   @IsOptional()
@@ -65,8 +89,11 @@ export class CategoryDto {
   @ApiProperty({ example: "expense", type: String })
   type!: string;
 
-  @ApiPropertyOptional({ example: "shopping-cart", nullable: true, type: String })
+  @ApiPropertyOptional({ example: "🛒", nullable: true, type: String })
   icon!: string | null;
+
+  @ApiPropertyOptional({ example: "665f5d865ef5a20c0d2f4444", nullable: true, type: String })
+  iconAssetId!: string | null;
 
   @ApiProperty({ example: 0, type: Number })
   order!: number;
@@ -99,4 +126,34 @@ export class CategorySuccessResponseDto {
 export class CategoryTransactionCountResponseDto {
   @ApiProperty({ example: 4, type: Number })
   count!: number;
+}
+
+export class CategoryIconDto {
+  @ApiProperty({ example: "665f5d865ef5a20c0d2f4444", type: String })
+  id!: string;
+
+  @ApiProperty({ example: "665f5d865ef5a20c0d2f1111", type: String })
+  workspaceId!: string;
+
+  @ApiProperty({ example: "/category-icons/665f5d865ef5a20c0d2f4444", type: String })
+  url!: string;
+
+  @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
+  createdAt!: string;
+}
+
+export class CategoryIconListResponseDto {
+  @ApiProperty({ type: [CategoryIconDto] })
+  icons!: CategoryIconDto[];
+}
+
+export class CategoryIconResponseDto {
+  @ApiProperty({ type: CategoryIconDto })
+  icon!: CategoryIconDto;
+}
+
+export class UploadCategoryIconDto {
+  @ApiProperty({ format: "binary", type: "string" })
+  @IsOptional()
+  file!: unknown;
 }

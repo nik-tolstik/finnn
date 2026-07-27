@@ -33,6 +33,8 @@ export type PaymentTransactionWithRelations = {
   category: {
     id: string;
     name: string;
+    icon?: string | null;
+    iconAssetId?: string | null;
   } | null;
   debtWriteOff: DebtWriteOffMetadata | null;
 };

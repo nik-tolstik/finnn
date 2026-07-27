@@ -30,6 +30,7 @@ interface TransactionLineFooter {
 
 interface TransactionDescriptionLineProps {
   segments: DescriptionSegment[];
+  categoryIcon?: ReactNode;
   icon?: ReactNode;
   accountChips?: AccountChipsMap;
   amount?: TransactionLineAmount;
@@ -42,6 +43,7 @@ interface TransactionDescriptionLineProps {
 
 export function TransactionDescriptionLine({
   segments,
+  categoryIcon,
   icon,
   accountChips,
   amount,
@@ -74,6 +76,9 @@ export function TransactionDescriptionLine({
     <span className="text-sm leading-relaxed inline-flex flex-wrap items-center gap-x-1 gap-y-1.5">
       <span className="inline-flex items-center gap-1">
         {icon ? <span className="text-muted-foreground [&>svg]:size-4">{icon}</span> : null}
+        {firstSegment?.segmentType === "category" && categoryIcon ? (
+          <span className="shrink-0">{categoryIcon}</span>
+        ) : null}
         <span className={firstSegment?.highlight ? "font-semibold" : undefined}>{firstSegment?.text ?? ""}</span>
       </span>
       {restSegments.map((seg, i) => {
