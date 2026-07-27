@@ -4,6 +4,7 @@ import { ChevronRight, LogOut } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { CategorySettingsDialog } from "@/modules/accounts/components/category-settings-dialog";
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
@@ -17,6 +18,7 @@ import { WorkspaceDropdown } from "./WorkspaceDropdown";
 export function MobileUserMenu() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
+  const [categorySettingsDialogOpen, setCategorySettingsDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const searchParams = useSearchParams();
   const workspaceId = searchParams.get("workspaceId") || undefined;
@@ -72,6 +74,10 @@ export function MobileUserMenu() {
             <div className="px-4 mt-4">
               <WorkspaceDropdown
                 currentWorkspaceId={workspaceId}
+                onCategorySettingsOpen={() => {
+                  setOpen(false);
+                  setCategorySettingsDialogOpen(true);
+                }}
                 variant="list"
                 onWorkspaceSelect={() => setOpen(false)}
               />
@@ -99,6 +105,13 @@ export function MobileUserMenu() {
         </SheetContent>
       </Sheet>
       <UserSettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
+      {workspaceId && (
+        <CategorySettingsDialog
+          workspaceId={workspaceId}
+          open={categorySettingsDialogOpen}
+          onOpenChange={setCategorySettingsDialogOpen}
+        />
+      )}
     </>
   );
 }
