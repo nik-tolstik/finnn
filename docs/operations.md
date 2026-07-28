@@ -251,7 +251,6 @@ Scripts:
 - `packages/api/scripts/mongo-export.ts`
 - `packages/api/scripts/mongo-import.ts`
 - `packages/api/scripts/db-seed.ts`
-- `packages/api/scripts/ensure-indexes.ts`
 
 Commands:
 
@@ -259,7 +258,6 @@ Commands:
 pnpm db:export ./backups/manual
 pnpm db:import ./backups/manual --drop --db=finnn_restore
 pnpm db:seed
-pnpm db:ensure-indexes
 ```
 
 Before import/export:
@@ -268,9 +266,6 @@ Before import/export:
 - Use throwaway database names for import verification.
 - Production imports are blocked unless `--allow-production` is passed. Use that flag only when the target dataset and overwrite behavior are fully understood.
 - Run `pnpm db:generate` if schema or Prisma version changed.
-- Run `pnpm db:ensure-indexes` after deploying optional-email schema changes. The command ensures
-  `users_email_unique_partial` exists with `partialFilterExpression: { email: { $type: "string" } }` and drops
-  older non-partial `users.email` indexes that would allow only one missing/null email.
 
 ## Database Schema Changes
 
@@ -285,15 +280,12 @@ Recommended sequence:
 ```bash
 pnpm db:generate
 pnpm db:push
-pnpm db:ensure-indexes
 pnpm typecheck
 pnpm test
 ```
 
 When adding indexes, verify they are represented in `packages/api/prisma/schema.prisma` and applied through `pnpm db:push`.
 For MongoDB partial indexes that Prisma cannot express, add or update an explicit script under `packages/api/scripts`.
-Run `pnpm db:ensure-indexes` explicitly when releasing the optional-email partial-index change; it is intentionally not
-part of every Railway pre-deploy command.
 
 ## Telegram Identity Repair
 
