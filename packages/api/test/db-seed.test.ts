@@ -133,6 +133,16 @@ describe("database seed script", () => {
     });
     expect(prisma.account.create).toHaveBeenCalledTimes(3);
     expect(prisma.category.create).toHaveBeenCalledTimes(8);
+    expect(prisma.category.create.mock.calls.map(([call]) => call.data)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Зарплата", icon: "💼" }),
+        expect.objectContaining({ name: "Продукты", icon: "🛒" }),
+        expect.objectContaining({ name: "Транспорт", icon: "🚗" }),
+        expect.objectContaining({ name: "Кафе", icon: "☕" }),
+        expect.objectContaining({ name: "Коммунальные", icon: "🏠" }),
+        expect.objectContaining({ name: "Подписки", icon: "📺" }),
+      ])
+    );
     expect(prisma.paymentTransaction.create).toHaveBeenCalledTimes(TRANSACTIONS_TARGET_COUNT);
     expect(prisma.account.update).toHaveBeenCalledTimes(3);
   });

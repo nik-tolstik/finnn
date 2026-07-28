@@ -14,6 +14,12 @@ export interface UpdateCategoryDto {
    */
   name?: string;
   type?: UpdateCategoryDtoType;
-  icon?: string;
+  /** @nullable */
+  icon?: string | null;
+  /**
+   * @nullable
+   * @pattern ^[a-fA-F0-9]{24}$
+   */
+  iconAssetId?: string | null;
   order?: number;
 }

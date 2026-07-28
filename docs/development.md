@@ -16,7 +16,6 @@ cp packages/web/.env.example packages/web/.env
 docker compose up -d
 pnpm db:generate
 pnpm db:push
-pnpm db:ensure-indexes
 pnpm dev
 ```
 
@@ -115,7 +114,7 @@ OPENROUTER_VISION_MODEL="google/gemini-2.5-flash"
 OPENROUTER_TRANSCRIPTION_MODEL="openai/gpt-4o-mini-transcribe"
 ```
 
-Required for custom avatar uploads:
+Required for custom avatar and category icon uploads:
 
 ```env
 AVATAR_BUCKET="railway-bucket-name"
@@ -249,15 +248,13 @@ Database scripts:
 ```bash
 pnpm db:generate  # Generate Prisma Client
 pnpm db:push      # Apply schema and indexes to MongoDB
-pnpm db:ensure-indexes # Ensure partial unique email index for optional email users
 pnpm db:seed      # Seed sample data
 pnpm db:export    # Export MongoDB data
 pnpm db:import <backup-dir> --drop --db=<database-name> # Import MongoDB data
 ```
 
 Root database commands delegate to `packages/api`. The source files are `packages/api/scripts/db-seed.ts`,
-`packages/api/scripts/mongo-export.ts`, `packages/api/scripts/mongo-import.ts`, and
-`packages/api/scripts/ensure-indexes.ts`.
+`packages/api/scripts/mongo-export.ts`, and `packages/api/scripts/mongo-import.ts`.
 
 ## Prisma Workflow
 
@@ -275,8 +272,6 @@ For this project:
 - Edit `packages/api/prisma/schema.prisma` for models, indexes, enums, and relations.
 - Run `pnpm db:generate` after schema changes.
 - Run `pnpm db:push` to apply collection and index changes to MongoDB.
-- Run `pnpm db:ensure-indexes` after user/email schema changes. It replaces non-partial `users.email` indexes
-  with `users_email_unique_partial`, allowing multiple users without email while keeping string emails unique.
 - Keep MongoDB ObjectId fields in the existing pattern: `String @id @default(auto()) @map("_id") @db.ObjectId`.
 - Prefer string money amounts over floats or numbers in persisted financial fields.
 

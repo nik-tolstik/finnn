@@ -82,7 +82,8 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - The database is MongoDB through Prisma with `provider = "mongodb"`.
 - Local MongoDB should run as a replica set. `docker-compose.yml` starts MongoDB with `--replSet rs0`; initialize the replica set before using Prisma transactions if needed.
 - Run `pnpm db:generate` after schema changes.
-- Run `pnpm db:push` to apply schema/index changes to MongoDB.
+- Run `pnpm db:push` to apply schema/index changes to a local MongoDB instance. Railway API deployments apply it
+  automatically in `preDeployCommand` for DEV and PROD; do not add destructive Prisma flags there.
 - `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`, email variables, and `CRON_SECRET`.
 - `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL`.
 - Vercel web domains: PROD `https://finnn.xyz`, DEV `https://dev.finnn.xyz`.

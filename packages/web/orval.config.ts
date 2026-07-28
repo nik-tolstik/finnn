@@ -24,6 +24,15 @@ export default defineConfig({
           useMutation: true,
           useQuery: true,
         },
+        operations: {
+          // The protected redirect is consumed by an <img>, not TanStack Query.
+          getCategoryIcon: {
+            query: {
+              useMutation: false,
+              useQuery: false,
+            },
+          },
+        },
       },
     },
     hooks: {

@@ -39,6 +39,8 @@ export interface AnalyticsCapitalTimeSeriesViewPoint {
 export interface AnalyticsCategoryViewRow {
   id: string;
   name: string;
+  icon?: string | null;
+  iconAssetId?: string | null;
   total: string;
   totalLabel: string;
   transactionCount: number;
@@ -288,6 +290,8 @@ export function buildAnalyticsOverviewViewModel(analytics: AnalyticsOverviewResu
   const incomeCategoryRows = analytics.incomeCategories.map((category) => ({
     id: category.id,
     name: category.name,
+    icon: category.icon,
+    iconAssetId: category.iconAssetId,
     total: category.totalInBaseCurrency,
     totalLabel: formatMoney(category.totalInBaseCurrency, analytics.baseCurrency),
     transactionCount: category.transactionCount,
@@ -298,6 +302,8 @@ export function buildAnalyticsOverviewViewModel(analytics: AnalyticsOverviewResu
   const categoryRows = analytics.expenseCategories.map((category) => ({
     id: category.id,
     name: category.name,
+    icon: category.icon,
+    iconAssetId: category.iconAssetId,
     total: category.totalInBaseCurrency,
     totalLabel: formatMoney(category.totalInBaseCurrency, analytics.baseCurrency),
     transactionCount: category.transactionCount,

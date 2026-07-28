@@ -9,6 +9,10 @@
 export interface AnalyticsExpenseCategoryDto {
   id: string;
   name: string;
+  /** @nullable */
+  icon?: string | null;
+  /** @nullable */
+  iconAssetId?: string | null;
   totalInBaseCurrency: string;
   transactionCount: number;
   sharePercent: number;

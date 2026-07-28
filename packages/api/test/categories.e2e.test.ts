@@ -1,4 +1,4 @@
-import type { INestApplication } from "@nestjs/common";
+import { type INestApplication, ServiceUnavailableException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,8 +7,10 @@ import { AUTH_COOKIE_NAME } from "../src/auth/session-cookie";
 import { CategoriesModule } from "../src/categories/categories.module";
 import { configureApp } from "../src/main";
 import { PrismaService } from "../src/prisma/prisma.service";
+import { ObjectStorageService } from "../src/storage/object-storage.service";
 
 type MockPrisma = {
+  $transaction: ReturnType<typeof vi.fn>;
   user: {
     findUnique: ReturnType<typeof vi.fn>;
   };
@@ -27,6 +29,15 @@ type MockPrisma = {
     findFirst: ReturnType<typeof vi.fn>;
     findMany: ReturnType<typeof vi.fn>;
     findUnique: ReturnType<typeof vi.fn>;
+    count: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    updateMany: ReturnType<typeof vi.fn>;
+  };
+  categoryIconAsset: {
+    create: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    findUnique: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     updateMany: ReturnType<typeof vi.fn>;
   };
@@ -36,7 +47,8 @@ type MockPrisma = {
 };
 
 function createPrismaMock(): MockPrisma {
-  return {
+  const prisma: MockPrisma = {
+    $transaction: vi.fn(),
     user: {
       findUnique: vi.fn(),
     },
@@ -55,6 +67,15 @@ function createPrismaMock(): MockPrisma {
       findFirst: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      updateMany: vi.fn(),
+      count: vi.fn(),
+      update: vi.fn(),
+    },
+    categoryIconAsset: {
+      create: vi.fn(),
+      delete: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
     },
@@ -62,6 +83,10 @@ function createPrismaMock(): MockPrisma {
       count: vi.fn(),
     },
   };
+
+  prisma.$transaction.mockImplementation(async (callback: (transaction: MockPrisma) => unknown) => callback(prisma));
+
+  return prisma;
 }
 
 const currentUser = {
@@ -71,6 +96,10 @@ const currentUser = {
   name: "Ada",
   image: null,
 };
+
+const categoryIconAssetId = "665f5d865ef5a20c0d2f4444";
+const foreignCategoryIconAssetId = "665f5d865ef5a20c0d2f5555";
+const missingCategoryIconAssetId = "665f5d865ef5a20c0d2f6666";
 
 function createCategoryRecord(overrides: Record<string, unknown> = {}) {
   return {
@@ -97,6 +126,11 @@ function mockAuthenticatedSession(prisma: MockPrisma) {
 describe("Categories API", () => {
   let app: INestApplication;
   let prisma: MockPrisma;
+  const storage = {
+    upload: vi.fn(),
+    delete: vi.fn(),
+    getReadUrl: vi.fn(),
+  };
 
   beforeAll(async () => {
     prisma = createPrismaMock();
@@ -106,6 +140,8 @@ describe("Categories API", () => {
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
+      .overrideProvider(ObjectStorageService)
+      .useValue(storage)
       .compile();
 
     app = configureApp(moduleRef.createNestApplication(), {
@@ -128,7 +164,34 @@ describe("Categories API", () => {
     prisma.category.update.mockResolvedValue(createCategoryRecord({ name: "Food" }));
     prisma.category.updateMany.mockResolvedValue({ count: 1 });
     prisma.category.delete.mockResolvedValue({});
+    prisma.category.count.mockResolvedValue(0);
     prisma.paymentTransaction.count.mockResolvedValue(4);
+    prisma.categoryIconAsset.findMany.mockResolvedValue([]);
+    prisma.categoryIconAsset.findUnique.mockResolvedValue({
+      id: categoryIconAssetId,
+      isDeleting: false,
+      workspaceId: "workspace-1",
+      storageKey: `category-icons/workspace-1/${categoryIconAssetId}.png`,
+      createdAt: new Date("2026-05-25T12:00:00.000Z"),
+    });
+    prisma.categoryIconAsset.create.mockResolvedValue({
+      id: categoryIconAssetId,
+      isDeleting: false,
+      workspaceId: "workspace-1",
+      storageKey: `category-icons/workspace-1/${categoryIconAssetId}.png`,
+      createdAt: new Date("2026-05-25T12:00:00.000Z"),
+    });
+    prisma.categoryIconAsset.delete.mockResolvedValue({});
+    prisma.categoryIconAsset.update.mockResolvedValue({
+      id: categoryIconAssetId,
+      isDeleting: false,
+      storageKey: `category-icons/workspace-1/${categoryIconAssetId}.png`,
+      workspaceId: "workspace-1",
+    });
+    prisma.categoryIconAsset.updateMany.mockResolvedValue({ count: 1 });
+    storage.upload.mockResolvedValue(undefined);
+    storage.delete.mockResolvedValue(undefined);
+    storage.getReadUrl.mockResolvedValue("https://storage.example/icon.png");
   });
 
   afterAll(async () => {
@@ -173,11 +236,42 @@ describe("Categories API", () => {
       expect.objectContaining({
         data: {
           icon: "shopping-cart",
+          iconAssetId: null,
           name: "Groceries",
           order: 4,
           type: "expense",
           workspaceId: "workspace-1",
         },
+      })
+    );
+  });
+
+  it("creates a category with an available uploaded icon", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.category.create.mockResolvedValue(
+      createCategoryRecord({
+        icon: null,
+        iconAssetId: categoryIconAssetId,
+      })
+    );
+
+    const response = await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/categories")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ name: "With uploaded icon", type: "expense", iconAssetId: categoryIconAssetId })
+      .expect(201);
+
+    expect(response.body.category).toMatchObject({
+      icon: null,
+      iconAssetId: categoryIconAssetId,
+    });
+    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(prisma.category.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          icon: null,
+          iconAssetId: categoryIconAssetId,
+        }),
       })
     );
   });
@@ -201,6 +295,235 @@ describe("Categories API", () => {
         where: { type: "expense", workspaceId: "workspace-1" },
       })
     );
+  });
+
+  it("lists uploaded workspace icons and protects the endpoint", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.categoryIconAsset.findMany.mockResolvedValue([
+      {
+        id: categoryIconAssetId,
+        isDeleting: false,
+        workspaceId: "workspace-1",
+        storageKey: `category-icons/workspace-1/${categoryIconAssetId}.png`,
+        createdAt: new Date("2026-05-25T12:00:00.000Z"),
+      },
+    ]);
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/category-icons")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.icons[0]).toMatchObject({ id: categoryIconAssetId, workspaceId: "workspace-1" });
+    expect(prisma.categoryIconAsset.findMany).toHaveBeenCalledWith({
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true, id: true, workspaceId: true },
+      where: { isDeleting: { not: true }, workspaceId: "workspace-1" },
+    });
+  });
+
+  it("validates uploaded icon MIME and magic bytes", async () => {
+    mockAuthenticatedSession(prisma);
+
+    await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/category-icons")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .attach("file", Buffer.from("not-an-image"), { filename: "icon.png", contentType: "image/png" })
+      .expect(400);
+
+    expect(storage.upload).not.toHaveBeenCalled();
+    expect(prisma.categoryIconAsset.create).not.toHaveBeenCalled();
+  });
+
+  it("uploads a valid icon and redirects protected reads to a presigned URL without caching it", async () => {
+    mockAuthenticatedSession(prisma);
+    const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+    const uploadResponse = await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/category-icons")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .attach("file", pngHeader, { filename: "icon.png", contentType: "image/png" })
+      .expect(200);
+
+    expect(uploadResponse.body.icon).toMatchObject({
+      id: categoryIconAssetId,
+      workspaceId: "workspace-1",
+    });
+    expect(prisma.categoryIconAsset.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          storageKey: expect.stringContaining("category-icons/"),
+          uploadedById: currentUser.id,
+          workspaceId: "workspace-1",
+        },
+      })
+    );
+    expect(storage.upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: "image/png",
+        buffer: pngHeader,
+        key: expect.stringContaining("category-icons/"),
+      })
+    );
+
+    const iconResponse = await request(app.getHttpServer())
+      .get(`/category-icons/${categoryIconAssetId}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(302)
+      .expect("Cache-Control", "no-store, max-age=0")
+      .expect("Location", "https://storage.example/icon.png");
+
+    expect(iconResponse.text ?? "").toBe("");
+  });
+
+  it("returns not found when reading or deleting a missing icon", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.categoryIconAsset.findUnique.mockResolvedValue(null);
+
+    await request(app.getHttpServer())
+      .get(`/category-icons/${missingCategoryIconAssetId}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(404);
+
+    await request(app.getHttpServer())
+      .delete(`/category-icons/${missingCategoryIconAssetId}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(404);
+  });
+
+  it("does not serve an icon that is being deleted", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.categoryIconAsset.findUnique.mockResolvedValue({
+      isDeleting: true,
+      storageKey: `category-icons/workspace-1/${categoryIconAssetId}.png`,
+      workspaceId: "workspace-1",
+    });
+
+    await request(app.getHttpServer())
+      .get(`/category-icons/${categoryIconAssetId}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(404);
+
+    expect(storage.getReadUrl).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed icon route parameters before querying the database", async () => {
+    mockAuthenticatedSession(prisma);
+
+    await request(app.getHttpServer())
+      .get("/category-icons/not-an-object-id")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .delete("/category-icons/not-an-object-id")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(400);
+
+    expect(prisma.categoryIconAsset.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("deletes an unused workspace icon from storage and the database", async () => {
+    mockAuthenticatedSession(prisma);
+
+    await request(app.getHttpServer())
+      .delete(`/category-icons/${categoryIconAssetId}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(204);
+
+    expect(prisma.category.count).toHaveBeenCalledWith({ where: { iconAssetId: categoryIconAssetId } });
+    expect(storage.delete).toHaveBeenCalledWith(`category-icons/workspace-1/${categoryIconAssetId}.png`);
+    expect(prisma.categoryIconAsset.delete).toHaveBeenCalledWith({ where: { id: categoryIconAssetId } });
+  });
+
+  it("rejects deleting an icon used by categories", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.category.count.mockResolvedValue(2);
+
+    const response = await request(app.getHttpServer())
+      .delete(`/category-icons/${categoryIconAssetId}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(409);
+
+    expect(response.body.message).toContain("2");
+    expect(storage.delete).not.toHaveBeenCalled();
+    expect(prisma.categoryIconAsset.delete).not.toHaveBeenCalled();
+  });
+
+  it("keeps the database asset when storage deletion fails", async () => {
+    mockAuthenticatedSession(prisma);
+    storage.delete.mockRejectedValueOnce(new ServiceUnavailableException("Storage is unavailable"));
+
+    await request(app.getHttpServer())
+      .delete(`/category-icons/${categoryIconAssetId}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(503);
+
+    expect(storage.delete).toHaveBeenCalledWith(`category-icons/workspace-1/${categoryIconAssetId}.png`);
+    expect(prisma.categoryIconAsset.delete).not.toHaveBeenCalled();
+  });
+
+  it("protects icon deletion with authentication and workspace access", async () => {
+    await request(app.getHttpServer()).delete(`/category-icons/${categoryIconAssetId}`).expect(401);
+
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockResolvedValue({ ownerId: "owner-2" });
+
+    await request(app.getHttpServer())
+      .delete(`/category-icons/${categoryIconAssetId}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(403);
+
+    expect(storage.delete).not.toHaveBeenCalled();
+    expect(prisma.categoryIconAsset.delete).not.toHaveBeenCalled();
+  });
+
+  it("rejects category icon assets from another workspace", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.categoryIconAsset.updateMany.mockResolvedValue({ count: 0 });
+    prisma.categoryIconAsset.findUnique.mockResolvedValue({
+      id: foreignCategoryIconAssetId,
+      isDeleting: false,
+      workspaceId: "workspace-2",
+    });
+
+    await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/categories")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ name: "Foreign icon", type: "expense", iconAssetId: foreignCategoryIconAssetId })
+      .expect(400);
+
+    expect(prisma.category.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects selecting an icon that is being deleted", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.categoryIconAsset.updateMany.mockResolvedValue({ count: 0 });
+    prisma.categoryIconAsset.findUnique.mockResolvedValue({
+      isDeleting: true,
+      workspaceId: "workspace-1",
+    });
+
+    await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/categories")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ name: "Deleting icon", type: "expense", iconAssetId: categoryIconAssetId })
+      .expect(409);
+
+    expect(prisma.category.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed category icon asset IDs before querying the database", async () => {
+    mockAuthenticatedSession(prisma);
+
+    await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/categories")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ name: "Malformed icon", type: "expense", iconAssetId: "not-an-object-id" })
+      .expect(400);
+
+    expect(prisma.categoryIconAsset.findUnique).not.toHaveBeenCalled();
+    expect(prisma.category.create).not.toHaveBeenCalled();
   });
 
   it("validates category type filters", async () => {

@@ -28,6 +28,11 @@ export const categoryKeys = {
   list: (workspaceId: string) => ["categories", workspaceId] as const,
 };
 
+export const categoryIconKeys = {
+  all: (workspaceId: string) => ["category-icons", workspaceId] as const,
+  list: (workspaceId: string) => ["category-icons", workspaceId, "list"] as const,
+};
+
 export const transactionKeys = {
   all: (workspaceId: string) => ["transactions", workspaceId] as const,
   list: (workspaceId: string, filters: TransactionListFilters) => ["transactions", workspaceId, filters] as const,

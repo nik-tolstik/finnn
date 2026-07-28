@@ -38,6 +38,8 @@ export interface AnalyticsCapitalTimeSeriesPoint {
 export interface AnalyticsCategoryTotal {
   id: string;
   name: string;
+  icon?: string | null;
+  iconAssetId?: string | null;
   totalInBaseCurrency: string;
   transactionCount: number;
   sharePercent: number;

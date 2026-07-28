@@ -2275,6 +2275,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2344,6 +2354,319 @@
           }
         ],
         "summary": "List categories",
+        "tags": ["Categories"]
+      }
+    },
+    "/workspaces/{workspaceId}/category-icons": {
+      "get": {
+        "operationId": "listCategoryIcons",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryIconListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "List uploaded category icons",
+        "tags": ["Categories"]
+      },
+      "post": {
+        "operationId": "uploadCategoryIcon",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadCategoryIconDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryIconResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Upload a category icon",
+        "tags": ["Categories"]
+      }
+    },
+    "/category-icons/{iconId}": {
+      "get": {
+        "operationId": "getCategoryIcon",
+        "parameters": [
+          {
+            "name": "iconId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirects to a short-lived private bucket URL.",
+            "headers": {
+              "Location": {
+                "description": "Short-lived presigned category icon URL.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "description": "Prevents clients from caching a short-lived presigned URL.",
+                "schema": {
+                  "example": "no-store, max-age=0",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Redirect to an uploaded category icon",
+        "tags": ["Categories"]
+      },
+      "delete": {
+        "operationId": "deleteCategoryIcon",
+        "parameters": [
+          {
+            "name": "iconId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Delete an uploaded category icon",
         "tags": ["Categories"]
       }
     },
@@ -2476,6 +2799,16 @@
             }
           },
           "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
             "description": "",
             "content": {
               "application/json": {
@@ -6373,7 +6706,14 @@
           },
           "icon": {
             "type": "string",
-            "example": "shopping-cart"
+            "example": "🛒",
+            "nullable": true
+          },
+          "iconAssetId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f4444",
+            "nullable": true,
+            "pattern": "^[a-fA-F0-9]{24}$"
           }
         },
         "required": ["name", "type"]
@@ -6399,7 +6739,12 @@
           },
           "icon": {
             "type": "string",
-            "example": "shopping-cart",
+            "example": "🛒",
+            "nullable": true
+          },
+          "iconAssetId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f4444",
             "nullable": true
           },
           "order": {
@@ -6444,6 +6789,60 @@
         },
         "required": ["categories"]
       },
+      "CategoryIconDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f4444"
+          },
+          "workspaceId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f1111"
+          },
+          "url": {
+            "type": "string",
+            "example": "/category-icons/665f5d865ef5a20c0d2f4444"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-05-25T12:00:00.000Z",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "workspaceId", "url", "createdAt"]
+      },
+      "CategoryIconListResponseDto": {
+        "type": "object",
+        "properties": {
+          "icons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryIconDto"
+            }
+          }
+        },
+        "required": ["icons"]
+      },
+      "UploadCategoryIconDto": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary"
+          }
+        },
+        "required": ["file"]
+      },
+      "CategoryIconResponseDto": {
+        "type": "object",
+        "properties": {
+          "icon": {
+            "$ref": "#/components/schemas/CategoryIconDto"
+          }
+        },
+        "required": ["icon"]
+      },
       "UpdateCategoriesOrderDto": {
         "type": "object",
         "properties": {
@@ -6483,7 +6882,14 @@
           },
           "icon": {
             "type": "string",
-            "example": "briefcase"
+            "example": "💼",
+            "nullable": true
+          },
+          "iconAssetId": {
+            "type": "string",
+            "example": "665f5d865ef5a20c0d2f4444",
+            "nullable": true,
+            "pattern": "^[a-fA-F0-9]{24}$"
           },
           "order": {
             "type": "number",
@@ -7020,6 +7426,14 @@
           },
           "name": {
             "type": "string"
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "iconAssetId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": ["id", "name"]
@@ -8521,6 +8935,14 @@
           },
           "name": {
             "type": "string"
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "iconAssetId": {
+            "type": "string",
+            "nullable": true
           },
           "totalInBaseCurrency": {
             "type": "string"

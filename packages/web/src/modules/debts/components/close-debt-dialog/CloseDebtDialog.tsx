@@ -11,6 +11,7 @@ import type { Account } from "@/modules/accounts/account.types";
 import { getCategories } from "@/modules/categories/category.api";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
+import { CategoryIcon } from "@/shared/components/category-icon";
 import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import {
@@ -166,6 +167,20 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   const selectedCategory = useMemo(() => {
     return categoryOptions.find((option) => option.value === categoryId);
   }, [categoryId, categoryOptions]);
+  const selectedCategoryData = useMemo(
+    () => categories.find((category) => category.id === categoryId),
+    [categories, categoryId]
+  );
+  const renderCategoryOption = (option: ComboboxOption) => {
+    const category = categories.find((item) => item.id === option.value);
+
+    return (
+      <span className="flex min-w-0 items-center gap-2">
+        {category && <CategoryIcon icon={category.icon} iconAssetId={category.iconAssetId} className="size-5" />}
+        <span className="truncate text-sm">{option.label}</span>
+      </span>
+    );
+  };
 
   const prevOpenRef = useRef(open);
 
@@ -416,7 +431,16 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
                         onClick={() => categoryModal.openDialog(true)}
                       >
                         {selectedCategory ? (
-                          <span className="truncate">{selectedCategory.label}</span>
+                          <span className="flex min-w-0 items-center gap-2 truncate">
+                            {selectedCategoryData && (
+                              <CategoryIcon
+                                icon={selectedCategoryData.icon}
+                                iconAssetId={selectedCategoryData.iconAssetId}
+                                className="size-5"
+                              />
+                            )}
+                            <span className="truncate">{selectedCategory.label}</span>
+                          </span>
                         ) : (
                           <span className="text-muted-foreground">Выберите категорию</span>
                         )}
@@ -447,6 +471,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
           placeholder="Выберите категорию"
           searchPlaceholder="Поиск категории..."
           emptyText="Категории не найдены"
+          renderOption={renderCategoryOption}
         />
       )}
     </Dialog>

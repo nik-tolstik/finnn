@@ -1,4 +1,5 @@
 export * from "./actions-dialog";
+export * from "./alert";
 export * from "./animated-list";
 export * from "./badge";
 export * from "./button";

@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Account } from "@/modules/accounts/account.types";
 import type { Category } from "@/modules/categories/category.types";
 import { AccountSelector } from "@/shared/components/AccountSelector";
+import { CategoryIcon } from "@/shared/components/category-icon";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { CURRENCY_OPTIONS, type Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
@@ -598,6 +599,17 @@ export function ScheduledPaymentForm({
     );
   }
 
+  function renderCategoryOption({ option, isTrigger }: RenderOptionProps<string>) {
+    const category = categories.find((item) => item.id === option.value);
+
+    return (
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        {category && <CategoryIcon icon={category.icon} iconAssetId={category.iconAssetId} className="size-5" />}
+        <span className={cn("min-w-0 truncate font-normal", !isTrigger && "text-sm")}>{option.label}</span>
+      </span>
+    );
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -719,6 +731,7 @@ export function ScheduledPaymentForm({
                   options={categoryOptions}
                   value={categoryId}
                   onChange={(value) => setCategoryId(value)}
+                  renderOption={renderCategoryOption}
                   multiple={false}
                 />
               </div>

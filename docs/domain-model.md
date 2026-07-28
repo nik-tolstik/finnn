@@ -12,6 +12,7 @@ Main models:
 - `WorkspaceMember` - user membership and role inside a workspace.
 - `Account` - balance container with current and initial balances, currency, owner, archive state, display metadata, and order.
 - `Category` - income or expense classification.
+- `CategoryIconAsset` - workspace-scoped uploaded PNG, JPEG, or WebP category image.
 - `PaymentTransaction` - income or expense transaction for one account.
 - `TransferTransaction` - transfer between two accounts with source and destination amounts.
 - `Debt` - open or closed debt with person, type, amount, remaining amount, and currency.
@@ -128,6 +129,12 @@ Categories belong to a workspace and have a `type`:
 - `expense`
 
 New workspaces are seeded with standard expense categories and one income category by the API workspace service.
+
+Categories keep the optional `icon` value for both curated emoji and legacy Lucide identifiers. Uploaded images use
+`iconAssetId`, which references a workspace-owned `CategoryIconAsset`. Assets use an internal `isDeleting` state to
+prevent new assignments while their private storage object is removed. The web renderer gives uploaded assets priority,
+then resolves legacy Lucide values, then emoji, with a muted question-mark container for missing or unknown values. See [Category Icons](./category-icons.md)
+for the storage and API contract.
 
 Category changes should invalidate accounting-related client query domains because transaction lists, filters, and analytics may depend on category metadata.
 

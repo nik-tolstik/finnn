@@ -13,6 +13,8 @@ export interface CategoryDto {
   type: string;
   /** @nullable */
   icon?: string | null;
+  /** @nullable */
+  iconAssetId?: string | null;
   order: number;
   createdAt: string;
   updatedAt: string;

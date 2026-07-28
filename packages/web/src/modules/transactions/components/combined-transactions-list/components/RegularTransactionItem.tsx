@@ -1,3 +1,4 @@
+import { CategoryIcon } from "@/shared/components/category-icon";
 import { AccountIcon } from "@/shared/utils/account-icons";
 
 import type { PaymentTransactionWithRelations } from "../../../transaction.types";
@@ -26,6 +27,15 @@ export function RegularTransactionItem({ transaction, workspaceName, onClick }: 
   return (
     <TransactionDescriptionLine
       segments={segments}
+      categoryIcon={
+        transaction.category ? (
+          <CategoryIcon
+            icon={transaction.category.icon}
+            iconAssetId={transaction.category.iconAssetId}
+            className="size-4"
+          />
+        ) : undefined
+      }
       footer={{
         icon: <TransactionActorAvatar account={transaction.account} showName workspaceName={workspaceName} />,
         badges: transaction.createdByAi ? [<AiCreatedBadge key="ai-created" />] : undefined,

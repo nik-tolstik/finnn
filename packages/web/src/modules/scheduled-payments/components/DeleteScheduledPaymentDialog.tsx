@@ -33,7 +33,7 @@ export function DeleteScheduledPaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow onCloseComplete={onCloseComplete} showCloseButton={false}>
+      <DialogWindow onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Удалить платёж?</DialogTitle>
           <DialogDescription>

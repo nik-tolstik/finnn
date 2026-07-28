@@ -48,7 +48,7 @@ export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: Dele
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow showCloseButton={false}>
+      <DialogWindow>
         <DialogHeader>
           <DialogTitle>Удалить долг?</DialogTitle>
           <DialogDescription>

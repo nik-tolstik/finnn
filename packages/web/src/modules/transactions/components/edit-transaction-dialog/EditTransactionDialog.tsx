@@ -13,6 +13,7 @@ import { getCategories } from "@/modules/categories/category.api";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
+import { CategoryIcon } from "@/shared/components/category-icon";
 import { addAccountBalanceDelta, getPaymentTransactionBalanceDelta } from "@/shared/lib/balance-domain";
 import {
   runOptimisticWorkspaceMutation,
@@ -106,6 +107,20 @@ export function EditTransactionDialog({
   const selectedCategory = useMemo(() => {
     return comboboxOptions.find((opt) => opt.value === categoryId);
   }, [comboboxOptions, categoryId]);
+  const selectedCategoryData = useMemo(
+    () => allCategories.find((category) => category.id === categoryId),
+    [allCategories, categoryId]
+  );
+  const renderCategoryOption = (option: ComboboxOption) => {
+    const category = allCategories.find((item) => item.id === option.value);
+
+    return (
+      <span className="flex min-w-0 items-center gap-2">
+        {category && <CategoryIcon icon={category.icon} iconAssetId={category.iconAssetId} className="size-5" />}
+        <span className="truncate text-sm">{option.label}</span>
+      </span>
+    );
+  };
 
   const selectedAccount = useMemo(() => {
     return accounts.find((acc) => acc.id === accountId);
@@ -316,7 +331,16 @@ export function EditTransactionDialog({
                   onClick={() => setCategoryModalOpen(true)}
                 >
                   {selectedCategory ? (
-                    <span className="truncate">{selectedCategory.label}</span>
+                    <span className="flex min-w-0 items-center gap-2 truncate">
+                      {selectedCategoryData && (
+                        <CategoryIcon
+                          icon={selectedCategoryData.icon}
+                          iconAssetId={selectedCategoryData.iconAssetId}
+                          className="size-5"
+                        />
+                      )}
+                      <span className="truncate">{selectedCategory.label}</span>
+                    </span>
                   ) : (
                     <span className="text-muted-foreground">Выберите категорию</span>
                   )}
@@ -343,6 +367,7 @@ export function EditTransactionDialog({
                 placeholder="Выберите категорию"
                 searchPlaceholder="Поиск категории..."
                 emptyText="Категории не найдены"
+                renderOption={renderCategoryOption}
               />
               {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}
             </div>

@@ -1,15 +1,36 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiConflictResponse,
+  ApiConsumes,
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiFoundResponse,
   ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
+  ApiServiceUnavailableResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
@@ -22,6 +43,8 @@ import { AUTH_COOKIE_NAME } from "@/auth/session-cookie";
 import { ApiErrorDto } from "@/common/api-error.dto";
 
 import {
+  CategoryIconListResponseDto,
+  CategoryIconResponseDto,
   CategoryListResponseDto,
   CategoryResponseDto,
   CategorySuccessResponseDto,
@@ -29,6 +52,7 @@ import {
   CreateCategoryDto,
   UpdateCategoriesOrderDto,
   UpdateCategoryDto,
+  UploadCategoryIconDto,
 } from "./categories.dto";
 import { CategoriesService } from "./categories.service";
 
@@ -45,6 +69,7 @@ export class CategoriesController {
   @ApiBody({ type: CreateCategoryDto })
   @ApiCreatedResponse({ type: CategoryResponseDto })
   @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiConflictResponse({ type: ApiErrorDto })
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
   @ApiForbiddenResponse({ type: ApiErrorDto })
   async createCategory(
@@ -70,6 +95,82 @@ export class CategoriesController {
     return this.categoriesService.listCategories(workspaceId, type, user);
   }
 
+  @Get("workspaces/:workspaceId/category-icons")
+  @ApiOperation({ operationId: "listCategoryIcons", summary: "List uploaded category icons" })
+  @ApiParam({ name: "workspaceId", type: String })
+  @ApiOkResponse({ type: CategoryIconListResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  async listCategoryIcons(@Param("workspaceId") workspaceId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.categoriesService.listCategoryIcons(workspaceId, user);
+  }
+
+  @Post("workspaces/:workspaceId/category-icons")
+  @HttpCode(200)
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 2 * 1024 * 1024 } }))
+  @ApiOperation({ operationId: "uploadCategoryIcon", summary: "Upload a category icon" })
+  @ApiParam({ name: "workspaceId", type: String })
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({ type: UploadCategoryIconDto })
+  @ApiOkResponse({ type: CategoryIconResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  async uploadCategoryIcon(
+    @Param("workspaceId") workspaceId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFile() file?: Express.Multer.File
+  ) {
+    return this.categoriesService.uploadCategoryIcon(workspaceId, user, file);
+  }
+
+  @Get("category-icons/:iconId")
+  @ApiOperation({ operationId: "getCategoryIcon", summary: "Redirect to an uploaded category icon" })
+  @ApiParam({ name: "iconId", type: String })
+  @ApiFoundResponse({
+    description: "Redirects to a short-lived private bucket URL.",
+    headers: {
+      Location: {
+        description: "Short-lived presigned category icon URL.",
+        schema: { type: "string" },
+      },
+      "Cache-Control": {
+        description: "Prevents clients from caching a short-lived presigned URL.",
+        schema: { example: "no-store, max-age=0", type: "string" },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiNotFoundResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async getCategoryIcon(
+    @Param("iconId") iconId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() response: import("express").Response
+  ) {
+    const url = await this.categoriesService.getCategoryIconReadUrl(iconId, user);
+    response.setHeader("Cache-Control", "no-store, max-age=0");
+    response.status(302).setHeader("Location", url).end();
+  }
+
+  @Delete("category-icons/:iconId")
+  @HttpCode(204)
+  @ApiOperation({ operationId: "deleteCategoryIcon", summary: "Delete an uploaded category icon" })
+  @ApiParam({ name: "iconId", type: String })
+  @ApiNoContentResponse()
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiConflictResponse({ type: ApiErrorDto })
+  @ApiNotFoundResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
+  async deleteCategoryIcon(@Param("iconId") iconId: string, @CurrentUser() user: AuthenticatedUser) {
+    await this.categoriesService.deleteCategoryIcon(iconId, user);
+  }
+
   @Patch("workspaces/:workspaceId/categories/order")
   @ApiOperation({ operationId: "updateCategoriesOrder", summary: "Update category order" })
   @ApiParam({ name: "workspaceId", type: String })
@@ -92,6 +193,7 @@ export class CategoriesController {
   @ApiBody({ type: UpdateCategoryDto })
   @ApiOkResponse({ type: CategoryResponseDto })
   @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiConflictResponse({ type: ApiErrorDto })
   @ApiUnauthorizedResponse({ type: ApiErrorDto })
   @ApiForbiddenResponse({ type: ApiErrorDto })
   async updateCategory(

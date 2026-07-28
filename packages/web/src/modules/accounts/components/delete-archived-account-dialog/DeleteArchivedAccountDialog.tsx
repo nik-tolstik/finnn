@@ -61,7 +61,7 @@ export function DeleteArchivedAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow showCloseButton={false} onCloseComplete={onCloseComplete}>
+      <DialogWindow onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Удалить счёт из архива?</DialogTitle>
           <DialogDescription>

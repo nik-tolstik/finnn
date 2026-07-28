@@ -252,8 +252,8 @@ describe("Workspace API", () => {
     );
     expect(prisma.category.createMany).toHaveBeenCalledWith({
       data: expect.arrayContaining([
-        expect.objectContaining({ name: "Продукты", type: "expense", workspaceId: "workspace-1" }),
-        expect.objectContaining({ name: "Зарплата", type: "income", workspaceId: "workspace-1" }),
+        expect.objectContaining({ name: "Продукты", type: "expense", icon: "🛒", workspaceId: "workspace-1" }),
+        expect.objectContaining({ name: "Зарплата", type: "income", icon: "💼", workspaceId: "workspace-1" }),
       ]),
     });
   });

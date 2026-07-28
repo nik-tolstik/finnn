@@ -268,6 +268,12 @@ export class TransactionCategoryDto {
 
   @ApiProperty({ type: String })
   name!: string;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  icon!: string | null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  iconAssetId!: string | null;
 }
 
 export class DebtWriteOffMetadataDto {

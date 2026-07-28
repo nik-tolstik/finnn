@@ -5,6 +5,7 @@
     "buildCommand": "pnpm --filter api build"
   },
   "deploy": {
+    "preDeployCommand": ["pnpm --filter api db:push"],
     "startCommand": "pnpm --filter api start",
     "healthcheckPath": "/health"
   }

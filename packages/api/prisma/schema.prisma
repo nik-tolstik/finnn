@@ -35,6 +35,7 @@ model User {
   passwordResetCodes PasswordResetCode[]
   telegramBotPreference TelegramBotPreference?
   aiFinanceDrafts AiFinanceDraft[]
+  uploadedCategoryIconAssets CategoryIconAsset[] @relation("CategoryIconUploadedBy")
   createdScheduledPayments ScheduledPayment[] @relation("ScheduledPaymentCreatedBy")
   assignedScheduledPayments ScheduledPayment[] @relation("ScheduledPaymentAssignedTo")
   scheduledPaymentRecords ScheduledPaymentRecord[] @relation("ScheduledPaymentActionBy")
@@ -129,6 +130,7 @@ model Workspace {
   debtTransactions DebtTransaction[]
   scheduledPayments ScheduledPayment[]
   scheduledPaymentRecords ScheduledPaymentRecord[]
+  categoryIconAssets CategoryIconAsset[]
   scheduledPaymentReminderDeliveries ScheduledPaymentReminderDelivery[]
 
   @@index([ownerId])
@@ -183,6 +185,7 @@ model Account {
 model Category {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   workspaceId String   @db.ObjectId
+  iconAssetId String?  @db.ObjectId
   name        String
   type        String
   icon        String?
@@ -191,12 +194,31 @@ model Category {
   updatedAt   DateTime @updatedAt
 
   workspace           Workspace            @relation(fields: [workspaceId], references: [id])
+  iconAsset           CategoryIconAsset?   @relation(fields: [iconAssetId], references: [id])
   paymentTransactions PaymentTransaction[]
   scheduledPayments ScheduledPayment[]
   scheduledPaymentRecords ScheduledPaymentRecord[]
 
   @@index([workspaceId, type, order])
   @@map("categories")
+}
+
+model CategoryIconAsset {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId  String     @db.ObjectId
+  uploadedById String     @db.ObjectId
+  storageKey   String
+  isDeleting   Boolean?   @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  workspace  Workspace @relation(fields: [workspaceId], references: [id])
+  uploadedBy User      @relation("CategoryIconUploadedBy", fields: [uploadedById], references: [id])
+  categories Category[]
+
+  @@index([workspaceId, createdAt])
+  @@index([uploadedById])
+  @@map("category_icon_assets")
 }
 
 model PaymentTransaction {

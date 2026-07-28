@@ -26,6 +26,8 @@ import type { BodyType, ErrorType } from "../../http-client";
 import { apiClient } from "../../http-client";
 import type {
   ApiErrorDto,
+  CategoryIconListResponseDto,
+  CategoryIconResponseDto,
   CategoryListResponseDto,
   CategoryResponseDto,
   CategorySuccessResponseDto,
@@ -34,6 +36,7 @@ import type {
   ListCategoriesParams,
   UpdateCategoriesOrderDto,
   UpdateCategoryDto,
+  UploadCategoryIconDto,
 } from "../model";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -247,6 +250,340 @@ export const useListCategories = <TError = ErrorType<ApiErrorDto>, TContext = un
 > => {
   return useMutation(getListCategoriesMutationOptions(options), queryClient);
 };
+export const getListCategoryIconsUrl = (workspaceId: string) => {
+  return `/workspaces/${workspaceId}/category-icons`;
+};
+
+/**
+ * @summary List uploaded category icons
+ */
+export const listCategoryIcons = async (
+  workspaceId: string,
+  options?: RequestInit
+): Promise<CategoryIconListResponseDto> => {
+  return apiClient<CategoryIconListResponseDto>(getListCategoryIconsUrl(workspaceId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCategoryIconsMutationOptions = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof listCategoryIcons>>,
+    TError,
+    { workspaceId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof apiClient>;
+}): UseMutationOptions<Awaited<ReturnType<typeof listCategoryIcons>>, TError, { workspaceId: string }, TContext> => {
+  const mutationKey = ["listCategoryIcons"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof listCategoryIcons>>, { workspaceId: string }> = (
+    props
+  ) => {
+    const { workspaceId } = props ?? {};
+
+    return listCategoryIcons(workspaceId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ListCategoryIconsMutationResult = NonNullable<Awaited<ReturnType<typeof listCategoryIcons>>>;
+
+export type ListCategoryIconsMutationError = ErrorType<ApiErrorDto>;
+
+/**
+ * @summary List uploaded category icons
+ */
+export const useListCategoryIcons = <TError = ErrorType<ApiErrorDto>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof listCategoryIcons>>,
+      TError,
+      { workspaceId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<Awaited<ReturnType<typeof listCategoryIcons>>, TError, { workspaceId: string }, TContext> => {
+  return useMutation(getListCategoryIconsMutationOptions(options), queryClient);
+};
+export const getUploadCategoryIconUrl = (workspaceId: string) => {
+  return `/workspaces/${workspaceId}/category-icons`;
+};
+
+/**
+ * @summary Upload a category icon
+ */
+export const uploadCategoryIcon = async (
+  workspaceId: string,
+  uploadCategoryIconDto: UploadCategoryIconDto,
+  options?: RequestInit
+): Promise<CategoryIconResponseDto> => {
+  const formData = new FormData();
+  formData.append(`file`, uploadCategoryIconDto.file);
+
+  return apiClient<CategoryIconResponseDto>(getUploadCategoryIconUrl(workspaceId), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getUploadCategoryIconQueryKey = (
+  workspaceId: string,
+  uploadCategoryIconDto?: BodyType<UploadCategoryIconDto>
+) => {
+  return ["POST", `/workspaces/${workspaceId}/category-icons`, uploadCategoryIconDto] as const;
+};
+
+export const getUploadCategoryIconQueryOptions = <
+  TData = Awaited<ReturnType<typeof uploadCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  workspaceId: string,
+  uploadCategoryIconDto: BodyType<UploadCategoryIconDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof uploadCategoryIcon>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getUploadCategoryIconQueryKey(workspaceId, uploadCategoryIconDto);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof uploadCategoryIcon>>> = ({ signal }) =>
+    uploadCategoryIcon(workspaceId, uploadCategoryIconDto, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: workspaceId !== null && workspaceId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof uploadCategoryIcon>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type UploadCategoryIconQueryResult = NonNullable<Awaited<ReturnType<typeof uploadCategoryIcon>>>;
+export type UploadCategoryIconQueryError = ErrorType<ApiErrorDto>;
+
+export function useUploadCategoryIcon<
+  TData = Awaited<ReturnType<typeof uploadCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  workspaceId: string,
+  uploadCategoryIconDto: BodyType<UploadCategoryIconDto>,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof uploadCategoryIcon>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof uploadCategoryIcon>>,
+          TError,
+          Awaited<ReturnType<typeof uploadCategoryIcon>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUploadCategoryIcon<
+  TData = Awaited<ReturnType<typeof uploadCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  workspaceId: string,
+  uploadCategoryIconDto: BodyType<UploadCategoryIconDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof uploadCategoryIcon>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof uploadCategoryIcon>>,
+          TError,
+          Awaited<ReturnType<typeof uploadCategoryIcon>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUploadCategoryIcon<
+  TData = Awaited<ReturnType<typeof uploadCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  workspaceId: string,
+  uploadCategoryIconDto: BodyType<UploadCategoryIconDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof uploadCategoryIcon>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Upload a category icon
+ */
+
+export function useUploadCategoryIcon<
+  TData = Awaited<ReturnType<typeof uploadCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  workspaceId: string,
+  uploadCategoryIconDto: BodyType<UploadCategoryIconDto>,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof uploadCategoryIcon>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getUploadCategoryIconQueryOptions(workspaceId, uploadCategoryIconDto, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getGetCategoryIconUrl = (iconId: string) => {
+  return `/category-icons/${iconId}`;
+};
+
+/**
+ * @summary Redirect to an uploaded category icon
+ */
+export const getCategoryIcon = async (iconId: string, options?: RequestInit): Promise<unknown> => {
+  return apiClient<unknown>(getGetCategoryIconUrl(iconId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDeleteCategoryIconUrl = (iconId: string) => {
+  return `/category-icons/${iconId}`;
+};
+
+/**
+ * @summary Delete an uploaded category icon
+ */
+export const deleteCategoryIcon = async (iconId: string, options?: RequestInit): Promise<void> => {
+  return apiClient<void>(getDeleteCategoryIconUrl(iconId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteCategoryIconQueryKey = (iconId: string) => {
+  return ["DELETE", `/category-icons/${iconId}`] as const;
+};
+
+export const getDeleteCategoryIconQueryOptions = <
+  TData = Awaited<ReturnType<typeof deleteCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  iconId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteCategoryIcon>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getDeleteCategoryIconQueryKey(iconId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof deleteCategoryIcon>>> = ({ signal }) =>
+    deleteCategoryIcon(iconId, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, enabled: iconId !== null && iconId !== undefined, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof deleteCategoryIcon>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type DeleteCategoryIconQueryResult = NonNullable<Awaited<ReturnType<typeof deleteCategoryIcon>>>;
+export type DeleteCategoryIconQueryError = ErrorType<ApiErrorDto>;
+
+export function useDeleteCategoryIcon<
+  TData = Awaited<ReturnType<typeof deleteCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  iconId: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteCategoryIcon>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof deleteCategoryIcon>>,
+          TError,
+          Awaited<ReturnType<typeof deleteCategoryIcon>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDeleteCategoryIcon<
+  TData = Awaited<ReturnType<typeof deleteCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  iconId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteCategoryIcon>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof deleteCategoryIcon>>,
+          TError,
+          Awaited<ReturnType<typeof deleteCategoryIcon>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useDeleteCategoryIcon<
+  TData = Awaited<ReturnType<typeof deleteCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  iconId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteCategoryIcon>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Delete an uploaded category icon
+ */
+
+export function useDeleteCategoryIcon<
+  TData = Awaited<ReturnType<typeof deleteCategoryIcon>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  iconId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof deleteCategoryIcon>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getDeleteCategoryIconQueryOptions(iconId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export const getUpdateCategoriesOrderUrl = (workspaceId: string) => {
   return `/workspaces/${workspaceId}/categories/order`;
 };

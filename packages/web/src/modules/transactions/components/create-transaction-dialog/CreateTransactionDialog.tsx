@@ -14,6 +14,7 @@ import type { Account } from "@/modules/accounts/account.types";
 import { getCategories } from "@/modules/categories/category.api";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
+import { CategoryIcon } from "@/shared/components/category-icon";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import type { Session } from "@/shared/lib/api-session-client";
 import { useSession } from "@/shared/lib/api-session-client";
@@ -205,6 +206,20 @@ export function CreateTransactionDialog({
   const selectedCategory = useMemo(() => {
     return comboboxOptions.find((opt) => opt.value === categoryId);
   }, [comboboxOptions, categoryId]);
+  const selectedCategoryData = useMemo(
+    () => allCategories.find((category) => category.id === categoryId),
+    [allCategories, categoryId]
+  );
+  const renderCategoryOption = (option: ComboboxOption) => {
+    const category = allCategories.find((item) => item.id === option.value);
+
+    return (
+      <span className="flex min-w-0 items-center gap-2">
+        {category && <CategoryIcon icon={category.icon} iconAssetId={category.iconAssetId} className="size-5" />}
+        <span className="truncate text-sm">{option.label}</span>
+      </span>
+    );
+  };
 
   const prevOpenRef = React.useRef(open);
   const accountIdRef = React.useRef<string | undefined>(account?.id || accountProp?.id);
@@ -549,7 +564,16 @@ export function CreateTransactionDialog({
                         onClick={() => categoryModal.openDialog(true)}
                       >
                         {selectedCategory ? (
-                          <span className="truncate">{selectedCategory.label}</span>
+                          <span className="flex min-w-0 items-center gap-2 truncate">
+                            {selectedCategoryData && (
+                              <CategoryIcon
+                                icon={selectedCategoryData.icon}
+                                iconAssetId={selectedCategoryData.iconAssetId}
+                                className="size-5"
+                              />
+                            )}
+                            <span className="truncate">{selectedCategory.label}</span>
+                          </span>
                         ) : (
                           <span className="text-muted-foreground">Выберите категорию</span>
                         )}
@@ -727,6 +751,7 @@ export function CreateTransactionDialog({
           placeholder="Выберите категорию"
           searchPlaceholder="Поиск категории..."
           emptyText="Категории не найдены"
+          renderOption={renderCategoryOption}
         />
       )}
     </>

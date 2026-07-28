@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Search } from "lucide-react";
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
 import type { ComboboxOption } from "@/shared/ui/combobox";
@@ -18,6 +19,7 @@ interface CategorySelectModalProps {
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
+  renderOption?: (option: ComboboxOption, selected: boolean) => ReactNode;
 }
 
 export function CategorySelectModal({
@@ -30,6 +32,7 @@ export function CategorySelectModal({
   placeholder: _placeholder = "Выберите категорию",
   searchPlaceholder = "Поиск категории...",
   emptyText = "Категории не найдены",
+  renderOption,
 }: CategorySelectModalProps) {
   const [search, setSearch] = useState("");
 
@@ -81,7 +84,11 @@ export function CategorySelectModal({
                     value === option.value && "bg-accent"
                   )}
                 >
-                  <span className="flex-1 text-sm">{option.label}</span>
+                  {renderOption ? (
+                    <span className="min-w-0 flex-1">{renderOption(option, value === option.value)}</span>
+                  ) : (
+                    <span className="flex-1 text-sm">{option.label}</span>
+                  )}
                   {value === option.value && <Check className="h-4 w-4 shrink-0 text-primary" />}
                 </button>
               ))
