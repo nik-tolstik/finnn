@@ -31,6 +31,7 @@ function makeAccount(
     currency: Currency.BYN,
     description: null,
     icon: null,
+    hidden: false,
     id,
     initialBalance: "0",
     name: overrides.id,

@@ -32,6 +32,10 @@ type MockPrisma = {
     updateMany: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
   };
+  hiddenAccount: {
+    deleteMany: ReturnType<typeof vi.fn>;
+    upsert: ReturnType<typeof vi.fn>;
+  };
   paymentTransaction: {
     count: ReturnType<typeof vi.fn>;
   };
@@ -70,6 +74,10 @@ function createPrismaMock(): MockPrisma {
       update: vi.fn(),
       updateMany: vi.fn(),
       delete: vi.fn(),
+    },
+    hiddenAccount: {
+      deleteMany: vi.fn(),
+      upsert: vi.fn(),
     },
     paymentTransaction: {
       count: vi.fn(),
@@ -120,13 +128,14 @@ function createAccountRecord(overrides: Record<string, unknown> = {}) {
     createdAt: new Date("2026-05-25T12:00:00.000Z"),
     updatedAt: new Date("2026-05-25T12:30:00.000Z"),
     owner: null,
+    hiddenForUsers: [],
     ...overrides,
   };
 }
 
-function mockAuthenticatedSession(prisma: MockPrisma) {
-  prisma.authSession.findFirst.mockResolvedValue({ userId: currentUser.id });
-  prisma.user.findUnique.mockResolvedValue(currentUser);
+function mockAuthenticatedSession(prisma: MockPrisma, user = currentUser) {
+  prisma.authSession.findFirst.mockResolvedValue({ userId: user.id });
+  prisma.user.findUnique.mockResolvedValue(user);
 }
 
 describe("Accounts API", () => {
@@ -315,7 +324,77 @@ describe("Accounts API", () => {
     expect(prisma.account.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { archived: false, workspaceId: "workspace-1" },
+        include: expect.objectContaining({
+          hiddenForUsers: {
+            select: { id: true },
+            where: { userId: currentUser.id },
+          },
+        }),
         orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      })
+    );
+  });
+
+  it("returns the hidden state for the current user without filtering the account", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findMany.mockResolvedValue([createAccountRecord({ hiddenForUsers: [{ id: "hidden-account-1" }] })]);
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/accounts")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.accounts).toEqual([
+      expect.objectContaining({
+        id: "account-1",
+        hidden: true,
+      }),
+    ]);
+  });
+
+  it("scopes the hidden state to the authenticated user", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findMany.mockResolvedValueOnce([
+      createAccountRecord({ hiddenForUsers: [{ id: "hidden-for-user-1" }] }),
+    ]);
+
+    const currentUserResponse = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/accounts")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    const otherUser = {
+      ...currentUser,
+      id: "user-2",
+      email: "grace@example.com",
+      name: "Grace",
+    };
+    mockAuthenticatedSession(prisma, otherUser);
+    prisma.workspace.findUnique.mockResolvedValue({ ownerId: currentUser.id });
+    prisma.workspaceMember.findUnique.mockResolvedValue({ id: "membership-2" });
+    prisma.account.findMany.mockResolvedValueOnce([createAccountRecord({ hiddenForUsers: [] })]);
+
+    const otherUserResponse = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/accounts")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(currentUserResponse.body.accounts[0]).toMatchObject({ hidden: true });
+    expect(otherUserResponse.body.accounts[0]).toMatchObject({ hidden: false });
+    expect(prisma.account.findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        include: expect.objectContaining({
+          hiddenForUsers: expect.objectContaining({ where: { userId: currentUser.id } }),
+        }),
+      })
+    );
+    expect(prisma.account.findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        include: expect.objectContaining({
+          hiddenForUsers: expect.objectContaining({ where: { userId: otherUser.id } }),
+        }),
       })
     );
   });
@@ -450,6 +529,84 @@ describe("Accounts API", () => {
     expect(prisma.account.update).not.toHaveBeenCalled();
   });
 
+  it("hides an active account idempotently for the current user", async () => {
+    mockAuthenticatedSession(prisma);
+
+    await request(app.getHttpServer())
+      .post("/accounts/account-1/hide")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200, { success: true });
+
+    await request(app.getHttpServer())
+      .post("/accounts/account-1/hide")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200, { success: true });
+
+    expect(prisma.hiddenAccount.upsert).toHaveBeenCalledTimes(2);
+    expect(prisma.hiddenAccount.upsert).toHaveBeenLastCalledWith({
+      create: {
+        accountId: "account-1",
+        userId: currentUser.id,
+      },
+      update: {},
+      where: {
+        accountId_userId: {
+          accountId: "account-1",
+          userId: currentUser.id,
+        },
+      },
+    });
+  });
+
+  it("shows an active account idempotently for the current user", async () => {
+    mockAuthenticatedSession(prisma);
+
+    await request(app.getHttpServer())
+      .post("/accounts/account-1/show")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200, { success: true });
+
+    await request(app.getHttpServer())
+      .post("/accounts/account-1/show")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200, { success: true });
+
+    expect(prisma.hiddenAccount.deleteMany).toHaveBeenCalledTimes(2);
+    expect(prisma.hiddenAccount.deleteMany).toHaveBeenLastCalledWith({
+      where: {
+        accountId: "account-1",
+        userId: currentUser.id,
+      },
+    });
+  });
+
+  it.each(["hide", "show"])("denies %s for an account in an inaccessible workspace", async (action) => {
+    mockAuthenticatedSession(prisma);
+    prisma.workspace.findUnique.mockResolvedValue({ ownerId: "owner-2" });
+    prisma.workspaceMember.findUnique.mockResolvedValue(null);
+
+    await request(app.getHttpServer())
+      .post(`/accounts/account-1/${action}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(403);
+
+    expect(prisma.hiddenAccount.upsert).not.toHaveBeenCalled();
+    expect(prisma.hiddenAccount.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it.each(["hide", "show"])("does not %s an archived account", async (action) => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findUnique.mockResolvedValue(createAccountRecord({ archived: true }));
+
+    await request(app.getHttpServer())
+      .post(`/accounts/account-1/${action}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(404);
+
+    expect(prisma.hiddenAccount.upsert).not.toHaveBeenCalled();
+    expect(prisma.hiddenAccount.deleteMany).not.toHaveBeenCalled();
+  });
+
   it("archives an account idempotently", async () => {
     mockAuthenticatedSession(prisma);
     prisma.account.findUnique.mockResolvedValue(createAccountRecord({ archived: true }));
@@ -519,6 +676,7 @@ describe("Accounts API", () => {
       .expect(204);
 
     expect(prisma.account.delete).toHaveBeenCalledWith({ where: { id: "account-1" } });
+    expect(prisma.hiddenAccount.deleteMany).toHaveBeenCalledWith({ where: { accountId: "account-1" } });
   });
 
   it("updates account order inside the workspace", async () => {

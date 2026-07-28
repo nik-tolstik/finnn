@@ -175,6 +175,13 @@ export class AccountDto {
   @ApiProperty({ example: false, type: Boolean })
   archived!: boolean;
 
+  @ApiProperty({
+    description: "Whether the current user hides the account from dashboard cards",
+    example: false,
+    type: Boolean,
+  })
+  hidden!: boolean;
+
   @ApiProperty({ example: 0, type: Number })
   order!: number;
 

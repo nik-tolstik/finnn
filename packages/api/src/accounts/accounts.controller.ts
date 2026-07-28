@@ -116,6 +116,28 @@ export class AccountsController {
     return this.accountsService.updateAccount(accountId, body, user);
   }
 
+  @Post("accounts/:accountId/hide")
+  @HttpCode(200)
+  @ApiOperation({ operationId: "hideAccount", summary: "Hide an account for the current user" })
+  @ApiParam({ name: "accountId", type: String })
+  @ApiOkResponse({ type: AccountSuccessResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  async hideAccount(@Param("accountId") accountId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.accountsService.hideAccount(accountId, user);
+  }
+
+  @Post("accounts/:accountId/show")
+  @HttpCode(200)
+  @ApiOperation({ operationId: "showAccount", summary: "Show an account for the current user" })
+  @ApiParam({ name: "accountId", type: String })
+  @ApiOkResponse({ type: AccountSuccessResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto })
+  @ApiForbiddenResponse({ type: ApiErrorDto })
+  async showAccount(@Param("accountId") accountId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.accountsService.showAccount(accountId, user);
+  }
+
   @Post("accounts/:accountId/archive")
   @HttpCode(200)
   @ApiOperation({ operationId: "archiveAccount", summary: "Archive an account" })

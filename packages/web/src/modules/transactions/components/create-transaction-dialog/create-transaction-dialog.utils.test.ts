@@ -21,6 +21,7 @@ function createAccount(id: string) {
     color: null,
     icon: null,
     archived: false,
+    hidden: false,
     order: 0,
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),

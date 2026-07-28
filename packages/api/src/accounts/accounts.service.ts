@@ -14,26 +14,35 @@ const ACCOUNT_OWNER_SELECT = {
   image: true,
 } satisfies Prisma.UserSelect;
 
-const ACCOUNT_WITH_OWNER_INCLUDE = {
-  owner: {
-    select: ACCOUNT_OWNER_SELECT,
-  },
-} satisfies Prisma.AccountInclude;
-
-const ARCHIVED_ACCOUNT_INCLUDE = {
-  ...ACCOUNT_WITH_OWNER_INCLUDE,
-  _count: {
-    select: {
-      paymentTransactions: true,
-      outgoingTransfers: true,
-      incomingTransfers: true,
-      debtTransactions: true,
+function getAccountInclude(userId: string): Prisma.AccountInclude {
+  return {
+    owner: {
+      select: ACCOUNT_OWNER_SELECT,
     },
-  },
-} satisfies Prisma.AccountInclude;
+    hiddenForUsers: {
+      where: { userId },
+      select: { id: true },
+    },
+  };
+}
+
+function getArchivedAccountInclude(userId: string): Prisma.AccountInclude {
+  return {
+    ...getAccountInclude(userId),
+    _count: {
+      select: {
+        paymentTransactions: true,
+        outgoingTransfers: true,
+        incomingTransfers: true,
+        debtTransactions: true,
+      },
+    },
+  };
+}
 
 type AccountWithOwner = Account & {
   owner?: Pick<User, "id" | "name" | "email" | "image"> | null;
+  hiddenForUsers?: Array<{ id: string }>;
 };
 
 type ArchivedAccountWithCounts = AccountWithOwner & {
@@ -67,6 +76,7 @@ function toAccountDto(account: AccountWithOwner) {
     color: account.color,
     icon: account.icon,
     archived: account.archived,
+    hidden: Boolean(account.hiddenForUsers?.length),
     order: account.order,
     createdAt: toIsoString(account.createdAt),
     updatedAt: toIsoString(account.updatedAt),
@@ -134,7 +144,7 @@ export class AccountsService {
   private async getAccessibleAccount(accountId: string, currentUser: AuthenticatedUser, includeArchived = false) {
     const account = await this.prisma.account.findUnique({
       where: { id: accountId },
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
+      include: getAccountInclude(currentUser.id),
     });
 
     if (!account || (!includeArchived && account.archived)) {
@@ -213,7 +223,7 @@ export class AccountsService {
         order: accountsCount,
         createdAt: input.createdAt,
       },
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
+      include: getAccountInclude(currentUser.id),
     });
 
     return { account: toAccountDto(account) };
@@ -227,7 +237,7 @@ export class AccountsService {
         workspaceId,
         archived: false,
       },
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
+      include: getAccountInclude(currentUser.id),
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
     });
 
@@ -267,10 +277,43 @@ export class AccountsService {
     const account = await this.prisma.account.update({
       where: { id: accountId },
       data: updateData,
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
+      include: getAccountInclude(currentUser.id),
     });
 
     return { account: toAccountDto(account) };
+  }
+
+  async hideAccount(accountId: string, currentUser: AuthenticatedUser) {
+    const account = await this.getAccessibleAccount(accountId, currentUser);
+
+    await this.prisma.hiddenAccount.upsert({
+      where: {
+        accountId_userId: {
+          accountId: account.id,
+          userId: currentUser.id,
+        },
+      },
+      update: {},
+      create: {
+        accountId: account.id,
+        userId: currentUser.id,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async showAccount(accountId: string, currentUser: AuthenticatedUser) {
+    const account = await this.getAccessibleAccount(accountId, currentUser);
+
+    await this.prisma.hiddenAccount.deleteMany({
+      where: {
+        accountId: account.id,
+        userId: currentUser.id,
+      },
+    });
+
+    return { success: true };
   }
 
   async updateAccountsOrder(workspaceId: string, input: UpdateAccountsOrderDto, currentUser: AuthenticatedUser) {
@@ -313,7 +356,7 @@ export class AccountsService {
         workspaceId,
         archived: true,
       },
-      include: ARCHIVED_ACCOUNT_INCLUDE,
+      include: getArchivedAccountInclude(currentUser.id),
       orderBy: { createdAt: "desc" },
     });
 
@@ -349,6 +392,10 @@ export class AccountsService {
       const dependencyBreakdown = formatAccountDependencyBreakdown(dependencyCounts);
       throw new BadRequestException(`Нельзя удалить счёт из архива: у счёта есть связанные ${dependencyBreakdown}.`);
     }
+
+    await this.prisma.hiddenAccount.deleteMany({
+      where: { accountId: account.id },
+    });
 
     await this.prisma.account.delete({
       where: { id: accountId },

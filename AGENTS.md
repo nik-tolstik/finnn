@@ -44,7 +44,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 ## Architecture Map
 
 - `packages/web/src/app` contains App Router pages, layouts, and providers.
-- `packages/web/src/modules` contains frontend feature modules: accounts, analytics, auth, categories, debts, scheduled payments, transactions, and workspace.
+- `packages/web/src/modules` contains frontend feature modules: accounts, analytics, auth, categories, debts, scheduled payments, transactions, and workspace. Account dashboard visibility is personal to the authenticated user; do not use it to filter account choices in financial forms.
 - `packages/web/src/shared/hooks/useCurrencyAmountSync.ts` and `packages/web/src/app/(dashboard)/components/dashboard-exchange-rates.tsx` contain the cross-cutting frontend exchange-rate behavior.
 - `packages/web/src/shared/api/generated` contains Orval-generated API client functions and types. Do not edit generated files manually.
 - `packages/web/src/shared/lib` contains frontend session, query keys, cache invalidation, optimistic updates, balance helpers, and domain types.
@@ -66,6 +66,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - Complex transactional business logic should live in API services that use `prisma.$transaction`.
 - Check authentication and workspace authorization in the API with auth guards and `WorkspaceAccessGuard`.
 - Keep money values as strings. Use backend money helpers in `packages/api/src/common/money.ts` for persisted logic and frontend helpers in `packages/web/src/shared/utils/money.ts` and `packages/web/src/shared/lib/balance-domain.ts` for UI/cache projections.
+- `Account.hidden` is the current user's personal dashboard-card preference. It must not change account access or remove the account from transaction, transfer, debt, scheduled-payment, or analytics data.
 - `Account.balance` is the current materialized balance and `Account.initialBalance` is the opening balance. When changing the opening balance, keep the invariant `balance = initialBalance + transaction deltas`.
 - Regenerate OpenAPI and the web client after API contract changes with `pnpm api:generate`; verify drift with `pnpm api:check-generated`.
 - Use TanStack Query keys from `packages/web/src/shared/lib/query-keys.ts`; do not invent ad hoc key shapes.

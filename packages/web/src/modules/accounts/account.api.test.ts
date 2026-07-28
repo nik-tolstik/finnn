@@ -4,8 +4,10 @@ const archiveApiAccountMock = vi.fn();
 const createApiAccountMock = vi.fn();
 const deleteApiArchivedAccountMock = vi.fn();
 const getApiAccountMock = vi.fn();
+const hideApiAccountMock = vi.fn();
 const listApiAccountsMock = vi.fn();
 const listApiArchivedAccountsMock = vi.fn();
+const showApiAccountMock = vi.fn();
 const unarchiveApiAccountMock = vi.fn();
 const updateApiAccountMock = vi.fn();
 const updateApiAccountsOrderMock = vi.fn();
@@ -15,8 +17,10 @@ vi.mock("@/shared/api/generated/accounts/accounts", () => ({
   createAccount: createApiAccountMock,
   deleteArchivedAccount: deleteApiArchivedAccountMock,
   getAccount: getApiAccountMock,
+  hideAccount: hideApiAccountMock,
   listAccounts: listApiAccountsMock,
   listArchivedAccounts: listApiArchivedAccountsMock,
+  showAccount: showApiAccountMock,
   unarchiveAccount: unarchiveApiAccountMock,
   updateAccount: updateApiAccountMock,
   updateAccountsOrder: updateApiAccountsOrderMock,
@@ -40,6 +44,7 @@ function createAccountDto(overrides: Record<string, unknown> = {}) {
     color: "#ef4444",
     icon: "Wallet",
     archived: false,
+    hidden: false,
     order: 0,
     createdAt: "2026-05-01T00:00:00.000Z",
     updatedAt: "2026-05-02T00:00:00.000Z",
@@ -174,15 +179,18 @@ describe("account.api", () => {
     archiveApiAccountMock.mockResolvedValue({ success: true });
     unarchiveApiAccountMock.mockResolvedValue({ success: true });
     deleteApiArchivedAccountMock.mockResolvedValue(undefined);
+    hideApiAccountMock.mockResolvedValue({ success: true });
+    showApiAccountMock.mockResolvedValue({ success: true });
     updateApiAccountsOrderMock.mockResolvedValue({ success: true });
 
-    const { archiveAccount, deleteArchivedAccount, unarchiveAccount, updateAccountsOrder } = await import(
-      "./account.api"
-    );
+    const { archiveAccount, deleteArchivedAccount, hideAccount, showAccount, unarchiveAccount, updateAccountsOrder } =
+      await import("./account.api");
 
     await expect(archiveAccount("account-1", requestOptions)).resolves.toEqual({ success: true });
     await expect(unarchiveAccount("account-1", requestOptions)).resolves.toEqual({ success: true });
     await expect(deleteArchivedAccount("account-1", requestOptions)).resolves.toEqual({ success: true });
+    await expect(hideAccount("account-1", requestOptions)).resolves.toEqual({ success: true });
+    await expect(showAccount("account-1", requestOptions)).resolves.toEqual({ success: true });
     await expect(
       updateAccountsOrder(
         "workspace-1",
@@ -201,6 +209,8 @@ describe("account.api", () => {
     expect(archiveApiAccountMock).toHaveBeenCalledWith("account-1", requestOptions);
     expect(unarchiveApiAccountMock).toHaveBeenCalledWith("account-1", requestOptions);
     expect(deleteApiArchivedAccountMock).toHaveBeenCalledWith("account-1", requestOptions);
+    expect(hideApiAccountMock).toHaveBeenCalledWith("account-1", requestOptions);
+    expect(showApiAccountMock).toHaveBeenCalledWith("account-1", requestOptions);
   });
 
   it("wraps getAccount responses and normalizes API failures", async () => {

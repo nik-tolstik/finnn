@@ -17,6 +17,7 @@ export type Account = {
   color: string | null;
   icon: string | null;
   archived: boolean;
+  hidden: boolean;
   order: number;
   createdAt: Date;
   updatedAt: Date;

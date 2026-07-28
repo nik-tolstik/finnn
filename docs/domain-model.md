@@ -11,6 +11,7 @@ Main models:
 - `Workspace` - shared financial space with owner, members, accounts, categories, transactions, transfers, debts, and invites.
 - `WorkspaceMember` - user membership and role inside a workspace.
 - `Account` - balance container with current and initial balances, currency, owner, archive state, display metadata, and order.
+- `HiddenAccount` - per-user preference that hides an active account from that user's dashboard cards.
 - `Category` - income or expense classification.
 - `CategoryIconAsset` - workspace-scoped uploaded PNG, JPEG, or WebP category image.
 - `PaymentTransaction` - income or expense transaction for one account.
@@ -101,6 +102,11 @@ Do not use raw JavaScript arithmetic for persisted money behavior.
 Accounts belong to a workspace and can optionally have an owner. Frontend owner visibility rules live in `packages/web/src/modules/accounts/account-visibility.ts`.
 Account names are display labels and are not unique inside a workspace; users can distinguish same-name accounts by
 owner, balance, icon, color, and transaction history.
+
+Dashboard hiding is personal to the authenticated user. The `hidden` account response field is computed from the
+`HiddenAccount` preference for the current user; it is not a global account property and does not restrict access to
+the account or remove it from financial forms, transactions, transfers, debts, scheduled payments, or analytics.
+The dashboard's `Все счета` mode includes hidden accounts so the user can restore them.
 
 `Account.balance` stores the current materialized balance. `Account.initialBalance` stores the opening balance before
 payment transactions, transfers, and debt transactions. The expected invariant is:
