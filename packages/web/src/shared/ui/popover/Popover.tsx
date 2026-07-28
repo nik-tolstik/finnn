@@ -41,6 +41,7 @@ interface PopoverProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "child
   children: React.ReactNode | ((props: PopoverRenderProps) => React.ReactNode);
   defaultOpen?: boolean;
   offset?: number;
+  onCloseComplete?: () => void;
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
   placement?: Placement;
@@ -85,6 +86,7 @@ function PopoverInner({
   className,
   defaultOpen = false,
   offset = 4,
+  onCloseComplete,
   onOpenChange,
   open,
   placement = "bottom",
@@ -163,6 +165,23 @@ function PopoverInner({
       transformOrigin: getTransformOrigin(side, align),
     },
   });
+
+  const closeCompleteCalledRef = React.useRef(false);
+  const wasMountedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isMounted) {
+      wasMountedRef.current = true;
+      closeCompleteCalledRef.current = false;
+      return;
+    }
+
+    if (wasMountedRef.current && !isOpen && !closeCompleteCalledRef.current) {
+      closeCompleteCalledRef.current = true;
+      wasMountedRef.current = false;
+      onCloseComplete?.();
+    }
+  }, [isMounted, isOpen, onCloseComplete]);
 
   const close = React.useCallback(() => {
     setOpen(false);

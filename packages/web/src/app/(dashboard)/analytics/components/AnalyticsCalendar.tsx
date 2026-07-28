@@ -71,8 +71,7 @@ function CalendarCellButton({
       className={cn(
         "group flex min-h-[62px] w-full min-w-0 flex-col items-start justify-between rounded-none border border-transparent bg-background p-1 text-left transition-[background-color,border-color,box-shadow] hover:bg-accent/35 focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 sm:min-h-[96px] sm:rounded-md sm:p-2",
         !cell.isCurrentMonth && "bg-muted/20 text-muted-foreground/55 opacity-75",
-        cell.isSelected && "border-primary bg-primary/8 ring-2 ring-primary/35",
-        cell.isToday && !cell.isSelected && "border-primary/55"
+        cell.isSelected && "bg-primary/8 hover:bg-primary/8"
       )}
       onClick={(event) => {
         onTriggerClick?.(event);
@@ -155,9 +154,11 @@ export function AnalyticsCalendar({
 }: AnalyticsCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [pendingSelectedDate, setPendingSelectedDate] = useState<string | null>(null);
+  const [dayDetailsOpen, setDayDetailsOpen] = useState(false);
   const { isMobile } = useBreakpoints();
   const prefersReducedMotion = useReducedMotion();
   const animationDirectionRef = useRef<CalendarNavigationDirection>("next");
+  const pendingCloseActionRef = useRef<(() => void) | null>(null);
   const visibleMonth = monthDate;
   const visibleMonthKey = getAnalyticsCalendarMonthKey(visibleMonth);
   const currentMonth = startOfMonth(new Date());
@@ -185,27 +186,47 @@ export function AnalyticsCalendar({
     const pendingCell = cells.find((cell) => cell.date === pendingSelectedDate && cell.isCurrentMonth);
     if (pendingCell) {
       setSelectedDate(pendingSelectedDate);
+      setDayDetailsOpen(true);
       setPendingSelectedDate(null);
     }
   }, [cells, pendingSelectedDate, visibleMonthKey]);
 
+  const closeDayDetails = (afterClose?: () => void) => {
+    if (afterClose) {
+      pendingCloseActionRef.current = afterClose;
+    }
+
+    setDayDetailsOpen(false);
+
+    if (!isMobile && selectedDate) {
+      return;
+    }
+
+    setSelectedDate(null);
+    const pendingCloseAction = pendingCloseActionRef.current;
+    pendingCloseActionRef.current = null;
+    pendingCloseAction?.();
+  };
+
   const handleMonthStep = (direction: CalendarNavigationDirection) => {
     animationDirectionRef.current = direction;
-    setSelectedDate(null);
-    setPendingSelectedDate(null);
-    onMonthChange((monthDate) => {
-      const normalizedMonth = startOfMonth(monthDate);
-      return direction === "next" ? addMonths(normalizedMonth, 1) : subMonths(normalizedMonth, 1);
+    closeDayDetails(() => {
+      setPendingSelectedDate(null);
+      onMonthChange((monthDate) => {
+        const normalizedMonth = startOfMonth(monthDate);
+        return direction === "next" ? addMonths(normalizedMonth, 1) : subMonths(normalizedMonth, 1);
+      });
     });
   };
 
   const handleTodayClick = () => {
-    setSelectedDate(null);
-    setPendingSelectedDate(null);
-    onMonthChange((monthDate) => {
-      const normalizedMonth = startOfMonth(monthDate);
-      animationDirectionRef.current = getMonthNavigationDirection(normalizedMonth, currentMonth);
-      return currentMonth;
+    closeDayDetails(() => {
+      setPendingSelectedDate(null);
+      onMonthChange((monthDate) => {
+        const normalizedMonth = startOfMonth(monthDate);
+        animationDirectionRef.current = getMonthNavigationDirection(normalizedMonth, currentMonth);
+        return currentMonth;
+      });
     });
   };
 
@@ -215,27 +236,40 @@ export function AnalyticsCalendar({
     }
 
     if (cell.isCurrentMonth) {
+      pendingCloseActionRef.current = null;
       setPendingSelectedDate(null);
       setSelectedDate(cell.date);
+      setDayDetailsOpen(true);
       return;
     }
 
     const targetMonth = startOfMonth(parseCalendarDate(cell.date));
     animationDirectionRef.current = getMonthNavigationDirection(visibleMonth, targetMonth);
-    setSelectedDate(null);
-    setPendingSelectedDate(cell.date);
-    onMonthChange(() => targetMonth);
+    closeDayDetails(() => {
+      setPendingSelectedDate(cell.date);
+      onMonthChange(() => targetMonth);
+    });
   };
 
   const dayDetails = selectedDay ? (
     <AnalyticsDayDetails
       appliedFilters={appliedFilters}
       day={selectedDay}
-      open={Boolean(selectedDate)}
+      onCloseComplete={() => {
+        setSelectedDate(null);
+        const pendingCloseAction = pendingCloseActionRef.current;
+        pendingCloseActionRef.current = null;
+        pendingCloseAction?.();
+      }}
+      open={dayDetailsOpen}
       onOpenChange={(open) => {
-        if (!open) {
-          setSelectedDate(null);
+        if (open) {
+          pendingCloseActionRef.current = null;
+          setDayDetailsOpen(true);
+          return;
         }
+
+        closeDayDetails();
       }}
       trigger={
         isMobile
