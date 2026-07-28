@@ -34,7 +34,7 @@ export function AccountCard({ account, className, contentClassName, onClick, sho
     <>
       <div
         aria-hidden="true"
-        className="flex w-[52px] shrink-0 items-center justify-center bg-[var(--account-tint)] transition-colors duration-200 group-hover:bg-[var(--account-tint-hover)] dark:bg-[var(--account-tint-dark)] dark:group-hover:bg-[var(--account-tint-dark-hover)]"
+        className="flex self-stretch w-[52px] shrink-0 items-center justify-center bg-[var(--account-tint)] transition-colors duration-200 group-hover:bg-[var(--account-tint-hover)] dark:bg-[var(--account-tint-dark)] dark:group-hover:bg-[var(--account-tint-dark-hover)]"
       >
         <AccountIcon
           iconName={account.icon}

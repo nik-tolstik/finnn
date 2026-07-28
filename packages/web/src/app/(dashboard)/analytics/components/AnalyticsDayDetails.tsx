@@ -22,6 +22,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 interface AnalyticsDayDetailsProps {
   appliedFilters: TransactionViewFilters;
   day: AnalyticsCalendarCell | null;
+  onCloseComplete?: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
   trigger?: (props: PopoverTriggerRenderProps) => ReactNode;
@@ -49,6 +50,7 @@ function SummaryItem({ label, value }: { label: string; value: string }) {
 export function AnalyticsDayDetails({
   appliedFilters,
   day,
+  onCloseComplete,
   onOpenChange,
   open,
   trigger,
@@ -136,6 +138,7 @@ export function AnalyticsDayDetails({
     return (
       <Popover
         open={open}
+        onCloseComplete={onCloseComplete}
         onOpenChange={onOpenChange}
         placement="bottom-start"
         className="w-[min(520px,calc(100vw-2rem))] overflow-hidden p-0"

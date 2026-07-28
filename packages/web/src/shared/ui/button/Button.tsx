@@ -12,7 +12,7 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
         danger:
           "bg-red-50 text-red-600 hover:bg-red-100 focus-visible:ring-red-600/20 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60 dark:focus-visible:ring-red-400/30",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-control-hover",
+        secondary: "bg-surface-subtle text-secondary-foreground hover:bg-surface-hover",
         field:
           "bg-control text-foreground shadow-xs hover:bg-control-hover data-[state=open]:bg-control-hover focus-visible:ring-2 focus-visible:ring-control-focus/30",
         ghost: "text-foreground hover:bg-transparent hover:text-foreground/80",
