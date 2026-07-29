@@ -161,7 +161,13 @@ describe("Accounts API", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    prisma.$transaction.mockResolvedValue([]);
+    prisma.$transaction.mockImplementation(async (input: unknown) => {
+      if (typeof input === "function") {
+        return input(prisma);
+      }
+
+      return Promise.all(input as Array<Promise<unknown>>);
+    });
     prisma.authSession.findFirst.mockResolvedValue(null);
     prisma.user.findUnique.mockResolvedValue(null);
     prisma.workspace.findUnique.mockResolvedValue({ ownerId: currentUser.id });
@@ -483,6 +489,11 @@ describe("Accounts API", () => {
         where: { id: "account-1" },
       })
     );
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: "Serializable",
+      maxWait: undefined,
+      timeout: undefined,
+    });
   });
 
   it("allows duplicate account name and currency on update", async () => {

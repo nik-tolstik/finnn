@@ -442,6 +442,11 @@ describe("Transactions API", () => {
       data: { balance: "75" },
       where: { id: "account-1" },
     });
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: "Serializable",
+      maxWait: undefined,
+      timeout: undefined,
+    });
   });
 
   it("rejects payment expenses above account balance", async () => {

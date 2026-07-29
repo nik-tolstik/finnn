@@ -13,6 +13,7 @@ import Big from "big.js";
 
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { PrismaService } from "@/prisma/prisma.service";
+import { runSerializableTransaction } from "@/prisma/serializable-transaction";
 
 import type {
   CombinedTransactionsQueryDto,
@@ -543,7 +544,7 @@ export class TransactionsService {
   ) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
 
-    const transaction = await this.prisma.$transaction(async (tx) => {
+    const transaction = await runSerializableTransaction(this.prisma, async (tx) => {
       const account = await this.getWorkspaceAccountOrThrow(tx, workspaceId, input.accountId);
       const accountCreatedDate = new Date(account.createdAt);
       accountCreatedDate.setHours(0, 0, 0, 0);
@@ -616,7 +617,7 @@ export class TransactionsService {
       throw new BadRequestException("Нет транзакций для создания");
     }
 
-    const transactions = await this.prisma.$transaction(async (tx) => {
+    const transactions = await runSerializableTransaction(this.prisma, async (tx) => {
       const accountsById = new Map<string, Account>();
       const balancesByAccountId = new Map<string, string>();
       const createdTransactions: PaymentTransactionWithRelations[] = [];
@@ -706,7 +707,7 @@ export class TransactionsService {
   ) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
 
-    const transfer = await this.prisma.$transaction(async (tx) => {
+    const transfer = await runSerializableTransaction(this.prisma, async (tx) => {
       const fromAccount = await this.getWorkspaceAccountOrThrow(tx, workspaceId, input.fromAccountId);
       const toAccount = await this.getWorkspaceAccountOrThrow(tx, workspaceId, input.toAccountId);
 
@@ -756,7 +757,7 @@ export class TransactionsService {
     input: UpdatePaymentTransactionDto,
     currentUser: AuthenticatedUser
   ) {
-    const transaction = await this.prisma.$transaction(async (tx) => {
+    const transaction = await runSerializableTransaction(this.prisma, async (tx) => {
       const existingTransaction = await tx.paymentTransaction.findUnique({
         where: { id: transactionId },
         include: {
@@ -877,7 +878,7 @@ export class TransactionsService {
     input: UpdateTransferTransactionDto,
     currentUser: AuthenticatedUser
   ) {
-    const transfer = await this.prisma.$transaction(async (tx) => {
+    const transfer = await runSerializableTransaction(this.prisma, async (tx) => {
       const existingTransfer = await tx.transferTransaction.findUnique({
         where: { id: transactionId },
         include: {
@@ -986,7 +987,7 @@ export class TransactionsService {
   }
 
   async deletePaymentTransaction(transactionId: string, currentUser: AuthenticatedUser) {
-    await this.prisma.$transaction(async (tx) => {
+    await runSerializableTransaction(this.prisma, async (tx) => {
       const transaction = await tx.paymentTransaction.findUnique({
         where: { id: transactionId },
         include: {
@@ -1022,7 +1023,7 @@ export class TransactionsService {
   }
 
   async deleteTransferTransaction(transactionId: string, currentUser: AuthenticatedUser) {
-    await this.prisma.$transaction(async (tx) => {
+    await runSerializableTransaction(this.prisma, async (tx) => {
       const transfer = await tx.transferTransaction.findUnique({
         where: { id: transactionId },
         include: {

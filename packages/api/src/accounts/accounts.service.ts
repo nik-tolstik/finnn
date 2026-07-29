@@ -4,6 +4,7 @@ import type { Account, Prisma, User } from "@prisma/client";
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { addMoney, subtractMoney } from "@/common/money";
 import { PrismaService } from "@/prisma/prisma.service";
+import { runSerializableTransaction } from "@/prisma/serializable-transaction";
 
 import type { CreateAccountDto, UpdateAccountDto, UpdateAccountsOrderDto } from "./accounts.dto";
 
@@ -253,31 +254,41 @@ export class AccountsService {
     const existingAccount = await this.getAccessibleAccount(accountId, currentUser);
     await this.assertOwnerBelongsToWorkspace(existingAccount.workspaceId, input.ownerId);
 
-    const updateData: Prisma.AccountUpdateInput = {};
-    if (input.name !== undefined) updateData.name = input.name;
-    if (input.balance !== undefined) updateData.balance = input.balance;
-    if (input.initialBalance !== undefined) {
-      updateData.initialBalance = input.initialBalance;
+    const account = await runSerializableTransaction(this.prisma, async (tx) => {
+      const currentAccount = await tx.account.findUnique({
+        where: { id: accountId },
+      });
 
-      if (input.balance === undefined) {
-        updateData.balance = addMoney(
-          existingAccount.balance,
-          subtractMoney(input.initialBalance, existingAccount.initialBalance)
-        );
+      if (!currentAccount || currentAccount.archived) {
+        throw new NotFoundException("Счёт не найден");
       }
-    }
-    if (input.currency !== undefined) updateData.currency = input.currency;
-    if (input.ownerId !== undefined)
-      updateData.owner = input.ownerId ? { connect: { id: input.ownerId } } : { disconnect: true };
-    if (input.color !== undefined) updateData.color = input.color;
-    if (input.icon !== undefined) updateData.icon = input.icon;
-    if (input.createdAt !== undefined) updateData.createdAt = input.createdAt;
-    if (input.order !== undefined) updateData.order = input.order;
 
-    const account = await this.prisma.account.update({
-      where: { id: accountId },
-      data: updateData,
-      include: getAccountInclude(currentUser.id),
+      const updateData: Prisma.AccountUpdateInput = {};
+      if (input.name !== undefined) updateData.name = input.name;
+      if (input.balance !== undefined) updateData.balance = input.balance;
+      if (input.initialBalance !== undefined) {
+        updateData.initialBalance = input.initialBalance;
+
+        if (input.balance === undefined) {
+          updateData.balance = addMoney(
+            currentAccount.balance,
+            subtractMoney(input.initialBalance, currentAccount.initialBalance)
+          );
+        }
+      }
+      if (input.currency !== undefined) updateData.currency = input.currency;
+      if (input.ownerId !== undefined)
+        updateData.owner = input.ownerId ? { connect: { id: input.ownerId } } : { disconnect: true };
+      if (input.color !== undefined) updateData.color = input.color;
+      if (input.icon !== undefined) updateData.icon = input.icon;
+      if (input.createdAt !== undefined) updateData.createdAt = input.createdAt;
+      if (input.order !== undefined) updateData.order = input.order;
+
+      return tx.account.update({
+        where: { id: accountId },
+        data: updateData,
+        include: getAccountInclude(currentUser.id),
+      });
     });
 
     return { account: toAccountDto(account) };

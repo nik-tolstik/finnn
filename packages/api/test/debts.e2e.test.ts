@@ -329,6 +329,11 @@ describe("Debts API", () => {
         data: expect.objectContaining({ amount: "40", toAmount: "12", type: "created" }),
       })
     );
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: "Serializable",
+      maxWait: undefined,
+      timeout: undefined,
+    });
   });
 
   it("rejects debt creation without the required debt currency", async () => {

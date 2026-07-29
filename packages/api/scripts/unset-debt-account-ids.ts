@@ -1,8 +1,6 @@
 import "../src/common/env/load-env";
 import { MongoClient } from "mongodb";
 
-import { getDatabaseUrl } from "../src/common/env/database-url";
-
 const DEBTS_COLLECTION = "debts";
 
 type UnsetDebtAccountIdsOptions = {
@@ -12,9 +10,9 @@ type UnsetDebtAccountIdsOptions = {
 };
 
 export async function unsetDebtAccountIds(options: UnsetDebtAccountIdsOptions = {}): Promise<void> {
-  const databaseUrl = options.databaseUrl ?? getDatabaseUrl();
+  const databaseUrl = options.databaseUrl ?? process.env.MONGODB_SOURCE_URL?.trim();
   if (!databaseUrl) {
-    throw new Error("DATABASE_URL must be provided.");
+    throw new Error("MONGODB_SOURCE_URL must be provided.");
   }
 
   const stdout = options.stdout ?? process.stdout;

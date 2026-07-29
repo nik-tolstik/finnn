@@ -4,7 +4,7 @@
 
 - Node.js compatible with the project dependencies.
 - `pnpm`.
-- MongoDB. For local development, use the provided Docker Compose service.
+- PostgreSQL. For local development, use the provided Docker Compose service.
 - Package-local `.env` files based on `packages/api/.env.example` and `packages/web/.env.example`.
 
 ## Local Setup
@@ -15,18 +15,17 @@ cp packages/api/.env.example packages/api/.env
 cp packages/web/.env.example packages/web/.env
 docker compose up -d
 pnpm db:generate
-pnpm db:push
+pnpm db:migrate:deploy
 pnpm dev
 ```
 
 The API server runs on `http://localhost:4000`. The web dev server runs on `http://localhost:3000`.
 
-`docker-compose.yml` starts MongoDB on port `27017` with `--replSet rs0`. Prisma's MongoDB connector uses transactions for some operations, so a local MongoDB deployment must support replica set transactions.
-
-If the local database is new and Prisma reports transaction or replica set errors, initialize the replica set:
+`docker-compose.yml` starts PostgreSQL 17 on port `5432`, persists data in the `postgres_data` volume, and exposes a
+`pg_isready` health check. Wait for it to become healthy before applying migrations:
 
 ```bash
-docker exec -it finnn-mongodb mongosh --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})'
+docker compose ps
 ```
 
 ## TypeScript Toolchain
@@ -42,7 +41,8 @@ Orval 8.12.3 does not parse npm alias ranges as semver. Its config uses `package
 Required in `packages/api/.env` for normal local API operation:
 
 ```env
-DATABASE_URL="mongodb://localhost:27017/finnn"
+DATABASE_URL="postgresql://finnn:finnn_local@localhost:5432/finnn?schema=public"
+DIRECT_URL="postgresql://finnn:finnn_local@localhost:5432/finnn?schema=public"
 API_AUTH_SECRET="paste-generated-secret-here"
 API_COOKIE_SECRET="paste-generated-secret-here"
 API_ALLOWED_ORIGINS="http://localhost:3000"
@@ -246,34 +246,56 @@ pnpm api:generate # Generate OpenAPI JSON and Orval web client
 Database scripts:
 
 ```bash
-pnpm db:generate  # Generate Prisma Client
-pnpm db:push      # Apply schema and indexes to MongoDB
-pnpm db:seed      # Seed sample data
-pnpm db:export    # Export MongoDB data
-pnpm db:import <backup-dir> --drop --db=<database-name> # Import MongoDB data
+pnpm db:generate        # Generate Prisma Client
+pnpm db:migrate:dev     # Create and apply a local SQL migration
+pnpm db:migrate:deploy  # Apply committed migrations without creating new ones
+pnpm db:migrate:status  # Compare the database with committed migration history
+pnpm db:seed            # Seed sample data
 ```
 
-Root database commands delegate to `packages/api`. The source files are `packages/api/scripts/db-seed.ts`,
-`packages/api/scripts/mongo-export.ts`, and `packages/api/scripts/mongo-import.ts`.
+Root database commands delegate to `packages/api`. `packages/api/scripts/db-seed.ts` owns development seed data. The
+`db:migrate:mongo-to-postgres` command and MongoDB-specific scripts are retained only for the one-time source migration;
+they are not the PostgreSQL backup workflow. The importer requires `MONGODB_SOURCE_URL` plus the PostgreSQL
+`DATABASE_URL`; run `pnpm db:migrate:mongo-to-postgres --dry-run` before a rehearsed migration. See
+[`docs/operations.md`](./operations.md#mongodb-to-postgresql-migration-notes) for the production guard, snapshot, retry,
+and cutover rules.
 
 ## Prisma Workflow
 
-The Prisma datasource uses MongoDB:
+The Prisma datasource uses PostgreSQL. `DATABASE_URL` is the runtime connection and `DIRECT_URL` is the direct
+connection used by schema migration commands:
 
 ```prisma
 datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 ```
 
 For this project:
 
 - Edit `packages/api/prisma/schema.prisma` for models, indexes, enums, and relations.
-- Run `pnpm db:generate` after schema changes.
-- Run `pnpm db:push` to apply collection and index changes to MongoDB.
-- Keep MongoDB ObjectId fields in the existing pattern: `String @id @default(auto()) @map("_id") @db.ObjectId`.
+- Run `pnpm db:migrate:dev --name <descriptive-name>` locally after a schema change.
+- Review the generated SQL under `packages/api/prisma/migrations` before applying or committing it.
+- Run `pnpm db:generate` after schema changes when it was not already run by Prisma Migrate.
+- Run `pnpm db:migrate:deploy` in shared DEV, test, and production environments. Never run `migrate dev` or `db push`
+  against a shared database.
+- Preserve legacy MongoDB ObjectId values as opaque text IDs. New rows use the ID default defined by the Prisma schema;
+  application code must not depend on a 24-character ID shape.
 - Prefer string money amounts over floats or numbers in persisted financial fields.
+
+### Direct and pooled connections
+
+For local development, `DATABASE_URL` and `DIRECT_URL` are intentionally identical. In a managed environment:
+
+- `DATABASE_URL` may use the provider's transaction-capable pooled endpoint for API traffic.
+- `DIRECT_URL` must use the direct PostgreSQL endpoint so Prisma Migrate, `pg_dump`, and administrative sessions do not
+  pass through a transaction pooler.
+- Keep runtime pool size within the PostgreSQL service connection limit after reserving capacity for migrations, cron,
+  observability, and emergency administration. Do not multiply the configured pool by deployment replica count beyond
+  the database limit.
+- Use the same TLS requirements on both URLs. Do not log either URL.
 
 ## Testing Strategy
 
@@ -293,6 +315,19 @@ Broaden to the full suite when changes affect:
 - App Router pages, API client adapters, or generated-client contracts.
 - Service worker cache policy.
 - Prisma schema.
+
+Provider behavior and concurrency need a real local PostgreSQL database because the regular API endpoint tests mock
+Prisma. Create the isolated database once, apply committed migrations, and opt into the integration test explicitly:
+
+```bash
+docker exec finnn-postgres createdb --username=finnn finnn_test
+FINNN_TEST_DATABASE_URL="postgresql://finnn:finnn_local@localhost:5432/finnn_test?schema=public"
+DATABASE_URL="$FINNN_TEST_DATABASE_URL" DIRECT_URL="$FINNN_TEST_DATABASE_URL" pnpm db:migrate:deploy
+POSTGRES_TEST_DATABASE_URL="$FINNN_TEST_DATABASE_URL" pnpm --filter api test test/postgres.integration.test.ts
+```
+
+`POSTGRES_TEST_DATABASE_URL` is accepted only for localhost databases whose name ends in `_test`. The test truncates its
+tables and must never target development, shared DEV, or production data.
 
 Full verification:
 

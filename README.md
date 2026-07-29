@@ -1,108 +1,77 @@
 # Finnn
 
-Finnn - личное и совместное приложение для учета финансов. В проекте есть рабочие столы, счета, категории, платежные транзакции, переводы, долги, аналитика, импорт/экспорт MongoDB и PWA-обвязка.
+Finnn is a personal and shared finance tracker for workspaces, accounts, categories, payment transactions, transfers,
+debts, scheduled payments, exchange rates, and analytics.
 
-## Документация
+## Documentation
 
-Подробная документация находится в [`docs/`](./docs/README.md): локальная разработка, архитектура, доменная модель, операции и AI-facing guide для Codex.
+Start with [`docs/README.md`](./docs/README.md). It links the development setup, architecture and domain guides,
+operations runbook, design system, and active implementation plans.
 
-## Стек
+## Stack
 
-- `pnpm` workspace: `packages/web` и `packages/api`
-- Next.js App Router, React, TypeScript
-- NestJS API, Prisma + MongoDB
-- API-owned HTTP-only cookie auth
-- OpenAPI + Orval-generated web client
-- TanStack Query для клиентского кеша и SSR hydration
-- Tailwind CSS, собственные UI-компоненты, lucide-react
-- Recharts для аналитики, lazy-loaded client chunks
-- Vitest для unit/static tests
-- Biome для форматирования и lint
-- Backend cron endpoint для обновления курсов валют
+- `pnpm` workspace with `packages/web` and `packages/api`.
+- Next.js App Router, React, and TypeScript frontend.
+- NestJS API with Prisma and PostgreSQL.
+- API-owned HTTP-only cookie authentication.
+- OpenAPI with an Orval-generated web client.
+- TanStack Query, Tailwind CSS, Recharts, Vitest, and Biome.
 
-## Локальный запуск
+## Local Setup
 
 ```bash
 pnpm install
 cp packages/api/.env.example packages/api/.env
 cp packages/web/.env.example packages/web/.env
+docker compose up -d
 pnpm db:generate
-pnpm db:push
+pnpm db:migrate:deploy
 pnpm dev
 ```
 
-API поднимается на [http://localhost:4000](http://localhost:4000), web-приложение - на [http://localhost:3000](http://localhost:3000).
+The API runs at [http://localhost:4000](http://localhost:4000), and the web app runs at
+[http://localhost:3000](http://localhost:3000). Docker Compose starts local PostgreSQL on port `5432`.
 
-Для локальной MongoDB можно использовать `docker-compose.yml`:
-
-```bash
-docker compose up -d
-```
-
-## Env Variables
-
-Минимальный набор для `packages/api/.env`:
+The minimum local API database and application settings are:
 
 ```env
-DATABASE_URL="mongodb://localhost:27017/finnn"
+DATABASE_URL="postgresql://finnn:finnn_local@localhost:5432/finnn?schema=public"
+DIRECT_URL="postgresql://finnn:finnn_local@localhost:5432/finnn?schema=public"
 API_AUTH_SECRET="paste-generated-secret-here"
 API_COOKIE_SECRET="paste-generated-secret-here"
 API_ALLOWED_ORIGINS="http://localhost:3000"
 CRON_SECRET="paste-cron-secret-here"
 ```
 
-Email delivery uses Resend over HTTPS. Verify the sender domain in Resend and set:
-
-```env
-RESEND_API_KEY="re_..."
-EMAIL_FROM="Finnn <no-reply@your-verified-domain.example>"
-```
-
-Минимальный набор для `packages/web/.env`:
+The minimum web setting is:
 
 ```env
 NEXT_PUBLIC_API_URL="http://localhost:4000"
 ```
 
-API-секреты можно сгенерировать так:
+Generate API secrets with `openssl rand -base64 32`. Email, Telegram, Google, OpenRouter, object storage, and hosted
+environment variables are documented in [`docs/development.md`](./docs/development.md) and
+[`docs/operations.md`](./docs/operations.md).
+
+## Prisma And PostgreSQL
 
 ```bash
-openssl rand -base64 32
-```
-
-## Prisma и MongoDB
-
-Основные команды:
-
-```bash
-pnpm db:generate  # сгенерировать Prisma Client
-pnpm db:push      # применить schema.prisma и индексы в MongoDB
-```
-
-После изменения `packages/api/prisma/schema.prisma` запускайте `pnpm db:generate`. Для применения новых индексов и моделей к MongoDB запускайте `pnpm db:push`.
-
-## Seed, Import, Export
-
-```bash
+pnpm db:generate
+pnpm db:migrate:dev --name <descriptive-name>
+pnpm db:migrate:deploy
+pnpm db:migrate:status
 pnpm db:seed
-pnpm db:export
-pnpm db:import
 ```
 
-Скрипты лежат в `packages/api/scripts/`:
+Create and review SQL migrations locally with `db:migrate:dev`. Shared DEV and production environments apply only
+committed migrations with `db:migrate:deploy`; do not use `prisma db push` for shared databases.
 
-- `db-seed.ts` - наполнение базы тестовыми данными.
-- `mongo-export.ts` - экспорт данных MongoDB.
-- `mongo-import.ts` - импорт данных MongoDB.
+PostgreSQL backup, restore, pooling, Railway deployment, and production cutover procedures live in
+[`docs/operations.md`](./docs/operations.md). The one-time MongoDB source migration is retained as historical migration
+tooling and documented in [`docs/plans/postgresql-migration`](./docs/plans/postgresql-migration/README.md); it is not the
+current backup workflow.
 
-Для безопасной проверки импорта используйте отдельную базу:
-
-```bash
-pnpm db:export ./backups/manual
-pnpm db:import ./backups/manual --drop --db=finnn_restore
-```
-
-## Проверки
+## Verification
 
 ```bash
 pnpm typecheck
@@ -111,39 +80,16 @@ pnpm test
 pnpm build
 ```
 
-`pnpm check` проверяет API contract drift и запускает Biome в обоих пакетах. `pnpm build` сначала собирает NestJS API, затем Next.js web.
+`pnpm check` verifies generated API contract drift and runs package Biome checks. `pnpm build` builds the NestJS API
+before the Next.js frontend.
 
-## Backend Cron
+## Important Boundaries
 
-Backend endpoint `/cron/update-exchange-rates` защищен `CRON_SECRET`. Планировщик должен передавать его в заголовке `Authorization: Bearer <secret>`.
-
-Для production также нужны:
-
-- `DATABASE_URL` на MongoDB.
-- `API_AUTH_SECRET` и `API_COOKIE_SECRET`.
-- `API_ALLOWED_ORIGINS` с production URL web-приложения.
-- `NEXT_PUBLIC_API_URL` с production URL API.
-- `RESEND_API_KEY` and `EMAIL_FROM` for registration, invites, and password recovery emails.
-
-## PWA и Service Worker
-
-Service Worker находится в `packages/web/public/sw.js`. Политика кеширования намеренно ограничена static assets:
-
-- `/_next/static/**`
-- favicon/icons/manifest
-- static images/fonts/styles/scripts
-
-SW не кеширует `/api/**`, document requests, dashboard/app routes, `/_next/data/**`, API/data responses и любые non-GET requests. Финансовые данные должны приходить с сервера или из контролируемого клиентского кеша, а не из offline-кеша браузера.
-
-## Архитектура
-
-- `packages/web/src/app` - App Router страницы, layouts и providers.
-- `packages/web/src/modules` - UI-модули для счетов, категорий, транзакций, долгов, аналитики, workspace и auth.
-- `packages/web/src/shared` - frontend helpers, API client, query keys, UI primitives и низкоуровневые утилиты.
-- `packages/api/src` - NestJS backend modules, auth/session ownership, workspace guards, finance endpoints, cron, email и Prisma access.
-- `packages/api/prisma/schema.prisma` - source of truth для MongoDB collections, relations, indexes и enums.
-- `packages/api/scripts` - seed, MongoDB import/export и OpenAPI generation.
-
-## Денежная логика
-
-Низкоуровневая frontend-арифметика находится в `packages/web/src/shared/utils/money.ts`. Backend сохраняет money-as-string инвариант в `packages/api/src/common/money.ts` и доменных сервисах NestJS.
+- `packages/api/prisma/schema.prisma` and `packages/api/prisma/migrations` are the source of truth for PostgreSQL schema
+  and migration history.
+- Backend money values remain strings and are manipulated through `packages/api/src/common/money.ts`.
+- Frontend money helpers live in `packages/web/src/shared/utils/money.ts` and
+  `packages/web/src/shared/lib/balance-domain.ts`.
+- `packages/web/public/sw.js` caches static assets only; it must not cache financial documents, API responses, or
+  protected app routes.
+- Protected cron endpoints require `Authorization: Bearer <CRON_SECRET>`.

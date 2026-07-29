@@ -5,8 +5,6 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { BSON, type Document, MongoClient } from "mongodb";
 
-import { getDatabaseUrl } from "../src/common/env/database-url";
-
 const { EJSON } = BSON;
 
 export type ExportedCollection = {
@@ -94,9 +92,9 @@ export async function exportCollection(
 }
 
 export async function runMongoExport(options: MongoExportOptions = {}): Promise<BackupManifest> {
-  const databaseUrl = options.databaseUrl ?? getDatabaseUrl();
+  const databaseUrl = options.databaseUrl ?? process.env.MONGODB_SOURCE_URL?.trim();
   if (!databaseUrl) {
-    throw new Error("DATABASE_URL must be provided.");
+    throw new Error("MONGODB_SOURCE_URL must be provided.");
   }
 
   const outputDir = getOutputDir(options);

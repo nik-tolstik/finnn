@@ -6833,7 +6833,7 @@
             "type": "string",
             "example": "665f5d865ef5a20c0d2f4444",
             "nullable": true,
-            "pattern": "^[a-fA-F0-9]{24}$"
+            "pattern": "^(?:[a-fA-F\\d]{24}|c[a-z\\d]{24})$"
           }
         },
         "required": ["name", "type"]
@@ -7009,7 +7009,7 @@
             "type": "string",
             "example": "665f5d865ef5a20c0d2f4444",
             "nullable": true,
-            "pattern": "^[a-fA-F0-9]{24}$"
+            "pattern": "^(?:[a-fA-F\\d]{24}|c[a-z\\d]{24})$"
           },
           "order": {
             "type": "number",

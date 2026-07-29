@@ -29,6 +29,21 @@ Main models:
 - `TelegramBotPreference` - per-user Telegram bot context, active workspace, default accounts, timezone, and receipt mode.
 - `AiFinanceDraft` - short-lived AI finance entry draft that must be confirmed before creating financial records.
 
+## PostgreSQL Persistence
+
+The Prisma schema maps the domain to relational PostgreSQL tables with database-enforced foreign keys and explicit
+referential actions. Application-level workspace authorization and domain validation remain required; a foreign key can
+prove that a referenced row exists, but not that every cross-workspace business rule is valid.
+
+Public IDs are opaque strings. Rows migrated from MongoDB retain their existing 24-character ObjectId strings, while
+new PostgreSQL rows use the Prisma ID default. API clients and backend validators must not infer the database provider
+from an ID's shape.
+
+The cutover deliberately preserves money values as strings and keeps the existing money helpers as the arithmetic
+boundary. JSON draft/preference payloads use PostgreSQL `jsonb`, scalar-list fields use PostgreSQL arrays, and temporal
+fields use timezone-aware timestamps. Converting money to native `numeric` or moving analytics aggregation into SQL is
+a separate change after migration parity is proven.
+
 ## Identity And Email
 
 `User.email` is optional because Telegram-authenticated users can exist before adding email. Email/password
@@ -63,8 +78,8 @@ avatar, a bundled preset path under `/avatars/`, a Telegram photo URL, or the st
 `/auth/users/:userId/avatar`. Uploaded avatar object keys are stored separately in `User.avatarStorageKey` so replacing
 or clearing an uploaded avatar can clean up the old private bucket object.
 
-The pair `(provider, providerUserId)` is unique. MongoDB must also keep a partial unique index on `users.email`
-for string email values only, so multiple users without email are valid while duplicate real email addresses are not.
+The pair `(provider, providerUserId)` is unique. `users.email` is also unique when present; PostgreSQL permits multiple
+`NULL` values, so Telegram-only users can coexist while duplicate real email addresses remain invalid.
 
 Workspace invites remain email-based:
 

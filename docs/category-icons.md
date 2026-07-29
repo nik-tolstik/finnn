@@ -43,7 +43,7 @@ optimistically. Uploaded and emoji items use the same accent background on hover
 
 Storage deletion is performed before deleting the database row. If storage fails, the database record remains in its
 protected deletion state so a later `DELETE` request can retry safely. Before storage deletion, the API marks the asset
-as deleting in a MongoDB transaction. New
+as deleting in a database transaction. New
 assignments lock the same record in their own transaction, so an asset cannot become assigned between the usage check
 and object deletion. Assets marked as deleting are hidden from lists and cannot be read or assigned. An assigned asset
 cannot be deleted; the category must first be cleared or changed.

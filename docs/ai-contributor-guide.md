@@ -16,7 +16,7 @@ sed -n '1,220p' AGENTS.md
 
 Then inspect the narrow module involved in the task.
 
-For framework or library behavior that may have changed, use Context7. Next.js App Router, NestJS, Prisma MongoDB, TanStack Query, Orval, and Tailwind changes are good candidates for documentation lookup.
+For framework or library behavior that may have changed, use Context7. Next.js App Router, NestJS, Prisma PostgreSQL, TanStack Query, Orval, and Tailwind changes are good candidates for documentation lookup.
 
 ## Decision Rules
 

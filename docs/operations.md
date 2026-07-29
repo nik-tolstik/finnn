@@ -33,7 +33,8 @@ Telegram authentication uses two separate bots:
 Required variables:
 
 ```env
-DATABASE_URL="mongodb-connection-string"
+DATABASE_URL="postgresql-runtime-connection-string"
+DIRECT_URL="postgresql-direct-connection-string"
 API_AUTH_SECRET="production-secret"
 API_COOKIE_SECRET="production-cookie-secret"
 API_ALLOWED_ORIGINS="https://production-app-url"
@@ -137,15 +138,17 @@ Railway setup:
 - Set the service root directory to `/packages/api`.
 - Set the config-as-code file path to `/packages/api/railway.json`.
 - Keep the checked-in config on the Railpack builder with `pnpm --filter api build`, pre-deploy
-  `pnpm --filter api db:push`, `pnpm --filter api start`, and `/health`.
-- The pre-deploy command applies Prisma schema and index changes to the `DATABASE_URL` of the current Railway
-  environment. It covers DEV and PROD automatically; keep their database URLs separate.
+  `pnpm --filter api db:migrate:deploy`, `pnpm --filter api start`, and `/health`.
+- The pre-deploy command applies only committed Prisma SQL migrations. A failed migration blocks the new deployment;
+  never replace it with `db push`, `migrate dev`, or a command containing destructive reset flags.
+- Keep DEV and PROD PostgreSQL services, URLs, migration histories, and backups separate.
 - Confirm the service listens on Railway's injected `PORT`; the NestJS bootstrap already binds `0.0.0.0`.
 
 Required Railway variables:
 
 ```env
-DATABASE_URL="mongodb-connection-string"
+DATABASE_URL="postgresql-runtime-connection-string"
+DIRECT_URL="postgresql-direct-connection-string"
 API_AUTH_SECRET="production-secret"
 API_COOKIE_SECRET="production-cookie-secret"
 API_COOKIE_SECURE="true"
@@ -212,7 +215,8 @@ Exchange-rate date keys follow the `Europe/Minsk` calendar day; run the daily jo
 Operational requirements:
 
 - Set the same `CRON_SECRET` in the API environment and in any scheduler that invokes the route.
-- Confirm `DATABASE_URL` points to a MongoDB deployment that supports Prisma's transaction requirements.
+- Confirm `DATABASE_URL` points to the PostgreSQL database for the same environment and that its pool has capacity for
+  API and cron traffic.
 - Keep `NEXT_PUBLIC_API_URL` in the web deployment aligned with the deployed API URL.
 
 Railway setup:
@@ -244,48 +248,136 @@ Scheduled payment reminder command:
 node -e "fetch(`${process.env.API_BASE_URL}/cron/scheduled-payment-reminders`, { headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` } }).then(async (response) => { const body = await response.text(); console.log(body); if (!response.ok) process.exit(1); }).catch((error) => { console.error(error); process.exit(1); })"
 ```
 
-## MongoDB Import And Export
+## PostgreSQL Connections And Pooling
 
-Scripts:
+Prisma uses two connection URLs:
 
-- `packages/api/scripts/mongo-export.ts`
-- `packages/api/scripts/mongo-import.ts`
-- `packages/api/scripts/db-seed.ts`
+- `DATABASE_URL` is the API runtime URL. It may use a transaction-capable pooled endpoint.
+- `DIRECT_URL` bypasses the pool and is used by Prisma Migrate and administrative tools.
 
-Commands:
+They may be identical on local PostgreSQL. In Railway, reference variables from the PostgreSQL service instead of
+copying credentials between environments. If a pooler is enabled, confirm that interactive Prisma transactions are
+supported and keep `DIRECT_URL` on the direct endpoint.
+
+Choose a runtime connection limit only after accounting for every API replica. Reserve direct PostgreSQL connections
+for migrations, backups, cron, monitoring, and incident response. A per-replica pool that is safe with one API instance
+can exhaust the database after horizontal scaling.
+
+## PostgreSQL Backup And Restore
+
+Use PostgreSQL-native custom-format backups. `pg_dump` and `pg_restore` need a direct libpq-compatible URL; do not pass a
+Prisma-only `?schema=public` parameter to them.
 
 ```bash
-pnpm db:export ./backups/manual
-pnpm db:import ./backups/manual --drop --db=finnn_restore
-pnpm db:seed
+mkdir -p backups
+FINNN_PG_DIRECT_URL="postgresql://user:password@host:5432/finnn?sslmode=require"
+pg_dump --dbname="$FINNN_PG_DIRECT_URL" --format=custom --file="backups/finnn-$(date -u +%Y%m%dT%H%M%SZ).dump"
 ```
 
-Before import/export:
+Verify every material backup by restoring it into an empty, non-production database:
 
-- Confirm `DATABASE_URL`.
-- Use throwaway database names for import verification.
-- Production imports are blocked unless `--allow-production` is passed. Use that flag only when the target dataset and overwrite behavior are fully understood.
-- Run `pnpm db:generate` if schema or Prisma version changed.
+```bash
+FINNN_PG_RESTORE_LIBPQ_URL="postgresql://user:password@host:5432/finnn_restore?sslmode=require"
+FINNN_PG_RESTORE_PRISMA_URL="postgresql://user:password@host:5432/finnn_restore?schema=public&sslmode=require"
+pg_restore --list backups/finnn-YYYYMMDDTHHMMSSZ.dump
+pg_restore --dbname="$FINNN_PG_RESTORE_LIBPQ_URL" --clean --if-exists --no-owner --no-privileges \
+  backups/finnn-YYYYMMDDTHHMMSSZ.dump
+DATABASE_URL="$FINNN_PG_RESTORE_PRISMA_URL" DIRECT_URL="$FINNN_PG_RESTORE_PRISMA_URL" pnpm db:migrate:status
+```
+
+The target database must already exist and must not serve application traffic. A successful `pg_dump` command alone is
+not proof that the backup is restorable. Keep provider-managed retention and point-in-time recovery enabled where
+available, but still rehearse logical restore before cutover and major schema changes.
 
 ## Database Schema Changes
 
-For MongoDB, the project uses Prisma `db push` rather than SQL-style change files.
+PostgreSQL schema history lives in `packages/api/prisma/migrations` and is committed with the corresponding
+`packages/api/prisma/schema.prisma` change.
 
-Railway runs `pnpm --filter api db:push` before each API deployment. Do not run it manually against the target
-Railway database during a normal release, and do not add `--accept-data-loss` or `--force-reset` to the deployment
-command. A destructive schema change, rename, or data backfill needs an explicit, reviewed rollout.
-
-Recommended sequence:
+Development sequence:
 
 ```bash
+pnpm db:migrate:dev --name <descriptive-name>
+pnpm db:migrate:status
 pnpm db:generate
-pnpm db:push
 pnpm typecheck
 pnpm test
 ```
 
-When adding indexes, verify they are represented in `packages/api/prisma/schema.prisma` and applied through `pnpm db:push`.
-For MongoDB partial indexes that Prisma cannot express, add or update an explicit script under `packages/api/scripts`.
+Review generated SQL for table rewrites, long locks, destructive operations, foreign-key validation, and non-concurrent
+index creation. Do not edit a migration after it has been applied to a shared environment; create a new corrective
+migration instead. Data backfills and destructive changes should use an expand/migrate/contract rollout so the previous
+API version remains compatible while Railway pre-deploy applies pending migrations.
+
+Production and shared DEV use only:
+
+```bash
+pnpm db:migrate:deploy
+pnpm db:migrate:status
+```
+
+Do not use `prisma db push`, `prisma migrate dev`, reset flags, or ad hoc schema SQL against a shared database.
+
+## MongoDB-To-PostgreSQL Migration Notes
+
+The MongoDB export/import utilities and MongoDB driver are retained only for the source-to-target migration. They use
+`MONGODB_SOURCE_URL` through the explicit `db:mongo:export` and `db:mongo:import` commands; they are not the backup
+workflow after PostgreSQL cutover. The migration preserves legacy ObjectId strings, sessions, public URLs, JSON
+references, and persisted money strings.
+
+Follow [`docs/plans/postgresql-migration`](./plans/postgresql-migration/README.md) for the migration command, source-data
+audit, dependency order, and invariant validation. Always rehearse against DEV and an empty PostgreSQL target before
+the production window.
+
+The importer accepts only a MongoDB source and a PostgreSQL target:
+
+```bash
+MONGODB_SOURCE_URL="mongodb://source-host:27017/finnn"
+DATABASE_URL="postgresql://user:password@target-host:5432/finnn?schema=public&sslmode=require"
+DIRECT_URL="$DATABASE_URL"
+export MONGODB_SOURCE_URL DATABASE_URL DIRECT_URL
+
+pnpm db:migrate:deploy
+pnpm db:mongo:export ./backups/final-mongodb
+pnpm db:migrate:mongo-to-postgres --dry-run
+pnpm db:migrate:mongo-to-postgres --batch-size=1000
+```
+
+Use the direct PostgreSQL endpoint for the importer's `DATABASE_URL`; do not send a long-running bulk migration through
+the API runtime pooler. The API can return to its pooled `DATABASE_URL` after cutover.
+
+By default the importer reads a consistent MongoDB snapshot transaction. Use `--no-snapshot` only for a standalone
+source or after every source writer is guaranteed to be stopped. Production-like environments require an explicit
+`--allow-production` flag on both the dry run and the write run. A retry is safe only when the PostgreSQL target is empty
+or contains an unchanged subset of the source rows; never use the command as bidirectional synchronization or against a
+target that has accepted new application writes.
+
+Preflight warnings must be reviewed rather than treated as generic success. The importer preserves stored account
+balances when ledger reconstruction differs, skips only expired or revoked orphan sessions, and omits only explicitly
+retired fields whose legacy shapes pass validation. Active orphan sessions, conflicting legacy debt-account links, debt
+ledger mismatches, changed retired-field shapes, and unknown fields remain fatal.
+
+### Production cutover
+
+The preferred rollout is a short, measured maintenance window:
+
+1. Verify a fresh PostgreSQL backup/restore rehearsal, committed migration status, source audit, row counts, stable
+   digests, account-balance invariants, and debt invariants in DEV.
+2. Stop scheduled-payment and exchange-rate cron services. Stop the API or enable a maintenance deployment that blocks
+   every writer, including web requests, Telegram callbacks, AI draft commits, and reminder actions. Let in-flight
+   requests finish.
+3. Take a final MongoDB backup and keep it immutable. Run `--dry-run`, migrate into the empty PostgreSQL target, then
+   run the full data and invariant validator. Do not open PostgreSQL writes after a partial or warning-only result.
+4. Set the production API `DATABASE_URL` and `DIRECT_URL` to the PostgreSQL service, deploy the PostgreSQL-backed API,
+   and confirm `db:migrate:status` plus `/health` before restoring public traffic.
+5. Smoke-test the existing session, workspace/account reads, one reversible financial flow, analytics, Telegram, and
+   both protected cron endpoints. Re-enable cron only after application reads and writes are healthy.
+6. Keep the final MongoDB snapshot immutable for the agreed observation period. After PostgreSQL accepts new writes,
+   MongoDB is stale and cannot be used for a lossless rollback without reverse replication.
+
+Before reopening writes, rollback means restoring the old API configuration and immutable MongoDB source. Reopening
+PostgreSQL writes is the explicit rollback boundary; after that point, recover PostgreSQL from backup/PITR or perform a
+forward fix rather than silently discarding new records.
 
 ## Telegram Identity Repair
 
@@ -410,9 +502,12 @@ pnpm build
 Also verify:
 
 - Required env vars exist in the target environment.
-- MongoDB accepts Prisma transactions.
-- Schema changes are backward compatible while the previous API deployment is still serving traffic; Railway pre-deploy
-  applies `db:push` to the target environment.
+- `DATABASE_URL` reaches the runtime PostgreSQL endpoint, `DIRECT_URL` reaches the direct endpoint, and the total pool
+  budget covers every deployed API replica plus operational reserve.
+- `pnpm db:migrate:status` reports no unapplied or divergent migrations after Railway pre-deploy runs
+  `db:migrate:deploy`.
+- Schema changes are backward compatible while the previous API deployment is still serving traffic.
+- A current PostgreSQL backup has been restored successfully in a non-production database.
 - Railway Bucket avatar variables are present and point at the correct environment bucket.
 - Cron endpoint returns success with a valid secret.
 - API auth cookie variables match the deployed API and web hosts.

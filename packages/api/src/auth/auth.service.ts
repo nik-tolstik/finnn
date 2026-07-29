@@ -175,7 +175,7 @@ function getEmailVerificationExpiryDate(): Date {
 function getActiveSessionWhere(token: string): Prisma.AuthSessionWhereInput {
   return {
     tokenHash: hashSessionToken(token),
-    OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
+    revokedAt: null,
     expiresAt: { gt: new Date() },
   };
 }
@@ -952,7 +952,7 @@ export class AuthService {
       await tx.authSession.updateMany({
         where: {
           userId: user.id,
-          OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
+          revokedAt: null,
         },
         data: { revokedAt: new Date() },
       });

@@ -12,8 +12,6 @@ import {
   MongoClient,
 } from "mongodb";
 
-import { getDatabaseUrl } from "../src/common/env/database-url";
-
 const { EJSON } = BSON;
 const BATCH_SIZE = 1000;
 
@@ -255,9 +253,10 @@ export async function runMongoImport(options: MongoImportOptions = {}): Promise<
   const manifestPath = path.join(backupDir, "manifest.json");
   const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as BackupManifest;
 
-  const databaseUrl = options.databaseUrl ?? getDatabaseUrl();
+  const databaseUrl =
+    options.databaseUrl ?? options.env?.MONGODB_SOURCE_URL?.trim() ?? process.env.MONGODB_SOURCE_URL?.trim();
   if (!databaseUrl) {
-    throw new Error("DATABASE_URL must be provided.");
+    throw new Error("MONGODB_SOURCE_URL must be provided.");
   }
 
   const stdout = options.stdout ?? process.stdout;

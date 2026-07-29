@@ -531,7 +531,7 @@ describe("Auth API", () => {
     expect(prisma.authSession.updateMany).toHaveBeenCalledWith({
       where: {
         userId: "user-1",
-        OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
+        revokedAt: null,
       },
       data: { revokedAt: expect.any(Date) },
     });
@@ -672,7 +672,7 @@ describe("Auth API", () => {
     expect(prisma.authSession.findFirst).toHaveBeenCalledWith({
       where: {
         tokenHash: hashSessionToken(token),
-        OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
+        revokedAt: null,
         expiresAt: { gt: expect.any(Date) },
       },
       select: { userId: true },
@@ -713,7 +713,7 @@ describe("Auth API", () => {
     expect(prisma.authSession.findFirst).toHaveBeenCalledWith({
       where: {
         tokenHash: hashSessionToken(freshToken),
-        OR: [{ revokedAt: null }, { revokedAt: { isSet: false } }],
+        revokedAt: null,
         expiresAt: { gt: expect.any(Date) },
       },
       select: { userId: true },

@@ -1,0 +1,268 @@
+# Work Log
+
+## 2026-07-29 - Migration kickoff
+
+### Scope
+
+- Assessed the current Prisma schema, MongoDB-specific code, financial transaction patterns, analytics access patterns,
+  tests, and deployment workflow.
+- Created the dedicated `feat/postgresql-migration` branch.
+- Defined a compatibility-first migration that preserves IDs and money strings during cutover.
+
+### Files Changed
+
+- `docs/plans/postgresql-migration/prompt.md`
+- `docs/plans/postgresql-migration/README.md`
+- `docs/plans/postgresql-migration/work-log.md`
+
+### Commands Run
+
+```bash
+git switch -c feat/postgresql-migration
+```
+
+### Results
+
+- The repository was clean on `develop` before the branch was created.
+- The migration is ready for parallel schema, runtime, ETL, and concurrency work.
+
+### Decisions
+
+- Preserve legacy ObjectId strings in PostgreSQL text columns.
+- Keep persisted money values as strings for the initial cutover.
+- Prefer a rehearsed maintenance window over custom CDC for a modest dataset.
+- Treat concurrency safety and real PostgreSQL integration coverage as cutover blockers.
+
+### Subagent Contributions
+
+- Repository analysis covered schema portability, MongoDB-specific runtime dependencies, and migration/cutover risks.
+
+### Blockers / Follow-ups
+
+- Production data volume and acceptable maintenance window still need confirmation before the production runbook is
+  finalized.
+
+## 2026-07-29 - MongoDB-to-PostgreSQL ETL tooling
+
+### Scope
+
+- Added a direct migration command using `MONGODB_SOURCE_URL` as the MongoDB source and Prisma `DATABASE_URL` as the
+  PostgreSQL target.
+- Added source preflight validation for schema fields, legacy ObjectIds, dates, JSON, arrays, money strings, unique keys,
+  foreign-key references, account balances, and debt ledger totals.
+- Added resumable batch insertion in foreign-key dependency order and exact target count/content-digest validation.
+- Added production-environment blocking and a MongoDB snapshot transaction with an explicit source-freeze fallback.
+
+### Files Changed
+
+- `packages/api/scripts/mongo-to-postgres-models.ts`
+- `packages/api/scripts/mongo-to-postgres.ts`
+- `packages/api/test/mongo-to-postgres.test.ts`
+- `packages/api/package.json`
+- `package.json`
+- `docs/plans/postgresql-migration/README.md`
+- `docs/plans/postgresql-migration/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter api test test/mongo-to-postgres.test.ts
+pnpm --filter api typecheck
+pnpm --filter api check
+pnpm --filter api test
+pnpm --filter api exec biome check scripts/mongo-to-postgres-models.ts scripts/mongo-to-postgres.ts \
+  test/mongo-to-postgres.test.ts --error-on-warnings
+```
+
+### Results
+
+- Legacy ObjectId values are copied unchanged as lowercase 24-character text IDs.
+- A retry is accepted only when PostgreSQL is empty or contains an unchanged subset of source rows.
+- Linked debt transactions are excluded from account-balance deltas because their linked payment transaction carries the
+  balance effect; all debt transactions still contribute to debt amount/remaining validation.
+- Debt rows without ledger transactions produce a warning because their totals cannot be independently reconstructed.
+
+### Blockers / Follow-ups
+
+- Rehearse with representative data to confirm the snapshot transaction fits the configured MongoDB transaction lifetime.
+- Keep all MongoDB writers stopped when using `--no-snapshot`.
+
+## 2026-07-29 - PostgreSQL infrastructure and operations
+
+### Scope
+
+- Replaced the local MongoDB replica-set service with PostgreSQL 17 and a readiness health check.
+- Replaced `db push` development/deployment commands with explicit Prisma migration create, deploy, and status commands.
+- Added the one-time MongoDB-to-PostgreSQL importer passthrough without changing ETL implementation.
+- Updated Railway pre-deploy, environment examples, repository guidance, development setup, backup/restore operations,
+  connection pooling, production cutover, and rollback-boundary documentation.
+
+### Files Changed
+
+- `docker-compose.yml`
+- `package.json`
+- `packages/api/package.json`
+- `packages/api/.env.example`
+- `packages/api/railway.json`
+- `packages/api/test/app.e2e.test.ts`
+- `AGENTS.md`
+- `README.md`
+- `docs/README.md`
+- `docs/development.md`
+- `docs/operations.md`
+- `docs/domain-model.md`
+- `docs/ai-contributor-guide.md`
+- `docs/category-icons.md`
+- `docs/plans/postgresql-migration/work-log.md`
+
+### Commands Run
+
+```bash
+docker compose config
+pnpm --filter api run
+pnpm run
+pnpm --filter api db:generate
+pnpm db:migrate:dev --help
+pnpm db:migrate:status --help
+pnpm --filter api test test/app.e2e.test.ts
+pnpm --filter api check
+pnpm --filter api typecheck
+pnpm exec biome check AGENTS.md README.md docker-compose.yml docs/README.md docs/ai-contributor-guide.md docs/category-icons.md docs/development.md docs/domain-model.md docs/operations.md package.json packages/api/package.json packages/api/railway.json
+git diff --check
+```
+
+### Results
+
+- Docker Compose renders a valid PostgreSQL service, persistent volume, port mapping, and health check.
+- Prisma Client generation succeeds against the converted PostgreSQL schema.
+- The Railway deployment configuration test passes (6 tests).
+- Migration command forwarding was verified; root scripts pass flags directly, for example
+  `pnpm db:migrate:dev --name <name>`.
+- An initial help probe exposed that an existing local `packages/api/.env` needs the newly documented `DIRECT_URL`.
+- Targeted Biome and whitespace checks passed. Full repository verification remains part of final integration because
+  schema, ETL, and transaction work proceeded in parallel.
+- The first package-wide API check caught formatting in a parallel PostgreSQL integration test; after that parallel fix,
+  the API check passed across 131 files.
+- API type checking passed with the generated PostgreSQL Prisma Client.
+- A final rerun still passed Compose validation, type checking, and the Railway config test; the package-wide check then
+  caught a new formatting-only issue in a concurrently edited scheduled-payment test, reported for final integration.
+
+### Decisions
+
+- Use `DATABASE_URL` for runtime traffic and `DIRECT_URL` for Prisma Migrate/direct administrative access.
+- Use committed `prisma migrate deploy` migrations in Railway; never use `db push` in shared environments.
+- Use PostgreSQL-native `pg_dump`/`pg_restore` and require a restore rehearsal.
+- Prefer a write-frozen maintenance cutover. Reopening PostgreSQL writes is the explicit lossless-rollback boundary
+  unless reverse replication exists.
+- Keep MongoDB tools and terminology only in clearly labeled one-time migration notes.
+
+### Blockers / Follow-ups
+
+- Confirm the managed PostgreSQL direct/pooled endpoint topology and per-environment connection budget.
+- Confirm the production maintenance duration and immutable MongoDB snapshot retention period.
+- Run the final full verification suite after the ETL and transaction branches finish writing shared files.
+
+## 2026-07-29 - Schema, concurrency, and final integration
+
+### Scope
+
+- Converted all Prisma models from MongoDB ObjectIds to PostgreSQL text IDs while preserving legacy IDs during ETL.
+- Added the initial reviewed PostgreSQL SQL migration, explicit referential actions, timezone-aware timestamps, JSONB,
+  arrays, unique constraints, and foreign-key indexes.
+- Replaced MongoDB-specific nullable filters and ID validation in runtime code.
+- Added Serializable transaction retries for balance-changing account, transaction, transfer, and debt operations.
+- Added unit coverage for transaction retries and real PostgreSQL coverage for constraints, cascades, JSON/arrays/time,
+  and concurrent balance updates.
+- Renamed the retained source backup utilities to explicit `db:mongo:*` commands and made them use
+  `MONGODB_SOURCE_URL` so they cannot consume the PostgreSQL runtime URL accidentally.
+- Regenerated OpenAPI and the Orval client after widening persisted-ID validation to legacy ObjectIds and new CUIDs.
+
+### Files Changed
+
+- `packages/api/prisma/schema.prisma`
+- `packages/api/prisma/migrations/20260729000000_init_postgresql/migration.sql`
+- `packages/api/src/prisma/serializable-transaction.ts`
+- `packages/api/src/accounts/accounts.service.ts`
+- `packages/api/src/transactions/transactions.service.ts`
+- `packages/api/src/debts/debts.service.ts`
+- `packages/api/src/auth/auth.service.ts`
+- `packages/api/src/categories/categories.dto.ts`
+- `packages/api/src/categories/categories.service.ts`
+- `packages/api/src/scheduled-payments/scheduled-payments-notification.service.ts`
+- `packages/api/test/postgres.integration.test.ts`
+- `packages/api/test/serializable-transaction.test.ts`
+- `packages/api/openapi.json`
+- `packages/web/src/shared/api/generated`
+
+### Commands Run
+
+```bash
+docker compose up -d postgres
+pnpm db:migrate:deploy
+pnpm db:migrate:status
+pnpm db:generate
+pnpm api:generate
+pnpm typecheck
+pnpm check
+pnpm test
+POSTGRES_TEST_DATABASE_URL="postgresql://.../finnn_test?schema=public" \
+  pnpm --filter api exec vitest run test/postgres.integration.test.ts
+pnpm build
+```
+
+### Results
+
+- The committed SQL migration applies cleanly to empty local `finnn` and `finnn_test` PostgreSQL databases.
+- Prisma reports no schema drift between the migrated test database and `schema.prisma`.
+- API tests pass: 280 passed and 4 PostgreSQL opt-in tests skipped in the normal run.
+- Web tests pass: 180 passed.
+- The opt-in real PostgreSQL test passes 4/4, including two concurrent balance changes producing the expected balance.
+- Prisma generation, API contract drift checks, API/web type checks, Biome checks, and production builds pass.
+
+### Decisions
+
+- Keep money persisted as strings for this cutover; native PostgreSQL numeric storage remains a separate follow-up.
+- Keep the MongoDB driver and explicitly named source tools until production migration and rollback retention finish.
+- Do not remove or mutate the existing local MongoDB container as part of the PostgreSQL implementation.
+
+### Blockers / Follow-ups
+
+- Run the ETL dry run and full rehearsal against a representative MongoDB snapshot before scheduling production cutover.
+- Confirm Railway direct/pooled URLs and the connection budget for every environment.
+- Agree on the write-freeze duration and immutable MongoDB snapshot retention period.
+
+## 2026-07-29 - Local data migration rehearsal
+
+### Scope
+
+- Verified that the local MongoDB source was healthy, PostgreSQL was healthy, and no local API/web writers were running.
+- Exported an immutable MongoDB backup before touching the PostgreSQL target.
+- Created the isolated `finnn_pg_local` PostgreSQL database and applied the committed SQL migration.
+- Ran a strict source dry run, classified legacy data deliberately, imported the data, and repeated dry-run validation
+  against the populated target.
+- Switched the ignored local API `.env` to PostgreSQL and performed database-count, build, startup, health, unauthenticated
+  session, and exchange-rate smoke checks.
+
+### Results
+
+- MongoDB backup: 808 documents across 22 existing collections.
+- PostgreSQL target: 803 rows across the 23 Prisma models; the five omitted documents are expired orphan auth sessions.
+- Every imported model passed exact row-count and SHA-256 content-digest comparison.
+- Retired `workspaces.icon`, `category_icon_assets.tags`, `categories.color`, and `debts.accountId` fields were omitted only
+  after validating their expected legacy shapes. Legacy debt account links also matched their `created` ledger entries.
+- One stored account balance differs from ledger reconstruction by `339.78`. The stored value was preserved, and the
+  finding exposed a pre-existing linked debt-write-off balance-reconciliation bug that must be fixed before DEV.
+- The NestJS API started successfully against PostgreSQL; `/health`, `/auth/session`, and `/exchange-rates/today` returned
+  successful responses.
+
+### Backup And Target
+
+- Backup: `backups/pre-postgresql-local-20260729`
+- PostgreSQL database: `finnn_pg_local`
+
+### Follow-ups
+
+- Fix create/update/delete debt-write-off balance reconciliation with targeted tests before DEV migration.
+- The user approved a separate local PostgreSQL repair for the historical `339.78` discrepancy. The account balance was
+  atomically changed from `12005` to `11665.22` only after verifying the expected account, database, and prior balance;
+  a ledger recomputation now matches `11665.22`. MongoDB and the immutable pre-migration backup were not modified.
