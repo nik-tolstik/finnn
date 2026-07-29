@@ -1,5 +1,90 @@
 # Work Log
 
+## 2026-07-29 - Encrypted PostgreSQL backup cron
+
+### Scope
+
+- Added an isolated Railway cron package based on PostgreSQL 18 client tooling.
+- Streamed `pg_dump` custom-format output directly through asymmetric age encryption so plaintext is not persisted.
+- Added S3-compatible upload with configurable endpoint, region, bucket, and URL style; SHA-256 metadata; full
+  re-download verification; and a completion manifest uploaded last.
+- Added bounded child-command and whole-job timeouts, signal handling, credential redaction, secure temporary-file
+  permissions and cleanup, deterministic non-zero failure exits, unit tests, and an English operations runbook.
+
+### Files Changed
+
+- `packages/postgres-backup`
+- `.dockerignore`
+- `package.json`
+- `pnpm-lock.yaml`
+- `AGENTS.md`
+- `README.md`
+- `docs/README.md`
+- `docs/operations.md`
+- `docs/postgresql-backups.md`
+- `docs/plans/postgresql-migration/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm install
+pnpm --filter postgres-backup check
+pnpm --filter postgres-backup test
+pnpm check
+pnpm typecheck
+pnpm test
+pnpm --filter web check
+docker build --file packages/postgres-backup/Dockerfile --tag finnn-postgres-backup:test .
+docker run --rm --entrypoint sh finnn-postgres-backup:test -c 'node --version && age --version && pg_dump --version && id'
+git diff --check
+```
+
+### Results
+
+- Backup Biome checks pass and its 11 unit tests pass across configuration, streaming/checksum behavior, hard timeout
+  cleanup, credential isolation/redaction, object metadata, full re-download verification, and manifest-last ordering.
+- API and web type checks pass. The full test command passes with 291 API tests, 180 web tests, and 11 backup tests;
+  four opt-in PostgreSQL API tests remain skipped in the normal run.
+- The backup Docker image builds successfully. Its final non-root runtime reports Node 22.23.1, age 1.1.1, and
+  PostgreSQL `pg_dump` 18.4; production dependencies load and an in-container age encrypt/decrypt smoke test passes.
+- API generated-contract drift verification and the web package check pass. The root `pnpm check` then stops only because
+  API Biome scans an existing gitignored local operational snapshot under `packages/api/backups`; those recovery files
+  were preserved and not reformatted.
+- Final whitespace checks pass, and generated OpenAPI/web-client verification left no worktree changes.
+- External Railway acceptance produced the completed encrypted object
+  `finnn/production/daily/2026/07/29/finnn-20260729T115837535Z.dump.age` (155,426 bytes), passed payload and source
+  checksum verification, and restored successfully into an isolated PostgreSQL 18 database. The restored database had
+  24 public tables, one applied migration, and the expected core counts: 5 users, 3 workspaces, 18 accounts, 913
+  transactions, and 52 debts.
+- Deployed `postgres-backup-cron` to the Production environment in Railway EU West with 0.5 vCPU, 500 MB memory,
+  `restartPolicyType: NEVER`, no public domain, and the daily `0 2 * * *` UTC schedule. The first Railway-side manual
+  execution used the private PostgreSQL hostname and completed the verified payload/manifest pair
+  `finnn/production/daily/2026/07/29/finnn-20260729T120917846Z.dump.age`.
+- Restored the Production PostgreSQL effective resource override to the approved 1 vCPU / 1 GB after live inspection
+  found that it had drifted back to the workspace maximum. EU West placement and Serverless-disabled state were
+  preserved.
+- Stopped the stale `mongodb-prod` deployment after successful PostgreSQL backup and restore validation. The Railway
+  service and ready `mongodb-volume-zdog` persistent volume remain intact for the approved observation period.
+- Removed disposable migration logs, temporary Railway links, the local backup test image, the replaceable local backup
+  role password, and local/DEV forensic exports. The authoritative pre-repair and final frozen Production MongoDB
+  exports remain local with directory mode `0700` and file mode `0600`; backend and frontend `.env` files were also
+  restricted to `0600`.
+
+### Decisions
+
+- Keep the private age identity out of Railway; the cron receives only `BACKUP_AGE_RECIPIENT`.
+- Match the production PostgreSQL 18 server major in the backup image.
+- Treat only a verified payload with a matching completion manifest as a completed backup.
+- Default to virtual-host S3 addressing and expose path-style addressing only as an explicit option.
+
+### Blockers / Follow-ups
+
+- Add independent failure/freshness alerting outside Railway so a missing successful manifest for more than 36 hours
+  is reported even if the cron service itself is unavailable.
+- Keep the first 90 days of completed backups, then review and implement the documented manual/client-side pruning
+  procedure.
+- Repeat the isolated restore rehearsal at least quarterly and after any age identity rotation or risky schema change.
+
 ## 2026-07-29 - Migration kickoff
 
 ### Scope

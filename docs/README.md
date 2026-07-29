@@ -16,6 +16,8 @@ This documentation is written for two audiences:
 - [Category Icons](./category-icons.md) - emoji, legacy Lucide, workspace uploads, API endpoints, and picker behavior.
 - [Domain Model](./domain-model.md) - core entities, money invariants, workspaces, transactions, transfers, debts, exchange rates, and PWA cache boundaries.
 - [Operations](./operations.md) - deployment, cron, PostgreSQL migrations and backups, cutover, email, service worker, and production checks.
+- [Encrypted PostgreSQL Backups](./postgresql-backups.md) - Railway cron, age encryption, verified S3-compatible uploads,
+  completion manifests, monitoring, retention, and restore rehearsals.
 - [AI Contributor Guide](./ai-contributor-guide.md) - how Codex or another AI agent should approach changes in this repo.
 - [Feature Plans](./plans/README.md) - how to write and maintain `docs/plans/<feature>` implementation plans.
 

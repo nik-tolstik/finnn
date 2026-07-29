@@ -10,7 +10,7 @@ operations runbook, design system, and active implementation plans.
 
 ## Stack
 
-- `pnpm` workspace with `packages/web` and `packages/api`.
+- `pnpm` workspace with `packages/web`, `packages/api`, and the isolated `packages/postgres-backup` cron service.
 - Next.js App Router, React, and TypeScript frontend.
 - NestJS API with Prisma and PostgreSQL.
 - API-owned HTTP-only cookie authentication.
@@ -67,7 +67,8 @@ Create and review SQL migrations locally with `db:migrate:dev`. Shared DEV and p
 committed migrations with `db:migrate:deploy`; do not use `prisma db push` for shared databases.
 
 PostgreSQL backup, restore, pooling, Railway deployment, and production cutover procedures live in
-[`docs/operations.md`](./docs/operations.md). The one-time MongoDB source migration is retained as historical migration
+[`docs/operations.md`](./docs/operations.md), with the encrypted cron runbook in
+[`docs/postgresql-backups.md`](./docs/postgresql-backups.md). The one-time MongoDB source migration is retained as historical migration
 tooling and documented in [`docs/plans/postgresql-migration`](./docs/plans/postgresql-migration/README.md); it is not the
 current backup workflow.
 
