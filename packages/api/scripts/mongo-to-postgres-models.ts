@@ -32,8 +32,9 @@ export type MigrationUniqueSpec = {
 };
 
 export type MigrationIgnoredSourceFieldSpec = {
+  allowedValues?: readonly string[];
   name: string;
-  validation: "empty-array" | "id" | "string";
+  validation: "empty-array" | "id" | "id-or-null" | "string";
 };
 
 export type MigrationModelSpec = {
@@ -72,6 +73,7 @@ export type FinancialInvariantResult = {
 };
 
 const currencies = ["USD", "EUR", "RUB", "BYN"] as const;
+const DEBT_LEDGER_INTRODUCED_AT = new Date("2026-02-11T23:08:15.000Z");
 
 const id = (name = "id", required = true): MigrationFieldSpec => ({
   kind: "id",
@@ -248,6 +250,9 @@ export const MIGRATION_MODELS: readonly MigrationModelSpec[] = [
     collection: "accounts",
     delegate: "account",
     model: "Account",
+    ignoredSourceFields: [
+      { allowedValues: ["cash", "bank", "card", "investment", "other"], name: "type", validation: "string" },
+    ],
     fields: [
       id(),
       id("workspaceId"),
@@ -380,7 +385,7 @@ export const MIGRATION_MODELS: readonly MigrationModelSpec[] = [
     collection: "debts",
     delegate: "debt",
     model: "Debt",
-    ignoredSourceFields: [{ name: "accountId", validation: "id" }],
+    ignoredSourceFields: [{ name: "accountId", validation: "id-or-null" }],
     fields: [
       id(),
       id("workspaceId"),
@@ -660,14 +665,19 @@ export function transformMongoDocument(spec: MigrationModelSpec, document: Docum
       const isValid =
         (ignoredField.validation === "empty-array" && Array.isArray(value) && value.length === 0) ||
         (ignoredField.validation === "id" && toLegacyId(value) !== null) ||
-        (ignoredField.validation === "string" && typeof value === "string");
+        (ignoredField.validation === "id-or-null" && (value === null || toLegacyId(value) !== null)) ||
+        (ignoredField.validation === "string" &&
+          typeof value === "string" &&
+          (!ignoredField.allowedValues || ignoredField.allowedValues.includes(value)));
 
       if (isValid) {
         warnings.push({ field: key, message: "is an obsolete source field and will not be copied" });
       } else {
         issues.push({
           field: key,
-          message: `is an obsolete source field with an unexpected value; expected ${ignoredField.validation}`,
+          message: `is an obsolete source field with an unexpected value; expected ${
+            ignoredField.allowedValues ? `one of: ${ignoredField.allowedValues.join(", ")}` : ignoredField.validation
+          }`,
         });
       }
     } else if (!sourceNames.has(key)) {
@@ -744,7 +754,62 @@ export function validateFinancialInvariants(input: FinancialInvariantInput): Fin
   const issues: string[] = [];
   const warnings: string[] = [];
   const balanceDeltas = new Map<string, Big>();
+  const accountsById = new Map(input.accounts.map((account) => [account.id as string, account]));
+  const debtsById = new Map(input.debts.map((debt) => [debt.id as string, debt]));
   const debtTypes = new Map(input.debts.map((debt) => [debt.id as string, debt.type as string]));
+  const paymentTransactionsById = new Map(
+    input.paymentTransactions
+      .filter((transaction) => typeof transaction.id === "string")
+      .map((transaction) => [transaction.id as string, transaction])
+  );
+  const linkedDebtTransactions = new Map<string, Record<string, unknown>[]>();
+
+  for (const transaction of input.debtTransactions) {
+    if (typeof transaction.paymentTransactionId !== "string") continue;
+    const linked = linkedDebtTransactions.get(transaction.paymentTransactionId) ?? [];
+    linked.push(transaction);
+    linkedDebtTransactions.set(transaction.paymentTransactionId, linked);
+  }
+
+  for (const [paymentTransactionId, transactions] of linkedDebtTransactions) {
+    if (transactions.length !== 1) {
+      issues.push(
+        `PaymentTransaction ${paymentTransactionId} must link to exactly one debt write-off transaction; found ${transactions.length}.`
+      );
+      continue;
+    }
+
+    const transaction = transactions[0];
+    const paymentTransaction = paymentTransactionsById.get(paymentTransactionId);
+    if (!paymentTransaction) {
+      issues.push(
+        `DebtTransaction linked paymentTransactionId references missing PaymentTransaction ${paymentTransactionId}.`
+      );
+      continue;
+    }
+
+    const debtType = debtTypes.get(transaction.debtId as string);
+    const expectedPaymentType = debtType === "lent" ? "expense" : debtType === "borrowed" ? "income" : null;
+    const transactionDate = transaction.date;
+    const paymentDate = paymentTransaction.date;
+    const accountAmount = new Big((transaction.toAmount ?? transaction.amount) as string);
+    const pairIssues = [
+      transaction.type === "closed" ? null : "debt transaction type must be closed",
+      transaction.workspaceId === paymentTransaction.workspaceId ? null : "workspaceId differs",
+      transaction.accountId === paymentTransaction.accountId ? null : "accountId differs",
+      transactionDate instanceof Date &&
+      paymentDate instanceof Date &&
+      transactionDate.getTime() === paymentDate.getTime()
+        ? null
+        : "date differs",
+      expectedPaymentType === paymentTransaction.type ? null : "payment type does not match debt type",
+      accountAmount.eq(getMoney(paymentTransaction, "amount")) ? null : "account-side amount differs",
+    ].filter((issue): issue is string => issue !== null);
+
+    for (const issue of pairIssues) {
+      issues.push(`Debt write-off pair ${paymentTransactionId}: ${issue}.`);
+    }
+  }
 
   for (const transaction of input.paymentTransactions) {
     const amount = getMoney(transaction, "amount");
@@ -758,7 +823,7 @@ export function validateFinancialInvariants(input: FinancialInvariantInput): Fin
   }
 
   for (const transaction of input.debtTransactions) {
-    if (typeof transaction.paymentTransactionId === "string" || typeof transaction.accountId !== "string") continue;
+    if (typeof transaction.accountId !== "string") continue;
     const debtType = debtTypes.get(transaction.debtId as string);
     if (!debtType) continue;
 
@@ -788,9 +853,34 @@ export function validateFinancialInvariants(input: FinancialInvariantInput): Fin
   }
 
   for (const [debtId, legacyAccountId] of input.legacyDebtAccountIds ?? []) {
+    const debt = debtsById.get(debtId);
+    const legacyAccount = accountsById.get(legacyAccountId);
+    if (!legacyAccount) {
+      issues.push(`Debt ${debtId} legacy accountId references missing Account ${legacyAccountId}.`);
+    } else if (
+      typeof debt?.workspaceId === "string" &&
+      typeof legacyAccount.workspaceId === "string" &&
+      debt.workspaceId !== legacyAccount.workspaceId
+    ) {
+      issues.push(`Debt ${debtId} legacy accountId references an Account from a different workspace.`);
+    }
+
     const createdTransactions = (transactionsByDebt.get(debtId) ?? []).filter(
       (transaction) => transaction.type === "created"
     );
+    if (createdTransactions.length === 0) {
+      if (!(debt?.createdAt instanceof Date) || debt.createdAt >= DEBT_LEDGER_INTRODUCED_AT) {
+        issues.push(`Debt ${debtId} has no created ledger transaction but does not predate the debt ledger.`);
+      }
+
+      const addedAmount = (transactionsByDebt.get(debtId) ?? [])
+        .filter((transaction) => transaction.type === "added")
+        .reduce((total, transaction) => total.plus(getMoney(transaction, "amount")), new Big(0));
+      if (debt && getMoney(debt, "amount").minus(addedAmount).lte(0)) {
+        issues.push(`Debt ${debtId} has a non-positive reconstructed pre-ledger amount.`);
+      }
+      continue;
+    }
     if (createdTransactions.length !== 1) {
       issues.push(
         `Debt ${debtId} legacy accountId requires exactly one created ledger transaction; found ${createdTransactions.length}.`
@@ -814,6 +904,51 @@ export function validateFinancialInvariants(input: FinancialInvariantInput): Fin
     }
 
     const createdTransactions = transactions.filter((transaction) => transaction.type === "created");
+    if (createdTransactions.length === 0 && input.legacyDebtAccountIds?.has(debtId)) {
+      const workspaceMismatch = transactions.find(
+        (transaction) =>
+          typeof debt.workspaceId === "string" &&
+          transaction.workspaceId !== undefined &&
+          transaction.workspaceId !== debt.workspaceId
+      );
+      if (workspaceMismatch) {
+        issues.push(`Debt ${debtId} contains a legacy ledger transaction from a different workspace.`);
+        continue;
+      }
+
+      const unsupportedTransaction = transactions.find(
+        (transaction) => transaction.type !== "added" && transaction.type !== "closed"
+      );
+      if (unsupportedTransaction) {
+        issues.push(
+          `Debt ${debtId} has no created ledger transaction and contains unsupported transaction type ${String(unsupportedTransaction.type)}.`
+        );
+        continue;
+      }
+
+      const actualAmount = getMoney(debt, "amount");
+      const expectedRemaining = transactions.reduce(
+        (remaining, transaction) =>
+          transaction.type === "closed" ? remaining.minus(getMoney(transaction, "amount")) : remaining,
+        actualAmount
+      );
+      const actualRemaining = getMoney(debt, "remainingAmount");
+      if (!actualRemaining.eq(expectedRemaining)) {
+        issues.push(
+          `Debt ${debtId} remainingAmount mismatch: stored=${actualRemaining.toString()}, legacy ledger=${expectedRemaining.toString()}.`
+        );
+      }
+
+      const expectedStatus = expectedRemaining.lte(0) ? "closed" : "open";
+      if (debt.status !== expectedStatus) {
+        issues.push(`Debt ${debtId} status mismatch: stored=${String(debt.status)}, legacy ledger=${expectedStatus}.`);
+      }
+
+      warnings.push(
+        `Debt ${debtId} has a legacy accountId and no created ledger transaction; preserving the stored amount and validating remainingAmount and status from subsequent ledger entries.`
+      );
+      continue;
+    }
     if (createdTransactions.length !== 1) {
       issues.push(
         `Debt ${debtId} must have exactly one created ledger transaction; found ${createdTransactions.length}.`

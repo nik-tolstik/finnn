@@ -5,9 +5,12 @@ import {
   assertProductionMigrationAllowed,
   getMigrationUrls,
   getStableDigest,
+  isDiscardableOrphanAccount,
   isDiscardableOrphanAuthSession,
   isProductionEnvironment,
+  isRetiredSourceCollection,
   parseMongoToPostgresArgs,
+  validateRetiredSourceDocument,
 } from "../scripts/mongo-to-postgres";
 import {
   canonicalRecord,
@@ -90,6 +93,33 @@ describe("MongoDB to PostgreSQL migration CLI", () => {
       )
     ).toBe(true);
     expect(isDiscardableOrphanAuthSession({ expiresAt: new Date("2026-07-30T12:00:00.000Z") }, now)).toBe(false);
+  });
+
+  it("skips orphan accounts only when they have no owner or dependent records", () => {
+    expect(isDiscardableOrphanAccount({ ownerId: null }, 0)).toBe(true);
+    expect(isDiscardableOrphanAccount({ ownerId: "user-a" }, 0)).toBe(false);
+    expect(isDiscardableOrphanAccount({ ownerId: null }, 1)).toBe(false);
+  });
+
+  it("recognizes only explicitly retired source collections", () => {
+    expect(isRetiredSourceCollection("whats_new_status")).toBe(true);
+    expect(isRetiredSourceCollection("unknown_financial_records")).toBe(false);
+  });
+
+  it("validates the exact retired whats-new document shape", () => {
+    const document = {
+      _id: new ObjectId("507f1f77bcf86cd799439011"),
+      createdAt: new Date("2026-02-01T10:00:00.000Z"),
+      shown: true,
+      updatedAt: new Date("2026-02-01T11:00:00.000Z"),
+      userId: new ObjectId("507f1f77bcf86cd799439012"),
+      version: "1",
+    };
+
+    expect(validateRetiredSourceDocument("whats_new_status", document)).toEqual([]);
+    expect(validateRetiredSourceDocument("whats_new_status", { ...document, payload: {} })).toContain(
+      "unexpected field payload"
+    );
   });
 });
 
@@ -217,6 +247,49 @@ describe("MongoDB to PostgreSQL transformations", () => {
     });
   });
 
+  it("accepts a nullable retired ObjectId field without copying it", () => {
+    const result = transformMongoDocument(
+      { ...account, ignoredSourceFields: [{ name: "legacyAccountId", validation: "id-or-null" }] },
+      {
+        _id: new ObjectId("507f1f77bcf86cd799439011"),
+        createdAt: new Date("2026-07-29T10:15:30.000Z"),
+        legacyAccountId: null,
+        name: "Cash",
+        updatedAt: new Date("2026-07-29T11:15:30.000Z"),
+        workspaceId: new ObjectId("507f1f77bcf86cd799439012"),
+      }
+    );
+
+    expect(result.issues).toEqual([]);
+    expect(result.data).not.toHaveProperty("legacyAccountId");
+    expect(result.warnings).toContainEqual({
+      field: "legacyAccountId",
+      message: "is an obsolete source field and will not be copied",
+    });
+  });
+
+  it("rejects a retired string field outside its explicit legacy values", () => {
+    const result = transformMongoDocument(
+      {
+        ...account,
+        ignoredSourceFields: [{ allowedValues: ["cash", "card"], name: "legacyType", validation: "string" }],
+      },
+      {
+        _id: new ObjectId("507f1f77bcf86cd799439011"),
+        createdAt: new Date("2026-07-29T10:15:30.000Z"),
+        legacyType: "crypto",
+        name: "Cash",
+        updatedAt: new Date("2026-07-29T11:15:30.000Z"),
+        workspaceId: new ObjectId("507f1f77bcf86cd799439012"),
+      }
+    );
+
+    expect(result.issues).toContainEqual({
+      field: "legacyType",
+      message: "is an obsolete source field with an unexpected value; expected one of: cash, card",
+    });
+  });
+
   it("rejects retired source fields when their legacy shape changes", () => {
     const result = transformMongoDocument(
       { ...account, ignoredSourceFields: [{ name: "legacyTags", validation: "empty-array" }] },
@@ -291,9 +364,10 @@ describe("MongoDB to PostgreSQL transformations", () => {
   });
 
   it("recomputes account balances and debt totals from ledger records", () => {
+    const writeOffDate = new Date("2026-07-01T10:00:00.000Z");
     const result = validateFinancialInvariants({
       accounts: [
-        { balance: "45", id: "account-a", initialBalance: "100" },
+        { balance: "55", id: "account-a", initialBalance: "100" },
         { balance: "60", id: "account-b", initialBalance: "20" },
       ],
       debts: [{ amount: "50", id: "debt-a", remainingAmount: "20", status: "open", type: "lent" }],
@@ -317,14 +391,23 @@ describe("MongoDB to PostgreSQL transformations", () => {
         {
           accountId: "account-a",
           amount: "10",
+          date: writeOffDate,
           debtId: "debt-a",
           paymentTransactionId: "payment-write-off",
           toAmount: null,
           type: "closed",
+          workspaceId: "workspace-a",
         },
       ],
       paymentTransactions: [
-        { accountId: "account-a", amount: "10", type: "expense" },
+        {
+          accountId: "account-a",
+          amount: "10",
+          date: writeOffDate,
+          id: "payment-write-off",
+          type: "expense",
+          workspaceId: "workspace-a",
+        },
         { accountId: "account-a", amount: "5", type: "income" },
       ],
       transfers: [{ amount: "20", fromAccountId: "account-a", toAccountId: "account-b", toAmount: "40" }],
@@ -355,6 +438,42 @@ describe("MongoDB to PostgreSQL transformations", () => {
     expect(result.issues).toContain(
       "Debt debt-a legacy accountId account-b differs from its created ledger transaction accountId account-a."
     );
+  });
+
+  it("validates legacy debts whose created ledger entry predates debt transactions", () => {
+    const result = validateFinancialInvariants({
+      accounts: [{ balance: "0", id: "account-a", initialBalance: "0", workspaceId: "workspace-a" }],
+      debts: [
+        {
+          amount: "100",
+          createdAt: new Date("2026-02-01T10:00:00.000Z"),
+          id: "debt-a",
+          remainingAmount: "70",
+          status: "open",
+          type: "lent",
+          workspaceId: "workspace-a",
+        },
+      ],
+      debtTransactions: [
+        {
+          accountId: "account-b",
+          amount: "30",
+          debtId: "debt-a",
+          paymentTransactionId: null,
+          toAmount: null,
+          type: "closed",
+          workspaceId: "workspace-a",
+        },
+      ],
+      legacyDebtAccountIds: new Map([["debt-a", "account-a"]]),
+      paymentTransactions: [],
+      transfers: [],
+    });
+
+    expect(result.issues).toEqual([]);
+    expect(result.warnings).toEqual([
+      "Debt debt-a has a legacy accountId and no created ledger transaction; preserving the stored amount and validating remainingAmount and status from subsequent ledger entries.",
+    ]);
   });
 
   it("reports materialized financial mismatches and debts without a complete ledger", () => {

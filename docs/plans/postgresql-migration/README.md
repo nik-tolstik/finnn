@@ -78,10 +78,14 @@ analytics are follow-up optimizations after behavioral parity is proven.
   materialized account balance when it differs and report the mismatch for explicit review; never silently repair
   financial data as part of the provider cutover. Debt ledger mismatches remain fatal. Debt rows without any ledger
   transactions are reported as warnings because their historical values cannot be reconstructed.
-- Ignore only explicitly retired source fields with validated legacy shapes. Legacy debt `accountId` values must match
-  the account on exactly one `created` debt transaction; changed shapes or conflicting links remain fatal.
+- Ignore only explicitly retired source fields and collections with reviewed legacy shapes. Legacy debt `accountId`
+  values must match the account on exactly one `created` debt transaction when that transaction exists. For debts that
+  predate created ledger entries, preserve the stored amount and require subsequent entries to reproduce the stored
+  remaining amount and status; changed shapes and conflicting links remain fatal.
 - Skip orphan authentication sessions only when they were expired or revoked at one captured audit cutoff. An active
   session referencing a missing user remains a fatal source-integrity error.
+- Skip an account whose workspace is missing only when the account also has no owner and no dependent financial or
+  preference records. Preserve the source document in the immutable MongoDB backup and report every skipped account.
 - Use the default MongoDB snapshot transaction when the rehearsed migration fits within the source transaction lifetime.
   MongoDB commonly defaults `transactionLifetimeLimitSeconds` to 60 seconds; for a longer cutover, stop every source
   writer for the entire maintenance window and run the importer with `--no-snapshot`.

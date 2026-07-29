@@ -354,8 +354,11 @@ target that has accepted new application writes.
 
 Preflight warnings must be reviewed rather than treated as generic success. The importer preserves stored account
 balances when ledger reconstruction differs, skips only expired or revoked orphan sessions, and omits only explicitly
-retired fields whose legacy shapes pass validation. Active orphan sessions, conflicting legacy debt-account links, debt
-ledger mismatches, changed retired-field shapes, and unknown fields remain fatal.
+retired fields and collections whose legacy shapes were reviewed. A legacy debt that predates its `created` ledger entry
+is accepted only when later ledger entries reproduce its stored remaining amount and status. Active orphan sessions,
+conflicting legacy debt-account links, debt ledger mismatches, changed retired-field shapes, and unknown fields remain
+fatal. An account with a missing workspace may be skipped only when it also has no owner and no dependent records; the
+immutable MongoDB backup remains the recovery source for every skipped account.
 
 ### Production cutover
 

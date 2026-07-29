@@ -15,6 +15,7 @@ import {
 
 const DEFAULT_BATCH_SIZE = 1000;
 const MAX_REPORTED_ISSUES = 100;
+const RETIRED_SOURCE_COLLECTIONS = new Set(["whats_new_status"]);
 
 export type MongoToPostgresCliArgs = {
   allowProduction: boolean;
@@ -97,6 +98,12 @@ class AuditMessages {
   add(message: string): void {
     this.count += 1;
     if (this.messages.length < MAX_REPORTED_ISSUES) this.messages.push(message);
+  }
+
+  addPriority(message: string): void {
+    this.count += 1;
+    this.messages.unshift(message);
+    if (this.messages.length > MAX_REPORTED_ISSUES) this.messages.pop();
   }
 }
 
@@ -218,6 +225,39 @@ export function isDiscardableOrphanAuthSession(record: Record<string, unknown>, 
   return record.revokedAt instanceof Date || (record.expiresAt instanceof Date && record.expiresAt <= now);
 }
 
+export function isDiscardableOrphanAccount(record: Record<string, unknown>, incomingReferenceCount: number): boolean {
+  return record.ownerId === null && incomingReferenceCount === 0;
+}
+
+export function isRetiredSourceCollection(collectionName: string): boolean {
+  return RETIRED_SOURCE_COLLECTIONS.has(collectionName);
+}
+
+export function validateRetiredSourceDocument(collectionName: string, document: Document): string[] {
+  if (collectionName !== "whats_new_status") return ["collection is not explicitly retired"];
+
+  const expectedFields = new Set(["_id", "createdAt", "shown", "updatedAt", "userId", "version"]);
+  const issues: string[] = [];
+  for (const field of Object.keys(document)) {
+    if (!expectedFields.has(field)) issues.push(`unexpected field ${field}`);
+  }
+  for (const field of expectedFields) {
+    if (!(field in document)) issues.push(`missing field ${field}`);
+  }
+
+  if (!toLegacyId(document._id)) issues.push("_id must be a 24-character ObjectId");
+  if (!toLegacyId(document.userId)) issues.push("userId must be a 24-character ObjectId");
+  if (typeof document.version !== "string") issues.push("version must be a string");
+  if (typeof document.shown !== "boolean") issues.push("shown must be a boolean");
+  if (!(document.createdAt instanceof Date) || !Number.isFinite(document.createdAt.getTime())) {
+    issues.push("createdAt must be a valid BSON date");
+  }
+  if (!(document.updatedAt instanceof Date) || !Number.isFinite(document.updatedAt.getTime())) {
+    issues.push("updatedAt must be a valid BSON date");
+  }
+  return issues;
+}
+
 async function auditSource(
   db: Db,
   session: ClientSession | undefined,
@@ -243,6 +283,30 @@ async function auditSource(
   for (const metadata of collectionMetadata) {
     const collectionName = metadata.name;
     if (!collectionName || collectionName.startsWith("system.") || knownCollections.has(collectionName)) continue;
+    if (isRetiredSourceCollection(collectionName)) {
+      let count = 0;
+      const cursor = db.collection<Document>(collectionName).find({}, { session }).batchSize(batchSize);
+      for await (const document of cursor) {
+        count += 1;
+        const documentId = toLegacyId(document._id) ?? `document-${count}`;
+        for (const issue of validateRetiredSourceDocument(collectionName, document)) {
+          issues.add(`${collectionName} (${documentId}): ${issue}.`);
+        }
+        if (
+          toLegacyId(document.userId) &&
+          !(await db.collection("users").findOne({ _id: document.userId }, { projection: { _id: 1 }, session }))
+        ) {
+          issues.add(`${collectionName} (${documentId}): userId references a missing User.`);
+        }
+      }
+      if (count > 0) {
+        warnings.add(
+          `Retired source collection ${collectionName} contains ${count} documents and will not be migrated.`
+        );
+      }
+      continue;
+    }
+
     const count = await db.collection(collectionName).countDocuments({}, { session });
     if (count > 0) {
       issues.add(`Unknown source collection ${collectionName} contains ${count} documents and would not be migrated.`);
@@ -357,6 +421,30 @@ async function auditSource(
         continue;
       }
 
+      if (
+        reference.model === "Account" &&
+        reference.field === "workspaceId" &&
+        reference.targetModel === "Workspace" &&
+        source &&
+        record
+      ) {
+        const incomingReferenceCount =
+          references.filter(
+            (candidate) => candidate.targetModel === "Account" && candidate.value === reference.documentId
+          ).length +
+          [...financialRecords.legacyDebtAccountIds.values()].filter((accountId) => accountId === reference.documentId)
+            .length;
+        if (isDiscardableOrphanAccount(record, incomingReferenceCount)) {
+          if (!source.skippedIds.has(reference.documentId)) {
+            source.skippedIds.add(reference.documentId);
+            warnings.addPriority(
+              `Account (${reference.documentId}) references a missing workspace and has no owner or dependent records; skipping it.`
+            );
+          }
+          continue;
+        }
+      }
+
       issues.add(
         `${reference.model} (${reference.documentId}): ${reference.field} references missing ${reference.targetModel} ${reference.value}.`
       );
@@ -372,9 +460,14 @@ async function auditSource(
     audit.digest = getStableDigest(audit.rowDigests);
   }
 
+  const skippedAccountIds = models.get("Account")?.skippedIds ?? new Set<string>();
+  financialRecords.accounts = financialRecords.accounts.filter(
+    (account) => typeof account.id !== "string" || !skippedAccountIds.has(account.id)
+  );
+
   const financialInvariants = validateFinancialInvariants(financialRecords);
-  for (const issue of financialInvariants.issues) issues.add(issue);
-  for (const warning of financialInvariants.warnings) warnings.add(warning);
+  for (const issue of financialInvariants.issues) issues.addPriority(issue);
+  for (const warning of financialInvariants.warnings) warnings.addPriority(warning);
 
   return {
     issueCount: issues.count,

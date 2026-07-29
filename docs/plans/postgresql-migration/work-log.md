@@ -268,6 +268,10 @@ pnpm build
   a ledger recomputation now matches `11665.22`. MongoDB and the immutable pre-migration backup were not modified.
 - Keep the debt-write-off runtime path unchanged for now. Reopen the investigation if DEV or production validation
   reports a balance mismatch.
+- A later audit proved that the `339.78` difference came from the ETL validator counting the payment side of a linked
+  debt write-off while omitting its equal and opposite debt-transaction side. The immutable MongoDB backup value
+  `12005` was correct. The local PostgreSQL account was atomically restored from `11665.22` to `12005` after validating
+  the exact linked pair; runtime debt behavior remained unchanged.
 
 ## 2026-07-29 - DEV cutover
 
@@ -307,3 +311,29 @@ pnpm build
 - The DEV MongoDB service and its volume remain available and unchanged from the migration workflow.
 - Once DEV accepts PostgreSQL writes, MongoDB is stale. Roll back by forward-fixing PostgreSQL or restoring PostgreSQL;
   do not silently switch back to MongoDB and discard newer writes.
+
+## 2026-07-29 - Production preflight and legacy repair
+
+### Scope
+
+- Created the Production Railway PostgreSQL service in EU West with a persistent volume, `1` vCPU, `1 GB` memory, and
+  Serverless disabled, while leaving the MongoDB-backed API online.
+- Applied the committed SQL migration to the empty target and ran repeated read-only MongoDB snapshot dry runs.
+- Extended the ETL audit for removed `whats_new_status` documents, retired account metadata, nullable legacy debt links,
+  pre-ledger debts, linked write-off pairs, and unreachable orphan accounts.
+- Took a full MongoDB export before repairing one reviewed historical debt transaction.
+
+### Results
+
+- Pre-repair backup: `backups/pre-production-debt-repair-20260729T103650Z`, containing 1,867 documents across 23
+  collections. Manifest SHA-256: `fbf39aa3d6dc90799914c87c369d54acadfa14e42d1deeb2a6a57cc6cb8bd75b`.
+- Debt transaction `69989a69431eada097a4b6df` had an incorrect debt-side amount `14000` with account-side amount
+  `580`. A guarded MongoDB transaction changed only the debt-side amount to `200`, which makes total repayments
+  `1158.68` and exactly reproduces the reviewed stored remaining amount `13341.32` and `open` status.
+- The final live dry run reports 1,853 target rows and no issues. The 14 intentionally omitted source documents are
+  eight expired or revoked orphan sessions, four ownerless accounts whose workspace and all dependent records are
+  missing, and two validated records from the removed `whats_new_status` feature.
+- Linked write-off pairs pass exact payment/debt account, workspace, date, type, and account-side amount validation.
+  No active account balance mismatch remains, and no runtime debt behavior was changed.
+- Production API remained online and MongoDB-backed throughout preflight. PostgreSQL still contains only the schema;
+  the maintenance-window backup, frozen import, variable switch, and deployment remain pending.
