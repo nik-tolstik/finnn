@@ -295,6 +295,11 @@ pnpm build
   applied.
 - Railway pre-deploy reported no pending migrations, NestJS started successfully, and `/health`, `/auth/session`, and
   `/exchange-rates/today` returned HTTP 200 against PostgreSQL.
+- The DEV PostgreSQL replica is capped at `0.5` vCPU and `500 MB`, has Serverless enabled, and remains colocated with the
+  API in Railway EU West.
+- The exchange-rate cron previously had no deployment snapshot, so its staged EU-region change could not redeploy. A
+  local source snapshot was deployed successfully, the cron remained scheduled at `30 8 * * *`, and the redundant
+  failed staged patch was cleared after the EU configuration was applied.
 
 ### Backup And Rollback Boundary
 
