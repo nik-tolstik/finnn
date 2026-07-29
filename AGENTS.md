@@ -16,6 +16,11 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 - Use `pnpm` as the package manager. Do not use `npm` or `yarn` unless the repository explicitly requires them.
 - Use Context7 for library and framework documentation when it is relevant.
 - Use subagents for parallel code analysis, implementation, or verification when they can reduce risk or latency.
+- Work in the current checkout and branch by default. Do not create a Git worktree or GitHub pull request unless the
+  user explicitly requests one.
+- A pull request may be created without an explicit request only when it is materially necessary to complete unusually
+  risky work safely, such as a production data migration, or when repository protections require it. Explain the need
+  to the user before creating the pull request. There is no equivalent exception for worktrees.
 - When creating a worktree, transfer the `packages/web/.env` and `packages/api/.env` files as opaque files without reading their contents.
 - Do not revert user changes unless the user explicitly requests it.
 - Do not work directly on `main` unless the user explicitly asks for it. If the current branch is `main`, switch to `develop` before making changes.

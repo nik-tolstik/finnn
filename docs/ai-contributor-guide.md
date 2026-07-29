@@ -20,6 +20,9 @@ For framework or library behavior that may have changed, use Context7. Next.js A
 
 ## Decision Rules
 
+- Use the current checkout and branch unless the user asks for a worktree or pull request.
+- Never create a worktree proactively. Create a pull request without a request only when a high-risk operation, such as
+  a production data migration, materially needs its isolation, checks, or audit trail; explain that need before acting.
 - Preserve the existing package and feature-module structure.
 - Put new backend behavior in `packages/api` NestJS modules.
 - Put frontend response-shaping helpers in pure `packages/web/src/modules/<feature>/<feature>.api.ts` files when generated client functions need adaptation.
