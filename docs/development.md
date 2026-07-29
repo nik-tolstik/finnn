@@ -325,7 +325,9 @@ POSTGRES_TEST_DATABASE_URL="$FINNN_TEST_DATABASE_URL" pnpm --filter api test tes
 ```
 
 `POSTGRES_TEST_DATABASE_URL` is accepted only for localhost databases whose name ends in `_test`. The test truncates its
-tables and must never target development, shared DEV, or production data.
+tables and must never target development, shared DEV, or production data. The integration suite covers concurrent
+balance changes, scheduled-payment occurrence idempotency and rollback, AI-draft rollback, one-time auth/invite token
+consumption, login-method unlink races, deterministic ordering, and JSONB preference updates.
 
 Full verification:
 

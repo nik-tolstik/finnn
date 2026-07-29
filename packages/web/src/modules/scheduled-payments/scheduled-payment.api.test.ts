@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const createApiScheduledPaymentMock = vi.fn();
+const markApiScheduledPaymentPaidMock = vi.fn();
 const updateApiScheduledPaymentMock = vi.fn();
 
 vi.mock("@/shared/api/generated/scheduled-payments/scheduled-payments", () => ({
@@ -8,7 +9,7 @@ vi.mock("@/shared/api/generated/scheduled-payments/scheduled-payments", () => ({
   deleteScheduledPayment: vi.fn(),
   getScheduledPaymentHistory: vi.fn(),
   listScheduledPayments: vi.fn(),
-  markScheduledPaymentPaid: vi.fn(),
+  markScheduledPaymentPaid: markApiScheduledPaymentPaidMock,
   skipScheduledPayment: vi.fn(),
   snoozeScheduledPayment: vi.fn(),
   updateScheduledPayment: updateApiScheduledPaymentMock,
@@ -118,6 +119,34 @@ describe("scheduled-payment.api", () => {
       expect.objectContaining({
         amount: "2276.37",
         nextDueAt: nextDueAt.toISOString(),
+      }),
+      undefined
+    );
+  });
+
+  it("sends the scheduled occurrence when marking a payment paid", async () => {
+    markApiScheduledPaymentPaidMock.mockResolvedValue({
+      scheduledPayment: createScheduledPaymentDto(),
+      transactionId: "transaction-1",
+    });
+    const { markScheduledPaymentPaid } = await import("./scheduled-payment.api");
+    const dueAt = new Date("2026-06-22T09:00:00.000Z");
+    const paidAt = new Date("2026-06-22T10:00:00.000Z");
+
+    await markScheduledPaymentPaid("workspace-1", "scheduled-payment-1", {
+      amount: "45",
+      createTransaction: true,
+      dueAt,
+      paidAt,
+    });
+
+    expect(markApiScheduledPaymentPaidMock).toHaveBeenCalledWith(
+      "workspace-1",
+      "scheduled-payment-1",
+      expect.objectContaining({
+        amount: "45",
+        dueAt: dueAt.toISOString(),
+        paidAt: paidAt.toISOString(),
       }),
       undefined
     );

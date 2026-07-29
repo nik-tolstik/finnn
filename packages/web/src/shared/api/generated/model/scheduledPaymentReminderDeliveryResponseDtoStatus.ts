@@ -10,6 +10,7 @@ export type ScheduledPaymentReminderDeliveryResponseDtoStatus =
   (typeof ScheduledPaymentReminderDeliveryResponseDtoStatus)[keyof typeof ScheduledPaymentReminderDeliveryResponseDtoStatus];
 
 export const ScheduledPaymentReminderDeliveryResponseDtoStatus = {
+  pending: "pending",
   sent: "sent",
   failed: "failed",
 } as const;

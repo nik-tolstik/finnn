@@ -687,7 +687,7 @@ describe("Accounts API", () => {
       .expect(204);
 
     expect(prisma.account.delete).toHaveBeenCalledWith({ where: { id: "account-1" } });
-    expect(prisma.hiddenAccount.deleteMany).toHaveBeenCalledWith({ where: { accountId: "account-1" } });
+    expect(prisma.hiddenAccount.deleteMany).not.toHaveBeenCalled();
   });
 
   it("updates account order inside the workspace", async () => {
@@ -714,6 +714,9 @@ describe("Accounts API", () => {
       data: { order: 1 },
       where: { archived: false, id: "account-1", workspaceId: "workspace-1" },
     });
-    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Array));
+    expect(prisma.$transaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ isolationLevel: "Serializable" })
+    );
   });
 });

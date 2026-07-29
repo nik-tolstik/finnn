@@ -3,6 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import { ScheduledPaymentsService } from "../src/scheduled-payments/scheduled-payments.service";
 import { ScheduledPaymentsNotificationService } from "../src/scheduled-payments/scheduled-payments-notification.service";
 import { ScheduledPaymentsScheduleService } from "../src/scheduled-payments/scheduled-payments-schedule.service";
+import {
+  encodeScheduledPaymentCallbackData,
+  parseScheduledPaymentCallbackData,
+} from "../src/telegram-bot/telegram-callback-data";
 
 const currentUser = {
   id: "user-1",
@@ -108,6 +112,7 @@ function createPrismaMock() {
       create: vi.fn(),
       deleteMany: vi.fn(),
       findUnique: vi.fn(),
+      update: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
@@ -145,6 +150,19 @@ function createService(prisma = createPrismaMock()) {
 }
 
 describe("Scheduled payments backend services", () => {
+  it("round-trips the scheduled occurrence in Telegram callback data", () => {
+    const dueAt = new Date("2026-02-04T09:00:00.000Z");
+    const callbackData = encodeScheduledPaymentCallbackData("snooze", "scheduled-payment-1", dueAt, 1);
+
+    expect(callbackData.length).toBeLessThanOrEqual(64);
+    expect(parseScheduledPaymentCallbackData(callbackData)).toEqual({
+      action: "snooze",
+      scheduledPaymentId: "scheduled-payment-1",
+      dueAt,
+      days: 1,
+    });
+  });
+
   it("clamps monthly recurrence to the last day of a shorter month", () => {
     const schedule = new ScheduledPaymentsScheduleService();
 
@@ -221,7 +239,8 @@ describe("Scheduled payments backend services", () => {
         amount: "45",
         type: "expense",
       }),
-      currentUser
+      currentUser,
+      expect.objectContaining({ transactionClient: prisma })
     );
     expect(prisma.scheduledPaymentRecord.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -329,7 +348,9 @@ describe("Scheduled payments backend services", () => {
         workspace: { name: workspace.name },
       },
     ]);
-    prisma.scheduledPaymentReminderDelivery.findUnique.mockResolvedValue({ id: "delivery-1" });
+    prisma.scheduledPaymentReminderDelivery.create.mockRejectedValue(
+      Object.assign(new Error("Unique constraint"), { code: "P2002" })
+    );
 
     const response = await notificationService.runReminderCron(new Date("2026-02-01T12:00:00.000Z"));
 
@@ -346,6 +367,64 @@ describe("Scheduled payments backend services", () => {
     );
     expect(response).toMatchObject({ processed: 0, sent: 0, failed: 0, deliveries: [] });
     expect(telegram.sendMessage).not.toHaveBeenCalled();
-    expect(prisma.scheduledPaymentReminderDelivery.create).not.toHaveBeenCalled();
+    expect(prisma.scheduledPaymentReminderDelivery.create).toHaveBeenCalledOnce();
+  });
+
+  it("claims a reminder delivery before calling Telegram", async () => {
+    const { prisma, schedule, service } = createService();
+    const email = { sendScheduledPaymentReminderEmail: vi.fn() };
+    const telegram = { sendMessage: vi.fn().mockResolvedValue({}) };
+    const notificationService = new ScheduledPaymentsNotificationService(
+      prisma as never,
+      email as never,
+      telegram as never,
+      schedule,
+      service
+    );
+    const payment = {
+      ...createScheduledPayment({
+        nextDueAt: new Date("2026-02-04T09:00:00.000Z"),
+        reminderDaysBefore: [3],
+      }),
+      workspace: { name: workspace.name },
+    };
+    const pendingDelivery = {
+      id: "delivery-claim-1",
+      scheduledPaymentId: payment.id,
+      workspaceId: payment.workspaceId,
+      userId: currentUser.id,
+      dueAt: payment.nextDueAt,
+      reminderDate: new Date("2026-02-01T09:00:00.000Z"),
+      daysBefore: 3,
+      channel: "telegram",
+      status: "pending",
+      sentAt: null,
+      error: null,
+      createdAt: new Date("2026-02-01T12:00:00.000Z"),
+    };
+    prisma.scheduledPayment.findMany.mockResolvedValue([payment]);
+    prisma.telegramBotPreference.findUnique.mockResolvedValue({ telegramChatId: "1001" });
+    prisma.scheduledPaymentReminderDelivery.create.mockResolvedValue(pendingDelivery);
+    prisma.scheduledPaymentReminderDelivery.update.mockResolvedValue({
+      ...pendingDelivery,
+      status: "sent",
+      sentAt: new Date("2026-02-01T12:00:01.000Z"),
+    });
+
+    const response = await notificationService.runReminderCron(new Date("2026-02-01T12:00:00.000Z"));
+
+    expect(response).toMatchObject({ processed: 1, sent: 1, failed: 0 });
+    expect(prisma.scheduledPaymentReminderDelivery.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "pending" }) })
+    );
+    expect(prisma.scheduledPaymentReminderDelivery.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: "sent" }),
+        where: { id: pendingDelivery.id },
+      })
+    );
+    expect(prisma.scheduledPaymentReminderDelivery.create.mock.invocationCallOrder[0]).toBeLessThan(
+      telegram.sendMessage.mock.invocationCallOrder[0]
+    );
   });
 });

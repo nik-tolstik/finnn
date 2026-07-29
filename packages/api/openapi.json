@@ -8143,6 +8143,10 @@
       "MarkScheduledPaymentPaidDto": {
         "type": "object",
         "properties": {
+          "dueAt": {
+            "type": "string",
+            "example": "2026-06-25T09:00:00.000Z"
+          },
           "amount": {
             "type": "string",
             "example": "35.50"
@@ -8254,6 +8258,10 @@
       "SkipScheduledPaymentDto": {
         "type": "object",
         "properties": {
+          "dueAt": {
+            "type": "string",
+            "example": "2026-06-25T09:00:00.000Z"
+          },
           "note": {
             "type": "string",
             "example": "Not needed this month"
@@ -8313,7 +8321,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["sent", "failed"]
+            "enum": ["pending", "sent", "failed"]
           },
           "sentAt": {
             "type": "string",

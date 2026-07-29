@@ -11,6 +11,7 @@ import type { Category, Prisma } from "@prisma/client";
 
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { PrismaService } from "@/prisma/prisma.service";
+import { runSerializableTransaction } from "@/prisma/serializable-transaction";
 import { ObjectStorageService } from "@/storage/object-storage.service";
 
 import {
@@ -168,7 +169,9 @@ export class CategoriesService {
       });
     }
 
-    return this.createCategoryWithClient(this.prisma, workspaceId, input);
+    return runSerializableTransaction(this.prisma, (transaction) =>
+      this.createCategoryWithClient(transaction, workspaceId, input)
+    );
   }
 
   async listCategories(workspaceId: string, type: string | undefined, currentUser: AuthenticatedUser) {
@@ -233,36 +236,38 @@ export class CategoriesService {
       return { success: true };
     }
 
-    const categories = await this.prisma.category.findMany({
-      where: {
-        id: { in: input.categoryIds },
-        workspaceId,
-      },
-      select: { id: true, type: true },
-    });
+    await runSerializableTransaction(this.prisma, async (tx) => {
+      const categories = await tx.category.findMany({
+        where: {
+          id: { in: input.categoryIds },
+          workspaceId,
+        },
+        select: { id: true, type: true },
+      });
 
-    if (categories.length !== input.categoryIds.length) {
-      throw new BadRequestException("Некоторые категории не найдены");
-    }
+      if (categories.length !== input.categoryIds.length) {
+        throw new BadRequestException("Некоторые категории не найдены");
+      }
 
-    const types = new Set(categories.map((category) => category.type));
-    if (types.size > 1) {
-      throw new BadRequestException("Нельзя сортировать категории разных типов вместе");
-    }
+      const types = new Set(categories.map((category) => category.type));
+      if (types.size > 1) {
+        throw new BadRequestException("Нельзя сортировать категории разных типов вместе");
+      }
 
-    await Promise.all(
-      input.categoryIds.map((id, index) =>
-        this.prisma.category.updateMany({
+      const orderById = new Map(input.categoryIds.map((id, index) => [id, index]));
+      const orderedIds = [...input.categoryIds].sort((left, right) => left.localeCompare(right));
+      for (const id of orderedIds) {
+        await tx.category.updateMany({
           where: {
             id,
             workspaceId,
           },
           data: {
-            order: index,
+            order: orderById.get(id),
           },
-        })
-      )
-    );
+        });
+      }
+    });
 
     return { success: true };
   }
@@ -483,7 +488,7 @@ export class CategoriesService {
     callback: (transaction: Prisma.TransactionClient) => Promise<T>
   ): Promise<T> {
     try {
-      return await this.prisma.$transaction(callback);
+      return await runSerializableTransaction(this.prisma, callback);
     } catch (error) {
       if (isTransactionConflict(error)) {
         throw new ConflictException("Иконка изменилась одновременно, повторите попытку");

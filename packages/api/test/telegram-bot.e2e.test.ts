@@ -275,7 +275,7 @@ describe("Telegram Bot API", () => {
     prisma.workspace.findUnique.mockResolvedValue(workspace);
     prisma.workspaceMember.findUnique.mockResolvedValue(null);
     prisma.telegramBotPreference.findUnique.mockResolvedValue(null);
-    prisma.telegramBotPreference.create.mockResolvedValue({
+    prisma.telegramBotPreference.upsert.mockResolvedValue({
       id: "preference-1",
       userId: user.id,
       telegramChatId: "1001",
@@ -2474,10 +2474,10 @@ describe("Telegram Bot API", () => {
         text: "Не получилось создать операцию: Сумма не может превышать баланс счёта (5)",
       })
     );
-    expect(prisma.aiFinanceDraft.update).toHaveBeenCalledWith(
+    expect(prisma.aiFinanceDraft.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: "failed" }),
-        where: { id: "draft-failed-commit-1" },
+        where: expect.objectContaining({ id: "draft-failed-commit-1" }),
       })
     );
   });

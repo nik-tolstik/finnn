@@ -4,6 +4,7 @@ import type { ScheduledPayment } from "@prisma/client";
 import { EmailService } from "@/email/email.service";
 import { PrismaService } from "@/prisma/prisma.service";
 import { TelegramBotClient } from "@/telegram-bot/telegram-bot.client";
+import { encodeScheduledPaymentCallbackData } from "@/telegram-bot/telegram-callback-data";
 
 import { ScheduledPaymentsService } from "./scheduled-payments.service";
 import type { ScheduledPaymentReminderChannel } from "./scheduled-payments.types";
@@ -26,13 +27,13 @@ function isUniqueConstraintError(error: unknown) {
   return Boolean(error && typeof error === "object" && "code" in error && error.code === "P2002");
 }
 
-function getTelegramReplyMarkup(paymentId: string) {
+function getTelegramReplyMarkup(paymentId: string, dueAt: Date) {
   return {
     inline_keyboard: [
       [
-        { text: "Оплачено", callback_data: `sp:paid:${paymentId}` },
-        { text: "Отложить", callback_data: `sp:snooze:${paymentId}:1` },
-        { text: "Пропустить", callback_data: `sp:skip:${paymentId}` },
+        { text: "Оплачено", callback_data: encodeScheduledPaymentCallbackData("paid", paymentId, dueAt) },
+        { text: "Отложить", callback_data: encodeScheduledPaymentCallbackData("snooze", paymentId, dueAt, 1) },
+        { text: "Пропустить", callback_data: encodeScheduledPaymentCallbackData("skip", paymentId, dueAt) },
       ],
     ],
   };
@@ -106,53 +107,46 @@ export class ScheduledPaymentsNotificationService {
     daysBefore: number,
     channel: ScheduledPaymentReminderChannel
   ) {
-    const recipient = await this.getRecipient(payment);
     const reminderDate = this.schedule.getReminderDate(payment.nextDueAt, daysBefore);
+    const delivery = await this.claimReminderDelivery(payment, reminderDate, daysBefore, channel);
+    if (!delivery) return null;
 
+    const recipient = await this.getRecipient(payment);
+    const sendResult = await this.sendReminder(payment, recipient, daysBefore, channel);
+
+    return this.prisma.scheduledPaymentReminderDelivery.update({
+      where: { id: delivery.id },
+      data: {
+        status: sendResult.ok ? "sent" : "failed",
+        sentAt: sendResult.ok ? new Date() : null,
+        error: sendResult.ok ? null : sendResult.error,
+      },
+    });
+  }
+
+  private async claimReminderDelivery(
+    payment: ReminderCandidate,
+    reminderDate: Date,
+    daysBefore: number,
+    channel: ScheduledPaymentReminderChannel
+  ) {
     try {
-      const deliveryIsNew = await this.isDeliveryNew(payment, daysBefore, channel);
-      if (!deliveryIsNew) return null;
-
-      const sendResult = await this.sendReminder(payment, recipient, daysBefore, channel);
-
-      return this.prisma.scheduledPaymentReminderDelivery.create({
+      return await this.prisma.scheduledPaymentReminderDelivery.create({
         data: {
           scheduledPaymentId: payment.id,
           workspaceId: payment.workspaceId,
-          userId: recipient.userId,
+          userId: payment.assignedUserId || payment.createdById,
           dueAt: payment.nextDueAt,
           reminderDate,
           daysBefore,
           channel,
-          status: sendResult.ok ? "sent" : "failed",
-          sentAt: sendResult.ok ? new Date() : null,
-          error: sendResult.ok ? null : sendResult.error,
+          status: "pending",
         },
       });
     } catch (error) {
       if (isUniqueConstraintError(error)) return null;
       throw error;
     }
-  }
-
-  private async isDeliveryNew(
-    payment: ReminderCandidate,
-    daysBefore: number,
-    channel: ScheduledPaymentReminderChannel
-  ) {
-    const existing = await this.prisma.scheduledPaymentReminderDelivery.findUnique({
-      where: {
-        scheduledPaymentId_dueAt_daysBefore_channel: {
-          scheduledPaymentId: payment.id,
-          dueAt: payment.nextDueAt,
-          daysBefore,
-          channel,
-        },
-      },
-      select: { id: true },
-    });
-
-    return !existing;
   }
 
   private async getRecipient(payment: ScheduledPayment): Promise<ReminderRecipient> {
@@ -194,7 +188,7 @@ export class ScheduledPaymentsNotificationService {
         await this.telegram.sendMessage({
           chatId: recipient.telegramChatId,
           text: this.scheduledPayments.getReminderText(payment, payment.workspace.name, daysBefore),
-          replyMarkup: getTelegramReplyMarkup(payment.id),
+          replyMarkup: getTelegramReplyMarkup(payment.id, payment.nextDueAt),
         });
         return { ok: true };
       } catch (error) {

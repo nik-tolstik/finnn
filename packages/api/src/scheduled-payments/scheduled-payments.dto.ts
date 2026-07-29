@@ -342,6 +342,12 @@ export class UpdateScheduledPaymentDto {
 }
 
 export class MarkScheduledPaymentPaidDto {
+  @ApiPropertyOptional({ example: "2026-06-25T09:00:00.000Z", type: String })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  dueAt?: Date;
+
   @ApiProperty({ example: "35.50", type: String })
   @IsString()
   @Matches(POSITIVE_MONEY_PATTERN, { message: "Сумма должна быть больше 0" })
@@ -385,6 +391,12 @@ export class MarkScheduledPaymentPaidDto {
 }
 
 export class SkipScheduledPaymentDto {
+  @ApiPropertyOptional({ example: "2026-06-25T09:00:00.000Z", type: String })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  dueAt?: Date;
+
   @ApiPropertyOptional({ example: "Not needed this month", type: String })
   @IsOptional()
   @IsString()

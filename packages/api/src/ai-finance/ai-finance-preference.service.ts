@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { Prisma, TelegramBotPreference } from "@prisma/client";
 
 import { PrismaService } from "@/prisma/prisma.service";
+import { runSerializableTransaction } from "@/prisma/serializable-transaction";
 
 import { RECEIPT_MODE_CATEGORY, type ReceiptMode } from "./ai-finance.types";
 
@@ -25,27 +26,14 @@ export class AiFinancePreferenceService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async getOrCreatePreference(userId: string, telegramChatId?: string): Promise<TelegramBotPreference> {
-    const existing = await this.prisma.telegramBotPreference.findUnique({
+    return this.prisma.telegramBotPreference.upsert({
       where: { userId },
-    });
-
-    if (existing) {
-      if (telegramChatId && existing.telegramChatId !== telegramChatId) {
-        return this.prisma.telegramBotPreference.update({
-          where: { userId },
-          data: { telegramChatId },
-        });
-      }
-
-      return existing;
-    }
-
-    return this.prisma.telegramBotPreference.create({
-      data: {
+      create: {
         userId,
         telegramChatId,
         receiptMode: RECEIPT_MODE_CATEGORY,
       },
+      update: telegramChatId ? { telegramChatId } : {},
     });
   }
 
@@ -66,17 +54,27 @@ export class AiFinancePreferenceService {
   }
 
   async setDefaultAccount(userId: string, workspaceId: string, accountId: string, telegramChatId?: string) {
-    const preference = await this.getOrCreatePreference(userId, telegramChatId);
-    const defaults = normalizeDefaultAccounts(preference.defaultAccountByWorkspace);
-    defaults[workspaceId] = accountId;
+    return runSerializableTransaction(this.prisma, async (tx) => {
+      const preference = await tx.telegramBotPreference.upsert({
+        where: { userId },
+        create: {
+          userId,
+          telegramChatId,
+          receiptMode: RECEIPT_MODE_CATEGORY,
+        },
+        update: telegramChatId ? { telegramChatId } : {},
+      });
+      const defaults = normalizeDefaultAccounts(preference.defaultAccountByWorkspace);
+      defaults[workspaceId] = accountId;
 
-    return this.prisma.telegramBotPreference.update({
-      where: { userId },
-      data: {
-        telegramChatId,
-        activeWorkspaceId: workspaceId,
-        defaultAccountByWorkspace: defaults,
-      },
+      return tx.telegramBotPreference.update({
+        where: { userId },
+        data: {
+          telegramChatId,
+          activeWorkspaceId: workspaceId,
+          defaultAccountByWorkspace: defaults,
+        },
+      });
     });
   }
 

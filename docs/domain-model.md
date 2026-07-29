@@ -221,11 +221,20 @@ Important invariants:
 - Optional `accountId` and `categoryId` must belong to the same workspace; category must be an expense category.
 - Optional `assignedUserId` must be the workspace owner or member.
 - Paid and skipped occurrence history lives in `ScheduledPaymentRecord`.
+- At most one history row may exist for `(scheduledPaymentId, dueAt)`.
 - Reminder idempotency is enforced by the unique key on `(scheduledPaymentId, dueAt, daysBefore, channel)`.
 
-Mark-paid may create an expense transaction through `TransactionsService`; the scheduled payment record then stores the resulting `transactionId`. One-time payments remain visible as paid or skipped after pay/skip. Recurring payments advance `nextDueAt`; month-end recurrence clamps to the last valid day of the target month. Manual deletion hard-deletes the scheduled payment and its scheduled-payment history/reminder delivery records.
+Mark-paid may create an expense transaction through `TransactionsService`; the financial row, account balance,
+scheduled-payment record, and `nextDueAt` update commit in one serializable database transaction. Clients send the
+occurrence `dueAt` so stale or retried actions cannot process the next occurrence accidentally. Skip uses the same
+occurrence guard without creating a financial transaction. One-time payments remain visible as paid or skipped after
+pay/skip. Recurring payments advance `nextDueAt`; month-end recurrence clamps to the last valid day of the target month.
+Manual deletion hard-deletes the scheduled payment and its scheduled-payment history/reminder delivery records.
 
-Reminder recipients resolve to the assigned user first and the creator otherwise. Email reminders require a verified email. Telegram reminders require a linked Telegram bot preference with `telegramChatId`.
+Reminder recipients resolve to the assigned user first and the creator otherwise. Email reminders require a verified
+email. Telegram reminders require a linked Telegram bot preference with `telegramChatId`. The cron atomically inserts a
+`pending` delivery claim before external I/O; overlapping cron runs therefore cannot both send the same reminder. The
+claim is updated to `sent` or `failed` after the provider call.
 
 ## Exchange Rates
 
@@ -245,6 +254,10 @@ be used for the current Minsk day, but never for historical dates. Daily USD, EU
 Telegram AI finance drafts convert payment entries to the selected account currency during draft resolution, before the
 draft is previewed or committed. The draft keeps `originalAmount`, `originalCurrency`, and `exchangeRate` when a
 conversion was applied, while `amount` remains the account-side value used by transaction creation.
+
+Confirming an AI finance draft atomically reserves the ready draft, creates all payment or transfer rows, updates account
+balances, and marks the draft committed. A failure in any step rolls back every financial write; the draft may then be
+marked failed in a separate short transaction.
 
 The API cron endpoint must be protected with `CRON_SECRET`.
 

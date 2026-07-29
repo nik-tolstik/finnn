@@ -79,7 +79,13 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 
 - New backend behavior should live in `packages/api` NestJS modules, not in `packages/web`.
 - Backend endpoints should use DTO validation, guards, explicit Swagger metadata, and API tests.
-- Complex transactional business logic should live in API services that use `prisma.$transaction`.
+- Complex transactional business logic should live in API services. Use
+  `packages/api/src/prisma/serializable-transaction.ts` for read-modify-write invariants and pass the active
+  `Prisma.TransactionClient` into composed service methods instead of opening nested transactions.
+- Keep database transactions short and never hold them across email, Telegram, object-storage, or other network I/O.
+  Use an atomic database claim/outbox or an explicit compensating workflow for those boundaries.
+- A scheduled-payment occurrence is unique by `(scheduledPaymentId, dueAt)`. Paying or skipping an occurrence must
+  atomically create its history row, apply any financial transaction, and advance `nextDueAt`.
 - Check authentication and workspace authorization in the API with auth guards and `WorkspaceAccessGuard`.
 - Keep money values as strings. Use backend money helpers in `packages/api/src/common/money.ts` for persisted logic and frontend helpers in `packages/web/src/shared/utils/money.ts` and `packages/web/src/shared/lib/balance-domain.ts` for UI/cache projections.
 - `Account.hidden` is the current user's personal dashboard-card preference. It must not change account access or remove the account from transaction, transfer, debt, scheduled-payment, or analytics data.

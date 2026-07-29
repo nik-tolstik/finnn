@@ -13,6 +13,7 @@ import type { Prisma, User, Workspace } from "@prisma/client";
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { EmailService } from "@/email/email.service";
 import { PrismaService } from "@/prisma/prisma.service";
+import { runSerializableTransaction } from "@/prisma/serializable-transaction";
 
 import { WORKSPACE_ROLES } from "./workspace.constants";
 import type { CreateInviteDto, CreateWorkspaceDto, UpdateWorkspaceDto, WorkspaceMemberDto } from "./workspace.dto";
@@ -432,61 +433,61 @@ export class WorkspaceService {
   }
 
   async acceptInvite(token: string, currentUser: AuthenticatedUser) {
-    const invite = await this.prisma.workspaceInvite.findUnique({
-      where: { token },
-      include: { workspace: true },
-    });
+    const workspaceId = await runSerializableTransaction(this.prisma, async (tx) => {
+      const invite = await tx.workspaceInvite.findUnique({
+        where: { token },
+        include: { workspace: true },
+      });
 
-    if (!invite) {
-      throw new BadRequestException("Неверный токен приглашения");
-    }
+      if (!invite) {
+        throw new BadRequestException("Неверный токен приглашения");
+      }
 
-    if (invite.expiresAt < new Date()) {
-      throw new BadRequestException("Приглашение истекло");
-    }
+      if (invite.expiresAt < new Date()) {
+        throw new BadRequestException("Приглашение истекло");
+      }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: currentUser.id },
-      select: { email: true, emailVerified: true },
-    });
+      const user = await tx.user.findUnique({
+        where: { id: currentUser.id },
+        select: { email: true, emailVerified: true },
+      });
 
-    if (!user?.email) {
-      throw new BadRequestException("Добавьте email в настройках аккаунта, чтобы принять приглашение по email");
-    }
+      if (!user?.email) {
+        throw new BadRequestException("Добавьте email в настройках аккаунта, чтобы принять приглашение по email");
+      }
 
-    if (!user.emailVerified) {
-      throw new ForbiddenException("Подтвердите email, чтобы принять приглашение");
-    }
+      if (!user.emailVerified) {
+        throw new ForbiddenException("Подтвердите email, чтобы принять приглашение");
+      }
 
-    if (invite.email !== user.email) {
-      throw new ForbiddenException("Email приглашения не совпадает с вашим аккаунтом");
-    }
+      if (invite.email !== user.email) {
+        throw new ForbiddenException("Email приглашения не совпадает с вашим аккаунтом");
+      }
 
-    const existingMember = await this.prisma.workspaceMember.findUnique({
-      where: {
-        workspaceId_userId: {
+      const existingMember = await tx.workspaceMember.findUnique({
+        where: {
+          workspaceId_userId: {
+            workspaceId: invite.workspaceId,
+            userId: currentUser.id,
+          },
+        },
+      });
+
+      if (existingMember) {
+        throw new ConflictException("Вы уже являетесь участником этого рабочего стола");
+      }
+
+      await tx.workspaceMember.create({
+        data: {
           workspaceId: invite.workspaceId,
           userId: currentUser.id,
+          role: "member",
         },
-      },
+      });
+      await tx.workspaceInvite.delete({ where: { id: invite.id } });
+      return invite.workspaceId;
     });
 
-    if (existingMember) {
-      throw new ConflictException("Вы уже являетесь участником этого рабочего стола");
-    }
-
-    await this.prisma.workspaceMember.create({
-      data: {
-        workspaceId: invite.workspaceId,
-        userId: currentUser.id,
-        role: "member",
-      },
-    });
-
-    await this.prisma.workspaceInvite.delete({
-      where: { id: invite.id },
-    });
-
-    return { success: true, workspaceId: invite.workspaceId };
+    return { success: true, workspaceId };
   }
 }

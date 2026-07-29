@@ -138,7 +138,8 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
   });
 
   const actionMutation = useMutation({
-    mutationFn: (payment: ScheduledPayment) => skipScheduledPayment(workspaceId, payment.id),
+    mutationFn: (payment: ScheduledPayment) =>
+      skipScheduledPayment(workspaceId, payment.id, { dueAt: payment.nextDueAt.toISOString() }),
     onSuccess: (result) => {
       if ("error" in result) {
         toast.error(result.error);
@@ -272,6 +273,7 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
                 amount: input.amount,
                 categoryId: input.categoryId,
                 createTransaction: true,
+                dueAt: paidDialog.data.nextDueAt,
                 note: input.description || undefined,
                 paidAt: input.date,
               },

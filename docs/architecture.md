@@ -90,7 +90,7 @@ Backend mutation flow:
 2. Check workspace access with `WorkspaceAccessGuard` and role metadata when needed.
 3. Validate inputs with NestJS DTOs.
 4. Execute Prisma reads/writes in API services.
-5. Keep balance-changing operations inside `prisma.$transaction`.
+5. Keep balance-changing and other read-modify-write invariants inside `runSerializableTransaction`.
 6. Return explicit DTO response shapes documented in OpenAPI.
 
 ## Transactional Application Layer
@@ -100,13 +100,20 @@ Balance-sensitive persisted logic lives in API services:
 - `packages/api/src/transactions/transactions.service.ts`
 - `packages/api/src/debts/debts.service.ts`
 
-These files use `prisma.$transaction` to keep domain writes consistent. They also centralize important checks such as:
+These files use `runSerializableTransaction` to keep domain writes consistent and retry PostgreSQL serialization or
+deadlock failures reported as Prisma `P2034`. Composed mutations accept the active `Prisma.TransactionClient`; they do
+not open nested transactions. They also centralize important checks such as:
 
 - Account belongs to the workspace.
 - A transaction date is not earlier than the account creation date.
 - Expense or transfer amount does not exceed the source account balance.
 - Transfer source and destination accounts are different.
 - Debt changes keep balances and remaining amounts coherent.
+
+The same boundary applies to scheduled-payment occurrence processing, AI-draft commits, email-token consumption,
+workspace-invite acceptance, and unlinking the last external login methods. Network calls remain outside database
+transactions. Reminder delivery uses a unique `pending` claim before calling email or Telegram, then records `sent` or
+`failed` after the provider returns.
 
 ## Auth And Access
 

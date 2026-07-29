@@ -156,12 +156,15 @@ export class AccountsService {
     return account;
   }
 
-  private async getAccountDependencyCounts(accountId: string): Promise<AccountDependencyCounts> {
+  private async getAccountDependencyCounts(
+    accountId: string,
+    client: PrismaService | Prisma.TransactionClient = this.prisma
+  ): Promise<AccountDependencyCounts> {
     const [paymentTransactions, outgoingTransfers, incomingTransfers, debtTransactions] = await Promise.all([
-      this.prisma.paymentTransaction.count({ where: { accountId } }),
-      this.prisma.transferTransaction.count({ where: { fromAccountId: accountId } }),
-      this.prisma.transferTransaction.count({ where: { toAccountId: accountId } }),
-      this.prisma.debtTransaction.count({ where: { accountId } }),
+      client.paymentTransaction.count({ where: { accountId } }),
+      client.transferTransaction.count({ where: { fromAccountId: accountId } }),
+      client.transferTransaction.count({ where: { toAccountId: accountId } }),
+      client.debtTransaction.count({ where: { accountId } }),
     ]);
 
     return {
@@ -170,12 +173,16 @@ export class AccountsService {
     };
   }
 
-  private async assertOwnerBelongsToWorkspace(workspaceId: string, ownerId: string | null | undefined) {
+  private async assertOwnerBelongsToWorkspace(
+    workspaceId: string,
+    ownerId: string | null | undefined,
+    client: PrismaService | Prisma.TransactionClient = this.prisma
+  ) {
     if (!ownerId) {
       return;
     }
 
-    const workspace = await this.prisma.workspace.findUnique({
+    const workspace = await client.workspace.findUnique({
       where: { id: workspaceId },
       select: { ownerId: true },
     });
@@ -188,7 +195,7 @@ export class AccountsService {
       return;
     }
 
-    const membership = await this.prisma.workspaceMember.findUnique({
+    const membership = await client.workspaceMember.findUnique({
       where: {
         workspaceId_userId: {
           workspaceId,
@@ -205,26 +212,28 @@ export class AccountsService {
 
   async createAccount(workspaceId: string, input: CreateAccountDto, currentUser: AuthenticatedUser) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
-    await this.assertOwnerBelongsToWorkspace(workspaceId, input.ownerId);
 
-    const accountsCount = await this.prisma.account.count({
-      where: { workspaceId, archived: false },
-    });
+    const account = await runSerializableTransaction(this.prisma, async (tx) => {
+      await this.assertOwnerBelongsToWorkspace(workspaceId, input.ownerId, tx);
+      const accountsCount = await tx.account.count({
+        where: { workspaceId, archived: false },
+      });
 
-    const account = await this.prisma.account.create({
-      data: {
-        name: input.name,
-        balance: input.initialBalance,
-        initialBalance: input.initialBalance,
-        currency: input.currency,
-        color: input.color,
-        icon: input.icon,
-        ownerId: input.ownerId ?? null,
-        workspaceId,
-        order: accountsCount,
-        createdAt: input.createdAt,
-      },
-      include: getAccountInclude(currentUser.id),
+      return tx.account.create({
+        data: {
+          name: input.name,
+          balance: input.initialBalance,
+          initialBalance: input.initialBalance,
+          currency: input.currency,
+          color: input.color,
+          icon: input.icon,
+          ownerId: input.ownerId ?? null,
+          workspaceId,
+          order: accountsCount,
+          createdAt: input.createdAt,
+        },
+        include: getAccountInclude(currentUser.id),
+      });
     });
 
     return { account: toAccountDto(account) };
@@ -252,9 +261,9 @@ export class AccountsService {
 
   async updateAccount(accountId: string, input: UpdateAccountDto, currentUser: AuthenticatedUser) {
     const existingAccount = await this.getAccessibleAccount(accountId, currentUser);
-    await this.assertOwnerBelongsToWorkspace(existingAccount.workspaceId, input.ownerId);
 
     const account = await runSerializableTransaction(this.prisma, async (tx) => {
+      await this.assertOwnerBelongsToWorkspace(existingAccount.workspaceId, input.ownerId, tx);
       const currentAccount = await tx.account.findUnique({
         where: { id: accountId },
       });
@@ -330,18 +339,19 @@ export class AccountsService {
   async updateAccountsOrder(workspaceId: string, input: UpdateAccountsOrderDto, currentUser: AuthenticatedUser) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
 
-    await this.prisma.$transaction(
-      input.accountOrders.map(({ id, order }) =>
-        this.prisma.account.updateMany({
+    await runSerializableTransaction(this.prisma, async (tx) => {
+      const orderedUpdates = [...input.accountOrders].sort((left, right) => left.id.localeCompare(right.id));
+      for (const { id, order } of orderedUpdates) {
+        await tx.account.updateMany({
           where: {
             id,
             workspaceId,
             archived: false,
           },
           data: { order },
-        })
-      )
-    );
+        });
+      }
+    });
 
     return { success: true };
   }
@@ -378,13 +388,18 @@ export class AccountsService {
     const account = await this.getAccessibleAccount(accountId, currentUser, true);
 
     if (account.archived) {
-      const accountsCount = await this.prisma.account.count({
-        where: { workspaceId: account.workspaceId, archived: false },
-      });
+      await runSerializableTransaction(this.prisma, async (tx) => {
+        const currentAccount = await tx.account.findUnique({ where: { id: accountId } });
+        if (!currentAccount?.archived) return;
 
-      await this.prisma.account.update({
-        where: { id: accountId },
-        data: { archived: false, order: accountsCount },
+        const accountsCount = await tx.account.count({
+          where: { workspaceId: currentAccount.workspaceId, archived: false },
+        });
+
+        await tx.account.update({
+          where: { id: accountId },
+          data: { archived: false, order: accountsCount },
+        });
       });
     }
 
@@ -393,23 +408,19 @@ export class AccountsService {
 
   async deleteArchivedAccount(accountId: string, currentUser: AuthenticatedUser) {
     const account = await this.getAccessibleAccount(accountId, currentUser, true);
+    await runSerializableTransaction(this.prisma, async (tx) => {
+      const currentAccount = await tx.account.findUnique({ where: { id: account.id } });
+      if (!currentAccount?.archived) {
+        throw new BadRequestException("Можно удалить только архивный счёт");
+      }
 
-    if (!account.archived) {
-      throw new BadRequestException("Можно удалить только архивный счёт");
-    }
+      const dependencyCounts = await this.getAccountDependencyCounts(currentAccount.id, tx);
+      if (Object.values(dependencyCounts).some((count) => count > 0)) {
+        const dependencyBreakdown = formatAccountDependencyBreakdown(dependencyCounts);
+        throw new BadRequestException(`Нельзя удалить счёт из архива: у счёта есть связанные ${dependencyBreakdown}.`);
+      }
 
-    const dependencyCounts = await this.getAccountDependencyCounts(account.id);
-    if (Object.values(dependencyCounts).some((count) => count > 0)) {
-      const dependencyBreakdown = formatAccountDependencyBreakdown(dependencyCounts);
-      throw new BadRequestException(`Нельзя удалить счёт из архива: у счёта есть связанные ${dependencyBreakdown}.`);
-    }
-
-    await this.prisma.hiddenAccount.deleteMany({
-      where: { accountId: account.id },
-    });
-
-    await this.prisma.account.delete({
-      where: { id: accountId },
+      await tx.account.delete({ where: { id: accountId } });
     });
   }
 }

@@ -93,6 +93,7 @@ function toMarkPaidDto(input: MarkScheduledPaymentPaidInput): MarkScheduledPayme
   return {
     ...input,
     amount: normalizeMoneyString(input.amount),
+    dueAt: input.dueAt?.toISOString(),
     paidAt: input.paidAt.toISOString(),
   };
 }

@@ -16,6 +16,7 @@ import bcrypt from "bcryptjs";
 import { AvatarStorageService } from "@/avatar/avatar-storage.service";
 import { EmailService } from "@/email/email.service";
 import { PrismaService } from "@/prisma/prisma.service";
+import { runSerializableTransaction } from "@/prisma/serializable-transaction";
 
 import type {
   LoginDto,
@@ -102,6 +103,11 @@ type AuthUserWithIdentities = Pick<User, "id" | "email" | "name" | "image" | "em
 };
 
 type UserAvatarFile = Pick<Express.Multer.File, "buffer" | "mimetype" | "size">;
+type EmailVerificationOutcome =
+  | { kind: "success"; userId: string }
+  | { kind: "expired" }
+  | { kind: "conflict" }
+  | { kind: "invalid" };
 
 const AUTH_PROVIDER_IDENTITY_SELECT = {
   where: { provider: { in: [TELEGRAM_PROVIDER, GOOGLE_PROVIDER] } },
@@ -489,83 +495,91 @@ export class AuthService {
       return this.verifyPendingUserEmail(token);
     }
 
-    if (pendingRegistration.expiresAt < new Date()) {
-      await this.prisma.pendingRegistration.delete({
-        where: { id: pendingRegistration.id },
+    const outcome: EmailVerificationOutcome = await runSerializableTransaction(this.prisma, async (tx) => {
+      const currentRegistration = await tx.pendingRegistration.findUnique({ where: { token } });
+      if (!currentRegistration) return { kind: "invalid" };
+
+      if (currentRegistration.expiresAt < new Date()) {
+        await tx.pendingRegistration.delete({ where: { id: currentRegistration.id } });
+        return { kind: "expired" };
+      }
+
+      const existingUser = await tx.user.findFirst({
+        where: { email: currentRegistration.email },
       });
+      if (existingUser) {
+        await tx.pendingRegistration.delete({ where: { id: currentRegistration.id } });
+        return { kind: "conflict" };
+      }
+
+      const user = await tx.user.create({
+        data: {
+          name: currentRegistration.name,
+          email: currentRegistration.email,
+          password: currentRegistration.password,
+          emailVerified: new Date(),
+        },
+      });
+      await tx.pendingRegistration.delete({ where: { id: currentRegistration.id } });
+      return { kind: "success", userId: user.id };
+    });
+
+    if (outcome.kind === "expired") {
       throw new BadRequestException("Токен подтверждения истек. Пожалуйста, зарегистрируйтесь заново.");
     }
-
-    const existingUser = await this.prisma.user.findFirst({
-      where: { email: pendingRegistration.email },
-    });
-
-    if (existingUser) {
-      await this.prisma.pendingRegistration.delete({
-        where: { id: pendingRegistration.id },
-      });
+    if (outcome.kind === "conflict") {
       throw new ConflictException("Пользователь с таким email уже существует");
     }
-
-    const user = await this.prisma.user.create({
-      data: {
-        name: pendingRegistration.name,
-        email: pendingRegistration.email,
-        password: pendingRegistration.password,
-        emailVerified: new Date(),
-      },
-    });
-
-    await this.prisma.pendingRegistration.delete({
-      where: { id: pendingRegistration.id },
-    });
-
-    return { success: true, userId: user.id };
-  }
-
-  private async verifyPendingUserEmail(token: string): Promise<{ success: true; userId: string }> {
-    const pendingEmail = await this.prisma.pendingEmailVerification.findUnique({
-      where: { token },
-    });
-
-    if (!pendingEmail) {
+    if (outcome.kind === "invalid") {
       throw new BadRequestException("Неверный токен подтверждения");
     }
 
-    if (pendingEmail.expiresAt < new Date()) {
-      await this.prisma.pendingEmailVerification.delete({
-        where: { id: pendingEmail.id },
+    return { success: true, userId: outcome.userId };
+  }
+
+  private async verifyPendingUserEmail(token: string): Promise<{ success: true; userId: string }> {
+    const outcome: EmailVerificationOutcome = await runSerializableTransaction(this.prisma, async (tx) => {
+      const pendingEmail = await tx.pendingEmailVerification.findUnique({ where: { token } });
+      if (!pendingEmail) return { kind: "invalid" };
+
+      if (pendingEmail.expiresAt < new Date()) {
+        await tx.pendingEmailVerification.delete({ where: { id: pendingEmail.id } });
+        return { kind: "expired" };
+      }
+
+      const existingUser = await tx.user.findFirst({
+        where: {
+          email: pendingEmail.email,
+          id: { not: pendingEmail.userId },
+        },
       });
+      if (existingUser) {
+        await tx.pendingEmailVerification.delete({ where: { id: pendingEmail.id } });
+        return { kind: "conflict" };
+      }
+
+      await tx.user.update({
+        where: { id: pendingEmail.userId },
+        data: {
+          email: pendingEmail.email,
+          emailVerified: new Date(),
+        },
+      });
+      await tx.pendingEmailVerification.delete({ where: { id: pendingEmail.id } });
+      return { kind: "success", userId: pendingEmail.userId };
+    });
+
+    if (outcome.kind === "expired") {
       throw new BadRequestException("Токен подтверждения истек. Пожалуйста, запросите подтверждение email заново.");
     }
-
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        email: pendingEmail.email,
-        id: { not: pendingEmail.userId },
-      },
-    });
-
-    if (existingUser) {
-      await this.prisma.pendingEmailVerification.delete({
-        where: { id: pendingEmail.id },
-      });
+    if (outcome.kind === "conflict") {
       throw new ConflictException("Пользователь с таким email уже существует");
     }
+    if (outcome.kind === "invalid") {
+      throw new BadRequestException("Неверный токен подтверждения");
+    }
 
-    await this.prisma.user.update({
-      where: { id: pendingEmail.userId },
-      data: {
-        email: pendingEmail.email,
-        emailVerified: new Date(),
-      },
-    });
-
-    await this.prisma.pendingEmailVerification.delete({
-      where: { id: pendingEmail.id },
-    });
-
-    return { success: true, userId: pendingEmail.userId };
+    return { success: true, userId: outcome.userId };
   }
 
   async login(input: LoginDto): Promise<{ token: string; user: ReturnType<typeof toAuthUser> }> {
@@ -1045,83 +1059,51 @@ export class AuthService {
   }
 
   async unlinkTelegram(userId: string): Promise<{ user: ReturnType<typeof toAuthUser> }> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        emailVerified: true,
-        authIdentities: {
-          select: {
-            id: true,
-            provider: true,
-          },
-        },
-      },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException("Не авторизован");
-    }
-
-    const telegramIdentity = user.authIdentities.find((identity) => identity.provider === TELEGRAM_PROVIDER);
-    if (!telegramIdentity) {
-      throw new BadRequestException("Telegram не подключен");
-    }
-
-    const hasEmailPassword = Boolean(user.email && user.password && user.emailVerified);
-    const otherIdentityCount = user.authIdentities.filter((identity) => identity.provider !== TELEGRAM_PROVIDER).length;
-    if (!hasEmailPassword && otherIdentityCount === 0) {
-      throw new BadRequestException("Нельзя отключить Telegram: добавьте и подтвердите email с паролем");
-    }
-
-    await this.prisma.authIdentity.delete({
-      where: { id: telegramIdentity.id },
-    });
-
-    const updatedUser = await this.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: AUTH_USER_SELECT,
-    });
-
-    return { user: toAuthUser(updatedUser) };
+    return this.unlinkAuthIdentity(userId, TELEGRAM_PROVIDER, "Telegram");
   }
 
   async unlinkGoogle(userId: string): Promise<{ user: ReturnType<typeof toAuthUser> }> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        emailVerified: true,
-        authIdentities: {
-          select: {
-            id: true,
-            provider: true,
+    return this.unlinkAuthIdentity(userId, GOOGLE_PROVIDER, "Google");
+  }
+
+  private async unlinkAuthIdentity(
+    userId: string,
+    provider: typeof TELEGRAM_PROVIDER | typeof GOOGLE_PROVIDER,
+    providerName: string
+  ): Promise<{ user: ReturnType<typeof toAuthUser> }> {
+    await runSerializableTransaction(this.prisma, async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          password: true,
+          emailVerified: true,
+          authIdentities: {
+            select: {
+              id: true,
+              provider: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!user) {
-      throw new UnauthorizedException("Не авторизован");
-    }
+      if (!user) {
+        throw new UnauthorizedException("Не авторизован");
+      }
 
-    const googleIdentity = user.authIdentities.find((identity) => identity.provider === GOOGLE_PROVIDER);
-    if (!googleIdentity) {
-      throw new BadRequestException("Google не подключен");
-    }
+      const identity = user.authIdentities.find((candidate) => candidate.provider === provider);
+      if (!identity) {
+        throw new BadRequestException(`${providerName} не подключен`);
+      }
 
-    const hasEmailPassword = Boolean(user.email && user.password && user.emailVerified);
-    const otherIdentityCount = user.authIdentities.filter((identity) => identity.provider !== GOOGLE_PROVIDER).length;
-    if (!hasEmailPassword && otherIdentityCount === 0) {
-      throw new BadRequestException("Нельзя отключить Google: добавьте и подтвердите email с паролем");
-    }
+      const hasEmailPassword = Boolean(user.email && user.password && user.emailVerified);
+      const otherIdentityCount = user.authIdentities.filter((candidate) => candidate.provider !== provider).length;
+      if (!hasEmailPassword && otherIdentityCount === 0) {
+        throw new BadRequestException(`Нельзя отключить ${providerName}: добавьте и подтвердите email с паролем`);
+      }
 
-    await this.prisma.authIdentity.delete({
-      where: { id: googleIdentity.id },
+      await tx.authIdentity.delete({ where: { id: identity.id } });
     });
 
     const updatedUser = await this.prisma.user.findUniqueOrThrow({

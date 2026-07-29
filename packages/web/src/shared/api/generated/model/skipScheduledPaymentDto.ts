@@ -7,5 +7,6 @@
  */
 
 export interface SkipScheduledPaymentDto {
+  dueAt?: string;
   note?: string;
 }

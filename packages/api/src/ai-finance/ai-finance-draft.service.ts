@@ -65,8 +65,8 @@ export class AiFinanceDraftService {
     return draft;
   }
 
-  async findDraft(draftId: string, userId: string) {
-    return this.prisma.aiFinanceDraft.findFirst({
+  async findDraft(draftId: string, userId: string, client: PrismaService | Prisma.TransactionClient = this.prisma) {
+    return client.aiFinanceDraft.findFirst({
       where: { id: draftId, userId },
     });
   }
@@ -146,8 +146,12 @@ export class AiFinanceDraftService {
     });
   }
 
-  async markCommitted(draftId: string, payload: AiFinanceDraftPayload) {
-    return this.prisma.aiFinanceDraft.update({
+  async markCommitted(
+    draftId: string,
+    payload: AiFinanceDraftPayload,
+    client: PrismaService | Prisma.TransactionClient = this.prisma
+  ) {
+    return client.aiFinanceDraft.update({
       where: { id: draftId },
       data: {
         status: AI_DRAFT_COMMITTED,
@@ -158,8 +162,12 @@ export class AiFinanceDraftService {
     });
   }
 
-  async reserveReadyDraftForCommit(draftId: string, userId: string) {
-    const result = await this.prisma.aiFinanceDraft.updateMany({
+  async reserveReadyDraftForCommit(
+    draftId: string,
+    userId: string,
+    client: PrismaService | Prisma.TransactionClient = this.prisma
+  ) {
+    const result = await client.aiFinanceDraft.updateMany({
       where: {
         id: draftId,
         userId,
@@ -175,12 +183,15 @@ export class AiFinanceDraftService {
       return null;
     }
 
-    return this.findDraft(draftId, userId);
+    return this.findDraft(draftId, userId, client);
   }
 
-  async markFailed(draftId: string, payload: AiFinanceDraftPayload) {
-    return this.prisma.aiFinanceDraft.update({
-      where: { id: draftId },
+  async markFailedIfReady(draftId: string, payload: AiFinanceDraftPayload) {
+    return this.prisma.aiFinanceDraft.updateMany({
+      where: {
+        id: draftId,
+        status: { in: [AI_DRAFT_READY, AI_DRAFT_COMMITTING] },
+      },
       data: {
         status: AI_DRAFT_FAILED,
         payload: toJsonPayload(payload),

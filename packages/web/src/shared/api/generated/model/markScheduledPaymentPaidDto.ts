@@ -7,6 +7,7 @@
  */
 
 export interface MarkScheduledPaymentPaidDto {
+  dueAt?: string;
   amount: string;
   currency?: string;
   accountId?: string;

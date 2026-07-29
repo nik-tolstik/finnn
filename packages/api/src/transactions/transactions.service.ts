@@ -165,6 +165,7 @@ type CombinedTransaction =
   | { kind: "debtTransaction"; data: DebtTransactionWithRelations };
 type CreateTransactionOptions = {
   createdByAi?: boolean;
+  transactionClient?: PrismaTx;
 };
 
 function toIsoString(value: Date): string {
@@ -542,9 +543,8 @@ export class TransactionsService {
     currentUser: AuthenticatedUser,
     options: CreateTransactionOptions = {}
   ) {
-    await this.assertWorkspaceAccess(workspaceId, currentUser);
-
-    const transaction = await runSerializableTransaction(this.prisma, async (tx) => {
+    const execute = async (tx: PrismaTx) => {
+      await this.assertWorkspaceAccessWithClient(tx, workspaceId, currentUser);
       const account = await this.getWorkspaceAccountOrThrow(tx, workspaceId, input.accountId);
       const accountCreatedDate = new Date(account.createdAt);
       accountCreatedDate.setHours(0, 0, 0, 0);
@@ -600,7 +600,11 @@ export class TransactionsService {
       });
 
       return createdTransaction as PaymentTransactionWithRelations;
-    });
+    };
+
+    const transaction = options.transactionClient
+      ? await execute(options.transactionClient)
+      : await runSerializableTransaction(this.prisma, execute);
 
     return { transaction: toPaymentTransactionDto(transaction) };
   }
@@ -611,13 +615,12 @@ export class TransactionsService {
     currentUser: AuthenticatedUser,
     options: CreateTransactionOptions = {}
   ) {
-    await this.assertWorkspaceAccess(workspaceId, currentUser);
-
     if (inputs.length === 0) {
       throw new BadRequestException("Нет транзакций для создания");
     }
 
-    const transactions = await runSerializableTransaction(this.prisma, async (tx) => {
+    const execute = async (tx: PrismaTx) => {
+      await this.assertWorkspaceAccessWithClient(tx, workspaceId, currentUser);
       const accountsById = new Map<string, Account>();
       const balancesByAccountId = new Map<string, string>();
       const createdTransactions: PaymentTransactionWithRelations[] = [];
@@ -686,7 +689,10 @@ export class TransactionsService {
         createdTransactions.push(createdTransaction as PaymentTransactionWithRelations);
       }
 
-      for (const [accountId, balance] of balancesByAccountId) {
+      const orderedBalances = [...balancesByAccountId.entries()].sort(([leftId], [rightId]) =>
+        leftId.localeCompare(rightId)
+      );
+      for (const [accountId, balance] of orderedBalances) {
         await tx.account.update({
           where: { id: accountId },
           data: { balance },
@@ -694,7 +700,11 @@ export class TransactionsService {
       }
 
       return createdTransactions;
-    });
+    };
+
+    const transactions = options.transactionClient
+      ? await execute(options.transactionClient)
+      : await runSerializableTransaction(this.prisma, execute);
 
     return { transactions: transactions.map(toPaymentTransactionDto) };
   }
@@ -705,9 +715,8 @@ export class TransactionsService {
     currentUser: AuthenticatedUser,
     options: CreateTransactionOptions = {}
   ) {
-    await this.assertWorkspaceAccess(workspaceId, currentUser);
-
-    const transfer = await runSerializableTransaction(this.prisma, async (tx) => {
+    const execute = async (tx: PrismaTx) => {
+      await this.assertWorkspaceAccessWithClient(tx, workspaceId, currentUser);
       const fromAccount = await this.getWorkspaceAccountOrThrow(tx, workspaceId, input.fromAccountId);
       const toAccount = await this.getWorkspaceAccountOrThrow(tx, workspaceId, input.toAccountId);
 
@@ -736,18 +745,30 @@ export class TransactionsService {
 
       const transferDeltas = getTransferTransactionBalanceDeltas(input.amount, input.toAmount);
 
-      await tx.account.update({
-        where: { id: input.fromAccountId },
-        data: { balance: addMoney(fromAccount.balance, transferDeltas.fromDelta) },
-      });
+      const balanceUpdates = [
+        {
+          id: input.fromAccountId,
+          balance: addMoney(fromAccount.balance, transferDeltas.fromDelta),
+        },
+        {
+          id: input.toAccountId,
+          balance: addMoney(toAccount.balance, transferDeltas.toDelta),
+        },
+      ].sort((left, right) => left.id.localeCompare(right.id));
 
-      await tx.account.update({
-        where: { id: input.toAccountId },
-        data: { balance: addMoney(toAccount.balance, transferDeltas.toDelta) },
-      });
+      for (const update of balanceUpdates) {
+        await tx.account.update({
+          where: { id: update.id },
+          data: { balance: update.balance },
+        });
+      }
 
       return createdTransfer as TransferTransactionWithRelations;
-    });
+    };
+
+    const transfer = options.transactionClient
+      ? await execute(options.transactionClient)
+      : await runSerializableTransaction(this.prisma, execute);
 
     return { transfer: toTransferTransactionDto(transfer) };
   }

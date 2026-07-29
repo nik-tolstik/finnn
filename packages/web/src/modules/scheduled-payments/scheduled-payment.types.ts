@@ -49,6 +49,7 @@ export interface ScheduledPaymentFormInput {
 }
 
 export interface MarkScheduledPaymentPaidInput {
+  dueAt?: Date;
   amount: string;
   currency?: string;
   accountId?: string;

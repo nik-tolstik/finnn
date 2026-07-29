@@ -4,7 +4,7 @@ export const SCHEDULED_PAYMENT_RECORD_STATUSES = ["paid", "skipped"] as const;
 export const SCHEDULED_PAYMENT_SCHEDULE_KINDS = ["one_time", "weekly", "monthly", "yearly", "custom"] as const;
 export const SCHEDULED_PAYMENT_SCHEDULE_UNITS = ["days", "weeks", "months", "years"] as const;
 export const SCHEDULED_PAYMENT_REMINDER_CHANNELS = ["telegram", "email"] as const;
-export const SCHEDULED_PAYMENT_REMINDER_STATUSES = ["sent", "failed"] as const;
+export const SCHEDULED_PAYMENT_REMINDER_STATUSES = ["pending", "sent", "failed"] as const;
 
 export type ScheduledPaymentAmountMode = (typeof SCHEDULED_PAYMENT_AMOUNT_MODES)[number];
 export type ScheduledPaymentDisplayStatus = (typeof SCHEDULED_PAYMENT_DISPLAY_STATUSES)[number];

@@ -495,16 +495,16 @@ export class TelegramBotService {
     user: AuthenticatedUser
   ) {
     if (parsed.action === "paid") {
-      await this.scheduledPayments.markPaidFromTelegram(parsed.scheduledPaymentId, user);
+      await this.scheduledPayments.markPaidFromTelegram(parsed.scheduledPaymentId, user, parsed.dueAt);
       return "Готово. Платёж отмечен как оплаченный.";
     }
 
     if (parsed.action === "skip") {
-      await this.scheduledPayments.skipFromTelegram(parsed.scheduledPaymentId, user);
+      await this.scheduledPayments.skipFromTelegram(parsed.scheduledPaymentId, user, parsed.dueAt);
       return "Готово. Этот платёж пропущен.";
     }
 
-    await this.scheduledPayments.snoozeFromTelegram(parsed.scheduledPaymentId, parsed.days || 1, user);
+    await this.scheduledPayments.snoozeFromTelegram(parsed.scheduledPaymentId, parsed.days || 1, user, parsed.dueAt);
     return "Готово. Напоминание отложено.";
   }
 

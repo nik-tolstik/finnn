@@ -23,6 +23,7 @@ export type ScheduledPaymentCallbackAction = "paid" | "snooze" | "skip";
 export type ParsedScheduledPaymentCallbackData = {
   action: ScheduledPaymentCallbackAction;
   scheduledPaymentId: string;
+  dueAt?: Date;
   days?: number;
 };
 
@@ -54,13 +55,15 @@ export function parseTelegramCallbackData(data: string | undefined): ParsedTeleg
 export function encodeScheduledPaymentCallbackData(
   action: ScheduledPaymentCallbackAction,
   scheduledPaymentId: string,
+  dueAt: Date,
   days?: number
 ) {
-  return [SCHEDULED_PAYMENT_CALLBACK_PREFIX, action, scheduledPaymentId, days].filter(Boolean).join(":");
+  const occurrence = `d${dueAt.getTime().toString(36)}`;
+  return [SCHEDULED_PAYMENT_CALLBACK_PREFIX, action, scheduledPaymentId, occurrence, days].filter(Boolean).join(":");
 }
 
 export function parseScheduledPaymentCallbackData(data: string | undefined): ParsedScheduledPaymentCallbackData {
-  const [prefix, action, scheduledPaymentId, days] = (data || "").split(":");
+  const [prefix, action, scheduledPaymentId, occurrenceOrDays, encodedDays] = (data || "").split(":");
   if (prefix !== SCHEDULED_PAYMENT_CALLBACK_PREFIX || !action || !scheduledPaymentId) {
     throw new BadRequestException("Unknown scheduled payment callback");
   }
@@ -69,9 +72,23 @@ export function parseScheduledPaymentCallbackData(data: string | undefined): Par
     throw new BadRequestException("Unknown scheduled payment callback action");
   }
 
+  let dueAt: Date | undefined;
+  let days: number | undefined;
+  if (occurrenceOrDays?.startsWith("d")) {
+    const timestamp = Number.parseInt(occurrenceOrDays.slice(1), 36);
+    if (!Number.isFinite(timestamp)) {
+      throw new BadRequestException("Unknown scheduled payment occurrence");
+    }
+    dueAt = new Date(timestamp);
+    days = encodedDays ? Number.parseInt(encodedDays, 10) : undefined;
+  } else {
+    days = occurrenceOrDays ? Number.parseInt(occurrenceOrDays, 10) : undefined;
+  }
+
   return {
     action,
     scheduledPaymentId,
-    days: days ? Number.parseInt(days, 10) : undefined,
+    dueAt,
+    days,
   };
 }

@@ -1,4 +1,11 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import type {
   Prisma,
   ScheduledPayment,
@@ -9,6 +16,7 @@ import Big from "big.js";
 
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { PrismaService } from "@/prisma/prisma.service";
+import { runSerializableTransaction } from "@/prisma/serializable-transaction";
 import { TransactionsService } from "@/transactions/transactions.service";
 
 import type {
@@ -165,8 +173,12 @@ export class ScheduledPaymentsService {
     };
   }
 
-  private async assertWorkspaceAccess(workspaceId: string, currentUser: AuthenticatedUser) {
-    const workspace = await this.prisma.workspace.findUnique({
+  private async assertWorkspaceAccess(
+    workspaceId: string,
+    currentUser: AuthenticatedUser,
+    client: PrismaService | PrismaTx = this.prisma
+  ) {
+    const workspace = await client.workspace.findUnique({
       where: { id: workspaceId },
       select: { ownerId: true },
     });
@@ -179,7 +191,7 @@ export class ScheduledPaymentsService {
       return;
     }
 
-    const membership = await this.prisma.workspaceMember.findUnique({
+    const membership = await client.workspaceMember.findUnique({
       where: {
         workspaceId_userId: {
           workspaceId,
@@ -237,10 +249,14 @@ export class ScheduledPaymentsService {
     throw new BadRequestException("Недопустимый режим суммы");
   }
 
-  private async assertAccountBelongsToWorkspace(accountId: string | null | undefined, workspaceId: string) {
+  private async assertAccountBelongsToWorkspace(
+    accountId: string | null | undefined,
+    workspaceId: string,
+    client: PrismaService | PrismaTx = this.prisma
+  ) {
     if (!accountId) return;
 
-    const account = await this.prisma.account.findFirst({
+    const account = await client.account.findFirst({
       where: { id: accountId, workspaceId, archived: false },
       select: { id: true },
     });
@@ -250,10 +266,14 @@ export class ScheduledPaymentsService {
     }
   }
 
-  private async assertCategoryBelongsToWorkspace(categoryId: string | null | undefined, workspaceId: string) {
+  private async assertCategoryBelongsToWorkspace(
+    categoryId: string | null | undefined,
+    workspaceId: string,
+    client: PrismaService | PrismaTx = this.prisma
+  ) {
     if (!categoryId) return;
 
-    const category = await this.prisma.category.findFirst({
+    const category = await client.category.findFirst({
       where: { id: categoryId, workspaceId, type: SCHEDULED_PAYMENT_EXPENSE_TYPE },
       select: { id: true },
     });
@@ -265,11 +285,12 @@ export class ScheduledPaymentsService {
 
   private async assertPaymentTransactionBelongsToWorkspace(
     transactionId: string | null | undefined,
-    workspaceId: string
+    workspaceId: string,
+    client: PrismaService | PrismaTx = this.prisma
   ) {
     if (!transactionId) return;
 
-    const transaction = await this.prisma.paymentTransaction.findFirst({
+    const transaction = await client.paymentTransaction.findFirst({
       where: { id: transactionId, workspaceId, type: SCHEDULED_PAYMENT_EXPENSE_TYPE },
       select: { id: true },
     });
@@ -498,46 +519,53 @@ export class ScheduledPaymentsService {
 
   async markPaid(workspaceId: string, id: string, input: MarkScheduledPaymentPaidDto, currentUser: AuthenticatedUser) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
+    const initialPayment = await this.ensurePayment(workspaceId, id);
+    const expectedDueAt = input.dueAt ?? initialPayment.nextDueAt;
 
-    const payment = await this.ensurePayment(workspaceId, id);
+    const result = await runSerializableTransaction(this.prisma, async (tx) => {
+      await this.assertWorkspaceAccess(workspaceId, currentUser, tx);
+      const payment = await this.ensurePayment(workspaceId, id, tx);
+      if (payment.nextDueAt.getTime() !== expectedDueAt.getTime()) {
+        throw new ConflictException("Этот период планового платежа уже обработан");
+      }
 
-    const accountId = input.accountId ?? payment.accountId;
-    const categoryId = input.categoryId ?? payment.categoryId;
-    if (input.createTransaction && !accountId) {
-      throw new BadRequestException("Для создания транзакции выберите счёт");
-    }
-    if (input.createTransaction && input.transactionId) {
-      throw new BadRequestException("Передайте createTransaction или transactionId, но не оба поля");
-    }
+      const accountId = input.accountId ?? payment.accountId;
+      const categoryId = input.categoryId ?? payment.categoryId;
+      if (input.createTransaction && !accountId) {
+        throw new BadRequestException("Для создания транзакции выберите счёт");
+      }
+      if (input.createTransaction && input.transactionId) {
+        throw new BadRequestException("Передайте createTransaction или transactionId, но не оба поля");
+      }
 
-    await Promise.all([
-      this.assertAccountBelongsToWorkspace(accountId, workspaceId),
-      this.assertCategoryBelongsToWorkspace(categoryId, workspaceId),
-      this.assertPaymentTransactionBelongsToWorkspace(input.transactionId, workspaceId),
-    ]);
+      await Promise.all([
+        this.assertAccountBelongsToWorkspace(accountId, workspaceId, tx),
+        this.assertCategoryBelongsToWorkspace(categoryId, workspaceId, tx),
+        this.assertPaymentTransactionBelongsToWorkspace(input.transactionId, workspaceId, tx),
+      ]);
 
-    let transactionId = input.transactionId ?? null;
-    let currency = input.currency ?? payment.currency;
+      let transactionId = input.transactionId ?? null;
+      let currency = input.currency ?? payment.currency;
 
-    if (input.createTransaction) {
-      const createdTransaction = await this.transactionsService.createPaymentTransaction(
-        workspaceId,
-        {
-          accountId: accountId || "",
-          amount: input.amount,
-          type: SCHEDULED_PAYMENT_EXPENSE_TYPE,
-          description: input.note || payment.name,
-          date: input.paidAt,
-          categoryId: categoryId ?? undefined,
-        },
-        currentUser
-      );
+      if (input.createTransaction) {
+        const createdTransaction = await this.transactionsService.createPaymentTransaction(
+          workspaceId,
+          {
+            accountId: accountId || "",
+            amount: input.amount,
+            type: SCHEDULED_PAYMENT_EXPENSE_TYPE,
+            description: input.note || payment.name,
+            date: input.paidAt,
+            categoryId: categoryId ?? undefined,
+          },
+          currentUser,
+          { transactionClient: tx }
+        );
 
-      transactionId = createdTransaction.transaction.id;
-      currency = createdTransaction.transaction.account.currency ?? currency;
-    }
+        transactionId = createdTransaction.transaction.id;
+        currency = createdTransaction.transaction.account.currency ?? currency;
+      }
 
-    const result = await this.prisma.$transaction(async (tx) => {
       const nextDueAt = this.schedule.getNextDueAt(payment.nextDueAt, this.getScheduleInput(payment));
       const record = await tx.scheduledPaymentRecord.create({
         data: {
@@ -560,21 +588,28 @@ export class ScheduledPaymentsService {
         lastPaidAt: input.paidAt,
       });
 
-      return { record, scheduledPayment: updatedPayment };
+      return { record, scheduledPayment: updatedPayment, transactionId };
     });
 
     return {
       scheduledPayment: this.toScheduledPaymentDto(result.scheduledPayment),
       record: this.toScheduledPaymentRecordDto(result.record),
-      transactionId,
+      transactionId: result.transactionId,
     };
   }
 
   async skip(workspaceId: string, id: string, input: SkipScheduledPaymentDto, currentUser: AuthenticatedUser) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
-    const payment = await this.ensurePayment(workspaceId, id);
+    const initialPayment = await this.ensurePayment(workspaceId, id);
+    const expectedDueAt = input.dueAt ?? initialPayment.nextDueAt;
 
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await runSerializableTransaction(this.prisma, async (tx) => {
+      await this.assertWorkspaceAccess(workspaceId, currentUser, tx);
+      const payment = await this.ensurePayment(workspaceId, id, tx);
+      if (payment.nextDueAt.getTime() !== expectedDueAt.getTime()) {
+        throw new ConflictException("Этот период планового платежа уже обработан");
+      }
+
       const nextDueAt = this.schedule.getNextDueAt(payment.nextDueAt, this.getScheduleInput(payment));
       const record = await tx.scheduledPaymentRecord.create({
         data: {
@@ -601,22 +636,37 @@ export class ScheduledPaymentsService {
     };
   }
 
-  async snooze(workspaceId: string, id: string, input: SnoozeScheduledPaymentDto, currentUser: AuthenticatedUser) {
+  async snooze(
+    workspaceId: string,
+    id: string,
+    input: SnoozeScheduledPaymentDto,
+    currentUser: AuthenticatedUser,
+    expectedDueAt?: Date
+  ) {
     await this.assertWorkspaceAccess(workspaceId, currentUser);
-    await this.ensurePayment(workspaceId, id);
+    const initialPayment = await this.ensurePayment(workspaceId, id);
+    const occurrenceDueAt = expectedDueAt ?? initialPayment.nextDueAt;
 
     const snoozedUntil = new Date();
     snoozedUntil.setUTCDate(snoozedUntil.getUTCDate() + input.days);
 
-    const payment = await this.prisma.scheduledPayment.update({
-      where: { id },
-      data: { snoozedUntil },
-      include: {
-        records: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
+    const payment = await runSerializableTransaction(this.prisma, async (tx) => {
+      await this.assertWorkspaceAccess(workspaceId, currentUser, tx);
+      const currentPayment = await this.ensurePayment(workspaceId, id, tx);
+      if (currentPayment.nextDueAt.getTime() !== occurrenceDueAt.getTime()) {
+        throw new ConflictException("Этот период планового платежа уже обработан");
+      }
+
+      return tx.scheduledPayment.update({
+        where: { id },
+        data: { snoozedUntil },
+        include: {
+          records: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
         },
-      },
+      });
     });
 
     return { scheduledPayment: this.toScheduledPaymentDto(payment) };
@@ -634,7 +684,7 @@ export class ScheduledPaymentsService {
     return { records: records.map((record) => this.toScheduledPaymentRecordDto(record)) };
   }
 
-  async markPaidFromTelegram(scheduledPaymentId: string, currentUser: AuthenticatedUser) {
+  async markPaidFromTelegram(scheduledPaymentId: string, currentUser: AuthenticatedUser, expectedDueAt?: Date) {
     const payment = await this.prisma.scheduledPayment.findUnique({ where: { id: scheduledPaymentId } });
     if (!payment) throw new NotFoundException("Платёж не найден");
     if (payment.amountMode !== "fixed" || !payment.amount) {
@@ -647,6 +697,7 @@ export class ScheduledPaymentsService {
       {
         amount: payment.amount,
         currency: payment.currency ?? undefined,
+        dueAt: expectedDueAt ?? payment.nextDueAt,
         paidAt: new Date(),
         createTransaction: false,
       },
@@ -654,20 +705,25 @@ export class ScheduledPaymentsService {
     );
   }
 
-  async skipFromTelegram(scheduledPaymentId: string, currentUser: AuthenticatedUser) {
+  async skipFromTelegram(scheduledPaymentId: string, currentUser: AuthenticatedUser, expectedDueAt?: Date) {
     const payment = await this.prisma.scheduledPayment.findUnique({ where: { id: scheduledPaymentId } });
     if (!payment) throw new NotFoundException("Платёж не найден");
-    return this.skip(payment.workspaceId, payment.id, {}, currentUser);
+    return this.skip(payment.workspaceId, payment.id, { dueAt: expectedDueAt ?? payment.nextDueAt }, currentUser);
   }
 
-  async snoozeFromTelegram(scheduledPaymentId: string, days: number, currentUser: AuthenticatedUser) {
+  async snoozeFromTelegram(
+    scheduledPaymentId: string,
+    days: number,
+    currentUser: AuthenticatedUser,
+    expectedDueAt?: Date
+  ) {
     const payment = await this.prisma.scheduledPayment.findUnique({ where: { id: scheduledPaymentId } });
     if (!payment) throw new NotFoundException("Платёж не найден");
-    return this.snooze(payment.workspaceId, payment.id, { days }, currentUser);
+    return this.snooze(payment.workspaceId, payment.id, { days }, currentUser, expectedDueAt);
   }
 
-  private async ensurePayment(workspaceId: string, id: string) {
-    const payment = await this.prisma.scheduledPayment.findFirst({ where: { id, workspaceId } });
+  private async ensurePayment(workspaceId: string, id: string, client: PrismaService | PrismaTx = this.prisma) {
+    const payment = await client.scheduledPayment.findFirst({ where: { id, workspaceId } });
     if (!payment) throw new NotFoundException("Платёж не найден");
     return payment;
   }
