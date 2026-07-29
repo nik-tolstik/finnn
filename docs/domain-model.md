@@ -35,7 +35,7 @@ The Prisma schema maps the domain to relational PostgreSQL tables with database-
 referential actions. Application-level workspace authorization and domain validation remain required; a foreign key can
 prove that a referenced row exists, but not that every cross-workspace business rule is valid.
 
-Public IDs are opaque strings. Rows migrated from MongoDB retain their existing 24-character ObjectId strings, while
+Public IDs are opaque strings. Imported legacy rows retain their existing 24-character IDs, while
 new PostgreSQL rows use the Prisma ID default. API clients and backend validators must not infer the database provider
 from an ID's shape.
 

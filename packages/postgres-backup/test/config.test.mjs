@@ -40,7 +40,7 @@ describe("backup configuration", () => {
   });
 
   it("rejects a non-PostgreSQL database URL", () => {
-    expect(() => loadConfig({ ...validEnvironment(), BACKUP_DATABASE_URL: "mongodb://database/finnn" })).toThrow(
+    expect(() => loadConfig({ ...validEnvironment(), BACKUP_DATABASE_URL: "mysql://database/finnn" })).toThrow(
       "must use the postgresql:// or postgres:// scheme"
     );
   });

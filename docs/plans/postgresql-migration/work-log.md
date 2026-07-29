@@ -1,5 +1,26 @@
 # Work Log
 
+## 2026-07-29 - Post-migration hardening and database retirement
+
+### Results
+
+- Created a fresh encrypted Production PostgreSQL backup and matching completion manifest before retiring the old
+  database infrastructure: `finnn/production/daily/2026/07/29/finnn-20260729T140659450Z.dump.age`.
+- Added least-privilege `finnn_app` login roles in DEV and Production. Railway API runtime URLs use
+  `connection_limit=5`, `pool_timeout=10`, and `connect_timeout=5`; `DIRECT_URL` retains the administrative role for
+  Prisma Migrate. Runtime roles cannot read or mutate `_prisma_migrations`.
+- Set both Railway PostgreSQL services to `max_connections=50`, `effective_cache_size=512MB`, and
+  `idle_in_transaction_session_timeout=60s`. Enabled `pg_stat_statements` and committed its idempotent schema migration;
+  limited the Production read-only backup role to two connections while preserving default `SELECT` grants for future
+  tables.
+- Verified both API deployments, public health endpoints, runtime database roles, migration status, and PostgreSQL
+  settings after the database restarts.
+- Deleted the retired Production database service and its 514 MB persistent volume, removed the source URL from
+  Production API variables, and permanently removed the two local plaintext Production exports.
+- Removed the one-time migration/import/export scripts, their tests and package commands, and the obsolete database
+  driver dependency. Historical cutover decisions remain in this plan; active application and operations docs describe
+  PostgreSQL only.
+
 ## 2026-07-29 - Encrypted PostgreSQL backup cron
 
 ### Scope

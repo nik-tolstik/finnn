@@ -254,11 +254,9 @@ pnpm db:seed            # Seed sample data
 ```
 
 Root database commands delegate to `packages/api`. `packages/api/scripts/db-seed.ts` owns development seed data. The
-`db:migrate:mongo-to-postgres` command and MongoDB-specific scripts are retained only for the one-time source migration;
-they are not the PostgreSQL backup workflow. The importer requires `MONGODB_SOURCE_URL` plus the PostgreSQL
-`DATABASE_URL`; run `pnpm db:migrate:mongo-to-postgres --dry-run` before a rehearsed migration. See
-[`docs/operations.md`](./operations.md#mongodb-to-postgresql-migration-notes) for the production guard, snapshot, retry,
-and cutover rules.
+completed data-provider cutover and validation history lives in
+[`docs/plans/postgresql-migration`](./plans/postgresql-migration/README.md); the one-time executable migration tooling is
+no longer part of the application.
 
 ## Prisma Workflow
 
@@ -281,8 +279,8 @@ For this project:
 - Run `pnpm db:generate` after schema changes when it was not already run by Prisma Migrate.
 - Run `pnpm db:migrate:deploy` in shared DEV, test, and production environments. Never run `migrate dev` or `db push`
   against a shared database.
-- Preserve legacy MongoDB ObjectId values as opaque text IDs. New rows use the ID default defined by the Prisma schema;
-  application code must not depend on a 24-character ID shape.
+- Preserve imported legacy 24-character values as opaque text IDs. New rows use the ID default defined by the Prisma
+  schema; application code must not depend on a 24-character ID shape.
 - Prefer string money amounts over floats or numbers in persisted financial fields.
 
 ### Direct and pooled connections

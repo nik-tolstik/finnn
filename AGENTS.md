@@ -68,7 +68,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - `packages/api/src` contains NestJS modules, controllers, DTOs, guards, services, auth/session ownership, cron, email, and finance domain logic.
 - `packages/api/prisma/schema.prisma` and `packages/api/prisma/migrations` are the source of truth for database tables,
   relations, indexes, enums, and reviewed SQL migrations.
-- `packages/api/scripts` contains seed, one-time MongoDB-to-PostgreSQL migration tooling, and OpenAPI generation scripts.
+- `packages/api/scripts` contains seed, operational helpers, and OpenAPI generation scripts.
 - `packages/postgres-backup` contains the PostgreSQL 18 backup image, streaming age encryption, verified object-storage
   upload, restore helper, tests, and Railway cron configuration.
 - `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
@@ -103,6 +103,11 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
   with `pnpm db:migrate:deploy` in `preDeployCommand` for DEV and PROD; do not use `db push` for shared environments.
 - Use `DATABASE_URL` for API runtime connections and `DIRECT_URL` for migration and administrative connections. They
   may be identical locally; in hosted environments `DATABASE_URL` may be pooled while `DIRECT_URL` must bypass the pool.
+- Railway API runtimes connect as the least-privilege `finnn_app` role with `connection_limit=5`, `pool_timeout=10`,
+  and `connect_timeout=5`. `DIRECT_URL` retains the administrative role for Prisma Migrate. Recalculate the total pool
+  budget before adding API replicas.
+- Shared Railway PostgreSQL instances use `max_connections=50`, `effective_cache_size=512MB`, and
+  `idle_in_transaction_session_timeout=60s`; `pg_stat_statements` is enabled for evidence-based query tuning.
 - Back up PostgreSQL with `pg_dump` and restore with `pg_restore`; rehearse restores against a separate database.
 - Railway project and service IDs, branch mappings, safe CLI usage, and the current deployment topology are documented
   in `docs/operations.md`. The main local checkout may be linked to Production, so pass explicit project, environment,

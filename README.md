@@ -68,9 +68,9 @@ committed migrations with `db:migrate:deploy`; do not use `prisma db push` for s
 
 PostgreSQL backup, restore, pooling, Railway deployment, and production cutover procedures live in
 [`docs/operations.md`](./docs/operations.md), with the encrypted cron runbook in
-[`docs/postgresql-backups.md`](./docs/postgresql-backups.md). The one-time MongoDB source migration is retained as historical migration
-tooling and documented in [`docs/plans/postgresql-migration`](./docs/plans/postgresql-migration/README.md); it is not the
-current backup workflow.
+[`docs/postgresql-backups.md`](./docs/postgresql-backups.md). The completed data-provider cutover is retained only as
+historical documentation in [`docs/plans/postgresql-migration`](./docs/plans/postgresql-migration/README.md); its
+one-time executable tooling has been retired.
 
 ## Verification
 

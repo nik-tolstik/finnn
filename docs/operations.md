@@ -42,11 +42,9 @@ Railway workspace ID is `0d1cc03f-784c-4d9f-8f21-0a35d3459ff3`. The primary proj
 | `Postgres-x8Vl` | `25a9f5d1-c6bf-49fc-94d0-04a6fbb8b330` | production | Production PostgreSQL 18 in EU West, persistent volume, 1 vCPU / 1 GB, Serverless disabled. |
 | `exchange-rates-cron` | `b7f24cda-b1eb-49af-be0b-5f77d3b53610` | develop, production | Calls the environment API at `30 8 * * *` UTC. |
 | `postgres-backup-cron` | `1e19ed24-6247-4dca-9b8e-aa847e6fc21b` | production | GitHub `main`, config `/packages/postgres-backup/railway.json`, daily at `0 2 * * *` UTC. |
-| `mongodb-prod` | `682befb3-68f7-4e7d-bbe3-1ccc63d72120` | production | Stopped rollback artifact; service and persistent volume are retained until MongoDB retirement is approved. |
 
-The former DEV MongoDB service and its persistent volume were deleted after the PostgreSQL cutover was validated.
-`MONGODB_SOURCE_URL` was removed from the DEV API variables. Production MongoDB remains a separate stopped rollback
-artifact and must not be deleted until its observation period is explicitly closed.
+The retired database services, persistent volumes, source variables, and local plaintext exports were deleted after
+the PostgreSQL cutover, encrypted backup, restore rehearsal, and application health checks were validated.
 
 Encrypted PostgreSQL objects live in the private `finnn-postgres-backups-prod` Bucket
 (`a52e1348-08ec-4b4e-ade4-01ca16088d92`) in the separate `Finnn Backups` project
@@ -301,13 +299,15 @@ Prisma uses two connection URLs:
 - `DATABASE_URL` is the API runtime URL. It may use a transaction-capable pooled endpoint.
 - `DIRECT_URL` bypasses the pool and is used by Prisma Migrate and administrative tools.
 
-They may be identical on local PostgreSQL. In Railway, reference variables from the PostgreSQL service instead of
-copying credentials between environments. If a pooler is enabled, confirm that interactive Prisma transactions are
-supported and keep `DIRECT_URL` on the direct endpoint.
+They may be identical on local PostgreSQL. Railway API instances use the least-privilege `finnn_app` role and append
+`schema=public`, `connection_limit=5`, `pool_timeout=10`, and `connect_timeout=5` to `DATABASE_URL`. `DIRECT_URL` retains
+the administrative database role so Prisma Migrate can apply reviewed migrations.
 
-Choose a runtime connection limit only after accounting for every API replica. Reserve direct PostgreSQL connections
-for migrations, backups, cron, monitoring, and incident response. A per-replica pool that is safe with one API instance
-can exhaust the database after horizontal scaling.
+Both Railway databases use `max_connections=50`, `effective_cache_size=512MB`, and
+`idle_in_transaction_session_timeout=60s`. `pg_stat_statements` is installed and preload-enabled. Reserve connections
+for migrations, backups, monitoring, and incident response; recalculate the five-connection per-replica pool before
+horizontal scaling. Production backups use the read-only `finnn_backup` role with a two-connection role limit and
+default `SELECT` privileges for future tables.
 
 ## PostgreSQL Backup And Restore
 
@@ -371,70 +371,6 @@ pnpm db:migrate:status
 ```
 
 Do not use `prisma db push`, `prisma migrate dev`, reset flags, or ad hoc schema SQL against a shared database.
-
-## MongoDB-To-PostgreSQL Migration Notes
-
-The MongoDB export/import utilities and MongoDB driver are retained only for the source-to-target migration. They use
-`MONGODB_SOURCE_URL` through the explicit `db:mongo:export` and `db:mongo:import` commands; they are not the backup
-workflow after PostgreSQL cutover. The migration preserves legacy ObjectId strings, sessions, public URLs, JSON
-references, and persisted money strings.
-
-Follow [`docs/plans/postgresql-migration`](./plans/postgresql-migration/README.md) for the migration command, source-data
-audit, dependency order, and invariant validation. Always rehearse against DEV and an empty PostgreSQL target before
-the production window.
-
-The importer accepts only a MongoDB source and a PostgreSQL target:
-
-```bash
-MONGODB_SOURCE_URL="mongodb://source-host:27017/finnn"
-DATABASE_URL="postgresql://user:password@target-host:5432/finnn?schema=public&sslmode=require"
-DIRECT_URL="$DATABASE_URL"
-export MONGODB_SOURCE_URL DATABASE_URL DIRECT_URL
-
-pnpm db:migrate:deploy
-pnpm db:mongo:export ./backups/final-mongodb
-pnpm db:migrate:mongo-to-postgres --dry-run
-pnpm db:migrate:mongo-to-postgres --batch-size=1000
-```
-
-Use the direct PostgreSQL endpoint for the importer's `DATABASE_URL`; do not send a long-running bulk migration through
-the API runtime pooler. The API can return to its pooled `DATABASE_URL` after cutover.
-
-By default the importer reads a consistent MongoDB snapshot transaction. Use `--no-snapshot` only for a standalone
-source or after every source writer is guaranteed to be stopped. Production-like environments require an explicit
-`--allow-production` flag on both the dry run and the write run. A retry is safe only when the PostgreSQL target is empty
-or contains an unchanged subset of the source rows; never use the command as bidirectional synchronization or against a
-target that has accepted new application writes.
-
-Preflight warnings must be reviewed rather than treated as generic success. The importer preserves stored account
-balances when ledger reconstruction differs, skips only expired or revoked orphan sessions, and omits only explicitly
-retired fields and collections whose legacy shapes were reviewed. A legacy debt that predates its `created` ledger entry
-is accepted only when later ledger entries reproduce its stored remaining amount and status. Active orphan sessions,
-conflicting legacy debt-account links, debt ledger mismatches, changed retired-field shapes, and unknown fields remain
-fatal. An account with a missing workspace may be skipped only when it also has no owner and no dependent records; the
-immutable MongoDB backup remains the recovery source for every skipped account.
-
-### Production cutover
-
-The preferred rollout is a short, measured maintenance window:
-
-1. Verify a fresh PostgreSQL backup/restore rehearsal, committed migration status, source audit, row counts, stable
-   digests, account-balance invariants, and debt invariants in DEV.
-2. Stop scheduled-payment and exchange-rate cron services. Stop the API or enable a maintenance deployment that blocks
-   every writer, including web requests, Telegram callbacks, AI draft commits, and reminder actions. Let in-flight
-   requests finish.
-3. Take a final MongoDB backup and keep it immutable. Run `--dry-run`, migrate into the empty PostgreSQL target, then
-   run the full data and invariant validator. Do not open PostgreSQL writes after a partial or warning-only result.
-4. Set the production API `DATABASE_URL` and `DIRECT_URL` to the PostgreSQL service, deploy the PostgreSQL-backed API,
-   and confirm `db:migrate:status` plus `/health` before restoring public traffic.
-5. Smoke-test the existing session, workspace/account reads, one reversible financial flow, analytics, Telegram, and
-   both protected cron endpoints. Re-enable cron only after application reads and writes are healthy.
-6. Keep the final MongoDB snapshot immutable for the agreed observation period. After PostgreSQL accepts new writes,
-   MongoDB is stale and cannot be used for a lossless rollback without reverse replication.
-
-Before reopening writes, rollback means restoring the old API configuration and immutable MongoDB source. Reopening
-PostgreSQL writes is the explicit rollback boundary; after that point, recover PostgreSQL from backup/PITR or perform a
-forward fix rather than silently discarding new records.
 
 ## Telegram Identity Repair
 
