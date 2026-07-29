@@ -14,7 +14,7 @@
 ### Files Changed
 
 - `packages/postgres-backup`
-- `.dockerignore`
+- `packages/postgres-backup/Dockerfile.dockerignore`
 - `package.json`
 - `pnpm-lock.yaml`
 - `AGENTS.md`
@@ -69,6 +69,9 @@ git diff --check
   role password, and local/DEV forensic exports. The authoritative pre-repair and final frozen Production MongoDB
   exports remain local with directory mode `0700` and file mode `0600`; backend and frontend `.env` files were also
   restricted to `0600`.
+- Scoped the backup build-context exclusions to `packages/postgres-backup/Dockerfile.dockerignore`. A root
+  `.dockerignore` was rejected because Railway Railpack also applied it to the API service and omitted the API build
+  dependencies; the previous healthy API deployment remained online while the failed replacement was corrected.
 
 ### Decisions
 
