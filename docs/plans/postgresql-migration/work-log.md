@@ -250,8 +250,9 @@ pnpm build
 - Every imported model passed exact row-count and SHA-256 content-digest comparison.
 - Retired `workspaces.icon`, `category_icon_assets.tags`, `categories.color`, and `debts.accountId` fields were omitted only
   after validating their expected legacy shapes. Legacy debt account links also matched their `created` ledger entries.
-- One stored account balance differs from ledger reconstruction by `339.78`. The stored value was preserved, and the
-  finding exposed a pre-existing linked debt-write-off balance-reconciliation bug that must be fixed before DEV.
+- One stored account balance differed from ledger reconstruction by `339.78`. The stored value was preserved during
+  import. The user chose to treat this as a local-data issue, repair only the local PostgreSQL copy, and defer any
+  debt-write-off runtime change unless the problem is reproduced outside local data.
 - The NestJS API started successfully against PostgreSQL; `/health`, `/auth/session`, and `/exchange-rates/today` returned
   successful responses.
 
@@ -262,7 +263,42 @@ pnpm build
 
 ### Follow-ups
 
-- Fix create/update/delete debt-write-off balance reconciliation with targeted tests before DEV migration.
 - The user approved a separate local PostgreSQL repair for the historical `339.78` discrepancy. The account balance was
   atomically changed from `12005` to `11665.22` only after verifying the expected account, database, and prior balance;
   a ledger recomputation now matches `11665.22`. MongoDB and the immutable pre-migration backup were not modified.
+- Keep the debt-write-off runtime path unchanged for now. Reopen the investigation if DEV or production validation
+  reports a balance mismatch.
+
+## 2026-07-29 - DEV cutover
+
+### Scope
+
+- Confirmed that Railway DEV deploys the API from `develop` and that production uses a separate environment and MongoDB
+  service.
+- Created a dedicated Railway PostgreSQL service, restored the original EU West placement for API, PostgreSQL, and the
+  exchange-rate cron, and kept the DEV MongoDB service and volume intact.
+- Stopped the DEV API during the final export and import, retained the MongoDB runtime URL separately for rollback, and
+  switched API `DATABASE_URL` and `DIRECT_URL` to the PostgreSQL service reference.
+- Applied the committed Prisma migration, ran the ETL dry run, imported the valid source data, and repeated full
+  count/digest validation before and after the PostgreSQL volume region move.
+- Deployed the PostgreSQL-backed API and ran health, unauthenticated-session, and database-backed exchange-rate smoke
+  checks.
+
+### Results
+
+- MongoDB backup: 529 documents across 22 collections.
+- PostgreSQL target: 528 rows across 23 migration models; one expired orphan auth session was intentionally omitted.
+- All populated and empty models passed exact row-count and SHA-256 content-digest comparison after import.
+- The 49 preflight warnings were expected and reviewed: 47 legacy transactions defaulted missing `createdByAi` to
+  `false`, one validated legacy `debts.accountId` field was omitted, and one expired orphan auth session was skipped.
+- DEV reported no account-balance or debt-ledger mismatch, so no data repair and no debt-write-off runtime change were
+  applied.
+- Railway pre-deploy reported no pending migrations, NestJS started successfully, and `/health`, `/auth/session`, and
+  `/exchange-rates/today` returned HTTP 200 against PostgreSQL.
+
+### Backup And Rollback Boundary
+
+- Backup: `packages/api/backups/pre-postgresql-dev-20260729T004250Z`
+- The DEV MongoDB service and its volume remain available and unchanged from the migration workflow.
+- Once DEV accepts PostgreSQL writes, MongoDB is stale. Roll back by forward-fixing PostgreSQL or restoring PostgreSQL;
+  do not silently switch back to MongoDB and discard newer writes.
