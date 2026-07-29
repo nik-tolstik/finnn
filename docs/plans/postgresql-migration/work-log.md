@@ -60,6 +60,15 @@ git diff --check
   `restartPolicyType: NEVER`, no public domain, and the daily `0 2 * * *` UTC schedule. The first Railway-side manual
   execution used the private PostgreSQL hostname and completed the verified payload/manifest pair
   `finnn/production/daily/2026/07/29/finnn-20260729T120917846Z.dump.age`.
+- Restored the Production PostgreSQL effective resource override to the approved 1 vCPU / 1 GB after live inspection
+  found that it had drifted back to the workspace maximum. EU West placement and Serverless-disabled state were
+  preserved.
+- Stopped the stale `mongodb-prod` deployment after successful PostgreSQL backup and restore validation. The Railway
+  service and ready `mongodb-volume-zdog` persistent volume remain intact for the approved observation period.
+- Removed disposable migration logs, temporary Railway links, the local backup test image, the replaceable local backup
+  role password, and local/DEV forensic exports. The authoritative pre-repair and final frozen Production MongoDB
+  exports remain local with directory mode `0700` and file mode `0600`; backend and frontend `.env` files were also
+  restricted to `0600`.
 
 ### Decisions
 

@@ -19,6 +19,11 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 - When creating a worktree, transfer the `packages/web/.env` and `packages/api/.env` files as opaque files without reading their contents.
 - Do not revert user changes unless the user explicitly requests it.
 - Do not work directly on `main` unless the user explicitly asks for it. If the current branch is `main`, switch to `develop` before making changes.
+- Agents may inspect Railway and, when the user has authorized the infrastructure change, manage services, variables,
+  deployments, resource limits, cron schedules, buckets, and environment configuration through the authenticated
+  Railway CLI or API. Resolve the exact project, environment, and service before every mutation.
+- Treat Railway variable and bucket-credential output as secret-bearing. Never print raw values, database URLs, access
+  keys, or private encryption identities; capture and filter them locally when verification is required.
 - Prefer existing project patterns over introducing new abstractions.
 - Keep comments in English.
 - Do not run Browser screenshot QA with Playwright, `agent-browser`, or similar browser automation unless the user explicitly asks for screenshot/browser QA.
@@ -94,6 +99,9 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - Use `DATABASE_URL` for API runtime connections and `DIRECT_URL` for migration and administrative connections. They
   may be identical locally; in hosted environments `DATABASE_URL` may be pooled while `DIRECT_URL` must bypass the pool.
 - Back up PostgreSQL with `pg_dump` and restore with `pg_restore`; rehearse restores against a separate database.
+- Railway project and service IDs, branch mappings, safe CLI usage, and the current deployment topology are documented
+  in `docs/operations.md`. The main local checkout may be linked to Production, so pass explicit project, environment,
+  and service identifiers for infrastructure mutations.
 - `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `DIRECT_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`,
   email variables, and `CRON_SECRET`.
 - `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL`.

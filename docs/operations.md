@@ -28,6 +28,49 @@ Telegram authentication uses two separate bots:
 - PROD bot: use only for `https://finnn.xyz` and `https://api.finnn.xyz`.
 - DEV bot: use for `https://dev.finnn.xyz`, `https://api-dev.finnn.xyz`, and localhost/ngrok testing.
 
+## Railway Topology And Agent Operations
+
+Railway workspace ID is `0d1cc03f-784c-4d9f-8f21-0a35d3459ff3`. The primary project is `Finnn`
+(`17245e2b-c104-4e6f-81a6-0bb8ffd4b403`): Production environment ID is
+`867b4c7c-cb08-4da3-9408-f0db1a5a979d`, and develop environment ID is
+`3e1d8b6f-882a-4de8-b06d-f8367de04ed1`.
+
+| Service | Railway ID | Environments | Purpose and source |
+| --- | --- | --- | --- |
+| `api` | `c6c6b351-f57e-4d19-8ae4-3a7ec50a4507` | develop, production | GitHub `nik-tolstik/finnn`: `develop` deploys DEV and `main` deploys Production. |
+| `Postgres` | `7ce03ef2-41e5-4ca2-a729-e7ed2e89c99c` | develop | DEV PostgreSQL 18 with a persistent volume. |
+| `Postgres-x8Vl` | `25a9f5d1-c6bf-49fc-94d0-04a6fbb8b330` | production | Production PostgreSQL 18 in EU West, persistent volume, 1 vCPU / 1 GB, Serverless disabled. |
+| `exchange-rates-cron` | `b7f24cda-b1eb-49af-be0b-5f77d3b53610` | develop, production | Calls the environment API at `30 8 * * *` UTC. |
+| `postgres-backup-cron` | `1e19ed24-6247-4dca-9b8e-aa847e6fc21b` | production | GitHub `main`, config `/packages/postgres-backup/railway.json`, daily at `0 2 * * *` UTC. |
+| `mongodb-dev` | `ab29c913-9e33-4306-8d9f-6f9c21d547c5` | develop | Retained migration source; not an application runtime database. |
+| `mongodb-prod` | `682befb3-68f7-4e7d-bbe3-1ccc63d72120` | production | Stopped rollback artifact; service and persistent volume are retained until MongoDB retirement is approved. |
+
+Encrypted PostgreSQL objects live in the private `finnn-postgres-backups-prod` Bucket
+(`a52e1348-08ec-4b4e-ade4-01ca16088d92`) in the separate `Finnn Backups` project
+(`1579c103-a426-4f8f-94bd-dfc7da9bd464`). Its Production environment ID is
+`f7dfb57b-2aa1-437d-9b55-cf7b204140d5`. The separate project reduces accidental deletion coupling; it does not replace
+offline custody of the age identity.
+
+Authenticated agents may use Railway CLI or API access when the requested task requires it. Read-only inspection is
+allowed for diagnosis. Creating or deleting services, changing variables, deploying, stopping a runtime, changing
+limits, or moving data requires user authorization for that scope. Before a mutation, resolve the exact IDs above and
+re-read the live state; after it, verify deployment status, region, limits, schedule, volume state, and secret-free logs.
+IDs are operational selectors rather than secrets, but they become stale when a resource is recreated.
+
+The local NVM environment can conflict with Railway's packaged CLI. Use the pinned CLI with the conflicting variables
+unset, and always pass explicit targets for mutations because the main checkout may be linked to Production:
+
+```bash
+unset NVM_DIR NVM_BIN NVM_INC NVM_CD_FLAGS npm_config_prefix
+pnpm dlx @railway/cli@5.30.1 status --json
+```
+
+`railway variable list --json`, `railway variable --kv`, and `railway bucket credentials` return raw secrets. Capture
+such output without echoing it, filter to non-secret metadata, and never commit it. Cross-project variable references do
+not resolve, so the backup cron receives copied Bucket credentials while its database URL uses the same-project private
+PostgreSQL hostname. Preserve `multiRegionConfig` when updating an instance, and treat credential resets, variable
+replacement, staged-change discard, and service or Bucket deletion as destructive operations.
+
 ## Production Environment
 
 Required variables:

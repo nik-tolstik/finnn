@@ -56,12 +56,16 @@ exist. The derived recipient fingerprint in each manifest identifies which recov
 
 ## Railway Service Configuration
 
-The checked-in [`packages/postgres-backup/railway.json`](../packages/postgres-backup/railway.json) builds
+The Production `postgres-backup-cron` service (`1e19ed24-6247-4dca-9b8e-aa847e6fc21b`) is connected to GitHub `main`.
+It has no DEV instance or public domain. The checked-in
+[`packages/postgres-backup/railway.json`](../packages/postgres-backup/railway.json) builds
 [`packages/postgres-backup/Dockerfile`](../packages/postgres-backup/Dockerfile), runs once daily at `02:00 UTC`, and uses
 `restartPolicyType: NEVER`. The image is based on PostgreSQL 18 so `pg_dump` matches the production server major, and it
-includes the `age` CLI and Node.js runtime.
+includes the `age` CLI and Node.js runtime. The service runs in Railway EU West with 0.5 vCPU and 500 MB memory.
 
-Create the cron service manually in the correct Railway environment:
+The initial deployment may be uploaded from a trusted local checkout, but that snapshot is not tied to a Git commit.
+After the implementation is merged, connect the service source to `nik-tolstik/finnn` branch `main` so subsequent
+deployments are reproducible and follow the checked-in watch patterns. Configure the service as follows:
 
 1. Keep the service root directory at `/` because its Docker build needs the workspace lockfile and package manifest.
 2. Set the config-as-code path to `/packages/postgres-backup/railway.json`.
@@ -72,6 +76,21 @@ Create the cron service manually in the correct Railway environment:
    style. For the Railway virtual-host endpoint `https://t3.storageapi.dev`, keep
    `BACKUP_S3_FORCE_PATH_STYLE="false"`.
 6. Add alerting for every non-zero cron result and for a missing daily completion manifest.
+
+`BACKUP_DATABASE_URL` uses the same-project private PostgreSQL hostname. The Bucket is in a separate Railway project,
+so its credentials cannot be referenced across projects and must be copied securely into the cron variables:
+
+| Backup variable | Railway Bucket credential |
+| --- | --- |
+| `BACKUP_S3_ENDPOINT` | `ENDPOINT` |
+| `BACKUP_S3_REGION` | `REGION` |
+| `BACKUP_S3_BUCKET` | `BUCKET` |
+| `BACKUP_S3_ACCESS_KEY_ID` | `ACCESS_KEY_ID` |
+| `BACKUP_S3_SECRET_ACCESS_KEY` | `SECRET_ACCESS_KEY` |
+
+The current Bucket uses virtual-host addressing at `https://t3.storageapi.dev`; keep
+`BACKUP_S3_FORCE_PATH_STYLE="false"` and set `BACKUP_S3_PREFIX="finnn"` explicitly. Never copy the age private identity
+into Railway.
 
 Railway cron schedules are UTC. A cron process must exit when its work finishes, and Railway skips an invocation when a
 previous execution is still active. See the official [Railway cron documentation](https://docs.railway.com/cron-jobs)
