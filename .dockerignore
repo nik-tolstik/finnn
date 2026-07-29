@@ -1,0 +1,10 @@
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!packages/
+!packages/postgres-backup/
+!packages/postgres-backup/Dockerfile
+!packages/postgres-backup/package.json
+!packages/postgres-backup/src/
+!packages/postgres-backup/src/**

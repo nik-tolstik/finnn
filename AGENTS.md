@@ -6,6 +6,8 @@ Finnn is a personal and shared finance tracker in a `pnpm` monorepo.
 
 - `packages/web` is the Next.js App Router frontend built with React, TypeScript, TanStack Query, Tailwind CSS, and Orval-generated API clients. Exchange-rate UI is shared across transaction and debt forms rather than owned by a standalone frontend module.
 - `packages/api` is the NestJS backend built with TypeScript, Prisma, PostgreSQL, OpenAPI, and Vitest.
+- `packages/postgres-backup` is the isolated Railway cron service that streams `pg_dump` through `age` and verifies
+  encrypted S3-compatible uploads.
 
 The app manages workspaces, members, accounts, categories, payment transactions, transfers, debts, analytics, exchange rates, PostgreSQL persistence, and PWA static asset caching.
 
@@ -35,6 +37,7 @@ pnpm db:migrate:dev
 pnpm db:migrate:deploy
 pnpm db:migrate:status
 pnpm db:seed
+pnpm backup:test
 ```
 
 Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishing non-trivial changes.
@@ -56,6 +59,8 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - `packages/api/prisma/schema.prisma` and `packages/api/prisma/migrations` are the source of truth for database tables,
   relations, indexes, enums, and reviewed SQL migrations.
 - `packages/api/scripts` contains seed, one-time MongoDB-to-PostgreSQL migration tooling, and OpenAPI generation scripts.
+- `packages/postgres-backup` contains the PostgreSQL 18 backup image, streaming age encryption, verified object-storage
+  upload, restore helper, tests, and Railway cron configuration.
 - `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
 - `docs` contains human and AI-facing project documentation.
 - `docs/plans` contains feature implementation plans and required work logs for multi-agent tasks.

@@ -239,13 +239,13 @@ CRON_SECRET="same-secret-as-api"
 Example cron service start command:
 
 ```bash
-node -e "fetch(`${process.env.API_BASE_URL}/cron/update-exchange-rates`, { headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` } }).then(async (response) => { const body = await response.text(); console.log(body); if (!response.ok) process.exit(1); }).catch((error) => { console.error(error); process.exit(1); })"
+node -e 'fetch(process.env.API_BASE_URL + "/cron/update-exchange-rates", { headers: { Authorization: "Bearer " + process.env.CRON_SECRET } }).then(async (response) => { const body = await response.text(); console.log(body); if (!response.ok) process.exit(1); }).catch((error) => { console.error(error); process.exit(1); })'
 ```
 
 Scheduled payment reminder command:
 
 ```bash
-node -e "fetch(`${process.env.API_BASE_URL}/cron/scheduled-payment-reminders`, { headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` } }).then(async (response) => { const body = await response.text(); console.log(body); if (!response.ok) process.exit(1); }).catch((error) => { console.error(error); process.exit(1); })"
+node -e 'fetch(process.env.API_BASE_URL + "/cron/scheduled-payment-reminders", { headers: { Authorization: "Bearer " + process.env.CRON_SECRET } }).then(async (response) => { const body = await response.text(); console.log(body); if (!response.ok) process.exit(1); }).catch((error) => { console.error(error); process.exit(1); })'
 ```
 
 ## PostgreSQL Connections And Pooling
@@ -265,6 +265,14 @@ can exhaust the database after horizontal scaling.
 
 ## PostgreSQL Backup And Restore
 
+Production daily backups are owned by the isolated `packages/postgres-backup` Railway cron service. It streams the
+PostgreSQL 18 custom dump through age without persisting plaintext, fully re-downloads the S3-compatible object for
+SHA-256 verification, and uploads a completion manifest last. Follow the complete setup, alerting, identity rotation,
+retention, and restore procedure in [`docs/postgresql-backups.md`](./postgresql-backups.md).
+
+The commands below remain useful for a manual local backup or isolated restore rehearsal. Do not use an unencrypted
+manual dump as a substitute for the scheduled production workflow.
+
 Use PostgreSQL-native custom-format backups. `pg_dump` and `pg_restore` need a direct libpq-compatible URL; do not pass a
 Prisma-only `?schema=public` parameter to them.
 
@@ -280,7 +288,7 @@ Verify every material backup by restoring it into an empty, non-production datab
 FINNN_PG_RESTORE_LIBPQ_URL="postgresql://user:password@host:5432/finnn_restore?sslmode=require"
 FINNN_PG_RESTORE_PRISMA_URL="postgresql://user:password@host:5432/finnn_restore?schema=public&sslmode=require"
 pg_restore --list backups/finnn-YYYYMMDDTHHMMSSZ.dump
-pg_restore --dbname="$FINNN_PG_RESTORE_LIBPQ_URL" --clean --if-exists --no-owner --no-privileges \
+pg_restore --dbname="$FINNN_PG_RESTORE_LIBPQ_URL" --single-transaction --exit-on-error --no-owner --no-acl \
   backups/finnn-YYYYMMDDTHHMMSSZ.dump
 DATABASE_URL="$FINNN_PG_RESTORE_PRISMA_URL" DIRECT_URL="$FINNN_PG_RESTORE_PRISMA_URL" pnpm db:migrate:status
 ```
