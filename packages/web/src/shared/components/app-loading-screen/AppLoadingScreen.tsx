@@ -1,4 +1,7 @@
+import { ArrowLeftRight, ChartNoAxesCombined, WalletCards } from "lucide-react";
 import Image from "next/image";
+
+import styles from "./AppLoadingScreen.module.css";
 
 interface AppLoadingScreenProps {
   label?: string;
@@ -6,17 +9,33 @@ interface AppLoadingScreenProps {
 
 export function AppLoadingScreen({ label = "Загрузка..." }: AppLoadingScreenProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="flex flex-col items-center gap-4 text-center">
-        <div className="relative size-14">
-          <Image src="/logo-dark.svg" alt="Finnn" fill className="block dark:hidden" priority />
-          <Image src="/logo-light.svg" alt="Finnn" fill className="hidden dark:block" priority />
+    <div
+      role="status"
+      aria-live="polite"
+      className={`${styles.screen} flex items-center justify-center overflow-hidden bg-background px-6`}
+    >
+      <div aria-hidden="true" className={styles.scene}>
+        <div className={styles.glow} />
+        <div className={styles.outerOrbit} />
+        <div className={styles.innerOrbit} />
+        <div className={styles.orbitSweep} />
+
+        <div className={styles.logoShell}>
+          <Image src="/logo-dark.svg" alt="" width={72} height={72} className="block dark:hidden" priority />
+          <Image src="/logo-light.svg" alt="" width={72} height={72} className="hidden dark:block" priority />
         </div>
-        <div className="space-y-1">
-          <div className="text-2xl font-semibold">Finnn</div>
-          <div className="text-sm text-muted-foreground">{label}</div>
+
+        <div className={`${styles.node} ${styles.accountsNode}`}>
+          <WalletCards className="size-5" strokeWidth={1.8} />
+        </div>
+        <div className={`${styles.node} ${styles.transferNode}`}>
+          <ArrowLeftRight className="size-5" strokeWidth={1.8} />
+        </div>
+        <div className={`${styles.node} ${styles.analyticsNode}`}>
+          <ChartNoAxesCombined className="size-5" strokeWidth={1.8} />
         </div>
       </div>
+      <span className="sr-only">{label}</span>
     </div>
   );
 }

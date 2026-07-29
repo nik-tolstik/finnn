@@ -1,0 +1,160 @@
+.screen {
+  min-height: 100dvh;
+  background-image: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--primary) 9%, transparent) 0,
+    transparent min(48vw, 28rem)
+  );
+}
+
+.scene {
+  position: relative;
+  width: min(17rem, calc(100vw - 3rem));
+  aspect-ratio: 1;
+  isolation: isolate;
+}
+
+.glow {
+  position: absolute;
+  inset: 28%;
+  z-index: -1;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
+  filter: blur(2.5rem);
+  animation: glow-pulse 2.8s ease-in-out infinite;
+}
+
+.outerOrbit,
+.innerOrbit,
+.orbitSweep {
+  position: absolute;
+  border-radius: 9999px;
+}
+
+.outerOrbit {
+  inset: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+
+.innerOrbit {
+  inset: 4rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.orbitSweep {
+  inset: 1.5rem;
+  background: conic-gradient(
+    from 20deg,
+    transparent 0deg 235deg,
+    color-mix(in srgb, var(--primary) 70%, transparent) 285deg,
+    transparent 330deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 1px));
+  animation: orbit 3.2s linear infinite;
+}
+
+.logoShell {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4.5rem;
+  height: 4.5rem;
+  overflow: hidden;
+  border-radius: 1.125rem;
+  box-shadow:
+    0 0 0 0.625rem color-mix(in srgb, var(--background) 72%, transparent),
+    0 1rem 2.5rem color-mix(in srgb, var(--foreground) 14%, transparent);
+  transform: translate(-50%, -50%);
+  animation: logo-float 2.8s ease-in-out infinite;
+}
+
+.node {
+  position: absolute;
+  display: flex;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
+  border-radius: 0.875rem;
+  background: var(--surface-raised);
+  color: var(--primary);
+  box-shadow:
+    0 0.625rem 1.5rem color-mix(in srgb, var(--foreground) 9%, transparent),
+    inset 0 1px color-mix(in srgb, white 45%, transparent);
+  animation: node-pulse 2.4s ease-in-out infinite;
+}
+
+.accountsNode {
+  top: 0.75rem;
+  left: calc(50% - 1.5rem);
+}
+
+.transferNode {
+  right: 0.75rem;
+  bottom: 3.125rem;
+  animation-delay: -1.6s;
+}
+
+.analyticsNode {
+  bottom: 3.125rem;
+  left: 0.75rem;
+  animation-delay: -0.8s;
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes logo-float {
+  0%,
+  100% {
+    transform: translate(-50%, -50%);
+  }
+
+  50% {
+    transform: translate(-50%, calc(-50% - 0.25rem));
+  }
+}
+
+@keyframes node-pulse {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: translateY(0) scale(0.94);
+  }
+
+  42% {
+    opacity: 1;
+    transform: translateY(-0.25rem) scale(1);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.52;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow,
+  .orbitSweep,
+  .logoShell,
+  .node {
+    animation: none;
+  }
+
+  .node {
+    opacity: 1;
+  }
+}
