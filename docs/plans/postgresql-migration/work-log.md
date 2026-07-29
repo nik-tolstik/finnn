@@ -337,3 +337,49 @@ pnpm build
   No active account balance mismatch remains, and no runtime debt behavior was changed.
 - Production API remained online and MongoDB-backed throughout preflight. PostgreSQL still contains only the schema;
   the maintenance-window backup, frozen import, variable switch, and deployment remain pending.
+
+## 2026-07-29 - Production cutover
+
+### Scope
+
+- Stopped the Production API before the final MongoDB export and kept the exchange-rate cron from writing during the
+  maintenance window.
+- Repeated the full ETL audit against the frozen source, imported the reviewed source rows into PostgreSQL, and compared
+  every migration model before opening PostgreSQL for writes.
+- Switched the Production API `DATABASE_URL` and `DIRECT_URL` to the Railway PostgreSQL service while retaining
+  `MONGODB_SOURCE_URL` for audited source access and rollback investigation.
+- Merged PR `#10` with merge commit `0998e28d5fc665fc9e80fe46b5db1208e5244cca` and deployed the PostgreSQL-backed
+  API from `main`.
+- Corrected the Railway exchange-rate cron command so Bash no longer expands JavaScript `${process.env...}`
+  expressions before Node.js starts.
+
+### Results
+
+- Final frozen backup: `backups/pre-postgresql-production-20260729T104642Z`, containing 1,868 documents across 23
+  collections. Manifest SHA-256: `df7216635e38ab8bce0732025f221273e9e37ace2a894f2eae32e3205c957be8`.
+- The frozen source and imported target both contained 1,854 retained rows across 23 migration models. Exact count and
+  content-digest validation passed with zero mismatches before PostgreSQL writes were enabled.
+- The same 14 reviewed documents were intentionally omitted: eight expired or revoked orphan sessions, four ownerless
+  accounts with missing workspaces and no dependent records, and two retired `whats_new_status` records.
+- Railway API deployment `3cd655a5-66a3-4f17-8c20-504b90ee5b7e` completed successfully. Its service manifest runs
+  `pnpm --filter api db:migrate:deploy`, uses `/health`, keeps one EU West replica, and disables Serverless sleep.
+- `/health`, `/auth/session`, and `/exchange-rates/today` returned HTTP 200 after the cutover. The unauthenticated session
+  response remained `authenticated: false`, and the exchange-rate endpoint returned the expected USD, EUR, and RUB
+  rates.
+- The corrected Production cron command was executed with the Production variables and saved all three exchange rates.
+  Cron snapshot `28d55b6a-403f-4eba-9b9f-8288332b92ae` is successful; the schedule remains `30 8 * * *`, with the next
+  run at `2026-07-30T08:30:00Z`.
+- Production PostgreSQL deployment `60d96bdb-3cc2-43d0-bdeb-a6353cc6a043` is healthy with one EU West replica, a ready
+  persistent volume, a `1` vCPU / `1 GB` override, and Serverless disabled.
+
+### Backup And Rollback Boundary
+
+- The Production MongoDB service, volume, pre-repair export, and final frozen export remain intact. Do not delete them
+  until the PostgreSQL retention window is explicitly approved.
+- Production accepted PostgreSQL writes when the API and the manual exchange-rate cron check completed. MongoDB is now
+  stale, so a lossless rollback requires replaying PostgreSQL writes or restoring from an appropriate PostgreSQL backup;
+  switching the API URL directly back to MongoDB would discard post-cutover writes.
+- Railway volume-backup reads are available, but both the backup-create and backup-schedule mutations returned
+  `Not Authorized`. No Railway PostgreSQL volume backup or automatic daily/weekly/monthly schedule was created. Confirm
+  the Railway plan or workspace permission in the UI, then create and restore-test a PostgreSQL backup before retiring
+  MongoDB.
