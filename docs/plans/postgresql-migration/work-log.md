@@ -72,6 +72,9 @@ git diff --check
 - Scoped the backup build-context exclusions to `packages/postgres-backup/Dockerfile.dockerignore`. A root
   `.dockerignore` was rejected because Railway Railpack also applied it to the API service and omitted the API build
   dependencies; the previous healthy API deployment remained online while the failed replacement was corrected.
+- Deleted the stale DEV MongoDB service and its persistent volume after the synchronized `develop` deployment passed
+  its health check. Removed the now-unresolvable `MONGODB_SOURCE_URL` from the DEV API variables; Production MongoDB
+  remains stopped with its volume retained.
 
 ### Decisions
 

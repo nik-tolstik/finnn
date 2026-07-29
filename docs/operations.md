@@ -42,8 +42,11 @@ Railway workspace ID is `0d1cc03f-784c-4d9f-8f21-0a35d3459ff3`. The primary proj
 | `Postgres-x8Vl` | `25a9f5d1-c6bf-49fc-94d0-04a6fbb8b330` | production | Production PostgreSQL 18 in EU West, persistent volume, 1 vCPU / 1 GB, Serverless disabled. |
 | `exchange-rates-cron` | `b7f24cda-b1eb-49af-be0b-5f77d3b53610` | develop, production | Calls the environment API at `30 8 * * *` UTC. |
 | `postgres-backup-cron` | `1e19ed24-6247-4dca-9b8e-aa847e6fc21b` | production | GitHub `main`, config `/packages/postgres-backup/railway.json`, daily at `0 2 * * *` UTC. |
-| `mongodb-dev` | `ab29c913-9e33-4306-8d9f-6f9c21d547c5` | develop | Retained migration source; not an application runtime database. |
 | `mongodb-prod` | `682befb3-68f7-4e7d-bbe3-1ccc63d72120` | production | Stopped rollback artifact; service and persistent volume are retained until MongoDB retirement is approved. |
+
+The former DEV MongoDB service and its persistent volume were deleted after the PostgreSQL cutover was validated.
+`MONGODB_SOURCE_URL` was removed from the DEV API variables. Production MongoDB remains a separate stopped rollback
+artifact and must not be deleted until its observation period is explicitly closed.
 
 Encrypted PostgreSQL objects live in the private `finnn-postgres-backups-prod` Bucket
 (`a52e1348-08ec-4b4e-ade4-01ca16088d92`) in the separate `Finnn Backups` project
