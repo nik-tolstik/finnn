@@ -18,16 +18,17 @@ describe("resolveViewerUserId", () => {
 
 describe("getVisibleAccounts", () => {
   const accounts = [
-    { id: "1", ownerId: "user-1" },
-    { id: "2", ownerId: "user-2" },
-    { id: "3", ownerId: null },
+    { id: "1", ownerId: "user-1", hidden: false },
+    { id: "2", ownerId: "user-2", hidden: false },
+    { id: "3", ownerId: null, hidden: false },
+    { id: "4", ownerId: "user-1", hidden: true },
   ];
 
   it("shows only the current user's accounts by default", () => {
-    expect(getVisibleAccounts(accounts, "user-1", false)).toEqual([{ id: "1", ownerId: "user-1" }]);
+    expect(getVisibleAccounts(accounts, "user-1", false)).toEqual([{ id: "1", ownerId: "user-1", hidden: false }]);
   });
 
-  it("shows all accounts when the toggle is enabled", () => {
+  it("shows all accounts including hidden accounts when the toggle is enabled", () => {
     expect(getVisibleAccounts(accounts, "user-1", true)).toEqual(accounts);
   });
 

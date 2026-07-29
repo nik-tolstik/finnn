@@ -2104,6 +2104,114 @@
         "tags": ["Accounts"]
       }
     },
+    "/accounts/{accountId}/hide": {
+      "post": {
+        "operationId": "hideAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Hide an account for the current user",
+        "tags": ["Accounts"]
+      }
+    },
+    "/accounts/{accountId}/show": {
+      "post": {
+        "operationId": "showAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "finnn_session": []
+          }
+        ],
+        "summary": "Show an account for the current user",
+        "tags": ["Accounts"]
+      }
+    },
     "/accounts/{accountId}/archive": {
       "post": {
         "operationId": "archiveAccount",
@@ -6432,6 +6540,11 @@
             "type": "boolean",
             "example": false
           },
+          "hidden": {
+            "type": "boolean",
+            "description": "Whether the current user hides the account from dashboard cards",
+            "example": false
+          },
           "order": {
             "type": "number",
             "example": 0
@@ -6464,6 +6577,7 @@
           "initialBalance",
           "currency",
           "archived",
+          "hidden",
           "order",
           "createdAt",
           "updatedAt"
@@ -6555,6 +6669,11 @@
             "type": "boolean",
             "example": false
           },
+          "hidden": {
+            "type": "boolean",
+            "description": "Whether the current user hides the account from dashboard cards",
+            "example": false
+          },
           "order": {
             "type": "number",
             "example": 0
@@ -6590,6 +6709,7 @@
           "initialBalance",
           "currency",
           "archived",
+          "hidden",
           "order",
           "createdAt",
           "updatedAt",
@@ -6713,7 +6833,7 @@
             "type": "string",
             "example": "665f5d865ef5a20c0d2f4444",
             "nullable": true,
-            "pattern": "^[a-fA-F0-9]{24}$"
+            "pattern": "^(?:[a-fA-F\\d]{24}|c[a-z\\d]{24})$"
           }
         },
         "required": ["name", "type"]
@@ -6889,7 +7009,7 @@
             "type": "string",
             "example": "665f5d865ef5a20c0d2f4444",
             "nullable": true,
-            "pattern": "^[a-fA-F0-9]{24}$"
+            "pattern": "^(?:[a-fA-F\\d]{24}|c[a-z\\d]{24})$"
           },
           "order": {
             "type": "number",

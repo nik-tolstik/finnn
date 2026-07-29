@@ -24,6 +24,8 @@ export interface ArchivedAccountDto {
   /** @nullable */
   icon?: string | null;
   archived: boolean;
+  /** Whether the current user hides the account from dashboard cards */
+  hidden: boolean;
   order: number;
   createdAt: string;
   updatedAt: string;

@@ -4,6 +4,7 @@ import Big from "big.js";
 
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { PrismaService } from "@/prisma/prisma.service";
+import { runSerializableTransaction } from "@/prisma/serializable-transaction";
 
 import type {
   AddToDebtDto,
@@ -532,7 +533,7 @@ export class DebtsService {
       throw new BadRequestException("Выберите счёт");
     }
 
-    const debt = await this.prisma.$transaction(async (tx) => {
+    const debt = await runSerializableTransaction(this.prisma, async (tx) => {
       const currency = input.currency;
       let accountId: string | null = null;
       let toAmount: string | null = null;
@@ -622,7 +623,7 @@ export class DebtsService {
   }
 
   async updateDebt(debtId: string, input: UpdateDebtDto, currentUser: AuthenticatedUser) {
-    const debt = await this.prisma.$transaction(async (tx) => {
+    const debt = await runSerializableTransaction(this.prisma, async (tx) => {
       const existingDebt = await this.getAccessibleDebtOrThrow(tx, debtId, currentUser);
 
       let initialTransaction = await tx.debtTransaction.findFirst({
@@ -714,7 +715,7 @@ export class DebtsService {
   }
 
   async addToDebt(debtId: string, input: AddToDebtDto, currentUser: AuthenticatedUser) {
-    const debt = await this.prisma.$transaction(async (tx) => {
+    const debt = await runSerializableTransaction(this.prisma, async (tx) => {
       const existingDebt = await this.getAccessibleDebtOrThrow(tx, debtId, currentUser);
 
       if (existingDebt.status === DEBT_CLOSED) {
@@ -780,7 +781,7 @@ export class DebtsService {
       throw new BadRequestException("Выберите счёт");
     }
 
-    const debt = await this.prisma.$transaction(async (tx) => {
+    const debt = await runSerializableTransaction(this.prisma, async (tx) => {
       const existingDebt = await this.getAccessibleDebtOrThrow(tx, debtId, currentUser);
 
       if (existingDebt.status === DEBT_CLOSED) {
@@ -904,7 +905,7 @@ export class DebtsService {
   }
 
   async createDebtWriteOff(debtId: string, input: CreateDebtWriteOffDto, currentUser: AuthenticatedUser) {
-    const writeOff = await this.prisma.$transaction(async (tx) => {
+    const writeOff = await runSerializableTransaction(this.prisma, async (tx) => {
       const debt = await this.getAccessibleDebtOrThrow(tx, debtId, currentUser);
 
       if (debt.status === DEBT_CLOSED) {
@@ -979,7 +980,7 @@ export class DebtsService {
   }
 
   async updateDebtWriteOff(debtTransactionId: string, input: UpdateDebtWriteOffDto, currentUser: AuthenticatedUser) {
-    const writeOff = await this.prisma.$transaction(async (tx) => {
+    const writeOff = await runSerializableTransaction(this.prisma, async (tx) => {
       const existingTransaction = await this.getAccessibleDebtTransactionOrThrow(tx, debtTransactionId, currentUser);
 
       if (!existingTransaction.paymentTransactionId) {
@@ -1054,7 +1055,7 @@ export class DebtsService {
   }
 
   async deleteDebtWriteOff(debtTransactionId: string, currentUser: AuthenticatedUser) {
-    await this.prisma.$transaction(async (tx) => {
+    await runSerializableTransaction(this.prisma, async (tx) => {
       const debtTransaction = await this.getAccessibleDebtTransactionOrThrow(tx, debtTransactionId, currentUser);
 
       if (!debtTransaction.paymentTransactionId) {
@@ -1082,7 +1083,7 @@ export class DebtsService {
   }
 
   async deleteDebt(debtId: string, currentUser: AuthenticatedUser) {
-    await this.prisma.$transaction(async (tx) => {
+    await runSerializableTransaction(this.prisma, async (tx) => {
       const debt = await this.getAccessibleDebtOrThrow(tx, debtId, currentUser);
       const debtTransactions = await tx.debtTransaction.findMany({
         where: { debtId: debt.id },
@@ -1136,7 +1137,7 @@ export class DebtsService {
     input: UpdateDebtEntryTransactionDto,
     currentUser: AuthenticatedUser
   ) {
-    const debtTransaction = await this.prisma.$transaction(async (tx) => {
+    const debtTransaction = await runSerializableTransaction(this.prisma, async (tx) => {
       const existingTransaction = await this.getAccessibleDebtTransactionOrThrow(tx, debtTransactionId, currentUser);
       const debt = existingTransaction.debt;
 
@@ -1240,7 +1241,7 @@ export class DebtsService {
   }
 
   async deleteDebtTransaction(debtTransactionId: string, currentUser: AuthenticatedUser) {
-    await this.prisma.$transaction(async (tx) => {
+    await runSerializableTransaction(this.prisma, async (tx) => {
       const debtTransaction = await this.getAccessibleDebtTransactionOrThrow(tx, debtTransactionId, currentUser);
       const debt = debtTransaction.debt;
 

@@ -11,6 +11,7 @@ Main models:
 - `Workspace` - shared financial space with owner, members, accounts, categories, transactions, transfers, debts, and invites.
 - `WorkspaceMember` - user membership and role inside a workspace.
 - `Account` - balance container with current and initial balances, currency, owner, archive state, display metadata, and order.
+- `HiddenAccount` - per-user preference that hides an active account from that user's dashboard cards.
 - `Category` - income or expense classification.
 - `CategoryIconAsset` - workspace-scoped uploaded PNG, JPEG, or WebP category image.
 - `PaymentTransaction` - income or expense transaction for one account.
@@ -27,6 +28,21 @@ Main models:
 - `ExchangeRate` - persisted daily currency rate.
 - `TelegramBotPreference` - per-user Telegram bot context, active workspace, default accounts, timezone, and receipt mode.
 - `AiFinanceDraft` - short-lived AI finance entry draft that must be confirmed before creating financial records.
+
+## PostgreSQL Persistence
+
+The Prisma schema maps the domain to relational PostgreSQL tables with database-enforced foreign keys and explicit
+referential actions. Application-level workspace authorization and domain validation remain required; a foreign key can
+prove that a referenced row exists, but not that every cross-workspace business rule is valid.
+
+Public IDs are opaque strings. Rows migrated from MongoDB retain their existing 24-character ObjectId strings, while
+new PostgreSQL rows use the Prisma ID default. API clients and backend validators must not infer the database provider
+from an ID's shape.
+
+The cutover deliberately preserves money values as strings and keeps the existing money helpers as the arithmetic
+boundary. JSON draft/preference payloads use PostgreSQL `jsonb`, scalar-list fields use PostgreSQL arrays, and temporal
+fields use timezone-aware timestamps. Converting money to native `numeric` or moving analytics aggregation into SQL is
+a separate change after migration parity is proven.
 
 ## Identity And Email
 
@@ -62,8 +78,8 @@ avatar, a bundled preset path under `/avatars/`, a Telegram photo URL, or the st
 `/auth/users/:userId/avatar`. Uploaded avatar object keys are stored separately in `User.avatarStorageKey` so replacing
 or clearing an uploaded avatar can clean up the old private bucket object.
 
-The pair `(provider, providerUserId)` is unique. MongoDB must also keep a partial unique index on `users.email`
-for string email values only, so multiple users without email are valid while duplicate real email addresses are not.
+The pair `(provider, providerUserId)` is unique. `users.email` is also unique when present; PostgreSQL permits multiple
+`NULL` values, so Telegram-only users can coexist while duplicate real email addresses remain invalid.
 
 Workspace invites remain email-based:
 
@@ -101,6 +117,11 @@ Do not use raw JavaScript arithmetic for persisted money behavior.
 Accounts belong to a workspace and can optionally have an owner. Frontend owner visibility rules live in `packages/web/src/modules/accounts/account-visibility.ts`.
 Account names are display labels and are not unique inside a workspace; users can distinguish same-name accounts by
 owner, balance, icon, color, and transaction history.
+
+Dashboard hiding is personal to the authenticated user. The `hidden` account response field is computed from the
+`HiddenAccount` preference for the current user; it is not a global account property and does not restrict access to
+the account or remove it from financial forms, transactions, transfers, debts, scheduled payments, or analytics.
+The dashboard's `Все счета` mode includes hidden accounts so the user can restore them.
 
 `Account.balance` stores the current materialized balance. `Account.initialBalance` stores the opening balance before
 payment transactions, transfers, and debt transactions. The expected invariant is:

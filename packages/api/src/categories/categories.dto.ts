@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsArray, IsIn, IsInt, IsMongoId, IsOptional, IsString, MaxLength, Min, MinLength } from "class-validator";
+import { IsArray, IsIn, IsInt, IsOptional, IsString, Matches, MaxLength, Min, MinLength } from "class-validator";
 
 const CATEGORY_TYPES = ["income", "expense"] as const;
+export const PERSISTED_ID_PATTERN = /^(?:[a-fA-F\d]{24}|c[a-z\d]{24})$/;
 
 export class CreateCategoryDto {
   @ApiProperty({ example: "Groceries", maxLength: 100, minLength: 1, type: String })
@@ -23,12 +24,12 @@ export class CreateCategoryDto {
   @ApiPropertyOptional({
     example: "665f5d865ef5a20c0d2f4444",
     nullable: true,
-    pattern: "^[a-fA-F0-9]{24}$",
+    pattern: PERSISTED_ID_PATTERN.source,
     type: String,
   })
   @IsOptional()
   @IsString()
-  @IsMongoId()
+  @Matches(PERSISTED_ID_PATTERN)
   iconAssetId?: string | null;
 }
 
@@ -54,12 +55,12 @@ export class UpdateCategoryDto {
   @ApiPropertyOptional({
     example: "665f5d865ef5a20c0d2f4444",
     nullable: true,
-    pattern: "^[a-fA-F0-9]{24}$",
+    pattern: PERSISTED_ID_PATTERN.source,
     type: String,
   })
   @IsOptional()
   @IsString()
-  @IsMongoId()
+  @Matches(PERSISTED_ID_PATTERN)
   iconAssetId?: string | null;
 
   @ApiPropertyOptional({ example: 0, type: Number })

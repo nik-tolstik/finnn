@@ -3,8 +3,10 @@ import {
   createAccount as createApiAccount,
   deleteArchivedAccount as deleteApiArchivedAccount,
   getAccount as getApiAccount,
+  hideAccount as hideApiAccount,
   listAccounts as listApiAccounts,
   listArchivedAccounts as listApiArchivedAccounts,
+  showAccount as showApiAccount,
   unarchiveAccount as unarchiveApiAccount,
   updateAccount as updateApiAccount,
   updateAccountsOrder as updateApiAccountsOrder,
@@ -88,6 +90,24 @@ export async function updateAccount(id: string, input: UpdateAccountInput, optio
     return ok(toUiAccount(response.account));
   } catch (error: unknown) {
     return fail(error, "Не удалось обновить счёт");
+  }
+}
+
+export async function hideAccount(id: string, options?: RequestInit) {
+  try {
+    await hideApiAccount(id, options);
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось скрыть счёт");
+  }
+}
+
+export async function showAccount(id: string, options?: RequestInit) {
+  try {
+    await showApiAccount(id, options);
+    return success();
+  } catch (error: unknown) {
+    return fail(error, "Не удалось показать счёт");
   }
 }
 

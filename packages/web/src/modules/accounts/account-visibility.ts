@@ -2,7 +2,7 @@ export function resolveViewerUserId(sessionUserId?: string | null, initialUserId
   return sessionUserId ?? initialUserId ?? null;
 }
 
-export function getVisibleAccounts<T extends { ownerId: string | null }>(
+export function getVisibleAccounts<T extends { ownerId: string | null; hidden?: boolean }>(
   accounts: T[],
   viewerUserId: string | null | undefined,
   showAllAccounts: boolean
@@ -11,5 +11,5 @@ export function getVisibleAccounts<T extends { ownerId: string | null }>(
     return accounts;
   }
 
-  return accounts.filter((account) => account.ownerId === viewerUserId);
+  return accounts.filter((account) => account.ownerId === viewerUserId && !account.hidden);
 }

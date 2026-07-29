@@ -55,7 +55,7 @@ export class ScheduledPaymentsNotificationService {
         OR: [{ notifyEmail: true }, { notifyTelegram: true }],
         AND: [
           {
-            OR: [{ snoozedUntil: null }, { snoozedUntil: { isSet: false } }, { snoozedUntil: { lte: now } }],
+            OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }],
           },
         ],
       },

@@ -1,5 +1,9 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
+import { toast } from "sonner";
+
 import type { Account } from "@/modules/accounts/account.types";
 import type {
   AccountDisplayGroup,
@@ -10,8 +14,10 @@ import { PaymentTransactionType } from "@/modules/transactions/transaction.const
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
 import { useDialogState } from "@/shared/hooks/useDialogState";
+import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { Badge } from "@/shared/ui/badge";
 
+import { hideAccount, showAccount } from "../../account.api";
 import { AccountActionsDialog } from "../account-actions-dialog/AccountActionsDialog";
 import { AccountsCardsSkeleton } from "../accounts-cards-skeleton/AccountsCardsSkeleton";
 import { ArchiveAccountDialog } from "../archive-account-dialog/ArchiveAccountDialog";
@@ -67,6 +73,8 @@ export function AccountsCards({
   reorderMode = false,
   workspaceId,
 }: AccountsCardsProps) {
+  const queryClient = useQueryClient();
+  const visibilityMutationIds = useRef(new Set<string>());
   const accountActionsDialog = useDialogState<ActionDialogData>();
   const createTransactionDialog = useDialogState<{
     workspaceId: string;
@@ -75,6 +83,39 @@ export function AccountsCards({
   }>();
   const editDialog = useDialogState<ActionDialogData>();
   const archiveDialog = useDialogState<ActionDialogData>();
+
+  const handleToggleVisibility = async (account: AccountWithOwner) => {
+    if (visibilityMutationIds.current.has(account.id)) {
+      return;
+    }
+
+    const nextHidden = !account.hidden;
+    visibilityMutationIds.current.add(account.id);
+
+    accountActionsDialog.closeDialog();
+
+    try {
+      const result = await runOptimisticWorkspaceMutation({
+        queryClient,
+        workspaceId: account.workspaceId,
+        domains: ["accounts"],
+        apply: (context) => {
+          updateAccountsInCache(context, [{ id: account.id, hidden: nextHidden }]);
+        },
+        mutation: () => (nextHidden ? hideAccount(account.id) : showAccount(account.id)),
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(nextHidden ? "Счёт скрыт" : "Счёт показан");
+      }
+    } catch {
+      toast.error(nextHidden ? "Не удалось скрыть счёт" : "Не удалось показать счёт");
+    } finally {
+      visibilityMutationIds.current.delete(account.id);
+    }
+  };
 
   if (isLoading) {
     return <AccountsCardsSkeleton />;
@@ -125,6 +166,9 @@ export function AccountsCards({
               account: accountActionsDialog.data.account,
             });
             accountActionsDialog.closeDialog();
+          }}
+          onToggleVisibility={() => {
+            void handleToggleVisibility(accountActionsDialog.data.account);
           }}
           onArchive={() => {
             archiveDialog.openDialog({

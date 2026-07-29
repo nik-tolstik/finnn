@@ -698,6 +698,224 @@ export function useDeleteArchivedAccount<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export const getHideAccountUrl = (accountId: string) => {
+  return `/accounts/${accountId}/hide`;
+};
+
+/**
+ * @summary Hide an account for the current user
+ */
+export const hideAccount = async (accountId: string, options?: RequestInit): Promise<AccountSuccessResponseDto> => {
+  return apiClient<AccountSuccessResponseDto>(getHideAccountUrl(accountId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getHideAccountQueryKey = (accountId: string) => {
+  return ["POST", `/accounts/${accountId}/hide`] as const;
+};
+
+export const getHideAccountQueryOptions = <
+  TData = Awaited<ReturnType<typeof hideAccount>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  accountId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof hideAccount>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getHideAccountQueryKey(accountId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof hideAccount>>> = ({ signal }) =>
+    hideAccount(accountId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: accountId !== null && accountId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof hideAccount>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type HideAccountQueryResult = NonNullable<Awaited<ReturnType<typeof hideAccount>>>;
+export type HideAccountQueryError = ErrorType<ApiErrorDto>;
+
+export function useHideAccount<TData = Awaited<ReturnType<typeof hideAccount>>, TError = ErrorType<ApiErrorDto>>(
+  accountId: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof hideAccount>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof hideAccount>>,
+          TError,
+          Awaited<ReturnType<typeof hideAccount>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useHideAccount<TData = Awaited<ReturnType<typeof hideAccount>>, TError = ErrorType<ApiErrorDto>>(
+  accountId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof hideAccount>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof hideAccount>>,
+          TError,
+          Awaited<ReturnType<typeof hideAccount>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useHideAccount<TData = Awaited<ReturnType<typeof hideAccount>>, TError = ErrorType<ApiErrorDto>>(
+  accountId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof hideAccount>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Hide an account for the current user
+ */
+
+export function useHideAccount<TData = Awaited<ReturnType<typeof hideAccount>>, TError = ErrorType<ApiErrorDto>>(
+  accountId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof hideAccount>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getHideAccountQueryOptions(accountId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getShowAccountUrl = (accountId: string) => {
+  return `/accounts/${accountId}/show`;
+};
+
+/**
+ * @summary Show an account for the current user
+ */
+export const showAccount = async (accountId: string, options?: RequestInit): Promise<AccountSuccessResponseDto> => {
+  return apiClient<AccountSuccessResponseDto>(getShowAccountUrl(accountId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getShowAccountQueryKey = (accountId: string) => {
+  return ["POST", `/accounts/${accountId}/show`] as const;
+};
+
+export const getShowAccountQueryOptions = <
+  TData = Awaited<ReturnType<typeof showAccount>>,
+  TError = ErrorType<ApiErrorDto>,
+>(
+  accountId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof showAccount>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getShowAccountQueryKey(accountId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof showAccount>>> = ({ signal }) =>
+    showAccount(accountId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: accountId !== null && accountId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof showAccount>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ShowAccountQueryResult = NonNullable<Awaited<ReturnType<typeof showAccount>>>;
+export type ShowAccountQueryError = ErrorType<ApiErrorDto>;
+
+export function useShowAccount<TData = Awaited<ReturnType<typeof showAccount>>, TError = ErrorType<ApiErrorDto>>(
+  accountId: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof showAccount>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof showAccount>>,
+          TError,
+          Awaited<ReturnType<typeof showAccount>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useShowAccount<TData = Awaited<ReturnType<typeof showAccount>>, TError = ErrorType<ApiErrorDto>>(
+  accountId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof showAccount>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof showAccount>>,
+          TError,
+          Awaited<ReturnType<typeof showAccount>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useShowAccount<TData = Awaited<ReturnType<typeof showAccount>>, TError = ErrorType<ApiErrorDto>>(
+  accountId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof showAccount>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Show an account for the current user
+ */
+
+export function useShowAccount<TData = Awaited<ReturnType<typeof showAccount>>, TError = ErrorType<ApiErrorDto>>(
+  accountId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof showAccount>>, TError, TData>>;
+    request?: SecondParameter<typeof apiClient>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getShowAccountQueryOptions(accountId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export const getArchiveAccountUrl = (accountId: string) => {
   return `/accounts/${accountId}/archive`;
 };

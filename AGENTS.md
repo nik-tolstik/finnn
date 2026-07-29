@@ -5,9 +5,9 @@
 Finnn is a personal and shared finance tracker in a `pnpm` monorepo.
 
 - `packages/web` is the Next.js App Router frontend built with React, TypeScript, TanStack Query, Tailwind CSS, and Orval-generated API clients. Exchange-rate UI is shared across transaction and debt forms rather than owned by a standalone frontend module.
-- `packages/api` is the NestJS backend built with TypeScript, Prisma, MongoDB, OpenAPI, and Vitest.
+- `packages/api` is the NestJS backend built with TypeScript, Prisma, PostgreSQL, OpenAPI, and Vitest.
 
-The app manages workspaces, members, accounts, categories, payment transactions, transfers, debts, analytics, exchange rates, MongoDB import/export, and PWA static asset caching.
+The app manages workspaces, members, accounts, categories, payment transactions, transfers, debts, analytics, exchange rates, PostgreSQL persistence, and PWA static asset caching.
 
 ## Required Workflow
 
@@ -31,10 +31,10 @@ pnpm typecheck
 pnpm check
 pnpm test
 pnpm db:generate
-pnpm db:push
+pnpm db:migrate:dev
+pnpm db:migrate:deploy
+pnpm db:migrate:status
 pnpm db:seed
-pnpm db:export
-pnpm db:import
 ```
 
 Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishing non-trivial changes.
@@ -44,7 +44,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 ## Architecture Map
 
 - `packages/web/src/app` contains App Router pages, layouts, and providers.
-- `packages/web/src/modules` contains frontend feature modules: accounts, analytics, auth, categories, debts, scheduled payments, transactions, and workspace.
+- `packages/web/src/modules` contains frontend feature modules: accounts, analytics, auth, categories, debts, scheduled payments, transactions, and workspace. Account dashboard visibility is personal to the authenticated user; do not use it to filter account choices in financial forms.
 - `packages/web/src/shared/hooks/useCurrencyAmountSync.ts` and `packages/web/src/app/(dashboard)/components/dashboard-exchange-rates.tsx` contain the cross-cutting frontend exchange-rate behavior.
 - `packages/web/src/shared/api/generated` contains Orval-generated API client functions and types. Do not edit generated files manually.
 - `packages/web/src/shared/lib` contains frontend session, query keys, cache invalidation, optimistic updates, balance helpers, and domain types.
@@ -53,8 +53,9 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - `packages/web/src/shared/utils` contains low-level utilities such as money formatting and arithmetic.
 - `packages/web/public/sw.js` controls the PWA service worker cache policy.
 - `packages/api/src` contains NestJS modules, controllers, DTOs, guards, services, auth/session ownership, cron, email, and finance domain logic.
-- `packages/api/prisma/schema.prisma` is the source of truth for database collections, relations, indexes, and enums.
-- `packages/api/scripts` contains seed, MongoDB import/export, and OpenAPI generation scripts.
+- `packages/api/prisma/schema.prisma` and `packages/api/prisma/migrations` are the source of truth for database tables,
+  relations, indexes, enums, and reviewed SQL migrations.
+- `packages/api/scripts` contains seed, one-time MongoDB-to-PostgreSQL migration tooling, and OpenAPI generation scripts.
 - `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
 - `docs` contains human and AI-facing project documentation.
 - `docs/plans` contains feature implementation plans and required work logs for multi-agent tasks.
@@ -66,6 +67,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - Complex transactional business logic should live in API services that use `prisma.$transaction`.
 - Check authentication and workspace authorization in the API with auth guards and `WorkspaceAccessGuard`.
 - Keep money values as strings. Use backend money helpers in `packages/api/src/common/money.ts` for persisted logic and frontend helpers in `packages/web/src/shared/utils/money.ts` and `packages/web/src/shared/lib/balance-domain.ts` for UI/cache projections.
+- `Account.hidden` is the current user's personal dashboard-card preference. It must not change account access or remove the account from transaction, transfer, debt, scheduled-payment, or analytics data.
 - `Account.balance` is the current materialized balance and `Account.initialBalance` is the opening balance. When changing the opening balance, keep the invariant `balance = initialBalance + transaction deltas`.
 - Regenerate OpenAPI and the web client after API contract changes with `pnpm api:generate`; verify drift with `pnpm api:check-generated`.
 - Use TanStack Query keys from `packages/web/src/shared/lib/query-keys.ts`; do not invent ad hoc key shapes.
@@ -79,12 +81,16 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 
 ## Data And Infrastructure Notes
 
-- The database is MongoDB through Prisma with `provider = "mongodb"`.
-- Local MongoDB should run as a replica set. `docker-compose.yml` starts MongoDB with `--replSet rs0`; initialize the replica set before using Prisma transactions if needed.
+- The database is PostgreSQL through Prisma with `provider = "postgresql"`.
+- Local PostgreSQL runs through `docker-compose.yml` on port `5432`.
 - Run `pnpm db:generate` after schema changes.
-- Run `pnpm db:push` to apply schema/index changes to a local MongoDB instance. Railway API deployments apply it
-  automatically in `preDeployCommand` for DEV and PROD; do not add destructive Prisma flags there.
-- `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`, email variables, and `CRON_SECRET`.
+- Run `pnpm db:migrate:dev` to create and apply a reviewed local SQL migration. Railway applies committed migrations
+  with `pnpm db:migrate:deploy` in `preDeployCommand` for DEV and PROD; do not use `db push` for shared environments.
+- Use `DATABASE_URL` for API runtime connections and `DIRECT_URL` for migration and administrative connections. They
+  may be identical locally; in hosted environments `DATABASE_URL` may be pooled while `DIRECT_URL` must bypass the pool.
+- Back up PostgreSQL with `pg_dump` and restore with `pg_restore`; rehearse restores against a separate database.
+- `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `DIRECT_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`,
+  email variables, and `CRON_SECRET`.
 - `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL`.
 - Vercel web domains: PROD `https://finnn.xyz`, DEV `https://dev.finnn.xyz`.
 - Railway API domains: PROD `https://api.finnn.xyz`, DEV `https://api-dev.finnn.xyz`.

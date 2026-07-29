@@ -4,6 +4,7 @@ import type { Account, Prisma, User } from "@prisma/client";
 import type { AuthenticatedUser } from "@/auth/auth.types";
 import { addMoney, subtractMoney } from "@/common/money";
 import { PrismaService } from "@/prisma/prisma.service";
+import { runSerializableTransaction } from "@/prisma/serializable-transaction";
 
 import type { CreateAccountDto, UpdateAccountDto, UpdateAccountsOrderDto } from "./accounts.dto";
 
@@ -14,26 +15,35 @@ const ACCOUNT_OWNER_SELECT = {
   image: true,
 } satisfies Prisma.UserSelect;
 
-const ACCOUNT_WITH_OWNER_INCLUDE = {
-  owner: {
-    select: ACCOUNT_OWNER_SELECT,
-  },
-} satisfies Prisma.AccountInclude;
-
-const ARCHIVED_ACCOUNT_INCLUDE = {
-  ...ACCOUNT_WITH_OWNER_INCLUDE,
-  _count: {
-    select: {
-      paymentTransactions: true,
-      outgoingTransfers: true,
-      incomingTransfers: true,
-      debtTransactions: true,
+function getAccountInclude(userId: string): Prisma.AccountInclude {
+  return {
+    owner: {
+      select: ACCOUNT_OWNER_SELECT,
     },
-  },
-} satisfies Prisma.AccountInclude;
+    hiddenForUsers: {
+      where: { userId },
+      select: { id: true },
+    },
+  };
+}
+
+function getArchivedAccountInclude(userId: string): Prisma.AccountInclude {
+  return {
+    ...getAccountInclude(userId),
+    _count: {
+      select: {
+        paymentTransactions: true,
+        outgoingTransfers: true,
+        incomingTransfers: true,
+        debtTransactions: true,
+      },
+    },
+  };
+}
 
 type AccountWithOwner = Account & {
   owner?: Pick<User, "id" | "name" | "email" | "image"> | null;
+  hiddenForUsers?: Array<{ id: string }>;
 };
 
 type ArchivedAccountWithCounts = AccountWithOwner & {
@@ -67,6 +77,7 @@ function toAccountDto(account: AccountWithOwner) {
     color: account.color,
     icon: account.icon,
     archived: account.archived,
+    hidden: Boolean(account.hiddenForUsers?.length),
     order: account.order,
     createdAt: toIsoString(account.createdAt),
     updatedAt: toIsoString(account.updatedAt),
@@ -134,7 +145,7 @@ export class AccountsService {
   private async getAccessibleAccount(accountId: string, currentUser: AuthenticatedUser, includeArchived = false) {
     const account = await this.prisma.account.findUnique({
       where: { id: accountId },
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
+      include: getAccountInclude(currentUser.id),
     });
 
     if (!account || (!includeArchived && account.archived)) {
@@ -213,7 +224,7 @@ export class AccountsService {
         order: accountsCount,
         createdAt: input.createdAt,
       },
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
+      include: getAccountInclude(currentUser.id),
     });
 
     return { account: toAccountDto(account) };
@@ -227,7 +238,7 @@ export class AccountsService {
         workspaceId,
         archived: false,
       },
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
+      include: getAccountInclude(currentUser.id),
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
     });
 
@@ -243,34 +254,77 @@ export class AccountsService {
     const existingAccount = await this.getAccessibleAccount(accountId, currentUser);
     await this.assertOwnerBelongsToWorkspace(existingAccount.workspaceId, input.ownerId);
 
-    const updateData: Prisma.AccountUpdateInput = {};
-    if (input.name !== undefined) updateData.name = input.name;
-    if (input.balance !== undefined) updateData.balance = input.balance;
-    if (input.initialBalance !== undefined) {
-      updateData.initialBalance = input.initialBalance;
+    const account = await runSerializableTransaction(this.prisma, async (tx) => {
+      const currentAccount = await tx.account.findUnique({
+        where: { id: accountId },
+      });
 
-      if (input.balance === undefined) {
-        updateData.balance = addMoney(
-          existingAccount.balance,
-          subtractMoney(input.initialBalance, existingAccount.initialBalance)
-        );
+      if (!currentAccount || currentAccount.archived) {
+        throw new NotFoundException("Счёт не найден");
       }
-    }
-    if (input.currency !== undefined) updateData.currency = input.currency;
-    if (input.ownerId !== undefined)
-      updateData.owner = input.ownerId ? { connect: { id: input.ownerId } } : { disconnect: true };
-    if (input.color !== undefined) updateData.color = input.color;
-    if (input.icon !== undefined) updateData.icon = input.icon;
-    if (input.createdAt !== undefined) updateData.createdAt = input.createdAt;
-    if (input.order !== undefined) updateData.order = input.order;
 
-    const account = await this.prisma.account.update({
-      where: { id: accountId },
-      data: updateData,
-      include: ACCOUNT_WITH_OWNER_INCLUDE,
+      const updateData: Prisma.AccountUpdateInput = {};
+      if (input.name !== undefined) updateData.name = input.name;
+      if (input.balance !== undefined) updateData.balance = input.balance;
+      if (input.initialBalance !== undefined) {
+        updateData.initialBalance = input.initialBalance;
+
+        if (input.balance === undefined) {
+          updateData.balance = addMoney(
+            currentAccount.balance,
+            subtractMoney(input.initialBalance, currentAccount.initialBalance)
+          );
+        }
+      }
+      if (input.currency !== undefined) updateData.currency = input.currency;
+      if (input.ownerId !== undefined)
+        updateData.owner = input.ownerId ? { connect: { id: input.ownerId } } : { disconnect: true };
+      if (input.color !== undefined) updateData.color = input.color;
+      if (input.icon !== undefined) updateData.icon = input.icon;
+      if (input.createdAt !== undefined) updateData.createdAt = input.createdAt;
+      if (input.order !== undefined) updateData.order = input.order;
+
+      return tx.account.update({
+        where: { id: accountId },
+        data: updateData,
+        include: getAccountInclude(currentUser.id),
+      });
     });
 
     return { account: toAccountDto(account) };
+  }
+
+  async hideAccount(accountId: string, currentUser: AuthenticatedUser) {
+    const account = await this.getAccessibleAccount(accountId, currentUser);
+
+    await this.prisma.hiddenAccount.upsert({
+      where: {
+        accountId_userId: {
+          accountId: account.id,
+          userId: currentUser.id,
+        },
+      },
+      update: {},
+      create: {
+        accountId: account.id,
+        userId: currentUser.id,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async showAccount(accountId: string, currentUser: AuthenticatedUser) {
+    const account = await this.getAccessibleAccount(accountId, currentUser);
+
+    await this.prisma.hiddenAccount.deleteMany({
+      where: {
+        accountId: account.id,
+        userId: currentUser.id,
+      },
+    });
+
+    return { success: true };
   }
 
   async updateAccountsOrder(workspaceId: string, input: UpdateAccountsOrderDto, currentUser: AuthenticatedUser) {
@@ -313,7 +367,7 @@ export class AccountsService {
         workspaceId,
         archived: true,
       },
-      include: ARCHIVED_ACCOUNT_INCLUDE,
+      include: getArchivedAccountInclude(currentUser.id),
       orderBy: { createdAt: "desc" },
     });
 
@@ -349,6 +403,10 @@ export class AccountsService {
       const dependencyBreakdown = formatAccountDependencyBreakdown(dependencyCounts);
       throw new BadRequestException(`Нельзя удалить счёт из архива: у счёта есть связанные ${dependencyBreakdown}.`);
     }
+
+    await this.prisma.hiddenAccount.deleteMany({
+      where: { accountId: account.id },
+    });
 
     await this.prisma.account.delete({
       where: { id: accountId },

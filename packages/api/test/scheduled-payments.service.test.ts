@@ -338,11 +338,7 @@ describe("Scheduled payments backend services", () => {
         where: expect.objectContaining({
           AND: [
             {
-              OR: [
-                { snoozedUntil: null },
-                { snoozedUntil: { isSet: false } },
-                { snoozedUntil: { lte: expect.any(Date) } },
-              ],
+              OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: expect.any(Date) } }],
             },
           ],
         }),

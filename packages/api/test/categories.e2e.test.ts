@@ -98,6 +98,7 @@ const currentUser = {
 };
 
 const categoryIconAssetId = "665f5d865ef5a20c0d2f4444";
+const categoryIconAssetCuid = "c123456789012345678901234";
 const foreignCategoryIconAssetId = "665f5d865ef5a20c0d2f5555";
 const missingCategoryIconAssetId = "665f5d865ef5a20c0d2f6666";
 
@@ -389,6 +390,19 @@ describe("Categories API", () => {
       .delete(`/category-icons/${missingCategoryIconAssetId}`)
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
       .expect(404);
+  });
+
+  it("accepts PostgreSQL-era CUID icon identifiers", async () => {
+    mockAuthenticatedSession(prisma);
+
+    await request(app.getHttpServer())
+      .get(`/category-icons/${categoryIconAssetCuid}`)
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(302);
+
+    expect(prisma.categoryIconAsset.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: categoryIconAssetCuid } })
+    );
   });
 
   it("does not serve an icon that is being deleted", async () => {

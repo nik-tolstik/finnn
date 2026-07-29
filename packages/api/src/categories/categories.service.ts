@@ -13,7 +13,13 @@ import type { AuthenticatedUser } from "@/auth/auth.types";
 import { PrismaService } from "@/prisma/prisma.service";
 import { ObjectStorageService } from "@/storage/object-storage.service";
 
-import type { CategoryIconDto, CreateCategoryDto, UpdateCategoriesOrderDto, UpdateCategoryDto } from "./categories.dto";
+import {
+  type CategoryIconDto,
+  type CreateCategoryDto,
+  PERSISTED_ID_PATTERN,
+  type UpdateCategoriesOrderDto,
+  type UpdateCategoryDto,
+} from "./categories.dto";
 
 const CATEGORY_TYPES = ["income", "expense"] as const;
 const CATEGORY_WITH_COUNT_INCLUDE = {
@@ -26,7 +32,6 @@ const CATEGORY_WITH_COUNT_INCLUDE = {
 const CATEGORY_ICON_MAX_BYTES = 2 * 1024 * 1024;
 const CATEGORY_ICON_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const CATEGORY_ICON_PATH_PREFIX = "/category-icons/";
-const MONGODB_OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
 
 type CategoryIconFile = Pick<Express.Multer.File, "buffer" | "mimetype" | "size">;
 type CategoryDatabaseClient = Pick<Prisma.TransactionClient, "category" | "categoryIconAsset">;
@@ -312,7 +317,7 @@ export class CategoriesService {
   }
 
   async getCategoryIconReadUrl(iconId: string, currentUser: AuthenticatedUser): Promise<string> {
-    this.assertMongoObjectId(iconId, "Недопустимый идентификатор иконки");
+    this.assertPersistedId(iconId, "Недопустимый идентификатор иконки");
 
     const asset = await this.prisma.categoryIconAsset.findUnique({
       where: { id: iconId },
@@ -326,7 +331,7 @@ export class CategoriesService {
   }
 
   async deleteCategoryIcon(iconId: string, currentUser: AuthenticatedUser): Promise<void> {
-    this.assertMongoObjectId(iconId, "Недопустимый идентификатор иконки");
+    this.assertPersistedId(iconId, "Недопустимый идентификатор иконки");
 
     const asset = await this.prisma.categoryIconAsset.findUnique({
       where: { id: iconId },
@@ -436,7 +441,7 @@ export class CategoriesService {
     }
 
     if (hasIconAsset) {
-      this.assertMongoObjectId(iconAssetId, "Недопустимый идентификатор иконки");
+      this.assertPersistedId(iconAssetId, "Недопустимый идентификатор иконки");
     }
   }
 
@@ -488,8 +493,8 @@ export class CategoriesService {
     }
   }
 
-  private assertMongoObjectId(value: unknown, message: string): asserts value is string {
-    if (typeof value !== "string" || !MONGODB_OBJECT_ID_PATTERN.test(value)) {
+  private assertPersistedId(value: unknown, message: string): asserts value is string {
+    if (typeof value !== "string" || !PERSISTED_ID_PATTERN.test(value)) {
       throw new BadRequestException(message);
     }
   }

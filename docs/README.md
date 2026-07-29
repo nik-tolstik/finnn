@@ -1,6 +1,6 @@
 # Finnn Documentation
 
-Finnn is a personal and shared finance tracker. It supports workspaces, shared members, accounts, categories, payments, transfers, debts, analytics, exchange rates, MongoDB import/export, and a constrained PWA service worker.
+Finnn is a personal and shared finance tracker. It supports workspaces, shared members, accounts, categories, payments, transfers, debts, analytics, exchange rates, PostgreSQL persistence, and a constrained PWA service worker.
 
 This documentation is written for two audiences:
 
@@ -15,14 +15,14 @@ This documentation is written for two audiences:
 - [Account Icons](./account-icons.md) - icon registry, adaptive contrast behavior, brand icon handling, and extension rules.
 - [Category Icons](./category-icons.md) - emoji, legacy Lucide, workspace uploads, API endpoints, and picker behavior.
 - [Domain Model](./domain-model.md) - core entities, money invariants, workspaces, transactions, transfers, debts, exchange rates, and PWA cache boundaries.
-- [Operations](./operations.md) - deployment, cron, MongoDB import/export, email, service worker, and production checks.
+- [Operations](./operations.md) - deployment, cron, PostgreSQL migrations and backups, cutover, email, service worker, and production checks.
 - [AI Contributor Guide](./ai-contributor-guide.md) - how Codex or another AI agent should approach changes in this repo.
 - [Feature Plans](./plans/README.md) - how to write and maintain `docs/plans/<feature>` implementation plans.
 
 ## Project At A Glance
 
 - Framework: Next.js App Router frontend and NestJS API, both in TypeScript.
-- Data: Prisma ORM with MongoDB in `packages/api`.
+- Data: Prisma ORM with PostgreSQL in `packages/api`.
 - Auth: API-owned HTTP-only cookie sessions.
 - Contract: NestJS OpenAPI with Orval-generated web clients.
 - Client data: TanStack Query with server-side prefetch and hydration.
@@ -37,7 +37,7 @@ This documentation is written for two audiences:
 1. A user registers, verifies email, signs in, and creates or joins a workspace.
 2. A workspace owner or member creates accounts and categories.
 3. A user records income, expense, transfer, or debt activity.
-4. API domain logic updates balances transactionally in MongoDB.
+4. API domain logic updates balances transactionally in PostgreSQL.
 5. The dashboard and analytics views prefetch data on the server and hydrate client components.
 6. The protected API cron endpoint fetches and stores exchange rates for conversion-aware analytics and UI display.
 

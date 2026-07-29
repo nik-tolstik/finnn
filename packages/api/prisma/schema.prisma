@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Currency {
@@ -15,47 +16,46 @@ enum Currency {
 }
 
 model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  email         String?
-  name          String?
-  image         String?
-  avatarStorageKey String?
-  password      String?
-  emailVerified DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  workspaces      WorkspaceMember[]
-  ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
-  accounts        Account[]
-  createdTransfers TransferTransaction[] @relation("TransferCreatedBy")
-  authSessions    AuthSession[]
-  authIdentities   AuthIdentity[]
-  pendingEmailVerifications PendingEmailVerification[]
-  passwordResetCodes PasswordResetCode[]
-  telegramBotPreference TelegramBotPreference?
-  aiFinanceDrafts AiFinanceDraft[]
-  uploadedCategoryIconAssets CategoryIconAsset[] @relation("CategoryIconUploadedBy")
-  createdScheduledPayments ScheduledPayment[] @relation("ScheduledPaymentCreatedBy")
-  assignedScheduledPayments ScheduledPayment[] @relation("ScheduledPaymentAssignedTo")
-  scheduledPaymentRecords ScheduledPaymentRecord[] @relation("ScheduledPaymentActionBy")
+  id                                 String                             @id @default(cuid())
+  email                              String?                            @unique
+  name                               String?
+  image                              String?
+  avatarStorageKey                   String?
+  password                           String?
+  emailVerified                      DateTime?                          @db.Timestamptz(3)
+  createdAt                          DateTime                           @default(now()) @db.Timestamptz(3)
+  updatedAt                          DateTime                           @updatedAt @db.Timestamptz(3)
+  workspaces                         WorkspaceMember[]
+  ownedWorkspaces                    Workspace[]                        @relation("WorkspaceOwner")
+  accounts                           Account[]
+  hiddenAccounts                     HiddenAccount[]
+  createdTransfers                   TransferTransaction[]              @relation("TransferCreatedBy")
+  authSessions                       AuthSession[]
+  authIdentities                     AuthIdentity[]
+  pendingEmailVerifications          PendingEmailVerification[]
+  passwordResetCodes                 PasswordResetCode[]
+  telegramBotPreference              TelegramBotPreference?
+  aiFinanceDrafts                    AiFinanceDraft[]
+  uploadedCategoryIconAssets         CategoryIconAsset[]                @relation("CategoryIconUploadedBy")
+  createdScheduledPayments           ScheduledPayment[]                 @relation("ScheduledPaymentCreatedBy")
+  assignedScheduledPayments          ScheduledPayment[]                 @relation("ScheduledPaymentAssignedTo")
+  scheduledPaymentRecords            ScheduledPaymentRecord[]           @relation("ScheduledPaymentActionBy")
   scheduledPaymentReminderDeliveries ScheduledPaymentReminderDelivery[]
 
   @@map("users")
 }
 
 model AuthIdentity {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @db.ObjectId
+  id             String   @id @default(cuid())
+  userId         String
   provider       String
   providerUserId String
   username       String?
   displayName    String?
   photoUrl       String?
-  linkedAt       DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
+  linkedAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerUserId])
   @@index([userId])
@@ -63,14 +63,13 @@ model AuthIdentity {
 }
 
 model PendingEmailVerification {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
+  id        String   @id @default(cuid())
+  userId    String
   email     String
   token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId])
   @@index([email])
@@ -79,15 +78,14 @@ model PendingEmailVerification {
 }
 
 model PasswordResetCode {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
+  id        String   @id @default(cuid())
+  userId    String
   email     String
   codeHash  String
-  expiresAt DateTime
+  expiresAt DateTime @db.Timestamptz(3)
   attempts  Int      @default(0)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId])
   @@index([email])
@@ -96,14 +94,13 @@ model PasswordResetCode {
 }
 
 model AuthSession {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String    @db.ObjectId
+  id        String    @id @default(cuid())
+  userId    String
   tokenHash String    @unique
-  expiresAt DateTime
-  createdAt DateTime  @default(now())
-  revokedAt DateTime?
-
-  user User @relation(fields: [userId], references: [id])
+  expiresAt DateTime  @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -111,41 +108,41 @@ model AuthSession {
 }
 
 model Workspace {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
-  slug         String   @unique
-  baseCurrency String   @default("BYN")
-  ownerId      String   @db.ObjectId
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  owner            User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
-  members          WorkspaceMember[]
-  accounts         Account[]
-  categories       Category[]
-  paymentTransactions PaymentTransaction[]
-  transferTransactions TransferTransaction[]
-  invites          WorkspaceInvite[]
-  debts            Debt[]
-  debtTransactions DebtTransaction[]
-  scheduledPayments ScheduledPayment[]
-  scheduledPaymentRecords ScheduledPaymentRecord[]
-  categoryIconAssets CategoryIconAsset[]
+  id                                 String                             @id @default(cuid())
+  name                               String
+  slug                               String                             @unique
+  baseCurrency                       String                             @default("BYN")
+  ownerId                            String
+  createdAt                          DateTime                           @default(now()) @db.Timestamptz(3)
+  updatedAt                          DateTime                           @updatedAt @db.Timestamptz(3)
+  owner                              User                               @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  members                            WorkspaceMember[]
+  accounts                           Account[]
+  categories                         Category[]
+  paymentTransactions                PaymentTransaction[]
+  transferTransactions               TransferTransaction[]
+  invites                            WorkspaceInvite[]
+  debts                              Debt[]
+  debtTransactions                   DebtTransaction[]
+  scheduledPayments                  ScheduledPayment[]
+  scheduledPaymentRecords            ScheduledPaymentRecord[]
+  categoryIconAssets                 CategoryIconAsset[]
   scheduledPaymentReminderDeliveries ScheduledPaymentReminderDelivery[]
+  telegramBotPreferences             TelegramBotPreference[]
+  aiFinanceDrafts                    AiFinanceDraft[]
 
   @@index([ownerId])
   @@map("workspaces")
 }
 
 model WorkspaceMember {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId String    @db.ObjectId
-  userId      String    @db.ObjectId
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
   role        String    @default("member")
-  createdAt   DateTime  @default(now())
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, userId])
   @@index([userId])
@@ -153,68 +150,81 @@ model WorkspaceMember {
 }
 
 model Account {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId String   @db.ObjectId
-  ownerId     String?  @db.ObjectId
-  name        String
-  balance     String   @default("0")
-  initialBalance String   @default("0")
-  currency    String   @default("USD")
-  description String?
-  color       String?
-  icon        String?
-  archived    Boolean  @default(false)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  workspace        Workspace         @relation(fields: [workspaceId], references: [id])
-  owner            User?             @relation(fields: [ownerId], references: [id])
-  paymentTransactions PaymentTransaction[]
-  outgoingTransfers TransferTransaction[] @relation("TransferFromAccount")
-  incomingTransfers TransferTransaction[] @relation("TransferToAccount")
-  debtTransactions DebtTransaction[]
-  scheduledPayments ScheduledPayment[]
+  id                      String                   @id @default(cuid())
+  workspaceId             String
+  ownerId                 String?
+  name                    String
+  balance                 String                   @default("0")
+  initialBalance          String                   @default("0")
+  currency                String                   @default("USD")
+  description             String?
+  color                   String?
+  icon                    String?
+  archived                Boolean                  @default(false)
+  order                   Int                      @default(0)
+  createdAt               DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                 @updatedAt @db.Timestamptz(3)
+  workspace               Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner                   User?                    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  hiddenForUsers          HiddenAccount[]
+  paymentTransactions     PaymentTransaction[]
+  outgoingTransfers       TransferTransaction[]    @relation("TransferFromAccount")
+  incomingTransfers       TransferTransaction[]    @relation("TransferToAccount")
+  debtTransactions        DebtTransaction[]
+  scheduledPayments       ScheduledPayment[]
   scheduledPaymentRecords ScheduledPaymentRecord[]
 
   @@index([workspaceId, archived])
   @@index([workspaceId, ownerId, archived, order])
+  @@index([ownerId])
   @@map("accounts")
 }
 
-model Category {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId String   @db.ObjectId
-  iconAssetId String?  @db.ObjectId
-  name        String
-  type        String
-  icon        String?
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model HiddenAccount {
+  id        String   @id @default(cuid())
+  accountId String
+  userId    String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  workspace           Workspace            @relation(fields: [workspaceId], references: [id])
-  iconAsset           CategoryIconAsset?   @relation(fields: [iconAssetId], references: [id])
-  paymentTransactions PaymentTransaction[]
-  scheduledPayments ScheduledPayment[]
+  @@unique([accountId, userId])
+  @@index([userId, accountId])
+  @@map("hidden_accounts")
+}
+
+model Category {
+  id                      String                   @id @default(cuid())
+  workspaceId             String
+  iconAssetId             String?
+  name                    String
+  type                    String
+  icon                    String?
+  order                   Int                      @default(0)
+  createdAt               DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                 @updatedAt @db.Timestamptz(3)
+  workspace               Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  iconAsset               CategoryIconAsset?       @relation(fields: [iconAssetId], references: [id], onDelete: SetNull)
+  paymentTransactions     PaymentTransaction[]
+  scheduledPayments       ScheduledPayment[]
   scheduledPaymentRecords ScheduledPaymentRecord[]
 
   @@index([workspaceId, type, order])
+  @@index([iconAssetId])
   @@map("categories")
 }
 
 model CategoryIconAsset {
-  id           String     @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId  String     @db.ObjectId
-  uploadedById String     @db.ObjectId
+  id           String     @id @default(cuid())
+  workspaceId  String
+  uploadedById String
   storageKey   String
   isDeleting   Boolean?   @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  workspace  Workspace @relation(fields: [workspaceId], references: [id])
-  uploadedBy User      @relation("CategoryIconUploadedBy", fields: [uploadedById], references: [id])
-  categories Category[]
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploadedBy   User       @relation("CategoryIconUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
+  categories   Category[]
 
   @@index([workspaceId, createdAt])
   @@index([uploadedById])
@@ -222,50 +232,49 @@ model CategoryIconAsset {
 }
 
 model PaymentTransaction {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId String   @db.ObjectId
-  accountId   String   @db.ObjectId
-  amount      String
-  type        String
-  description String?
-  date        DateTime @default(now())
-  categoryId  String?  @db.ObjectId
-  createdByAi Boolean? @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  account   Account   @relation(fields: [accountId], references: [id])
-  category  Category? @relation(fields: [categoryId], references: [id])
+  id                      String                   @id @default(cuid())
+  workspaceId             String
+  accountId               String
+  amount                  String
+  type                    String
+  description             String?
+  date                    DateTime                 @default(now()) @db.Timestamptz(3)
+  categoryId              String?
+  createdByAi             Boolean?                 @default(false)
+  createdAt               DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                 @updatedAt @db.Timestamptz(3)
+  workspace               Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account                 Account                  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category                Category?                @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   scheduledPaymentRecords ScheduledPaymentRecord[]
-  debtTransactions DebtTransaction[]
+  debtTransactions        DebtTransaction[]
 
   @@index([workspaceId, date])
   @@index([workspaceId, type, date])
   @@index([workspaceId, categoryId, date])
   @@index([workspaceId, accountId, date])
   @@index([accountId, date])
+  @@index([categoryId])
   @@map("transactions")
 }
 
 model TransferTransaction {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId   String   @db.ObjectId
-  fromAccountId String   @db.ObjectId
-  toAccountId   String   @db.ObjectId
-  createdById    String?  @db.ObjectId
-  amount            String
-  toAmount          String
-  description       String?
-  date              DateTime @default(now())
-  createdByAi       Boolean? @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  workspace    Workspace @relation(fields: [workspaceId], references: [id])
-  fromAccount  Account   @relation("TransferFromAccount", fields: [fromAccountId], references: [id])
-  toAccount    Account   @relation("TransferToAccount", fields: [toAccountId], references: [id])
-  createdBy    User?     @relation("TransferCreatedBy", fields: [createdById], references: [id])
+  id            String    @id @default(cuid())
+  workspaceId   String
+  fromAccountId String
+  toAccountId   String
+  createdById   String?
+  amount        String
+  toAmount      String
+  description   String?
+  date          DateTime  @default(now()) @db.Timestamptz(3)
+  createdByAi   Boolean?  @default(false)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  fromAccount   Account   @relation("TransferFromAccount", fields: [fromAccountId], references: [id], onDelete: Restrict)
+  toAccount     Account   @relation("TransferToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
+  createdBy     User?     @relation("TransferCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, date])
   @@index([workspaceId, createdById, date])
@@ -273,19 +282,18 @@ model TransferTransaction {
   @@index([workspaceId, toAccountId, date])
   @@index([fromAccountId, date])
   @@index([toAccountId, date])
-
+  @@index([createdById])
   @@map("transfers")
 }
 
 model WorkspaceInvite {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId String   @db.ObjectId
+  id          String    @id @default(cuid())
+  workspaceId String
   email       String
-  token       String   @unique
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  token       String    @unique
+  expiresAt   DateTime  @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, email])
   @@index([expiresAt])
@@ -293,26 +301,26 @@ model WorkspaceInvite {
 }
 
 model PendingRegistration {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(cuid())
   name      String
   email     String   @unique
   password  String
   token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([expiresAt])
   @@map("pending_registrations")
 }
 
 model ExchangeRate {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  date        DateTime
+  id           String   @id @default(cuid())
+  date         DateTime @db.Timestamptz(3)
   fromCurrency Currency
   toCurrency   Currency
-  rate        Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  rate         Float
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
 
   @@unique([date, fromCurrency, toCurrency])
   @@index([date])
@@ -321,20 +329,19 @@ model ExchangeRate {
 }
 
 model Debt {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId     String   @db.ObjectId
+  id              String            @id @default(cuid())
+  workspaceId     String
   type            String
   personName      String
   amount          String
   remainingAmount String
   currency        String
-  date            DateTime @default(now())
-  status          String   @default("open")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  workspace    Workspace         @relation(fields: [workspaceId], references: [id])
-  transactions DebtTransaction[]
+  date            DateTime          @default(now()) @db.Timestamptz(3)
+  status          String            @default("open")
+  createdAt       DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime          @updatedAt @db.Timestamptz(3)
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  transactions    DebtTransaction[]
 
   @@index([workspaceId, status])
   @@index([workspaceId, status, date])
@@ -343,164 +350,168 @@ model Debt {
 }
 
 model DebtTransaction {
-  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId          String   @db.ObjectId
-  debtId               String   @db.ObjectId
-  accountId            String?  @db.ObjectId
-  paymentTransactionId String?  @db.ObjectId
+  id                   String              @id @default(cuid())
+  workspaceId          String
+  debtId               String
+  accountId            String?
+  paymentTransactionId String?
   type                 String
   amount               String
   toAmount             String?
-  date                 DateTime @default(now())
-  createdAt            DateTime @default(now())
-
-  workspace          Workspace           @relation(fields: [workspaceId], references: [id])
-  debt               Debt                @relation(fields: [debtId], references: [id], onDelete: Cascade)
-  account            Account?            @relation(fields: [accountId], references: [id])
-  paymentTransaction PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id])
+  date                 DateTime            @default(now()) @db.Timestamptz(3)
+  createdAt            DateTime            @default(now()) @db.Timestamptz(3)
+  workspace            Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  debt                 Debt                @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  account              Account?            @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  paymentTransaction   PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id], onDelete: Restrict)
 
   @@index([workspaceId, date])
   @@index([workspaceId, accountId, date])
   @@index([workspaceId, type, date])
   @@index([debtId])
+  @@index([accountId])
   @@index([paymentTransactionId])
   @@map("debt_transactions")
 }
 
 model TelegramBotPreference {
-  id                String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String   @unique @db.ObjectId
-  telegramChatId    String?
-  activeWorkspaceId String?  @db.ObjectId
-  defaultAccountByWorkspace Json?
-  receiptMode       String   @default("category")
-  timezone          String   @default("Europe/Minsk")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
+  id                        String     @id @default(cuid())
+  userId                    String     @unique
+  telegramChatId            String?
+  activeWorkspaceId         String?
+  defaultAccountByWorkspace Json?      @db.JsonB
+  receiptMode               String     @default("category")
+  timezone                  String     @default("Europe/Minsk")
+  createdAt                 DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime   @updatedAt @db.Timestamptz(3)
+  user                      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeWorkspace           Workspace? @relation(fields: [activeWorkspaceId], references: [id], onDelete: SetNull)
 
   @@index([activeWorkspaceId])
   @@map("telegram_bot_preferences")
 }
 
 model AiFinanceDraft {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String    @db.ObjectId
+  id              String     @id @default(cuid())
+  userId          String
   telegramChatId  String?
-  workspaceId     String?   @db.ObjectId
-  status          String    @default("pending")
+  workspaceId     String?
+  status          String     @default("pending")
   sourceType      String
   sourceText      String?
   receiptMode     String?
   kind            String?
-  payload         Json
+  payload         Json       @db.JsonB
   missingFields   String[]
   confidence      Float?
   currentQuestion String?
-  expiresAt       DateTime
-  committedAt     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
+  expiresAt       DateTime   @db.Timestamptz(3)
+  committedAt     DateTime?  @db.Timestamptz(3)
+  createdAt       DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime   @updatedAt @db.Timestamptz(3)
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace       Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 
   @@index([userId, status, updatedAt])
   @@index([telegramChatId, status, updatedAt])
+  @@index([workspaceId])
   @@index([expiresAt])
   @@map("ai_finance_drafts")
 }
 
 model ScheduledPayment {
-  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId        String   @db.ObjectId
+  id                 String                             @id @default(cuid())
+  workspaceId        String
   name               String
   amountMode         String
   amount             String?
   amountMin          String?
   amountMax          String?
   currency           String?
-  categoryId         String?  @db.ObjectId
-  accountId          String?  @db.ObjectId
-  assignedUserId     String?  @db.ObjectId
-  createdById        String   @db.ObjectId
+  categoryId         String?
+  accountId          String?
+  assignedUserId     String?
+  createdById        String
   scheduleKind       String
-  scheduleInterval   Int      @default(1)
+  scheduleInterval   Int                                @default(1)
   scheduleUnit       String?
   dueDay             Int?
   dueMonth           Int?
-  nextDueAt          DateTime
-  timezone           String   @default("Europe/Minsk")
+  nextDueAt          DateTime                           @db.Timestamptz(3)
+  timezone           String                             @default("Europe/Minsk")
   reminderDaysBefore Int[]
-  notifyTelegram     Boolean  @default(false)
-  notifyEmail        Boolean  @default(false)
+  notifyTelegram     Boolean                            @default(false)
+  notifyEmail        Boolean                            @default(false)
   notes              String?
-  lastPaidAt         DateTime?
-  snoozedUntil       DateTime?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  account   Account?  @relation(fields: [accountId], references: [id])
-  category  Category? @relation(fields: [categoryId], references: [id])
-  createdBy User     @relation("ScheduledPaymentCreatedBy", fields: [createdById], references: [id])
-  assignedUser User? @relation("ScheduledPaymentAssignedTo", fields: [assignedUserId], references: [id])
-  records ScheduledPaymentRecord[]
+  lastPaidAt         DateTime?                          @db.Timestamptz(3)
+  snoozedUntil       DateTime?                          @db.Timestamptz(3)
+  createdAt          DateTime                           @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime                           @updatedAt @db.Timestamptz(3)
+  workspace          Workspace                          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account            Account?                           @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category           Category?                          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdBy          User                               @relation("ScheduledPaymentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  assignedUser       User?                              @relation("ScheduledPaymentAssignedTo", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  records            ScheduledPaymentRecord[]
   reminderDeliveries ScheduledPaymentReminderDelivery[]
 
   @@index([workspaceId, nextDueAt])
   @@index([assignedUserId, nextDueAt])
   @@index([nextDueAt])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([createdById])
   @@map("scheduled_payments")
 }
 
 model ScheduledPaymentRecord {
-  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
-  scheduledPaymentId String   @db.ObjectId
-  workspaceId        String   @db.ObjectId
-  transactionId      String?  @db.ObjectId
-  dueAt              DateTime
-  paidAt             DateTime?
-  skippedAt          DateTime?
+  id                 String              @id @default(cuid())
+  scheduledPaymentId String
+  workspaceId        String
+  transactionId      String?
+  dueAt              DateTime            @db.Timestamptz(3)
+  paidAt             DateTime?           @db.Timestamptz(3)
+  skippedAt          DateTime?           @db.Timestamptz(3)
   amount             String?
   currency           String?
-  accountId          String?  @db.ObjectId
-  categoryId         String?  @db.ObjectId
-  actionById         String   @db.ObjectId
+  accountId          String?
+  categoryId         String?
+  actionById         String
   status             String
   note               String?
-  createdAt          DateTime @default(now())
-
-  scheduledPayment ScheduledPayment @relation(fields: [scheduledPaymentId], references: [id])
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  transaction PaymentTransaction? @relation(fields: [transactionId], references: [id])
-  account Account? @relation(fields: [accountId], references: [id])
-  category Category? @relation(fields: [categoryId], references: [id])
-  actionBy User @relation("ScheduledPaymentActionBy", fields: [actionById], references: [id])
+  createdAt          DateTime            @default(now()) @db.Timestamptz(3)
+  scheduledPayment   ScheduledPayment    @relation(fields: [scheduledPaymentId], references: [id], onDelete: Cascade)
+  workspace          Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  transaction        PaymentTransaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  account            Account?            @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category           Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  actionBy           User                @relation("ScheduledPaymentActionBy", fields: [actionById], references: [id], onDelete: Restrict)
 
   @@index([scheduledPaymentId, dueAt])
   @@index([workspaceId, createdAt])
   @@index([transactionId])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([actionById])
   @@map("scheduled_payment_records")
 }
 
 model ScheduledPaymentReminderDelivery {
-  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
-  scheduledPaymentId String    @db.ObjectId
-  workspaceId        String    @db.ObjectId
-  userId             String    @db.ObjectId
-  dueAt              DateTime
-  reminderDate       DateTime
+  id                 String           @id @default(cuid())
+  scheduledPaymentId String
+  workspaceId        String
+  userId             String
+  dueAt              DateTime         @db.Timestamptz(3)
+  reminderDate       DateTime         @db.Timestamptz(3)
   daysBefore         Int
   channel            String
   status             String
-  sentAt             DateTime?
+  sentAt             DateTime?        @db.Timestamptz(3)
   error              String?
-  createdAt          DateTime  @default(now())
-
-  scheduledPayment ScheduledPayment @relation(fields: [scheduledPaymentId], references: [id])
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  createdAt          DateTime         @default(now()) @db.Timestamptz(3)
+  scheduledPayment   ScheduledPayment @relation(fields: [scheduledPaymentId], references: [id], onDelete: Cascade)
+  workspace          Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([scheduledPaymentId, dueAt, daysBefore, channel])
   @@index([workspaceId, reminderDate])

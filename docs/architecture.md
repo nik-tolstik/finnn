@@ -37,7 +37,7 @@ Examples:
 
 Frontend feature modules live under `packages/web/src/modules`.
 
-- `accounts` - account CRUD, archive/delete behavior, ownership visibility, cards, ordering, settings.
+- `accounts` - account CRUD, archive/delete behavior, ownership visibility, personal dashboard hiding, cards, ordering, settings.
 - `analytics` - analytics aggregation, date range helpers, chart data.
 - `auth` - registration, verification, user settings.
 - `categories` - income/expense category CRUD and ordering.

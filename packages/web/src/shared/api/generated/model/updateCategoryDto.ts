@@ -18,7 +18,7 @@ export interface UpdateCategoryDto {
   icon?: string | null;
   /**
    * @nullable
-   * @pattern ^[a-fA-F0-9]{24}$
+   * @pattern ^(?:[a-fA-F\d]{24}|c[a-z\d]{24})$
    */
   iconAssetId?: string | null;
   order?: number;
