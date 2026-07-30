@@ -23,6 +23,9 @@ For framework or library behavior that may have changed, use Context7. Vite, Rea
 - Use the current checkout and branch unless the user asks for a worktree or pull request.
 - Never create a worktree proactively. Create a pull request without a request only when a high-risk operation, such as
   a production data migration, materially needs its isolation, checks, or audit trail; explain that need before acting.
+- Agents may use the authenticated Vercel connector, CLI, or API for authorized frontend infrastructure work. Follow
+  the exact resource IDs, secret-output rules, Git-owned deployment flow, and protected-deployment verification process
+  in `docs/operations.md`; do not auto-link the monorepo or pull environment files into an existing checkout.
 - Preserve the existing package and feature-module structure.
 - Put new backend behavior in `packages/api` NestJS modules.
 - Put frontend response-shaping helpers in pure `packages/web/src/modules/<feature>/<feature>.api.ts` files when generated client functions need adaptation.

@@ -11,7 +11,7 @@ import { insertWorkspacesInCache, runOptimisticWorkspaceMutation } from "@/share
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { type CreateWorkspaceInput, createWorkspaceSchema } from "@/shared/lib/validations/workspace";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 
@@ -118,38 +118,42 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
           <DialogTitle>Создать новый рабочий стол</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Название рабочего стола</Label>
-            <div className="relative">
-              <Building2 className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="name"
-                type="text"
-                placeholder="Мой рабочий стол"
-                className="pl-9"
-                {...register("name")}
-                aria-invalid={errors.name ? "true" : "false"}
-              />
+          <DialogContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Название рабочего стола</Label>
+              <div className="relative">
+                <Building2 className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Мой рабочий стол"
+                  className="pl-9"
+                  {...register("name")}
+                  aria-invalid={errors.name ? "true" : "false"}
+                />
+              </div>
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
-            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="slug">Идентификатор</Label>
-            <div className="relative">
-              <Hash className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="slug"
-                type="text"
-                placeholder="my-workspace"
-                className="pl-9 font-mono text-sm"
-                {...register("slug")}
-                aria-invalid={errors.slug ? "true" : "false"}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="slug">Идентификатор</Label>
+              <div className="relative">
+                <Hash className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="slug"
+                  type="text"
+                  placeholder="my-workspace"
+                  className="pl-9 font-mono text-sm"
+                  {...register("slug")}
+                  aria-invalid={errors.slug ? "true" : "false"}
+                />
+              </div>
+              {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
+              <p className="text-xs text-muted-foreground">
+                Идентификатор генерируется автоматически на основе названия
+              </p>
             </div>
-            {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
-            <p className="text-xs text-muted-foreground">Идентификатор генерируется автоматически на основе названия</p>
-          </div>
+          </DialogContent>
 
           <DialogFooter>
             <Button type="submit" disabled={!isValid || isSubmitting || createMutation.isPending} size="xl">

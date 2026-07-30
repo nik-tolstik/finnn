@@ -28,6 +28,84 @@ Telegram authentication uses two separate bots:
 - PROD bot: use only for `https://finnn.xyz` and `https://api.finnn.xyz`.
 - DEV bot: use for `https://dev.finnn.xyz`, `https://api-dev.finnn.xyz`, and localhost/ngrok testing.
 
+## Vercel Topology And Agent Operations
+
+The frontend belongs to Vercel team `nikita-tolstiks-projects`
+(`team_kvIGfPhFgoNVm2ZeZo3UVA8g`) and project `finnn`
+(`prj_TTGv3A6Nw34FhSHseGEGQthGqoUf`). The project root is `packages/web`, the framework preset is `vite`, the output
+directory is `dist`, and the configured Node.js runtime is `24.x`.
+
+Vercel's Git integration owns normal deployments:
+
+- `main` creates the Production deployment and owns `finnn.xyz` plus `www.finnn.xyz`.
+- `develop` creates a Preview deployment and owns the protected `dev.finnn.xyz` alias.
+- Pull-request branches create protected Preview deployments.
+
+Agents may use an authenticated Vercel connector for discovery and read-only inspection. For mutations or CLI-only
+verification, use the authenticated CLI/API with the explicit team scope and project ID. Do not depend on whichever
+project happens to be linked in the current directory.
+
+```bash
+pnpm --silent dlx vercel@latest whoami
+
+pnpm --silent dlx vercel@latest api \
+  /v9/projects/prj_TTGv3A6Nw34FhSHseGEGQthGqoUf \
+  --scope nikita-tolstiks-projects \
+  --raw | jq '{id,name,framework,rootDirectory,outputDirectory,nodeVersion}'
+
+pnpm --silent dlx vercel@latest api \
+  /v10/projects/prj_TTGv3A6Nw34FhSHseGEGQthGqoUf/env \
+  --scope nikita-tolstiks-projects \
+  --raw | jq '[.envs[] | {id,key,target,gitBranch,type}]'
+```
+
+The second command intentionally prints environment metadata only. Never print environment values, CLI access tokens,
+deployment-protection bypass tokens, or temporary share URLs. Pipe mutation request bodies through stdin, suppress the
+response when it can contain a value, and perform a separate metadata-only read after the mutation.
+
+Before a mutation:
+
+1. Confirm the local Git branch and working-tree state.
+2. Confirm the authenticated Vercel identity and the explicit team/project metadata.
+3. Resolve the exact environment-variable or deployment ID with a read-only request.
+4. Confirm that the user authorized the shared-environment change, especially for Production.
+5. Prefer the existing Git integration for deployments. Use manual deploy, promote, rollback, alias, or domain changes
+   only when the user explicitly requests them or an authorized incident recovery requires them.
+
+The required public Vite configuration is scoped independently:
+
+| Vercel target | `VITE_API_URL` |
+| --- | --- |
+| Development | `http://localhost:4000` |
+| Preview | `https://api-dev.finnn.xyz` |
+| Production | `https://api.finnn.xyz` |
+
+When replacing or renaming a build-time variable, create and validate the new scoped variables first. Let the Git
+integration produce a Preview deployment, confirm that its built assets contain the expected API origin and no wrong
+environment or localhost fallback, and only then delete the obsolete variables by their resolved IDs. A Vite build
+without `VITE_API_URL` is expected to fail before bundling.
+
+Use `vercel inspect` for deployment state and aliases. Preview and DEV are protected; use authenticated `vercel curl`
+instead of disabling deployment protection or exposing a bypass token:
+
+```bash
+pnpm --silent dlx vercel@latest inspect <deployment-url> --scope nikita-tolstiks-projects
+pnpm --silent dlx vercel@latest curl https://dev.finnn.xyz/dashboard \
+  --scope nikita-tolstiks-projects -- \
+  --silent --show-error --output /dev/null --write-out '%{http_code} %{content_type}\n'
+```
+
+After a deployment, verify direct loads for `/`, `/login`, `/dashboard`, `/invite/test-token`, and
+`/verify-email/test-token`; check the manifest, service worker, icons, and hashed assets with their expected content
+types; inspect the built HTTP-client chunk for the environment's API origin and the absence of other environment URLs,
+localhost, or obsolete variable names; then verify API `/health` and a credentialed CORS preflight from the matching web
+origin. Keep deployment protection enabled throughout.
+
+Do not run `vercel link`, `vercel pull`, or `vercel env pull` in an existing checkout merely to inspect the shared
+project. Linking creates `.vercel` state, and pulling can overwrite local environment files. If a task genuinely needs
+local linking, confirm the intended project and use the monorepo-aware link flow; preserve existing `.env` files before
+any pull.
+
 ## Railway Topology And Agent Operations
 
 Railway workspace ID is `0d1cc03f-784c-4d9f-8f21-0a35d3459ff3`. The primary project is `Finnn`
