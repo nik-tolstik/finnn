@@ -1,10 +1,12 @@
+import { useId } from "react";
+
 import styles from "./AppLoadingScreenConcepts.module.css";
 
 interface AppLoadingScreenConceptProps {
   label?: string;
 }
 
-type Concept = "pathAssembly" | "pathDraw" | "pathPulse";
+type Concept = "nThenBars" | "pathAssembly" | "pathDraw" | "pathPulse";
 
 // Keep this geometry in sync with the public Finnn logo assets.
 const LEFT_MARK_PATH =
@@ -14,6 +16,11 @@ const RIGHT_MARK_PATH =
   "M710.156 286.808C714.634 278.753 721.128 273.383 729.638 270.699C738.147 268.014 748.672 266.671 761.212 266.671C774.199 266.671 784.5 267.79 792.114 270.027C800.175 272.265 805.997 274.95 809.58 278.082C813.611 281.214 816.522 285.913 818.313 292.177C821 299.337 822.344 310.748 822.344 326.409V698.933C822.344 709.673 821.896 717.503 821 722.426C820.553 727.348 818.537 733.165 814.954 739.877C808.684 751.959 791.218 758 762.555 758C745.089 758 732.997 756.658 726.279 753.973C719.561 751.288 713.963 747.037 709.484 741.22C608.716 606.977 542.434 519.271 510.636 478.104V698.933C510.636 709.673 510.188 717.503 509.292 722.426C508.844 727.348 506.829 733.165 503.246 739.877C496.976 751.959 479.51 758 450.847 758C423.08 758 406.061 751.959 399.791 739.877C396.208 733.165 393.969 727.124 393.073 721.754C392.626 716.385 392.402 708.554 392.402 698.262V323.724C392.402 306.72 394.417 294.415 398.448 286.808C402.926 278.753 409.42 273.383 417.929 270.699C426.439 268.014 437.411 266.671 450.847 266.671C464.283 266.671 474.807 268.014 482.421 270.699C490.482 272.936 496.08 275.621 499.215 278.753C501.007 280.096 506.157 285.913 514.666 296.205C609.164 424.63 672.312 509.427 704.11 550.595V323.724C704.11 306.72 706.125 294.415 710.156 286.808Z";
 
 function AnimatedLogo({ concept }: { concept: Concept }) {
+  const instanceId = useId().replaceAll(":", "");
+  const nRevealMaskId = `n-reveal-${instanceId}`;
+  const barsRevealMaskId = `bars-reveal-${instanceId}`;
+  const drawsNThenBars = concept === "nThenBars";
+
   return (
     <svg
       viewBox="0 0 1025 1024"
@@ -23,9 +30,29 @@ function AnimatedLogo({ concept }: { concept: Concept }) {
       aria-hidden="true"
       focusable="false"
     >
+      {drawsNThenBars ? (
+        <defs>
+          <mask id={nRevealMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1025" height="1024">
+            <path className={styles.nRevealGuide} d="M451 710V315L762 710V315" pathLength={1} />
+          </mask>
+          <mask id={barsRevealMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1025" height="1024">
+            <path className={`${styles.barRevealGuide} ${styles.topBarGuide}`} d="M440 326H168" pathLength={1} />
+            <path className={`${styles.barRevealGuide} ${styles.middleBarGuide}`} d="M430 512H232" pathLength={1} />
+          </mask>
+        </defs>
+      ) : null}
       <rect className={styles.tile} x="0.343994" width="1024" height="1024" rx="256" />
-      <path className={`${styles.markPath} ${styles.leftPath}`} d={LEFT_MARK_PATH} pathLength={1} />
-      <path className={`${styles.markPath} ${styles.rightPath}`} d={RIGHT_MARK_PATH} pathLength={1} />
+      {drawsNThenBars ? (
+        <g className={styles.sequenceMarks}>
+          <path className={styles.markPath} d={RIGHT_MARK_PATH} mask={`url(#${nRevealMaskId})`} />
+          <path className={styles.markPath} d={LEFT_MARK_PATH} mask={`url(#${barsRevealMaskId})`} />
+        </g>
+      ) : (
+        <>
+          <path className={`${styles.markPath} ${styles.leftPath}`} d={LEFT_MARK_PATH} pathLength={1} />
+          <path className={`${styles.markPath} ${styles.rightPath}`} d={RIGHT_MARK_PATH} pathLength={1} />
+        </>
+      )}
     </svg>
   );
 }
@@ -54,4 +81,8 @@ export function SvgPathAssemblySplash(props: AppLoadingScreenConceptProps) {
 
 export function SvgPathPulseSplash(props: AppLoadingScreenConceptProps) {
   return <AppLoadingScreenConcept concept="pathPulse" {...props} />;
+}
+
+export function SvgNThenBarsSplash(props: AppLoadingScreenConceptProps) {
+  return <AppLoadingScreenConcept concept="nThenBars" {...props} />;
 }

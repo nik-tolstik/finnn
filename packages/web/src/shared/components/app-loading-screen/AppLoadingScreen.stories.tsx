@@ -1,7 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { AppLoadingScreen } from "./AppLoadingScreen";
-import { SvgPathAssemblySplash, SvgPathDrawSplash, SvgPathPulseSplash } from "./AppLoadingScreenConcepts";
+import {
+  SvgNThenBarsSplash,
+  SvgPathAssemblySplash,
+  SvgPathDrawSplash,
+  SvgPathPulseSplash,
+} from "./AppLoadingScreenConcepts";
 
 const meta = {
   title: "Shared Components/App Loading Screen",
@@ -45,6 +50,15 @@ export const Dark: Story = {
 
 export const SvgPathDraw: Story = {
   render: (args) => <SvgPathDrawSplash label={args.label} />,
+  parameters: {
+    themes: {
+      themeOverride: "light",
+    },
+  },
+};
+
+export const SvgNThenBars: Story = {
+  render: (args) => <SvgNThenBarsSplash label={args.label} />,
   parameters: {
     themes: {
       themeOverride: "light",

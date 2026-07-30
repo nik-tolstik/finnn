@@ -84,6 +84,37 @@ html[class~="dark"] .scene {
   animation: pulse-right-path 2.6s ease-in-out infinite;
 }
 
+.nRevealGuide,
+.barRevealGuide {
+  fill: none;
+  stroke: white;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nRevealGuide {
+  stroke-width: 160;
+  animation: reveal-n 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.barRevealGuide {
+  stroke-width: 144;
+}
+
+.topBarGuide {
+  animation: reveal-top-bar 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.middleBarGuide {
+  animation: reveal-middle-bar 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.sequenceMarks {
+  animation: fade-sequence-marks 4.2s ease-in-out infinite;
+}
+
 @keyframes draw-left-path {
   0%,
   8% {
@@ -273,6 +304,53 @@ html[class~="dark"] .scene {
   }
 }
 
+@keyframes reveal-n {
+  0%,
+  7% {
+    stroke-dashoffset: 1;
+  }
+
+  58%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes reveal-top-bar {
+  0%,
+  60% {
+    stroke-dashoffset: 1;
+  }
+
+  75%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes reveal-middle-bar {
+  0%,
+  71% {
+    stroke-dashoffset: 1;
+  }
+
+  84%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-sequence-marks {
+  0%,
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tile,
   .markPath {
@@ -283,6 +361,17 @@ html[class~="dark"] .scene {
     fill: var(--logo-mark-color);
     stroke: transparent;
     stroke-dashoffset: 0;
+    opacity: 1;
+  }
+
+  .nRevealGuide,
+  .barRevealGuide {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .sequenceMarks {
+    animation: none;
     opacity: 1;
   }
 }

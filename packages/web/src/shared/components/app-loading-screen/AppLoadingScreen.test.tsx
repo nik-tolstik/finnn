@@ -3,7 +3,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { AppLoadingScreen } from "./AppLoadingScreen";
-import { SvgPathAssemblySplash, SvgPathDrawSplash, SvgPathPulseSplash } from "./AppLoadingScreenConcepts";
+import {
+  SvgNThenBarsSplash,
+  SvgPathAssemblySplash,
+  SvgPathDrawSplash,
+  SvgPathPulseSplash,
+} from "./AppLoadingScreenConcepts";
 
 describe("AppLoadingScreen", () => {
   it("announces the default loading state while keeping the animation decorative", () => {
@@ -36,5 +41,15 @@ describe("AppLoadingScreen SVG concepts", () => {
     expect(markup.match(/<path /g)).toHaveLength(2);
     expect(markup).not.toContain("<img");
     expect(markup).not.toContain("mask");
+  });
+
+  it("reveals the N before the left bars inside the SVG", () => {
+    const markup = renderToStaticMarkup(createElement(SvgNThenBarsSplash));
+
+    expect(markup).toContain("<mask");
+    expect(markup).toContain('d="M451 710V315L762 710V315"');
+    expect(markup).toContain('d="M440 326H168"');
+    expect(markup).toContain('d="M430 512H232"');
+    expect(markup).not.toContain("<img");
   });
 });
