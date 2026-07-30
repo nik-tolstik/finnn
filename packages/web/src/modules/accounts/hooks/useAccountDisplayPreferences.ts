@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useEffect, useState } from "react";
 
 import type {
@@ -114,7 +112,6 @@ export function useAccountDisplayPreferences(workspaceId: string) {
   }, []);
 
   return {
-    isHydrated: loadedStorageKey === storageKey,
     preferences,
     selectGrouping,
     selectSort,

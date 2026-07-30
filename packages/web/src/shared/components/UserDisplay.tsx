@@ -1,5 +1,3 @@
-"use client";
-
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { cn } from "@/shared/utils/cn";
 

@@ -1,5 +1,3 @@
-"use client";
-
 import { ru } from "date-fns/locale";
 import { Bell, CalendarClock, ChevronRight, Clock3, Mail, Repeat2, Send } from "lucide-react";
 import type { FormEvent } from "react";
@@ -12,7 +10,7 @@ import { CategoryIcon } from "@/shared/components/category-icon";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { CURRENCY_OPTIONS, type Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
 import { Calendar } from "@/shared/ui/calendar";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";

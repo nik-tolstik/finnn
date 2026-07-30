@@ -1,5 +1,3 @@
-"use client";
-
 import { Check, Pencil, SkipForward, Trash2 } from "lucide-react";
 
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog";

@@ -1,5 +1,3 @@
-"use client";
-
 import { ArrowDown } from "lucide-react";
 import { useMemo } from "react";
 import { Controller, type UseFormReturn, useWatch } from "react-hook-form";

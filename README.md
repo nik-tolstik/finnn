@@ -11,7 +11,7 @@ operations runbook, design system, and active implementation plans.
 ## Stack
 
 - `pnpm` workspace with `packages/web`, `packages/api`, and the isolated `packages/postgres-backup` cron service.
-- Next.js App Router, React, and TypeScript frontend.
+- Vite, React Router, React, and TypeScript frontend.
 - NestJS API with Prisma and PostgreSQL.
 - API-owned HTTP-only cookie authentication.
 - OpenAPI with an Orval-generated web client.
@@ -46,7 +46,7 @@ CRON_SECRET="paste-cron-secret-here"
 The minimum web setting is:
 
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:4000"
+VITE_API_URL="http://localhost:4000"
 ```
 
 Generate API secrets with `openssl rand -base64 32`. Email, Telegram, Google, OpenRouter, object storage, and hosted
@@ -81,8 +81,8 @@ pnpm test
 pnpm build
 ```
 
-`pnpm check` verifies generated API contract drift and runs package Biome checks. `pnpm build` builds the NestJS API
-before the Next.js frontend.
+`pnpm check` verifies generated API contract drift and runs package Biome checks.
+`pnpm build` builds the NestJS API before the Vite frontend.
 
 ## Important Boundaries
 

@@ -1,9 +1,7 @@
-"use client";
-
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 
 import { createTelegramMiniAppSessionFromInitData } from "./telegram-mini.api";
 import type { TelegramMiniAppState } from "./telegram-mini.types";

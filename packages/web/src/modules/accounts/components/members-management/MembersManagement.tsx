@@ -1,12 +1,10 @@
-"use client";
-
 import { useQuery } from "@tanstack/react-query";
 import { UserPlus } from "lucide-react";
 
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.api";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";
 

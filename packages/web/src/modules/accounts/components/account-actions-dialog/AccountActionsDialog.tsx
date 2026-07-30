@@ -1,5 +1,3 @@
-"use client";
-
 import { Archive, Eye, EyeOff, Pencil, Plus } from "lucide-react";
 
 import type { Account } from "@/modules/accounts/account.types";

@@ -2,10 +2,13 @@
 
 ## High-Level Shape
 
-Finnn is a `pnpm` monorepo with a Next.js App Router frontend in `packages/web` and a NestJS API in `packages/api`.
+Finnn is a `pnpm` monorepo with a Vite-powered React SPA in `packages/web` and a NestJS API in `packages/api`.
 
 ```text
-packages/web/src/app       App Router pages, layouts, and providers
+packages/web/src/app       SPA composition root and React Router route tree
+packages/web/src/routes    Route layouts and route entry components
+packages/web/src/providers Application-wide client providers
+packages/web/src/styles    Global styles
 packages/web/src/modules   Feature UI, frontend hooks, and API-backed adapters
 packages/web/src/shared    Cross-cutting UI, generated API client, lib helpers, utilities
 packages/web/public        PWA assets and service worker
@@ -15,23 +18,25 @@ packages/api/scripts       Seed, import, and export scripts
 docs                       Project documentation
 ```
 
-## App Router
+## Web SPA And Routing
 
-Route groups:
+`packages/web/src/main.tsx` mounts the application. `packages/web/src/app/App.tsx` declares the React Router tree and
+lazy-loads each route entry behind a shared suspense fallback.
 
-- `packages/web/src/app/(auth)` contains login, registration, invite acceptance, and email verification pages.
-- `packages/web/src/app/(dashboard)` contains authenticated pages and layout.
-- `packages/web/src/shared/lib/api-session.ts` reads the API-owned HTTP-only session cookie during server rendering and checks it through `GET /auth/session`.
-- `packages/web/src/shared/lib/api-session-client.tsx` provides client session state from the generated API client.
+- `packages/web/src/routes/auth` contains login, registration, invite acceptance, password reset, and email verification routes.
+- `packages/web/src/routes/dashboard` contains authenticated routes and the dashboard shell.
+- `packages/web/src/shared/lib/api-session.tsx` provides SPA session state from the generated API client.
 - Exchange-rate reads and cron persistence are owned by `packages/api/src/currency`.
 
-Dashboard pages are server components that load session/workspace context, normalize `workspaceId` search params, prefetch TanStack Query data, and render client content inside `HydrationBoundary`.
+Nested route layouts render child routes through React Router's `Outlet`. The dashboard auth gate resolves the API
+session in the browser, while route components use TanStack Query for workspace and financial data. A wildcard route
+redirects unknown client-side URLs to `/`, and `packages/web/vercel.json` serves `index.html` for direct SPA navigation.
 
 Examples:
 
-- `packages/web/src/app/(dashboard)/dashboard/page.tsx`
-- `packages/web/src/app/(dashboard)/analytics/page.tsx`
-- `packages/web/src/app/(dashboard)/debts/page.tsx`
+- `packages/web/src/routes/dashboard/DashboardRoute.tsx`
+- `packages/web/src/routes/dashboard/AnalyticsRoute.tsx`
+- `packages/web/src/routes/dashboard/DebtsRoute.tsx`
 
 ## Feature Modules
 
@@ -48,7 +53,7 @@ Frontend feature modules live under `packages/web/src/modules`.
 
 Exchange-rate UI is cross-cutting rather than a standalone frontend feature module. The shared amount synchronization hook lives in
 `packages/web/src/shared/hooks/useCurrencyAmountSync.ts`, dashboard presentation lives under
-`packages/web/src/app/(dashboard)/components`, and the Orval client lives under
+`packages/web/src/routes/dashboard/components`, and the Orval client lives under
 `packages/web/src/shared/api/generated/currency`.
 
 The typical frontend module shape is:
@@ -58,7 +63,7 @@ module/
   module.api.ts           Pure generated-client adapter when response shaping is needed
   module.types.ts         Shared module types
   module.constants.ts     Domain constants
-  components/             Client/server UI for the feature
+  components/             Browser UI for the feature
 ```
 
 Not every module has every file; follow the local pattern already used by that module.
@@ -80,7 +85,7 @@ Prefer direct generated client functions when no response normalization is neede
 Shared helpers:
 
 - `packages/web/src/shared/lib/action-result.ts`
-- `packages/web/src/shared/lib/api-session.ts`
+- `packages/web/src/shared/lib/api-session.tsx`
 - `packages/web/src/shared/lib/query-invalidation.ts`
 - `packages/web/src/shared/lib/validations`
 
@@ -138,7 +143,9 @@ Authentication is owned by `packages/api/src/auth`:
 - `POST /auth/password-reset/request` sends a short-lived reset code when the requested email belongs to a verified user.
 - `POST /auth/password-reset/confirm` validates the reset code, updates the password, and revokes active sessions.
 
-`packages/web` calls these endpoints through generated Orval client functions with credentials included. Server session access is cached through `packages/web/src/shared/lib/api-session.ts`, which forwards the API session cookie to the backend session endpoint.
+`packages/web` calls these endpoints through generated Orval client functions with credentials included. The client
+session provider caches `GET /auth/session` through TanStack Query; the browser sends the HTTP-only session cookie to
+the API without exposing it to application code.
 
 Protected app pages (`/dashboard`, `/analytics`, `/debts`, and `/payments`) use a CSR-first shell. The client `DashboardAuthGate`
 confirms the real API session through `GET /auth/session`, shows a global loading screen while the check is pending,
@@ -182,9 +189,9 @@ Workspace authorization is handled in the API by `WorkspaceAccessGuard` and `Wor
 
 TanStack Query keys are centralized in `packages/web/src/shared/lib/query-keys.ts`.
 
-Protected app data is loaded through TanStack Query in client components. Cached data should render immediately while
-stale data refetches in the background; avoid adding server-side page data dependencies to protected app routes unless a
-feature explicitly needs SSR again.
+Protected app data is loaded through TanStack Query in browser components. Cached data should render immediately while
+stale data refetches in the background. Keep authentication and financial data access on the API boundary rather than
+adding route loaders that duplicate the query cache.
 
 Optimistic updates are centralized in `packages/web/src/shared/lib/optimistic-workspace-updates.ts`. Use these helpers when changing account, category, debt, transaction, workspace, or user references in client cache.
 

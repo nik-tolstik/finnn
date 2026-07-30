@@ -1,5 +1,3 @@
-"use client";
-
 import { motion, useReducedMotion } from "motion/react";
 import type * as React from "react";
 import { cloneElement, isValidElement, useCallback, useId, useLayoutEffect, useRef, useState } from "react";

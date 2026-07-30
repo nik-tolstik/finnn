@@ -1,5 +1,3 @@
-"use client";
-
 import { CombinedTransactionsDialogs } from "./components/CombinedTransactionsDialogs";
 import { CombinedTransactionsView } from "./components/CombinedTransactionsView";
 import { useCombinedTransactionsController } from "./hooks/useCombinedTransactionsController";

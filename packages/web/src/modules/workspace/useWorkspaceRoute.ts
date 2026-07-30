@@ -1,8 +1,6 @@
-"use client";
-
 import { useQuery } from "@tanstack/react-query";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { workspacesKeys } from "@/shared/lib/query-keys";
 
@@ -10,9 +8,9 @@ import { getWorkspaces } from "./workspace.api";
 import { buildWorkspaceSearchString, resolveWorkspaceIdFromList } from "./workspace-search-params";
 
 export function useWorkspaceRoute() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const { hash, pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const requestedWorkspaceId = searchParams.get("workspaceId");
 
   const workspacesQuery = useQuery({
@@ -31,8 +29,15 @@ export function useWorkspaceRoute() {
       return;
     }
 
-    router.replace(`${pathname}?${buildWorkspaceSearchString(searchParams, workspaceId)}`, { scroll: false });
-  }, [pathname, requestedWorkspaceId, router, searchParams, workspaceId]);
+    navigate(
+      {
+        pathname,
+        search: `?${buildWorkspaceSearchString(searchParams, workspaceId)}`,
+        hash,
+      },
+      { replace: true, preventScrollReset: true }
+    );
+  }, [hash, navigate, pathname, requestedWorkspaceId, searchParams, workspaceId]);
 
   return {
     workspaceId,

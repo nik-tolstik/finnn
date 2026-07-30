@@ -5,11 +5,11 @@ import { deleteCurrentUserAvatar, uploadCurrentUserAvatar } from "./auth.api";
 describe("auth avatar API", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    delete process.env.NEXT_PUBLIC_API_URL;
+    vi.unstubAllEnvs();
   });
 
   it("uploads avatar FormData with credentials and without a manual content type", async () => {
-    process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";
+    vi.stubEnv("VITE_API_URL", "https://api.example.com");
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -39,7 +39,7 @@ describe("auth avatar API", () => {
   });
 
   it("clears avatar with credentials", async () => {
-    process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";
+    vi.stubEnv("VITE_API_URL", "https://api.example.com");
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({

@@ -1,5 +1,3 @@
-"use client";
-
 import {
   BriefcaseBusiness,
   Building2,
@@ -60,7 +58,6 @@ export function CategoryIcon({
 }: CategoryIconProps) {
   if (iconAssetId) {
     return (
-      // biome-ignore lint/performance/noImgElement: Category assets are protected API redirects and should not use Next Image.
       <img
         src={getAssetUrl(iconAssetId, iconAssetUrl)}
         alt={imageAlt}

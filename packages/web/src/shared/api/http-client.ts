@@ -1,3 +1,5 @@
+import { LOCAL_API_BASE_URL, normalizeApiBaseUrl } from "./api-url";
+
 export type ErrorType<Error> = Error;
 export type BodyType<BodyData> = BodyData;
 
@@ -25,11 +27,7 @@ async function parseResponseBody(response: Response): Promise<unknown> {
 }
 
 export function getApiBaseUrl(): string {
-  const configuredUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
-
-  if (typeof window === "undefined") {
-    return configuredUrl;
-  }
+  const configuredUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL || LOCAL_API_BASE_URL);
 
   try {
     const apiUrl = new URL(configuredUrl);
