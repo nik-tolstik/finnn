@@ -6,25 +6,19 @@ import { useSession } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/ui/sheet";
 
-const MobileUserMenuContent = lazy(() =>
-  import("./MobileUserMenuContent").then((module) => ({ default: module.MobileUserMenuContent }))
-);
-const UserSettingsDialog = lazy(() =>
-  import("@/modules/auth/components/user-settings-dialog").then((module) => ({ default: module.UserSettingsDialog }))
-);
-const CategorySettingsDialog = lazy(() =>
+import { MobileUserMenuContent } from "./MobileUserMenuContent";
+
+const loadUserSettingsDialog = () =>
+  import("@/modules/auth/components/user-settings-dialog").then((module) => ({ default: module.UserSettingsDialog }));
+const UserSettingsDialog = lazy(loadUserSettingsDialog);
+const loadCategorySettingsDialog = () =>
   import("@/modules/accounts/components/category-settings-dialog").then((module) => ({
     default: module.CategorySettingsDialog,
-  }))
-);
+  }));
+const CategorySettingsDialog = lazy(loadCategorySettingsDialog);
 
-function MenuContentFallback() {
-  return (
-    <div aria-hidden="true" className="space-y-4 px-4 pt-6">
-      <div className="h-16 rounded-lg bg-muted animate-pulse" />
-      <div className="h-32 rounded-lg bg-muted animate-pulse" />
-    </div>
-  );
+function preloadUserMenuDialogs() {
+  void Promise.all([loadUserSettingsDialog(), loadCategorySettingsDialog()]).catch(() => undefined);
 }
 
 export function MobileUserMenu() {
@@ -60,21 +54,22 @@ export function MobileUserMenu() {
           aria-expanded={open}
           aria-haspopup="dialog"
           className="p-0 size-9 rounded-full"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            preloadUserMenuDialogs();
+            setOpen(true);
+          }}
         >
           <UserAvatar name={session?.user?.name || telegramName} email={email} image={session?.user?.image} size="lg" />
         </Button>
         <SheetContent side="right" showCloseButton={false} className="w-[calc(100vw-48px)] max-w-sm p-0">
           <SheetTitle className="sr-only">Меню пользователя</SheetTitle>
           {open ? (
-            <Suspense fallback={<MenuContentFallback />}>
-              <MobileUserMenuContent
-                workspaceId={workspaceId}
-                onMenuOpenChange={setOpen}
-                onUserSettingsOpen={openUserSettingsDialog}
-                onCategorySettingsOpen={openCategorySettingsDialog}
-              />
-            </Suspense>
+            <MobileUserMenuContent
+              workspaceId={workspaceId}
+              onMenuOpenChange={setOpen}
+              onUserSettingsOpen={openUserSettingsDialog}
+              onCategorySettingsOpen={openCategorySettingsDialog}
+            />
           ) : null}
         </SheetContent>
       </Sheet>

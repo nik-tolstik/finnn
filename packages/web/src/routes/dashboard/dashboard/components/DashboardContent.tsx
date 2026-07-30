@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Eye, EyeOff, X } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { getAccounts, updateAccountsOrder } from "@/modules/accounts/account.api";
@@ -13,9 +13,11 @@ import {
   getCanonicalAccountOrder,
   mergeReorderedVisibleAccounts,
 } from "@/modules/accounts/components/accounts-cards/account-display";
+import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog/CreateAccountDialog";
 import { useAccountDisplayPreferences } from "@/modules/accounts/hooks/useAccountDisplayPreferences";
 import { CombinedTransactionsList } from "@/modules/transactions/components/combined-transactions-list";
 import { TransactionsFilterButton } from "@/modules/transactions/components/transactions-filters/components/TransactionsFilterButton";
+import { TransactionsFilterDrawer } from "@/modules/transactions/components/transactions-filters/components/TransactionsFilterDrawer";
 import { useTransactionFilters } from "@/modules/transactions/components/transactions-filters/hooks/useTransactionFilters";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/transactions-list-skeleton";
 import { getCombinedTransactions } from "@/modules/transactions/transaction.api";
@@ -38,25 +40,6 @@ import { Tooltip } from "@/shared/ui/tooltip";
 
 import { AccountDisplayControls, type BalanceSortStatus } from "./AccountDisplayControls";
 import { AccountsMenu } from "./AccountsMenu";
-
-const CreateAccountDialog = lazy(() =>
-  import("@/modules/accounts/components/create-account-dialog/CreateAccountDialog").then((module) => ({
-    default: module.CreateAccountDialog,
-  }))
-);
-const TransactionsFilterDrawer = lazy(() =>
-  import("@/modules/transactions/components/transactions-filters/components/TransactionsFilterDrawer").then(
-    (module) => ({ default: module.TransactionsFilterDrawer })
-  )
-);
-
-function DialogLoadingFallback() {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/18 backdrop-blur-sm" role="status">
-      <div className="rounded-lg bg-dialog px-4 py-3 text-sm shadow-lg">Загрузка…</div>
-    </div>
-  );
-}
 
 interface DashboardContentProps {
   initialCurrentUserId?: string;
@@ -440,14 +423,12 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
         </div>
 
         {createAccountDialog.mounted && (
-          <Suspense fallback={<DialogLoadingFallback />}>
-            <CreateAccountDialog
-              workspaceId={workspaceId}
-              open={createAccountDialog.open}
-              onOpenChange={createAccountDialog.closeDialog}
-              onCloseComplete={createAccountDialog.unmountDialog}
-            />
-          </Suspense>
+          <CreateAccountDialog
+            workspaceId={workspaceId}
+            open={createAccountDialog.open}
+            onOpenChange={createAccountDialog.closeDialog}
+            onCloseComplete={createAccountDialog.unmountDialog}
+          />
         )}
 
         <div>
@@ -486,20 +467,18 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
       </div>
 
       {isFiltersDrawerMounted ? (
-        <Suspense fallback={<DialogLoadingFallback />}>
-          <TransactionsFilterDrawer
-            open={isFiltersDrawerOpen}
-            onOpenChange={setIsFiltersDrawerOpen}
-            appliedFilters={appliedFilters}
-            members={membersData?.data || []}
-            categories={categoriesData?.data || []}
-            accounts={availableAccounts}
-            isCategoriesLoading={isCategoriesLoading}
-            isMembersLoading={isMembersLoading}
-            onApply={handleApplyFilters}
-            onReset={handleResetFilters}
-          />
-        </Suspense>
+        <TransactionsFilterDrawer
+          open={isFiltersDrawerOpen}
+          onOpenChange={setIsFiltersDrawerOpen}
+          appliedFilters={appliedFilters}
+          members={membersData?.data || []}
+          categories={categoriesData?.data || []}
+          accounts={availableAccounts}
+          isCategoriesLoading={isCategoriesLoading}
+          isMembersLoading={isMembersLoading}
+          onApply={handleApplyFilters}
+          onReset={handleResetFilters}
+        />
       ) : null}
     </div>
   );

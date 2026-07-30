@@ -3,6 +3,7 @@ import { lazy, Suspense, useRef } from "react";
 import { toast } from "sonner";
 
 import type { Account } from "@/modules/accounts/account.types";
+import { AccountActionsDialog } from "@/modules/accounts/components/account-actions-dialog/AccountActionsDialog";
 import type {
   AccountDisplayGroup,
   AccountDisplayGrouping,
@@ -17,33 +18,26 @@ import { Badge } from "@/shared/ui/badge";
 import { hideAccount, showAccount } from "../../account.api";
 import { AccountsCardsSkeleton } from "../accounts-cards-skeleton/AccountsCardsSkeleton";
 
-const AccountActionsDialog = lazy(() =>
-  import("../account-actions-dialog/AccountActionsDialog").then((module) => ({
-    default: module.AccountActionsDialog,
-  }))
-);
 const AccountsCardsReorderView = lazy(() =>
   import("./AccountsCardsReorderView").then((module) => ({ default: module.AccountsCardsReorderView }))
 );
-const ArchiveAccountDialog = lazy(() =>
+const loadArchiveAccountDialog = () =>
   import("../archive-account-dialog/ArchiveAccountDialog").then((module) => ({
     default: module.ArchiveAccountDialog,
-  }))
-);
-const CreateTransactionDialog = lazy(() =>
+  }));
+const ArchiveAccountDialog = lazy(loadArchiveAccountDialog);
+const loadCreateTransactionDialog = () =>
   import("@/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog").then((module) => ({
     default: module.CreateTransactionDialog,
-  }))
-);
-const EditAccountDialog = lazy(() =>
-  import("../edit-account-dialog/EditAccountDialog").then((module) => ({ default: module.EditAccountDialog }))
-);
+  }));
+const CreateTransactionDialog = lazy(loadCreateTransactionDialog);
+const loadEditAccountDialog = () =>
+  import("../edit-account-dialog/EditAccountDialog").then((module) => ({ default: module.EditAccountDialog }));
+const EditAccountDialog = lazy(loadEditAccountDialog);
 
-function DialogLoadingFallback() {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/18 backdrop-blur-sm" role="status">
-      <div className="rounded-lg bg-dialog px-4 py-3 text-sm shadow-lg">Загрузка…</div>
-    </div>
+function preloadAccountDetailsDialogs() {
+  void Promise.all([loadArchiveAccountDialog(), loadCreateTransactionDialog(), loadEditAccountDialog()]).catch(
+    () => undefined
   );
 }
 
@@ -172,6 +166,7 @@ export function AccountsCards({
                   account={account}
                   showOwner={shouldShowOwnerOnCard}
                   onClick={() => {
+                    preloadAccountDetailsDialogs();
                     accountActionsDialog.openDialog({ account });
                   }}
                 />
@@ -182,41 +177,39 @@ export function AccountsCards({
       </div>
 
       {accountActionsDialog.mounted ? (
-        <Suspense fallback={<DialogLoadingFallback />}>
-          <AccountActionsDialog
-            account={accountActionsDialog.data.account}
-            open={accountActionsDialog.open}
-            onCloseComplete={accountActionsDialog.unmountDialog}
-            onEdit={() => {
-              editDialog.openDialog({
-                account: accountActionsDialog.data.account,
-              });
-              accountActionsDialog.closeDialog();
-            }}
-            onToggleVisibility={() => {
-              void handleToggleVisibility(accountActionsDialog.data.account);
-            }}
-            onArchive={() => {
-              archiveDialog.openDialog({
-                account: accountActionsDialog.data.account,
-              });
-              accountActionsDialog.closeDialog();
-            }}
-            onOpenChange={accountActionsDialog.closeDialog}
-            onCreateTransaction={() => {
-              createTransactionDialog.openDialog({
-                workspaceId,
-                defaultType: PaymentTransactionType.EXPENSE,
-                account: accountActionsDialog.data.account,
-              });
-              accountActionsDialog.closeDialog();
-            }}
-          />
-        </Suspense>
+        <AccountActionsDialog
+          account={accountActionsDialog.data.account}
+          open={accountActionsDialog.open}
+          onCloseComplete={accountActionsDialog.unmountDialog}
+          onEdit={() => {
+            editDialog.openDialog({
+              account: accountActionsDialog.data.account,
+            });
+            accountActionsDialog.closeDialog();
+          }}
+          onToggleVisibility={() => {
+            void handleToggleVisibility(accountActionsDialog.data.account);
+          }}
+          onArchive={() => {
+            archiveDialog.openDialog({
+              account: accountActionsDialog.data.account,
+            });
+            accountActionsDialog.closeDialog();
+          }}
+          onOpenChange={accountActionsDialog.closeDialog}
+          onCreateTransaction={() => {
+            createTransactionDialog.openDialog({
+              workspaceId,
+              defaultType: PaymentTransactionType.EXPENSE,
+              account: accountActionsDialog.data.account,
+            });
+            accountActionsDialog.closeDialog();
+          }}
+        />
       ) : null}
 
       {editDialog.mounted ? (
-        <Suspense fallback={<DialogLoadingFallback />}>
+        <Suspense fallback={null}>
           <EditAccountDialog
             account={editDialog.data.account}
             open={editDialog.open}
@@ -227,7 +220,7 @@ export function AccountsCards({
       ) : null}
 
       {archiveDialog.mounted ? (
-        <Suspense fallback={<DialogLoadingFallback />}>
+        <Suspense fallback={null}>
           <ArchiveAccountDialog
             account={archiveDialog.data.account}
             open={archiveDialog.open}
@@ -238,7 +231,7 @@ export function AccountsCards({
       ) : null}
 
       {createTransactionDialog.mounted ? (
-        <Suspense fallback={<DialogLoadingFallback />}>
+        <Suspense fallback={null}>
           <CreateTransactionDialog
             workspaceId={createTransactionDialog.data.workspaceId}
             open={createTransactionDialog.open}

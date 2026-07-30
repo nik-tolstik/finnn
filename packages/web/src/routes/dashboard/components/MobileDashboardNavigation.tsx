@@ -1,7 +1,8 @@
 import { Plus } from "lucide-react";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
 
+import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 import { Tooltip } from "@/shared/ui/tooltip";
@@ -9,19 +10,14 @@ import { cn } from "@/shared/utils/cn";
 
 import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
 
-const CreateTransactionDialog = lazy(() =>
-  import("@/modules/transactions/components/create-transaction-dialog").then((module) => ({
-    default: module.CreateTransactionDialog,
-  }))
-);
-const CreateDebtDialog = lazy(() =>
-  import("@/modules/debts/components/create-debt-dialog").then((module) => ({ default: module.CreateDebtDialog }))
-);
-const CreateScheduledPaymentDialog = lazy(() =>
+const loadCreateDebtDialog = () =>
+  import("@/modules/debts/components/create-debt-dialog").then((module) => ({ default: module.CreateDebtDialog }));
+const CreateDebtDialog = lazy(loadCreateDebtDialog);
+const loadCreateScheduledPaymentDialog = () =>
   import("@/modules/scheduled-payments/components/CreateScheduledPaymentDialog").then((module) => ({
     default: module.CreateScheduledPaymentDialog,
-  }))
-);
+  }));
+const CreateScheduledPaymentDialog = lazy(loadCreateScheduledPaymentDialog);
 
 export function MobileDashboardNavigation() {
   const [searchParams] = useSearchParams();
@@ -34,6 +30,19 @@ export function MobileDashboardNavigation() {
   const isDebtsPage = pathname === "/debts";
   const isPaymentsPage = pathname === "/payments";
   const actionLabel = isPaymentsPage ? "Добавить платёж" : isDebtsPage ? "Добавить долг" : "Добавить транзакцию";
+
+  useEffect(() => {
+    if (!workspaceId) {
+      return;
+    }
+
+    if (isPaymentsPage) {
+      void loadCreateScheduledPaymentDialog().catch(() => undefined);
+    } else if (isDebtsPage) {
+      void loadCreateDebtDialog().catch(() => undefined);
+    }
+  }, [isDebtsPage, isPaymentsPage, workspaceId]);
+
   const handleClick = () => {
     if (!workspaceId) {
       return;
@@ -94,14 +103,12 @@ export function MobileDashboardNavigation() {
         </Tooltip>
       </div>
       {createTransactionDialog.mounted && workspaceId && (
-        <Suspense fallback={null}>
-          <CreateTransactionDialog
-            workspaceId={workspaceId}
-            open={createTransactionDialog.open}
-            onOpenChange={createTransactionDialog.closeDialog}
-            onCloseComplete={createTransactionDialog.unmountDialog}
-          />
-        </Suspense>
+        <CreateTransactionDialog
+          workspaceId={workspaceId}
+          open={createTransactionDialog.open}
+          onOpenChange={createTransactionDialog.closeDialog}
+          onCloseComplete={createTransactionDialog.unmountDialog}
+        />
       )}
       {createDebtDialog.mounted && workspaceId && (
         <Suspense fallback={null}>

@@ -259,3 +259,49 @@ pnpm dlx lighthouse@13.4.1 <local-authenticated-dashboard> --only-categories=per
 - The built-in browser bridge could not attach from this WSL checkout because its sandbox path was not accepted, so local verification used standalone Chrome, Lighthouse, and the Chrome DevTools Protocol.
 - `pnpm db:seed` could not reseed the existing local database because its cleanup order hit `debt_transactions_paymentTransactionId_fkey`; the performance fixture was created through the authenticated local API instead. No seed code was changed.
 - Confirm the immutable `/assets/*` response header on the Vercel preview and review mobile Speed Insights after sufficient DEV/PROD samples accumulate.
+
+## 2026-07-30 15:08 +03 - Primary Agent Interaction Follow-up
+
+### Scope
+
+- Addressed user feedback that first-time dashboard actions had become visibly slower after dialog code splitting.
+- Kept first-level mobile interactions in their already breakpoint- or route-scoped chunks: the create-transaction form, account actions, transaction actions, account creation, transaction filters, and user menu content.
+- Kept secondary edit/archive/delete forms lazy, but starts loading them as soon as the corresponding first-level action menu opens.
+- Removed the full-screen `Загрузка…` interstitial from dashboard interactions.
+
+### Files Changed
+
+- `packages/web/src/modules/accounts/components/accounts-cards/AccountsCards.tsx`
+- `packages/web/src/modules/transactions/components/combined-transactions-list/CombinedTransactionsList.tsx`
+- `packages/web/src/modules/transactions/components/combined-transactions-list/components/CombinedTransactionsDialogs.tsx`
+- `packages/web/src/routes/dashboard/components/MobileDashboardNavigation.tsx`
+- `packages/web/src/routes/dashboard/components/MobileUserMenu.tsx`
+- `packages/web/src/routes/dashboard/components/dashboard-shell-performance.test.ts`
+- `packages/web/src/routes/dashboard/dashboard/components/DashboardContent.tsx`
+- `packages/web/src/routes/dashboard/dashboard/components/dashboard-interaction-ux.test.ts`
+
+### Commands Run
+
+```bash
+pnpm --filter web typecheck
+pnpm --filter web check
+pnpm --filter web test -- src/routes/dashboard/components/dashboard-shell-performance.test.ts src/routes/dashboard/dashboard/components/dashboard-interaction-ux.test.ts
+VITE_API_URL=https://api.finnn.xyz pnpm --filter web build
+```
+
+### Results
+
+- Web typecheck and Biome checks passed.
+- All 50 web test files and 210 tests passed, including the new interaction-loading assertions.
+- Production web build passed.
+- Authenticated Chrome verification at a 390 x 844 mobile viewport measured:
+  - create transaction: 111.7 ms to the rendered dialog;
+  - account actions: 40.0 ms;
+  - transaction actions: 43.2 ms.
+- None of the three flows displayed the removed loading interstitial, and the browser reported no console errors.
+
+### Decisions
+
+- Treat first-level interactions as part of the interactive route rather than the cold-start-only optimization budget.
+- Defer secondary forms behind their action menus, where the user's decision time provides a safe preload window.
+- Preserve the responsive shell and route-level splitting that delivered the original mobile loading improvement.

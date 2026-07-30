@@ -19,19 +19,21 @@ describe("dashboard shell performance boundaries", () => {
     expect(viewportSource).toContain('addEventListener("change"');
   });
 
-  it("keeps interaction-only dialogs outside the initial mobile chrome chunks", () => {
+  it("keeps primary mobile interactions instant while deferring secondary dialogs", () => {
     const menuSource = readComponent("MobileUserMenu.tsx");
     const menuContentSource = readComponent("MobileUserMenuContent.tsx");
     const navigationSource = readComponent("MobileDashboardNavigation.tsx");
     const sidebarSource = readComponent("Sidebar.tsx");
 
-    expect(menuSource).toContain('lazy(() =>\n  import("./MobileUserMenuContent")');
+    expect(menuSource).toContain('import { MobileUserMenuContent } from "./MobileUserMenuContent"');
     expect(menuSource).toContain('import("@/modules/auth/components/user-settings-dialog")');
     expect(menuSource).toContain('import("@/modules/accounts/components/category-settings-dialog")');
     expect(menuSource).not.toContain('from "./WorkspaceDropdown"');
     expect(menuContentSource).toContain('from "./WorkspaceDropdown"');
 
-    expect(navigationSource).toContain('import("@/modules/transactions/components/create-transaction-dialog")');
+    expect(navigationSource).toContain(
+      'import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog"'
+    );
     expect(navigationSource).toContain('import("@/modules/debts/components/create-debt-dialog")');
     expect(navigationSource).toContain(
       'import("@/modules/scheduled-payments/components/CreateScheduledPaymentDialog")'
