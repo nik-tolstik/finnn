@@ -33,7 +33,9 @@ function AnimatedLogo({ concept }: { concept: Concept }) {
       {drawsNThenBars ? (
         <defs>
           <mask id={nRevealMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1025" height="1024">
-            <path className={styles.nRevealGuide} d="M451 710V315L762 710V315" pathLength={1} />
+            <path className={`${styles.nRevealGuide} ${styles.nLeftStemGuide}`} d="M451 780V240" pathLength={1} />
+            <path className={`${styles.nRevealGuide} ${styles.nDiagonalGuide}`} d="M451 270L762 754" pathLength={1} />
+            <path className={`${styles.nRevealGuide} ${styles.nRightStemGuide}`} d="M762 780V240" pathLength={1} />
           </mask>
           <mask id={barsRevealMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1025" height="1024">
             <path className={`${styles.barRevealGuide} ${styles.topBarGuide}`} d="M440 326H168" pathLength={1} />

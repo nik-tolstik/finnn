@@ -47,7 +47,9 @@ describe("AppLoadingScreen SVG concepts", () => {
     const markup = renderToStaticMarkup(createElement(SvgNThenBarsSplash));
 
     expect(markup).toContain("<mask");
-    expect(markup).toContain('d="M451 710V315L762 710V315"');
+    expect(markup).toContain('d="M451 780V240"');
+    expect(markup).toContain('d="M451 270L762 754"');
+    expect(markup).toContain('d="M762 780V240"');
     expect(markup).toContain('d="M440 326H168"');
     expect(markup).toContain('d="M430 512H232"');
     expect(markup).not.toContain("<img");

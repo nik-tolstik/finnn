@@ -95,8 +95,20 @@ html[class~="dark"] .scene {
 }
 
 .nRevealGuide {
-  stroke-width: 160;
-  animation: reveal-n 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  stroke-width: 126;
+  stroke-linecap: butt;
+}
+
+.nLeftStemGuide {
+  animation: reveal-n-left-stem 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.nDiagonalGuide {
+  animation: reveal-n-diagonal 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.nRightStemGuide {
+  animation: reveal-n-right-stem 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 .barRevealGuide {
@@ -304,13 +316,37 @@ html[class~="dark"] .scene {
   }
 }
 
-@keyframes reveal-n {
+@keyframes reveal-n-left-stem {
   0%,
   7% {
     stroke-dashoffset: 1;
   }
 
-  58%,
+  28%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes reveal-n-diagonal {
+  0%,
+  30% {
+    stroke-dashoffset: 1;
+  }
+
+  51%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes reveal-n-right-stem {
+  0%,
+  53% {
+    stroke-dashoffset: 1;
+  }
+
+  67%,
   100% {
     stroke-dashoffset: 0;
   }
@@ -318,11 +354,11 @@ html[class~="dark"] .scene {
 
 @keyframes reveal-top-bar {
   0%,
-  60% {
+  69% {
     stroke-dashoffset: 1;
   }
 
-  75%,
+  79%,
   100% {
     stroke-dashoffset: 0;
   }
@@ -330,11 +366,11 @@ html[class~="dark"] .scene {
 
 @keyframes reveal-middle-bar {
   0%,
-  71% {
+  80% {
     stroke-dashoffset: 1;
   }
 
-  84%,
+  88%,
   100% {
     stroke-dashoffset: 0;
   }
@@ -342,7 +378,7 @@ html[class~="dark"] .scene {
 
 @keyframes fade-sequence-marks {
   0%,
-  90% {
+  93% {
     opacity: 1;
   }
 
