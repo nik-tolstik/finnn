@@ -19,7 +19,7 @@
 ### Commands Run
 
 ```bash
-git worktree add -b agent/mobile-dashboard-performance /home/vibegame/projects/finnn-mobile-performance HEAD
+git worktree add -b agent/mobile-dashboard-performance <worktree-path> HEAD
 pnpm install --frozen-lockfile
 VITE_API_URL=https://api.finnn.xyz pnpm --filter web build
 ```
@@ -245,7 +245,7 @@ pnpm dlx lighthouse@13.4.1 <local-authenticated-dashboard> --only-categories=per
   - Representative transferred JavaScript fell from 329,925 bytes to 209,807 bytes (-36%); all transferred assets fell from 395,670 bytes to 275,621 bytes (-30%).
   - Initial API fetches fell from 9 to 4 and normal-browser Telegram requests fell from 2 to 0.
 - Browser verification at a 390 x 844 mobile viewport found all three account cards, both dashboard headings, all four navigation destinations, and the create-transaction action. The lazy transaction dialog opened successfully with no console exceptions.
-- The temporary workspace/accounts fixture, authenticated headers, browser profiles, and secret-bearing Lighthouse reports were removed after the measurements; only sanitized aggregate results and screenshots remain.
+- The temporary workspace/accounts fixture, authenticated headers, browser profiles, and secret-bearing Lighthouse reports were removed after the measurements; only sanitized aggregate results remain.
 
 ### Decisions
 
@@ -333,3 +333,46 @@ VITE_API_URL=https://api.finnn.xyz pnpm --filter web build
 
 - Accept the route-scoped category editor cost to guarantee interaction responsiveness; the dashboard route and mobile/desktop shell remain independently split from the application entry point.
 - Keep the categories API request prefetched rather than making it an unconditional render-blocking dashboard request.
+
+## 2026-07-30 15:52 +03 - Primary Agent Review
+
+### Scope
+
+- Reviewed the complete pull-request diff for correctness, interaction regressions, unnecessary preload work, secrets, and generated or temporary artifacts.
+- Kept favicon synchronization active when the inline theme bootstrap had already applied the selected theme.
+- Added complete service-worker polling and listener cleanup, including development Strict Mode remounts.
+- Suppressed Telegram authentication errors after bootstrap cancellation.
+- Scoped secondary transaction-dialog preloading to the selected transaction type instead of loading every dialog chunk.
+- Removed disposable local TypeScript and Chrome/Lighthouse artifacts and corrected the work log to contain only portable, accurate evidence.
+
+### Files Changed
+
+- `packages/web/src/providers/AppProviders.tsx`
+- `packages/web/src/shared/components/ServiceWorkerRegistration.tsx`
+- `packages/web/src/modules/telegram-mini/TelegramMiniAppBootstrap.tsx`
+- `packages/web/src/modules/transactions/components/combined-transactions-list/components/CombinedTransactionsDialogs.tsx`
+- `packages/web/src/routes/dashboard/dashboard/components/dashboard-interaction-ux.test.ts`
+- `packages/web/src/shared/lib/logo-assets.test.ts`
+- `packages/web/src/shared/lib/service-worker-cache-policy.test.ts`
+- `docs/plans/mobile-dashboard-performance/work-log.md`
+
+### Commands Run
+
+```bash
+pnpm --filter web check
+pnpm --filter web typecheck
+pnpm --filter web test
+VITE_API_URL=https://api.finnn.xyz pnpm --filter web build
+pnpm check
+pnpm typecheck
+curl http://127.0.0.1:3000/login
+curl http://127.0.0.1:4000/health
+```
+
+### Results
+
+- Web check, typecheck, production build, and all 50 test files with 213 tests passed.
+- Repository-wide generated-client drift, Biome, and TypeScript checks passed.
+- Every emitted production asset matched the service-worker content-hash allowlist.
+- The local web and API development servers both returned HTTP 200 after cleanup.
+- No tracked Lighthouse reports, browser profiles, screenshots, traces, logs, build caches, or secret-bearing files remain.

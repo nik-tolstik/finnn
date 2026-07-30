@@ -39,6 +39,16 @@ describe("dashboard interaction loading", () => {
     }
   });
 
+  it("preloads only secondary dialogs relevant to the selected transaction", () => {
+    const dialogsSource = readSource(
+      "src/modules/transactions/components/combined-transactions-list/components/CombinedTransactionsDialogs.tsx"
+    );
+
+    expect(dialogsSource).toContain('transaction.kind === "transferTransaction"');
+    expect(dialogsSource).toContain("hasDebtWriteOff(transaction.data)");
+    expect(dialogsSource).toContain("debtTransaction.type === DebtTransactionType.CREATED");
+  });
+
   it("keeps the category editor instant and preloads its data", () => {
     const categoryDialogSource = readSource(
       "src/modules/accounts/components/category-settings-dialog/CategorySettingsDialog.tsx"

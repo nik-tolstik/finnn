@@ -68,4 +68,10 @@ describe("service worker cache policy", () => {
     expect(registrationSource).toContain("const hadController = Boolean(navigator.serviceWorker.controller)");
     expect(registrationSource).toContain("if (hadController && !refreshing)");
   });
+
+  it("cleans up update polling and service-worker listeners", () => {
+    expect(registrationSource).toContain('removeEventListener("controllerchange", handleControllerChange)');
+    expect(registrationSource).toContain('removeEventListener("updatefound", handleUpdateFound)');
+    expect(registrationSource).toContain("window.clearInterval(updateIntervalId)");
+  });
 });

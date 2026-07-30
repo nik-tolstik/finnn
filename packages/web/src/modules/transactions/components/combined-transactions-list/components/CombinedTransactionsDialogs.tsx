@@ -1,9 +1,13 @@
 import { lazy, Suspense, useEffect } from "react";
 
 import { DebtTransactionActionsDialog } from "@/modules/debts/components/debt-transaction-actions-dialog";
+import { hasDebtWriteOff } from "@/modules/debts/components/debt-write-off-dialog/debt-write-off-dialog.utils";
+import { DebtTransactionType } from "@/modules/debts/debt.constants";
+import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
 
 import { TransactionActionsDialog } from "../../transaction-actions-dialog/TransactionActionsDialog";
 import type { CombinedTransactionsController } from "../hooks/useCombinedTransactionsController";
+import type { ActionableCombinedTransaction } from "../types";
 import { canCreateScheduledPaymentFromTransaction } from "../utils/scheduledPaymentFromTransaction";
 
 const loadDebtWriteOffDialog = () =>
@@ -41,17 +45,32 @@ const loadEditTransferDialog = () =>
   import("../../edit-transfer-dialog/EditTransferDialog").then((module) => ({ default: module.EditTransferDialog }));
 const EditTransferDialog = lazy(loadEditTransferDialog);
 
-function preloadTransactionDetailDialogs() {
-  void Promise.all([
-    loadDebtWriteOffDialog(),
-    loadDeleteDebtDialog(),
-    loadEditDebtDialog(),
-    loadEditDebtTransactionDialog(),
-    loadCreateScheduledPaymentDialog(),
-    loadCreateTransactionDialog(),
-    loadEditTransactionDialog(),
-    loadEditTransferDialog(),
-  ]).catch(() => undefined);
+function preloadTransactionDetailDialogs(transaction: ActionableCombinedTransaction) {
+  if (transaction.kind === "transferTransaction") {
+    void loadEditTransferDialog().catch(() => undefined);
+    return;
+  }
+
+  if (hasDebtWriteOff(transaction.data)) {
+    void loadDebtWriteOffDialog().catch(() => undefined);
+    return;
+  }
+
+  const preloadRequests = [loadCreateTransactionDialog(), loadEditTransactionDialog()];
+  if (canCreateScheduledPaymentFromTransaction(transaction)) {
+    preloadRequests.push(loadCreateScheduledPaymentDialog());
+  }
+
+  void Promise.all(preloadRequests).catch(() => undefined);
+}
+
+function preloadDebtTransactionDetailDialogs(debtTransaction: DebtTransactionWithRelations) {
+  const preloadRequests =
+    debtTransaction.type === DebtTransactionType.CREATED
+      ? [loadDeleteDebtDialog(), loadEditDebtDialog()]
+      : [loadEditDebtTransactionDialog()];
+
+  void Promise.all(preloadRequests).catch(() => undefined);
 }
 
 interface CombinedTransactionsDialogsProps {
@@ -80,12 +99,17 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
     handleDebtTransactionDelete,
     handleDebtTransactionEdit,
   } = controller;
+  const actionTransaction = actionsDialog.mounted ? actionsDialog.data.transaction : null;
+  const debtActionTransaction = debtActionsDialog.mounted ? debtActionsDialog.data.debtTransaction : null;
 
   useEffect(() => {
-    if (actionsDialog.mounted || debtActionsDialog.mounted) {
-      preloadTransactionDetailDialogs();
+    if (actionTransaction) {
+      preloadTransactionDetailDialogs(actionTransaction);
     }
-  }, [actionsDialog.mounted, debtActionsDialog.mounted]);
+    if (debtActionTransaction) {
+      preloadDebtTransactionDetailDialogs(debtActionTransaction);
+    }
+  }, [actionTransaction, debtActionTransaction]);
 
   return (
     <>

@@ -113,8 +113,8 @@ export function TelegramMiniAppBootstrap({ children }: { children: ReactNode }) 
         }
       } catch (error: unknown) {
         const message = getErrorMessage(error);
-        toast.error(message);
         if (!cancelled) {
+          toast.error(message);
           setState({
             error: message,
             isPending: false,

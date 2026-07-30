@@ -30,6 +30,7 @@ describe("logo assets", () => {
       theme_color: string;
       icons: Array<{ src: string; sizes?: string; type?: string }>;
     };
+    const appProviders = readAsset("src/providers/AppProviders.tsx");
     const serviceWorker = readAsset("public/sw.js");
 
     expect(appIcon).toContain('viewBox="0 0 1025 1024"');
@@ -50,6 +51,7 @@ describe("logo assets", () => {
       type: "image/svg+xml",
       purpose: "any",
     });
+    expect(appProviders.indexOf("const faviconUrl")).toBeLessThan(appProviders.indexOf("if (themeAlreadyApplied)"));
     expect(serviceWorker).toContain('const CACHE_NAME = "finnn-assets-v5";');
     expect(serviceWorker).toContain("HASHED_ASSET_PATH_PATTERN");
     expect(serviceWorker).not.toContain('"/logo-adaptive.svg"');
