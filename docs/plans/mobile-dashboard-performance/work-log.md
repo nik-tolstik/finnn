@@ -305,3 +305,31 @@ VITE_API_URL=https://api.finnn.xyz pnpm --filter web build
 - Treat first-level interactions as part of the interactive route rather than the cold-start-only optimization budget.
 - Defer secondary forms behind their action menus, where the user's decision time provides a safe preload window.
 - Preserve the responsive shell and route-level splitting that delivered the original mobile loading improvement.
+
+## 2026-07-30 15:30 +03 - Category Dialog Follow-up
+
+### Scope
+
+- Addressed the remaining first-open delay in category settings reported during manual mobile QA.
+- Kept the category dialog and editor inside the responsive dashboard chrome chunk so opening it never waits for a dynamic import.
+- Prefetched category data during browser idle time and again on avatar/category intent through the existing TanStack Query key.
+
+### Files Changed
+
+- `packages/web/src/modules/accounts/components/category-settings-dialog/index.ts`
+- `packages/web/src/modules/accounts/components/category-settings-dialog/useCategorySettingsPreload.ts`
+- `packages/web/src/routes/dashboard/components/MobileUserMenu.tsx`
+- `packages/web/src/routes/dashboard/components/Sidebar.tsx`
+- `packages/web/src/routes/dashboard/components/dashboard-shell-performance.test.ts`
+- `packages/web/src/routes/dashboard/dashboard/components/dashboard-interaction-ux.test.ts`
+
+### Results
+
+- Authenticated Chrome verification at 390 x 844 measured 178.2 ms from the category action to the rendered dialog and five editable category rows.
+- The previous split-shell implementation needed 337.5 ms for the same content and briefly rendered its fallback.
+- The final flow displayed no loading fallback, framework overlay, console error, or console warning.
+
+### Decisions
+
+- Accept the route-scoped category editor cost to guarantee interaction responsiveness; the dashboard route and mobile/desktop shell remain independently split from the application entry point.
+- Keep the categories API request prefetched rather than making it an unconditional render-blocking dashboard request.

@@ -2,6 +2,10 @@ import { LogOut, PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
 
+import {
+  CategorySettingsDialog,
+  useCategorySettingsPreload,
+} from "@/modules/accounts/components/category-settings-dialog";
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { useSession, useSignOut } from "@/shared/lib/api-session";
@@ -16,11 +20,6 @@ import { WorkspaceDropdown } from "./WorkspaceDropdown";
 
 const UserSettingsDialog = lazy(() =>
   import("@/modules/auth/components/user-settings-dialog").then((module) => ({ default: module.UserSettingsDialog }))
-);
-const CategorySettingsDialog = lazy(() =>
-  import("@/modules/accounts/components/category-settings-dialog").then((module) => ({
-    default: module.CategorySettingsDialog,
-  }))
 );
 
 function getDisplayName(session: ReturnType<typeof useSession>["data"]) {
@@ -63,6 +62,7 @@ export function Sidebar() {
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const workspaceId = searchParams.get("workspaceId") || undefined;
+  const preloadCategorySettings = useCategorySettingsPreload(workspaceId);
   const basePath = workspaceId ? `?workspaceId=${workspaceId}` : "";
   const { displayName, email, telegramName } = getDisplayName(session);
   const {
@@ -72,6 +72,7 @@ export function Sidebar() {
   } = useDashboardExchangeRates(workspaceId);
   const shouldShowExchangeRates = isExchangeRatesLoading || shouldRenderExchangeRates;
   const openCategorySettingsDialog = () => {
+    preloadCategorySettings();
     setCategorySettingsDialogMounted(true);
     setCategorySettingsDialogOpen(true);
   };
@@ -304,13 +305,11 @@ export function Sidebar() {
         </Suspense>
       ) : null}
       {workspaceId && categorySettingsDialogMounted ? (
-        <Suspense fallback={null}>
-          <CategorySettingsDialog
-            workspaceId={workspaceId}
-            open={categorySettingsDialogOpen}
-            onOpenChange={setCategorySettingsDialogOpen}
-          />
-        </Suspense>
+        <CategorySettingsDialog
+          workspaceId={workspaceId}
+          open={categorySettingsDialogOpen}
+          onOpenChange={setCategorySettingsDialogOpen}
+        />
       ) : null}
     </>
   );

@@ -1,6 +1,10 @@
 import { lazy, Suspense, useState } from "react";
 import { useSearchParams } from "react-router";
 
+import {
+  CategorySettingsDialog,
+  useCategorySettingsPreload,
+} from "@/modules/accounts/components/category-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { useSession } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
@@ -11,15 +15,6 @@ import { MobileUserMenuContent } from "./MobileUserMenuContent";
 const loadUserSettingsDialog = () =>
   import("@/modules/auth/components/user-settings-dialog").then((module) => ({ default: module.UserSettingsDialog }));
 const UserSettingsDialog = lazy(loadUserSettingsDialog);
-const loadCategorySettingsDialog = () =>
-  import("@/modules/accounts/components/category-settings-dialog").then((module) => ({
-    default: module.CategorySettingsDialog,
-  }));
-const CategorySettingsDialog = lazy(loadCategorySettingsDialog);
-
-function preloadUserMenuDialogs() {
-  void Promise.all([loadUserSettingsDialog(), loadCategorySettingsDialog()]).catch(() => undefined);
-}
 
 export function MobileUserMenu() {
   const { data: session } = useSession();
@@ -30,12 +25,14 @@ export function MobileUserMenu() {
   const [settingsDialogMounted, setSettingsDialogMounted] = useState(false);
   const [searchParams] = useSearchParams();
   const workspaceId = searchParams.get("workspaceId") || undefined;
+  const preloadCategorySettings = useCategorySettingsPreload(workspaceId);
 
   const telegramName = session?.user?.telegram.username
     ? `@${session.user.telegram.username}`
     : session?.user?.telegram.displayName;
   const email = session?.user?.email;
   const openCategorySettingsDialog = () => {
+    preloadCategorySettings();
     setCategorySettingsDialogMounted(true);
     setCategorySettingsDialogOpen(true);
   };
@@ -54,8 +51,12 @@ export function MobileUserMenu() {
           aria-expanded={open}
           aria-haspopup="dialog"
           className="p-0 size-9 rounded-full"
+          onFocus={preloadCategorySettings}
+          onPointerDown={preloadCategorySettings}
+          onPointerEnter={preloadCategorySettings}
           onClick={() => {
-            preloadUserMenuDialogs();
+            void loadUserSettingsDialog().catch(() => undefined);
+            preloadCategorySettings();
             setOpen(true);
           }}
         >
@@ -80,13 +81,11 @@ export function MobileUserMenu() {
       ) : null}
       {workspaceId &&
         (categorySettingsDialogMounted ? (
-          <Suspense fallback={null}>
-            <CategorySettingsDialog
-              workspaceId={workspaceId}
-              open={categorySettingsDialogOpen}
-              onOpenChange={setCategorySettingsDialogOpen}
-            />
-          </Suspense>
+          <CategorySettingsDialog
+            workspaceId={workspaceId}
+            open={categorySettingsDialogOpen}
+            onOpenChange={setCategorySettingsDialogOpen}
+          />
         ) : null)}
     </>
   );

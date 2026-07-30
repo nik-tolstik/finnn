@@ -38,4 +38,21 @@ describe("dashboard interaction loading", () => {
       expect(source).not.toContain("Загрузка…");
     }
   });
+
+  it("keeps the category editor instant and preloads its data", () => {
+    const categoryDialogSource = readSource(
+      "src/modules/accounts/components/category-settings-dialog/CategorySettingsDialog.tsx"
+    );
+    const categoryPreloadSource = readSource(
+      "src/modules/accounts/components/category-settings-dialog/useCategorySettingsPreload.ts"
+    );
+
+    expect(categoryDialogSource).toContain("<DialogTitle>Настройки категорий</DialogTitle>");
+    expect(categoryDialogSource).toContain(
+      'import { CategoryManagement } from "../category-management/CategoryManagement"'
+    );
+    expect(categoryDialogSource).not.toContain("lazy(");
+    expect(categoryPreloadSource).toContain("requestIdleCallback");
+    expect(categoryPreloadSource).toContain(".prefetchQuery({");
+  });
 });

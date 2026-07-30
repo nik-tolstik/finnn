@@ -27,7 +27,8 @@ describe("dashboard shell performance boundaries", () => {
 
     expect(menuSource).toContain('import { MobileUserMenuContent } from "./MobileUserMenuContent"');
     expect(menuSource).toContain('import("@/modules/auth/components/user-settings-dialog")');
-    expect(menuSource).toContain('import("@/modules/accounts/components/category-settings-dialog")');
+    expect(menuSource).toContain('from "@/modules/accounts/components/category-settings-dialog"');
+    expect(menuSource).toContain("useCategorySettingsPreload(workspaceId)");
     expect(menuSource).not.toContain('from "./WorkspaceDropdown"');
     expect(menuContentSource).toContain('from "./WorkspaceDropdown"');
 
@@ -39,7 +40,8 @@ describe("dashboard shell performance boundaries", () => {
       'import("@/modules/scheduled-payments/components/CreateScheduledPaymentDialog")'
     );
     expect(sidebarSource).toContain('import("@/modules/auth/components/user-settings-dialog")');
-    expect(sidebarSource).toContain('import("@/modules/accounts/components/category-settings-dialog")');
+    expect(sidebarSource).toContain('from "@/modules/accounts/components/category-settings-dialog"');
+    expect(sidebarSource).toContain("useCategorySettingsPreload(workspaceId)");
   });
 
   it("uses CSS state for the mobile navigation without layout measurement or motion runtime", () => {
