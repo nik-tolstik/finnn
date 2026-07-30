@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { getSession, login } from "@/shared/api/generated/auth/auth";
 import { acceptWorkspaceInvite } from "@/shared/api/generated/workspace-invites/workspace-invites";
-import { apiSessionQueryKey, userRequiresEmailVerification } from "@/shared/lib/api-session-client";
+import { apiSessionQueryKey, userRequiresEmailVerification } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";

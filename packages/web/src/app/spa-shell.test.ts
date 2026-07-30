@@ -38,6 +38,8 @@ describe("SPA shell", () => {
 
     expect(htmlEntry).toContain('<div id="root"></div>');
     expect(htmlEntry).toContain('<script type="module" src="/src/main.tsx"></script>');
+    expect(htmlEntry).toContain('window.localStorage.getItem("theme")');
+    expect(htmlEntry).toContain('window.matchMedia("(prefers-color-scheme: dark)")');
     expect(mainSource).toContain("<BrowserRouter>");
     expect(vercelConfig.framework).toBe("vite");
     expect(vercelConfig.rewrites).toEqual([{ source: "/(.*)", destination: "/index.html" }]);

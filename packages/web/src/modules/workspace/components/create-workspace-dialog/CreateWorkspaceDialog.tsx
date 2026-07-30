@@ -6,7 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 import { insertWorkspacesInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { invalidateWorkspaceDomains } from "@/shared/lib/query-invalidation";
 import { type CreateWorkspaceInput, createWorkspaceSchema } from "@/shared/lib/validations/workspace";

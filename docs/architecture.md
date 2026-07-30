@@ -25,7 +25,7 @@ lazy-loads each route entry behind a shared suspense fallback.
 
 - `packages/web/src/routes/auth` contains login, registration, invite acceptance, password reset, and email verification routes.
 - `packages/web/src/routes/dashboard` contains authenticated routes and the dashboard shell.
-- `packages/web/src/shared/lib/api-session-client.tsx` provides client session state from the generated API client.
+- `packages/web/src/shared/lib/api-session.tsx` provides SPA session state from the generated API client.
 - Exchange-rate reads and cron persistence are owned by `packages/api/src/currency`.
 
 Nested route layouts render child routes through React Router's `Outlet`. The dashboard auth gate resolves the API
@@ -85,7 +85,7 @@ Prefer direct generated client functions when no response normalization is neede
 Shared helpers:
 
 - `packages/web/src/shared/lib/action-result.ts`
-- `packages/web/src/shared/lib/api-session-client.tsx`
+- `packages/web/src/shared/lib/api-session.tsx`
 - `packages/web/src/shared/lib/query-invalidation.ts`
 - `packages/web/src/shared/lib/validations`
 

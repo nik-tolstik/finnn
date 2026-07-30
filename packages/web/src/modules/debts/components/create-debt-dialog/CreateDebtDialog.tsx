@@ -9,7 +9,7 @@ import type { Account } from "@/modules/accounts/account.types";
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CURRENCY_OPTIONS, type Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
 import { useCurrencyAmountSync } from "@/shared/hooks/useCurrencyAmountSync";
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 import { addAccountBalanceDelta, getDebtInitialAccountBalanceDelta } from "@/shared/lib/balance-domain";
 import {
   insertDebtsInCache,

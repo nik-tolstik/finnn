@@ -34,7 +34,7 @@ import {
   DEFAULT_CURRENCY,
 } from "@/shared/constants/currency";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys, categoryKeys, exchangeRateKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";

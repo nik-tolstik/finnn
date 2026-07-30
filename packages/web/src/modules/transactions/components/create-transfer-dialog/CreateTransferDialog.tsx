@@ -6,8 +6,8 @@ import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
-import type { Session } from "@/shared/lib/api-session-client";
-import { useSession } from "@/shared/lib/api-session-client";
+import type { Session } from "@/shared/lib/api-session";
+import { useSession } from "@/shared/lib/api-session";
 import { addAccountBalanceDelta, getTransferTransactionBalanceDeltas } from "@/shared/lib/balance-domain";
 import {
   insertTransactionsInCache,

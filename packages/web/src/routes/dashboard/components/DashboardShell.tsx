@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Suspense } from "react";
 
 import { cn } from "@/shared/utils/cn";
 import { useUIStore } from "@/stores/ui-store";
@@ -20,13 +19,9 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           sidebarOpen ? "md:pl-64" : "md:pl-[72px]"
         )}
       >
-        <Suspense fallback={null}>
-          <Header />
-        </Suspense>
+        <Header />
         <main className="flex-1 px-4 pb-20 md:p-8">{children}</main>
-        <Suspense fallback={null}>
-          <MobileDashboardNavigation />
-        </Suspense>
+        <MobileDashboardNavigation />
       </div>
     </div>
   );

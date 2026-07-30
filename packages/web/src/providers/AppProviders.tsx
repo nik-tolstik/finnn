@@ -1,7 +1,6 @@
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { ThemeProvider, useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { type NavigateFunction, useNavigate } from "react-router";
 
 import { TelegramMiniAppBootstrap } from "@/modules/telegram-mini/TelegramMiniAppBootstrap";
@@ -9,38 +8,45 @@ import { isEmailVerificationRequiredError } from "@/shared/api/http-client";
 import { AccentColorProvider } from "@/shared/components/accent-color-provider";
 import { PullToRefresh } from "@/shared/components/pull-to-refresh";
 import { ServiceWorkerRegistration } from "@/shared/components/ServiceWorkerRegistration";
-import { ApiSessionProvider, apiSessionQueryKey } from "@/shared/lib/api-session-client";
+import { ApiSessionProvider, apiSessionQueryKey } from "@/shared/lib/api-session";
+import { ThemeProvider, useTheme } from "@/shared/lib/theme-context";
 import { getThemeLogoPath } from "@/shared/lib/theme-logo";
 import { Toaster } from "@/shared/ui/sonner";
 
 function ThemeClassSync() {
-  const { resolvedTheme, theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
-    const nextTheme = theme === "system" ? resolvedTheme : theme;
+    const transitionBlocker = document.createElement("style");
+    transitionBlocker.textContent = "*,*::before,*::after{transition:none!important}";
+    document.head.appendChild(transitionBlocker);
 
     root.classList.remove("light", "dark");
+    root.classList.add(resolvedTheme);
+    root.style.colorScheme = resolvedTheme;
 
-    if (nextTheme === "light" || nextTheme === "dark") {
-      root.classList.add(nextTheme);
-      root.style.colorScheme = nextTheme;
-    } else {
-      root.style.removeProperty("color-scheme");
+    const faviconUrl = getThemeLogoPath(resolvedTheme);
+
+    if (faviconUrl) {
+      const faviconLinks = document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]');
+
+      for (const link of faviconLinks) {
+        link.href = faviconUrl;
+        link.type = "image/svg+xml";
+        link.sizes = "any";
+        link.media = "";
+      }
     }
 
-    const faviconUrl = getThemeLogoPath(nextTheme);
-    if (!faviconUrl) return;
+    void window.getComputedStyle(root).color;
+    const timeoutId = window.setTimeout(() => transitionBlocker.remove(), 0);
 
-    const faviconLinks = document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]');
-
-    for (const link of faviconLinks) {
-      link.href = faviconUrl;
-      link.type = "image/svg+xml";
-      link.sizes = "any";
-      link.media = "";
-    }
-  }, [resolvedTheme, theme]);
+    return () => {
+      window.clearTimeout(timeoutId);
+      transitionBlocker.remove();
+    };
+  }, [resolvedTheme]);
 
   return null;
 }
@@ -86,7 +92,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   });
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider>
       <AccentColorProvider>
         <QueryClientProvider client={queryClient}>
           <ApiSessionProvider>

@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { requestEmailVerification } from "@/shared/api/generated/auth/auth";
-import { userRequiresEmailVerification, useSession, useSignOut } from "@/shared/lib/api-session-client";
+import { userRequiresEmailVerification, useSession, useSignOut } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";

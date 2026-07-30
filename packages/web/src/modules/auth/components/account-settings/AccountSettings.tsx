@@ -13,7 +13,7 @@ import {
   updateUser as updateApiUser,
 } from "@/shared/api/generated/auth/auth";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 import { bumpUploadedAvatarVersion } from "@/shared/lib/avatar-cache-bust";
 import { runOptimisticWorkspaceMutation, updateUserReferencesInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";

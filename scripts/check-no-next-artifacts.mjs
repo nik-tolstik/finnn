@@ -1,6 +1,6 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const webRoot = resolve(root, "packages/web");
@@ -8,10 +8,16 @@ const failures = [];
 
 const forbiddenPaths = [
   "packages/web/next.config.js",
+  "packages/web/next.config.cjs",
+  "packages/web/next.config.cts",
   "packages/web/next.config.mjs",
+  "packages/web/next.config.mts",
   "packages/web/next.config.ts",
   "packages/web/next-env.d.ts",
   "packages/web/.next",
+  "packages/web/pages",
+  "packages/web/src/pages",
+  "packages/web/src/shared/lib/api-session-client.tsx",
   "packages/web/src/app/(auth)",
   "packages/web/src/app/(dashboard)",
 ];
@@ -28,6 +34,7 @@ for (const section of dependencySections) {
   for (const dependencyName of Object.keys(webPackage[section] ?? {})) {
     if (
       dependencyName === "next" ||
+      dependencyName.startsWith("next-") ||
       dependencyName.startsWith("@next/") ||
       dependencyName.startsWith("@storybook/nextjs") ||
       dependencyName === "vite-plugin-storybook-nextjs"
@@ -37,14 +44,9 @@ for (const section of dependencySections) {
   }
 }
 
-const sourceConventionNames = new Set([
-  "page.tsx",
-  "layout.tsx",
-  "loading.tsx",
-  "error.tsx",
-  "not-found.tsx",
-  "route.ts",
-]);
+const sourceConventionPattern =
+  /^(?:apple-icon|default|error|global-error|icon|instrumentation|instrumentation-client|layout|loading|manifest|middleware|not-found|opengraph-image|page|proxy|robots|route|sitemap|template|twitter-image)\.[cm]?[jt]sx?$/;
+const obsoleteClientBoundaryPattern = /PageClient\.[cm]?[jt]sx?$/;
 
 function walk(directory, visit) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -70,19 +72,37 @@ walk(resolve(webRoot, "src"), (absolutePath, entry, isDirectory) => {
     return;
   }
 
-  if (sourceConventionNames.has(entry.name)) {
+  if (sourceConventionPattern.test(entry.name)) {
     failures.push(`${filePath}: App Router convention filename remains`);
+  }
+
+  if (obsoleteClientBoundaryPattern.test(entry.name)) {
+    failures.push(`${filePath}: obsolete App Router client-boundary filename remains`);
   }
 });
 
-const textExtensions = new Set([".css", ".html", ".js", ".json", ".jsx", ".mjs", ".ts", ".tsx"]);
-const activeDocumentation = [
-  "AGENTS.md",
-  "README.md",
-].filter((filePath) => existsSync(resolve(root, filePath)));
+const textExtensions = new Set([
+  ".cjs",
+  ".css",
+  ".cts",
+  ".html",
+  ".js",
+  ".json",
+  ".jsx",
+  ".mjs",
+  ".mts",
+  ".ts",
+  ".tsx",
+  ".yaml",
+  ".yml",
+]);
+const activeDocumentation = ["AGENTS.md", "README.md"].filter((filePath) => existsSync(resolve(root, filePath)));
 const activeRootConfiguration = [
   ".gitignore",
+  ".vscode/extensions.json",
+  ".vscode/settings.json",
   "biome.json",
+  "docker-compose.yml",
   "package.json",
   "packages/web/.env.example",
   "packages/web/.gitignore",
@@ -90,14 +110,20 @@ const activeRootConfiguration = [
 ].filter((filePath) => existsSync(resolve(root, filePath)));
 
 const contentChecks = [
+  { label: "framework reference", pattern: /\bNext\.js\b|\bNextjs\b/i },
   {
     label: "framework import",
     pattern: /(?:from\s+|import\s*(?:\(\s*)?)["']next(?:\/[^"']*)?["']/,
+  },
+  {
+    label: "Next-prefixed package import",
+    pattern: /(?:from\s+|import\s*(?:\(\s*)?)["']next-[^"']+["']/,
   },
   { label: "framework Speed Insights entry", pattern: /@vercel\/speed-insights\/next/ },
   { label: "server/client framework directive", pattern: /^[\t ]*["']use (?:client|server|cache)["'];?/m },
   { label: "obsolete public environment prefix", pattern: /NEXT_PUBLIC_[A-Z0-9_]+/ },
   { label: "obsolete build asset path", pattern: /\/_next\// },
+  { label: "obsolete build directory reference", pattern: /\.next(?:\/|["'])/ },
   { label: "obsolete generated type path", pattern: /\.next\/(?:dev\/)?types/ },
   { label: "obsolete Storybook adapter", pattern: /@storybook\/nextjs|parameters\.nextjs/ },
   { label: "obsolete runtime command", pattern: /\bnext\s+(?:dev|build|start)\b/ },
@@ -105,13 +131,26 @@ const contentChecks = [
 
 const filesToScan = new Set(activeDocumentation.map((filePath) => resolve(root, filePath)));
 for (const filePath of activeRootConfiguration) filesToScan.add(resolve(root, filePath));
-walk(webRoot, (absolutePath, _entry, isDirectory) => {
-  if (isDirectory) return;
-  const extension = absolutePath.slice(absolutePath.lastIndexOf("."));
-  if (textExtensions.has(extension)) filesToScan.add(absolutePath);
-});
+
+function addTextFiles(directory) {
+  if (!existsSync(directory)) return;
+
+  walk(directory, (absolutePath, entry, isDirectory) => {
+    if (isDirectory) return;
+    const extension = absolutePath.slice(absolutePath.lastIndexOf("."));
+    if (textExtensions.has(extension) || entry.name.startsWith("Dockerfile")) {
+      filesToScan.add(absolutePath);
+    }
+  });
+}
+
+addTextFiles(resolve(root, "packages"));
+addTextFiles(resolve(root, "scripts"));
+addTextFiles(resolve(root, ".github"));
+
 walk(resolve(root, "docs"), (absolutePath, _entry, isDirectory) => {
-  if (isDirectory || !absolutePath.endsWith(".md")) return;
+  if (isDirectory) return;
+  if (!absolutePath.endsWith(".md")) return;
   const filePath = relative(root, absolutePath);
   if (!filePath.startsWith("docs/plans/")) filesToScan.add(absolutePath);
 });
@@ -131,6 +170,7 @@ for (const absolutePath of filesToScan) {
 const lockfile = readFileSync(resolve(root, "pnpm-lock.yaml"), "utf8");
 const lockfileChecks = [
   { label: "Next.js package", pattern: /^\s{2}next@/m },
+  { label: "Next-prefixed package", pattern: /^\s{2}next-[^:]+@/m },
   { label: "@next package", pattern: /@next\//m },
   { label: "Next.js Storybook adapter", pattern: /@storybook\/nextjs/m },
 ];

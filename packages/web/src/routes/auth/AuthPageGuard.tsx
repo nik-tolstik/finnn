@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import { AppLoadingScreen } from "@/shared/components/app-loading-screen";
-import { userRequiresEmailVerification, useSession } from "@/shared/lib/api-session-client";
+import { userRequiresEmailVerification, useSession } from "@/shared/lib/api-session";
 
 const AUTH_ONLY_PATHS = new Set(["/login", "/register", "/forgot-password", "/reset-password"]);
 

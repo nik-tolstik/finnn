@@ -39,7 +39,6 @@
     "date-fns": "^4.1.0",
     "lucide-react": "^0.562.0",
     "motion": "^12.26.2",
-    "next-themes": "^0.4.6",
     "radash": "^12.1.1",
     "react": "19.2.3",
     "react-colorful": "^5.6.1",

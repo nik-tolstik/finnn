@@ -10,7 +10,7 @@ import { CreateTransactionDialog } from "@/modules/transactions/components/creat
 import { TRANSFER_TRANSACTION_MODE } from "@/modules/transactions/components/create-transaction-dialog/create-transaction-dialog.utils";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { ok } from "@/shared/lib/action-result";
-import { ApiSessionProvider, apiSessionQueryKey } from "@/shared/lib/api-session-client";
+import { ApiSessionProvider, apiSessionQueryKey } from "@/shared/lib/api-session";
 import { accountKeys, categoryKeys } from "@/shared/lib/query-keys";
 import type { CreateDebtInput } from "@/shared/lib/validations/debt";
 import type {

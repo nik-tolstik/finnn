@@ -5,7 +5,7 @@ import { getAccounts } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 import { accountKeys } from "@/shared/lib/query-keys";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 

@@ -6,7 +6,7 @@ import { CategorySettingsDialog } from "@/modules/accounts/components/category-s
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
 import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { useSession, useSignOut } from "@/shared/lib/api-session-client";
+import { useSession, useSignOut } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";

@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { LeaveWorkspaceDialog } from "@/modules/workspace/components/leave-workspace-dialog";
 import { getWorkspaceSummary, updateWorkspace } from "@/modules/workspace/workspace.api";
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 import { runOptimisticWorkspaceMutation, updateWorkspaceCaches } from "@/shared/lib/optimistic-workspace-updates";
 import { workspaceKeys } from "@/shared/lib/query-keys";
 import { Button } from "@/shared/ui/button";

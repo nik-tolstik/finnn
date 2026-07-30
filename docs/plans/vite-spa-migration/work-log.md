@@ -114,3 +114,59 @@ A Vite production preview was also started locally and checked with `curl` for `
 - No repository implementation blocker remains.
 - Before shared DEV rollout, create `VITE_API_URL` in Vercel, deploy, and manually verify OAuth/Telegram callbacks and real authenticated route behavior. Production should follow only after DEV validation.
 - Browser screenshot QA was not run because repository instructions prohibit it without an explicit request.
+
+## 2026-07-30 11:12 +0300 - Codex / Post-Migration Artifact Cleanup
+
+### Scope
+
+- Re-audited tracked source, configuration, documentation, dependency metadata, ignored build output, and the installed dependency tree for migration residue.
+- Replaced the remaining `next-themes` dependency with a local SPA theme context while preserving the existing `theme` storage key, system color-scheme updates, pre-render theme initialization, favicon synchronization, and transition suppression.
+- Inlined four obsolete `*PageClient` boundaries into their React Router route components and removed redundant Suspense wrappers carried over from App Router requirements.
+- Renamed `api-session-client.tsx` to the framework-neutral `api-session.tsx` and updated source and architecture documentation references.
+- Removed confirmed dead files carried through the migration: the unused server logger, duplicated dashboard search-param helper, desktop user menu, and exchange-rate ticker.
+- Removed the obsolete `.next` Biome exclusion and the stale API comment that described environment loading in Next.js terms.
+- Expanded the automated artifact audit to cover every package and reject `next-themes`, `*PageClient` files, the old session-client path, generic active Next.js references, broader App Router convention filenames, `.next` references, and matching lockfile entries.
+
+### Commands Run
+
+```bash
+pnpm --filter web remove next-themes
+pnpm prune
+pnpm install --frozen-lockfile
+pnpm check:no-next-artifacts
+pnpm check
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm --filter web build:storybook
+git diff --check
+```
+
+The worktree dependency directories were moved to the system trash and recreated from the frozen lockfile because `pnpm prune` retained unreferenced Next.js packages in the local virtual store.
+
+### Results
+
+- The committed artifact audit passes across source, package metadata, configuration, current documentation, lockfile, and the resolved web dependency graph.
+- The recreated local virtual store contains no `next`, `@next/*`, `next-themes`, or Next-resolved Speed Insights package variants.
+- Full workspace check and typecheck passed.
+- Full test suite passed: API 267 tests passed / 12 skipped, web 182 passed, PostgreSQL backup 11 passed.
+- API and Vite production builds passed, and Storybook rebuilt successfully with the Vite adapter.
+- Fresh application Vite output contains no Next.js runtime markers. Storybook's generated vendor bundle still contains its own generic cross-framework Next.js mock names, but the application has no Next Storybook adapter or runtime dependency.
+- `git diff --check` passed.
+
+### Decisions
+
+- The earlier decision to retain `next-themes` is superseded by this cleanup: the package is framework-independent, but removing the last Next-branded dependency makes the migration boundary explicit and enforceable.
+- Historical references in this migration plan and work log remain intentionally; active source, configuration, dependency state, and current documentation are clean.
+- Existing Suspense boundaries around actual lazy imports remain. Only boundaries inherited solely for App Router search-param behavior were removed.
+- The four pre-existing dead files carried through the migration and surfaced by this audit were removed; other unrelated dead code remains outside this cleanup.
+
+### Subagent Contributions
+
+- A dependency/configuration audit identified the obsolete Biome exclusion, stale API comment, redundant client-boundary files, and unreferenced local Next.js install entries.
+- A route/import-graph audit confirmed which Suspense wrappers and moved files were migration residue and separated them from unrelated pre-existing dead code.
+
+### Blockers / Follow-ups
+
+- No repository blocker remains.
+- Browser screenshot QA was not run because repository instructions prohibit it without an explicit request.

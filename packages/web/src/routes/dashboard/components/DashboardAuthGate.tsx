@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { useTelegramMiniApp } from "@/modules/telegram-mini/useTelegramMiniApp";
 import { AppLoadingScreen } from "@/shared/components/app-loading-screen";
-import { userRequiresEmailVerification, useSession } from "@/shared/lib/api-session-client";
+import { userRequiresEmailVerification, useSession } from "@/shared/lib/api-session";
 
 interface DashboardAuthGateProps {
   children: ReactNode;

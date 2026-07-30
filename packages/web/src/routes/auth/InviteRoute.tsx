@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 import { acceptWorkspaceInvite, getWorkspaceInvite } from "@/shared/api/generated/workspace-invites/workspace-invites";
 import { isEmailVerificationRequiredError } from "@/shared/api/http-client";
-import { userRequiresEmailVerification, useSession } from "@/shared/lib/api-session-client";
+import { userRequiresEmailVerification, useSession } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
