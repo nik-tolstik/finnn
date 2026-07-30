@@ -4,48 +4,40 @@ import { type AccentColor, DEFAULT_ACCENT_COLOR, readAccentColor, writeAccentCol
 
 interface AccentColorContextValue {
   accentColor: AccentColor;
-  isHydrated: boolean;
   setAccentColor: (value: AccentColor) => void;
 }
 
 const AccentColorContext = createContext<AccentColorContextValue | null>(null);
 
-export function AccentColorProvider({ children }: { children: React.ReactNode }) {
-  const [accentColor, setAccentColor] = useState<AccentColor>(DEFAULT_ACCENT_COLOR);
-  const [isHydrated, setIsHydrated] = useState(false);
+function getInitialAccentColor(): AccentColor {
+  try {
+    return readAccentColor(window.localStorage);
+  } catch {
+    return DEFAULT_ACCENT_COLOR;
+  }
+}
 
-  useEffect(() => {
-    try {
-      setAccentColor(readAccentColor(window.localStorage));
-    } catch {
-      setAccentColor(DEFAULT_ACCENT_COLOR);
-    }
-    setIsHydrated(true);
-  }, []);
+export function AccentColorProvider({ children }: { children: React.ReactNode }) {
+  const [accentColor, setAccentColor] = useState<AccentColor>(getInitialAccentColor);
 
   useEffect(() => {
     document.documentElement.dataset.accentColor = accentColor;
   }, [accentColor]);
 
   useEffect(() => {
-    if (!isHydrated) {
-      return;
-    }
-
     try {
       writeAccentColor(window.localStorage, accentColor);
     } catch {
       // The selected color remains available for the current session.
     }
-  }, [accentColor, isHydrated]);
+  }, [accentColor]);
 
   const contextValue = useMemo(
     () => ({
       accentColor,
-      isHydrated,
       setAccentColor,
     }),
-    [accentColor, isHydrated]
+    [accentColor]
   );
 
   return <AccentColorContext.Provider value={contextValue}>{children}</AccentColorContext.Provider>;

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 export function ServiceWorkerRegistration() {
   useEffect(() => {
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+    if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/sw.js", { updateViaCache: "none" })
         .then((registration) => {

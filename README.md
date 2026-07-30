@@ -81,7 +81,7 @@ pnpm test
 pnpm build
 ```
 
-`pnpm check` rejects legacy framework artifacts, verifies generated API contract drift, and runs package Biome checks.
+`pnpm check` verifies generated API contract drift and runs package Biome checks.
 `pnpm build` builds the NestJS API before the Vite frontend.
 
 ## Important Boundaries

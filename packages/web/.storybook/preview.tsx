@@ -15,10 +15,6 @@ function resolveTheme(theme: StorybookTheme): "light" | "dark" {
     return theme;
   }
 
-  if (typeof window === "undefined") {
-    return "light";
-  }
-
   return window.matchMedia(systemDarkThemeQuery).matches ? "dark" : "light";
 }
 
@@ -28,7 +24,7 @@ function useResolvedStorybookTheme(theme: StorybookTheme) {
   useEffect(() => {
     setResolvedTheme(resolveTheme(theme));
 
-    if (theme !== "system" || typeof window === "undefined") {
+    if (theme !== "system") {
       return;
     }
 

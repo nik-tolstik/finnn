@@ -14,8 +14,9 @@ describe("getApiBaseUrl", () => {
     vi.unstubAllEnvs();
   });
 
-  it("returns the configured API URL on the server", () => {
+  it("removes the trailing slash from the configured API URL", () => {
     vi.stubEnv("VITE_API_URL", "http://127.0.0.1:4000/");
+    stubBrowserHostname("127.0.0.1");
 
     expect(getApiBaseUrl()).toBe("http://127.0.0.1:4000");
   });
@@ -50,6 +51,7 @@ describe("apiClient", () => {
 
   it("wraps network failures with an actionable API connection error", async () => {
     vi.stubEnv("VITE_API_URL", "https://api.example.com");
+    stubBrowserHostname("app.example.com");
     const fetchMock = vi.fn().mockRejectedValue(new Error("Load failed"));
     vi.stubGlobal("fetch", fetchMock);
 

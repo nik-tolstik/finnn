@@ -247,3 +247,53 @@ The deprecated standalone `vite optimize` command was used only to inspect the d
 ### Blockers / Follow-ups
 
 - No repository blocker remains.
+
+## 2026-07-30 11:48 +0300 - Codex / Browser-Only Runtime Cleanup
+
+### Scope
+
+- Removed obsolete `typeof window === "undefined"` branches from the Vite runtime, Storybook preview, theme handling, responsive hooks, API URL resolution, email-verification redirects, and service-worker registration.
+- Removed the unused server snapshot passed to `useSyncExternalStore`.
+- Replaced the accent-color hydration pass with lazy browser storage initialization and removed its temporary disabled UI state.
+- Removed first-mount gates that existed only to keep Next.js server and client renders aligned in the sortable account card and responsive select.
+- Removed the unused account-preferences `isHydrated` return value while retaining its internal per-workspace storage synchronization guard.
+- Corrected the root README after retirement of the migration-only artifact checker.
+
+### Commands Run
+
+```bash
+rg -n 'typeof\s+(window|document|navigator|localStorage|sessionStorage)' packages/web
+pnpm --filter web check
+pnpm --filter web test
+pnpm --filter web build
+pnpm --filter web build:storybook
+pnpm typecheck
+pnpm check
+git diff --check
+```
+
+### Results
+
+- No direct `typeof window`, `typeof document`, `typeof navigator`, `typeof localStorage`, or `typeof sessionStorage` SSR guards remain in the web package.
+- Web check passed, all 182 web tests passed, and both the application and Storybook production builds completed successfully.
+- Full workspace typecheck and check passed.
+- `git diff --check` passed.
+
+### Decisions
+
+- The Vite SPA runtime assumes browser globals because it mounts exclusively through `createRoot`; Node tests that call browser-only helpers provide explicit browser stubs.
+- Keep `"serviceWorker" in navigator` because it detects an optional browser capability rather than an SSR environment.
+- Keep the `typeof Element === "undefined"` branch in the pull-to-refresh helper because the pure helper is intentionally exercised in the Node-based unit-test environment.
+- Keep dialog/Floating UI `mounted` state because it controls close transitions and portal lifecycles, not React hydration.
+- Keep account-preference storage readiness keyed by workspace so switching workspaces cannot overwrite the new workspace's saved preferences with stale state.
+
+### Subagent Contributions
+
+- A browser-guard audit classified all frontend environment checks and identified the Node-sensitive pull-to-refresh helper and required HTTP-client test updates.
+- A hydration-residue audit identified the responsive select's first-mount gate and confirmed which other `mounted`/storage readiness states remain behaviorally necessary.
+
+### Blockers / Follow-ups
+
+- No repository blocker remains.
+
+- Browser screenshot QA was not run because repository instructions prohibit it without an explicit request.

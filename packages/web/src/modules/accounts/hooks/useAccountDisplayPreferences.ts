@@ -112,7 +112,6 @@ export function useAccountDisplayPreferences(workspaceId: string) {
   }, []);
 
   return {
-    isHydrated: loadedStorageKey === storageKey,
     preferences,
     selectGrouping,
     selectSort,

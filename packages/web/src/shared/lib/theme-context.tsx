@@ -30,14 +30,10 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getSystemPrefersDark(): boolean {
-  return typeof window !== "undefined" && window.matchMedia(DARK_MODE_QUERY).matches;
+  return window.matchMedia(DARK_MODE_QUERY).matches;
 }
 
 function subscribeToSystemTheme(onStoreChange: () => void): () => void {
-  if (typeof window === "undefined") {
-    return () => undefined;
-  }
-
   const mediaQuery = window.matchMedia(DARK_MODE_QUERY);
   mediaQuery.addEventListener("change", onStoreChange);
 
@@ -45,10 +41,6 @@ function subscribeToSystemTheme(onStoreChange: () => void): () => void {
 }
 
 function getInitialTheme(): ThemeMode {
-  if (typeof window === "undefined") {
-    return "system";
-  }
-
   try {
     return readTheme(window.localStorage);
   } catch {
@@ -58,18 +50,16 @@ function getInitialTheme(): ThemeMode {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>(getInitialTheme);
-  const systemPrefersDark = useSyncExternalStore(subscribeToSystemTheme, getSystemPrefersDark, () => false);
+  const systemPrefersDark = useSyncExternalStore(subscribeToSystemTheme, getSystemPrefersDark);
   const resolvedTheme = resolveTheme(theme, systemPrefersDark);
 
   const setTheme = useCallback((value: ThemeMode) => {
     setThemeState(value);
 
-    if (typeof window !== "undefined") {
-      try {
-        writeTheme(window.localStorage, value);
-      } catch {
-        // The selected theme remains available for the current session.
-      }
+    try {
+      writeTheme(window.localStorage, value);
+    } catch {
+      // The selected theme remains available for the current session.
     }
   }, []);
 

@@ -9,7 +9,6 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useEffect, useState } from "react";
 
 import type { Account } from "@/modules/accounts/account.types";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
@@ -40,19 +39,11 @@ function SortableAccountCard({ account, disabled = false }: SortableAccountCardP
     disabled,
     id: account.id,
   });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const style = mounted
-    ? {
-        opacity: isDragging ? 0.5 : 1,
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }
-    : {};
+  const style = {
+    opacity: isDragging ? 0.5 : 1,
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   return (
     <div ref={setNodeRef} style={style} className="w-full min-w-0">

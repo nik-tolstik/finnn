@@ -52,7 +52,7 @@ function ThemeClassSync() {
 }
 
 function redirectToEmailRequired(queryClient: QueryClient, navigate: NavigateFunction): void {
-  if (typeof window === "undefined" || window.location.pathname === "/email-required") return;
+  if (window.location.pathname === "/email-required") return;
 
   queryClient.removeQueries({
     predicate: (query) => query.queryKey[0] !== apiSessionQueryKey[0],

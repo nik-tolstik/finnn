@@ -27,10 +27,6 @@ async function parseResponseBody(response: Response): Promise<unknown> {
 export function getApiBaseUrl(): string {
   const configuredUrl = (import.meta.env.VITE_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
 
-  if (typeof window === "undefined") {
-    return configuredUrl;
-  }
-
   try {
     const apiUrl = new URL(configuredUrl);
     const webHostname = window.location.hostname;

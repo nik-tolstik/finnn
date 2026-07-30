@@ -20,7 +20,7 @@ export function AppearanceSettings({
   segmentedClassName,
   showLabels = true,
 }: AppearanceSettingsProps) {
-  const { accentColor, isHydrated: isAccentColorHydrated, setAccentColor } = useAccentColor();
+  const { accentColor, setAccentColor } = useAccentColor();
   const accentColorGroupName = useId();
 
   return (
@@ -29,27 +29,16 @@ export function AppearanceSettings({
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Основной цвет</h3>
-        <div
-          className={cn("flex items-center gap-3", !isAccentColorHydrated && "opacity-60")}
-          role="radiogroup"
-          aria-label="Основной цвет приложения"
-          aria-disabled={!isAccentColorHydrated}
-        >
+        <div className="flex items-center gap-3" role="radiogroup" aria-label="Основной цвет приложения">
           {ACCENT_COLOR_OPTIONS.map((option) => (
             <Tooltip key={option.value} content={option.label} delayDuration={0} disableHoverableContent>
-              <label
-                className={cn(
-                  "relative inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105",
-                  isAccentColorHydrated ? "cursor-pointer" : "cursor-default"
-                )}
-              >
+              <label className="relative inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-transform hover:scale-105">
                 <input
                   type="radio"
                   name={`accent-color-${accentColorGroupName}`}
                   value={option.value}
                   checked={accentColor === option.value}
                   aria-label={option.label}
-                  disabled={!isAccentColorHydrated}
                   onChange={() => setAccentColor(option.value)}
                   className="peer sr-only"
                 />
