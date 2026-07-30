@@ -32,12 +32,14 @@ describe("SPA shell", () => {
     const htmlEntry = readProjectFile("index.html");
     const mainSource = readProjectFile("src/main.tsx");
     const vercelConfig = JSON.parse(readProjectFile("vercel.json")) as {
+      framework?: string;
       rewrites?: Array<{ source: string; destination: string }>;
     };
 
     expect(htmlEntry).toContain('<div id="root"></div>');
     expect(htmlEntry).toContain('<script type="module" src="/src/main.tsx"></script>');
     expect(mainSource).toContain("<BrowserRouter>");
+    expect(vercelConfig.framework).toBe("vite");
     expect(vercelConfig.rewrites).toEqual([{ source: "/(.*)", destination: "/index.html" }]);
   });
 });
