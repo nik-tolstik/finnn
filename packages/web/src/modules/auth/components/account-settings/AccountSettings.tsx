@@ -1,11 +1,9 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import {
@@ -42,7 +40,7 @@ export function AccountSettings({ onSaved }: AccountSettingsProps) {
   const queryClient = useQueryClient();
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [emailValue, setEmailValue] = useState(session?.user?.email ?? "");
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const workspaceId = searchParams.get("workspaceId");
 
   const {

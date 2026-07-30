@@ -4,12 +4,9 @@ node_modules
 # testing
 coverage
 
-# next.js
-.next/
-out/
-
 # production
 build
+dist
 storybook-static
 
 # env files
@@ -18,7 +15,6 @@ storybook-static
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
 # uploads
 public/uploads/

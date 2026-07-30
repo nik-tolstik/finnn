@@ -1,14 +1,10 @@
-import type { Decorator, Preview } from "@storybook/nextjs-vite";
-import { Onest } from "next/font/google";
+import "@fontsource-variable/onest";
+
+import type { Decorator, Preview } from "@storybook/react-vite";
 import { type ReactNode, useEffect, useState } from "react";
+import { MemoryRouter } from "react-router";
 
-import "../src/app/globals.css";
-
-const onest = Onest({
-  subsets: ["cyrillic", "latin"],
-  variable: "--font-onest",
-  display: "swap",
-});
+import "../src/styles/globals.css";
 
 type StorybookTheme = "system" | "light" | "dark";
 
@@ -59,7 +55,7 @@ function StorybookThemeSync({ children, theme }: { children: ReactNode; theme: S
     const body = document.body;
 
     root.classList.remove("light", "dark");
-    root.classList.add(resolvedTheme, onest.variable);
+    root.classList.add(resolvedTheme);
     root.style.colorScheme = resolvedTheme;
 
     body.classList.add("bg-background", "font-sans", "text-foreground", "antialiased");
@@ -70,7 +66,7 @@ function StorybookThemeSync({ children, theme }: { children: ReactNode; theme: S
 
 function StorybookShell({ children }: { children: ReactNode }) {
   return (
-    <div className={`${onest.variable} min-h-screen bg-background p-4 font-sans text-foreground antialiased sm:p-6`}>
+    <div className="min-h-screen bg-background p-4 font-sans text-foreground antialiased sm:p-6">
       <div className="mx-auto w-full max-w-5xl">{children}</div>
     </div>
   );
@@ -88,8 +84,14 @@ const withFinnnTheme: Decorator = (Story, context) => {
   );
 };
 
+const withRouter: Decorator = (Story) => (
+  <MemoryRouter>
+    <Story />
+  </MemoryRouter>
+);
+
 const preview: Preview = {
-  decorators: [withFinnnTheme],
+  decorators: [withRouter, withFinnnTheme],
   globalTypes: {
     theme: {
       name: "Theme",
@@ -124,9 +126,6 @@ const preview: Preview = {
         color: /(background|color)$/i,
         date: /Date$/i,
       },
-    },
-    nextjs: {
-      appDirectory: true,
     },
   },
 };

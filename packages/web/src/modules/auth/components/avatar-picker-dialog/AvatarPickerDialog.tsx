@@ -1,5 +1,3 @@
-"use client";
-
 import { ImagePlusIcon } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -145,7 +143,6 @@ export function AvatarPickerDialog({
                 >
                   <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-muted-foreground">
                     {previewUrl ? (
-                      // biome-ignore lint/performance/noImgElement: Local object URLs cannot be rendered through Next Image.
                       <img src={previewUrl} alt="" className="size-full object-cover" />
                     ) : (
                       <ImagePlusIcon className="size-5" />

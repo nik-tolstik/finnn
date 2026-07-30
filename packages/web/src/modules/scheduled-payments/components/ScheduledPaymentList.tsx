@@ -1,5 +1,3 @@
-"use client";
-
 import { Bell, Check, Pencil, SkipForward, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 

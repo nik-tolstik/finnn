@@ -1,5 +1,3 @@
-"use client";
-
 import { Copy, Pipette } from "lucide-react";
 import * as React from "react";
 import { HexColorPicker } from "react-colorful";

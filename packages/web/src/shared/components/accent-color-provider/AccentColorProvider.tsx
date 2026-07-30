@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { type AccentColor, DEFAULT_ACCENT_COLOR, readAccentColor, writeAccentColor } from "@/shared/lib/accent-color";

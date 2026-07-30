@@ -1,5 +1,3 @@
-"use client";
-
 import { AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { hexToRgba } from "@/shared/utils/color-utils";

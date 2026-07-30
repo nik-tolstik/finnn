@@ -1,7 +1,6 @@
-"use client";
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useMemo } from "react";
+import { useNavigate } from "react-router";
 
 import { getSession, logout } from "@/shared/api/generated/auth/auth";
 import type { AuthUserDto, SessionResponseDto } from "@/shared/api/generated/model";
@@ -68,7 +67,22 @@ export function useSession(): ApiSessionContextValue {
   return context;
 }
 
-export async function signOut(options: { callbackUrl?: string } = {}) {
-  await logout();
-  window.location.assign(options.callbackUrl ?? "/login");
+export function useSignOut() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    async (options: { callbackUrl?: string } = {}) => {
+      await logout();
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== apiSessionQueryKey[0],
+      });
+      queryClient.setQueryData<SessionResponseDto>(apiSessionQueryKey, {
+        authenticated: false,
+        user: null,
+      });
+      navigate(options.callbackUrl ?? "/login", { replace: true });
+    },
+    [navigate, queryClient]
+  );
 }

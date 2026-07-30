@@ -1,13 +1,11 @@
-"use client";
-
 import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2, LogOut, Mail } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { requestEmailVerification } from "@/shared/api/generated/auth/auth";
-import { signOut, userRequiresEmailVerification, useSession } from "@/shared/lib/api-session-client";
+import { userRequiresEmailVerification, useSession, useSignOut } from "@/shared/lib/api-session-client";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
@@ -19,22 +17,23 @@ function sanitizeReturnTo(value: string | null): string {
 }
 
 export function EmailRequiredScreen() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const signOut = useSignOut();
+  const [searchParams] = useSearchParams();
   const { data: session, status, update: updateSession } = useSession();
   const [email, setEmail] = useState(session?.user.email ?? "");
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace("/login");
+      navigate("/login", { replace: true });
       return;
     }
 
     if (status === "authenticated" && !userRequiresEmailVerification(session?.user)) {
-      router.replace(returnTo);
+      navigate(returnTo, { replace: true });
     }
-  }, [returnTo, router, session?.user, status]);
+  }, [navigate, returnTo, session?.user, status]);
 
   useEffect(() => {
     setEmail(session?.user.email ?? "");
@@ -54,8 +53,7 @@ export function EmailRequiredScreen() {
   const refreshSession = async () => {
     const nextSession = await updateSession();
     if (nextSession && !userRequiresEmailVerification(nextSession.user)) {
-      router.replace(returnTo);
-      router.refresh();
+      navigate(returnTo, { replace: true });
       return;
     }
 

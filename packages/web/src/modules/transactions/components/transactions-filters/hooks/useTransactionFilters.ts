@@ -1,7 +1,5 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import type { TransactionViewFilters } from "../types";
 import {
@@ -12,23 +10,14 @@ import {
 } from "../utils/search-params";
 
 export function useTransactionFilters() {
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const { hash, pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const [appliedFilters, setAppliedFilters] = useState(() => parseTransactionFilters(searchParams));
 
   useEffect(() => {
     setAppliedFilters(parseTransactionFilters(searchParams));
   }, [searchParams]);
-
-  useEffect(() => {
-    const handlePopState = () => {
-      setAppliedFilters(parseTransactionFilters(new URLSearchParams(window.location.search)));
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
 
   const appliedFiltersCount = useMemo(() => countActiveTransactionFilterGroups(appliedFilters), [appliedFilters]);
   const appliedFiltersKey = useMemo(() => JSON.stringify(appliedFilters), [appliedFilters]);
@@ -39,26 +28,22 @@ export function useTransactionFilters() {
 
   const applyFilters = useCallback(
     (nextFilters: TransactionViewFilters) => {
-      const currentSearchParams =
-        typeof window === "undefined"
-          ? new URLSearchParams(searchParams.toString())
-          : new URLSearchParams(window.location.search);
+      const currentSearchParams = new URLSearchParams(searchParams);
       const nextSearchParams = applyTransactionFiltersToSearchParams(currentSearchParams, nextFilters);
       const queryString = nextSearchParams.toString();
-      const nextUrl =
-        typeof window === "undefined"
-          ? queryString
-            ? `?${queryString}`
-            : ""
-          : `${window.location.pathname}${queryString ? `?${queryString}` : ""}${window.location.hash}`;
 
       setAppliedFilters(parseTransactionFilters(nextSearchParams));
 
-      if (typeof window !== "undefined") {
-        window.history.replaceState(window.history.state, "", nextUrl);
-      }
+      navigate(
+        {
+          pathname,
+          search: queryString ? `?${queryString}` : "",
+          hash,
+        },
+        { replace: true, preventScrollReset: true }
+      );
     },
-    [searchParams]
+    [hash, navigate, pathname, searchParams]
   );
 
   const resetFilters = useCallback(() => {

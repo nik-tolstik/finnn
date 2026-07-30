@@ -18,7 +18,7 @@ Backend API deployments are hosted on Railway:
 
 Keep environment variables aligned with the matching frontend/API pair:
 
-| Environment | `WEB_APP_URL` / `API_ALLOWED_ORIGINS` | `NEXT_PUBLIC_API_URL` | `TELEGRAM_REDIRECT_URI` | `GOOGLE_REDIRECT_URI` | Mini App URL |
+| Environment | `WEB_APP_URL` / `API_ALLOWED_ORIGINS` | `VITE_API_URL` | `TELEGRAM_REDIRECT_URI` | `GOOGLE_REDIRECT_URI` | Mini App URL |
 | --- | --- | --- | --- | --- | --- |
 | PROD | `https://finnn.xyz` | `https://api.finnn.xyz` | `https://api.finnn.xyz/auth/telegram/callback` | `https://api.finnn.xyz/auth/google/callback` | `https://finnn.xyz/dashboard` |
 | DEV | `https://dev.finnn.xyz` | `https://api-dev.finnn.xyz` | `https://api-dev.finnn.xyz/auth/telegram/callback` | `https://api-dev.finnn.xyz/auth/google/callback` | `https://dev.finnn.xyz/dashboard` |
@@ -173,6 +173,17 @@ pnpm build
 
 This script builds the API package first, then the web package.
 
+## Vercel Frontend Deployment
+
+Deploy `packages/web` as a Vite project with `dist` as the output directory. Set `VITE_API_URL` in each Vercel
+environment before the build; browser bundles receive the value at build time. The checked-in
+`packages/web/vercel.json` rewrites client-side route requests to `index.html` while Vercel continues to serve existing
+static files directly.
+
+After deployment, open `/`, one public route such as `/login`, and one protected deep link such as `/dashboard`
+directly. A hard refresh must return the SPA shell, and the client auth gate must still own the protected-route
+redirect. Confirm that `/sw.js`, the manifest, icons, and hashed `/assets/*` files are served as static files.
+
 ## Railway Backend Deployment
 
 Deploy the backend as the `api` service from `packages/api`.
@@ -231,7 +242,7 @@ AVATAR_PRESIGNED_URL_TTL_SECONDS="3600"
 Frontend production variables stay with the web deployment:
 
 ```env
-NEXT_PUBLIC_API_URL="https://production-api-url"
+VITE_API_URL="https://production-api-url"
 ```
 
 After deployment, verify:
@@ -261,7 +272,8 @@ Operational requirements:
 - Set the same `CRON_SECRET` in the API environment and in any scheduler that invokes the route.
 - Confirm `DATABASE_URL` points to the PostgreSQL database for the same environment and that its pool has capacity for
   API and cron traffic.
-- Keep `NEXT_PUBLIC_API_URL` in the web deployment aligned with the deployed API URL.
+- Keep `VITE_API_URL` in the web deployment aligned with the deployed API URL. Vite embeds this value at build time,
+  so rebuild the frontend after changing it.
 
 Railway setup:
 
@@ -435,7 +447,7 @@ API_ALLOWED_ORIGINS="http://${FINNN_LAN_IP}:3000,http://localhost:3000" pnpm --f
 
 ```bash
 FINNN_LAN_IP=192.168.1.102
-NEXT_PUBLIC_API_URL="http://${FINNN_LAN_IP}:4000" pnpm --filter web exec next dev -H 0.0.0.0 -p 3000
+VITE_API_URL="http://${FINNN_LAN_IP}:4000" pnpm --filter web exec vite --host 0.0.0.0 --port 3000
 ```
 
 4. In Windows PowerShell started **as Administrator**, create port forwarding and allow only local-subnet traffic:

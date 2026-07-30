@@ -1,5 +1,3 @@
-"use client";
-
 import { DebtTransactionActionsDialog } from "@/modules/debts/components/debt-transaction-actions-dialog";
 import { DebtWriteOffDialog } from "@/modules/debts/components/debt-write-off-dialog";
 import { DeleteDebtDialog } from "@/modules/debts/components/delete-debt-dialog";

@@ -8,7 +8,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!!**/dist", "!!**/.next", "!!**/storybook-static"]
+    "includes": ["**", "!!**/dist", "!!**/storybook-static"]
   },
   "formatter": {
     "enabled": true,
@@ -32,7 +32,6 @@
   "linter": {
     "enabled": true,
     "domains": {
-      "next": "recommended",
       "react": "recommended"
     },
     "rules": {
@@ -100,7 +99,6 @@
         "pnpm-lock.yaml",
         "package-lock.json",
         "yarn.lock",
-        "next-env.d.ts",
         "prisma/generated/**",
         "tsconfig.tsbuildinfo"
       ],

@@ -1,5 +1,3 @@
-"use client";
-
 import { ru } from "date-fns/locale";
 import { Bell, CalendarClock, ChevronRight, Clock3, Mail, Repeat2, Send } from "lucide-react";
 import type { FormEvent } from "react";

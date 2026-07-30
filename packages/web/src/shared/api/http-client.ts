@@ -25,7 +25,7 @@ async function parseResponseBody(response: Response): Promise<unknown> {
 }
 
 export function getApiBaseUrl(): string {
-  const configuredUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
+  const configuredUrl = (import.meta.env.VITE_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
 
   if (typeof window === "undefined") {
     return configuredUrl;

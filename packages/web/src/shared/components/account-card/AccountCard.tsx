@@ -1,5 +1,3 @@
-"use client";
-
 import type { CSSProperties, HTMLAttributes } from "react";
 
 import type { Account } from "@/modules/accounts/account.types";

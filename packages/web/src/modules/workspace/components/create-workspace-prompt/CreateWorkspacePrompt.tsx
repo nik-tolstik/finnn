@@ -1,11 +1,9 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, Hash } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { useSession } from "@/shared/lib/api-session-client";
@@ -22,7 +20,7 @@ import type { WorkspaceWithOwner } from "../../workspace.types";
 import { generateSlug } from "../../workspace.utils";
 
 export function CreateWorkspacePrompt() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
 
@@ -97,7 +95,7 @@ export function CreateWorkspacePrompt() {
           "workspaceSummary",
           "workspaceMembers",
         ]);
-        router.push(`/dashboard?workspaceId=${result.data.id}`);
+        navigate(`/dashboard?workspaceId=${result.data.id}`);
       }
     },
     onError: () => {
