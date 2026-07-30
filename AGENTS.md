@@ -29,6 +29,15 @@ The app manages workspaces, members, accounts, categories, payment transactions,
   Railway CLI or API. Resolve the exact project, environment, and service before every mutation.
 - Treat Railway variable and bucket-credential output as secret-bearing. Never print raw values, database URLs, access
   keys, or private encryption identities; capture and filter them locally when verification is required.
+- Agents may inspect Vercel and, when the user has authorized the frontend infrastructure change, manage project
+  settings, environment variables, deployments, aliases, and domains through an authenticated Vercel connector, CLI,
+  or API. Resolve the exact team, project, environment, Git branch, and deployment before every mutation; use explicit
+  scopes or resource IDs and follow the branch-owned Git deployment flow documented in `docs/operations.md`.
+- Treat Vercel environment values, access tokens, deployment-protection bypass tokens, and temporary share URLs as
+  secret-bearing. Never print raw values or tokens; filter API output to the required metadata. Use `vercel curl` for
+  protected Preview/DEV checks instead of weakening deployment protection. Do not run `vercel link`, `vercel pull`, or
+  `vercel env pull` in an existing checkout unless the task requires local linking or environment synchronization,
+  because those commands create local project state or can overwrite local environment files.
 - Prefer existing project patterns over introducing new abstractions.
 - Keep comments in English.
 - Do not run Browser screenshot QA with Playwright, `agent-browser`, or similar browser automation unless the user explicitly asks for screenshot/browser QA.
@@ -121,6 +130,8 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - Railway project and service IDs, branch mappings, safe CLI usage, and the current deployment topology are documented
   in `docs/operations.md`. The main local checkout may be linked to Production, so pass explicit project, environment,
   and service identifiers for infrastructure mutations.
+- Vercel team/project IDs, branch and domain mappings, safe authenticated CLI/API usage, and deployment verification
+  commands are documented in `docs/operations.md`.
 - `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `DIRECT_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`,
   email variables, and `CRON_SECRET`.
 - `packages/web/.env` owns browser-safe variables such as `VITE_API_URL`.
