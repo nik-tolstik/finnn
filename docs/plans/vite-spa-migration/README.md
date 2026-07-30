@@ -1,6 +1,6 @@
 # Vite SPA Migration Plan
 
-Status: repository implementation and artifact cleanup complete on 2026-07-30; shared-environment rollout remains an external follow-up.
+Status: completed and deployed to DEV and PROD on 2026-07-30.
 
 ## Summary
 
@@ -23,10 +23,10 @@ Replace the Next.js 16 App Router shell in `packages/web` with a Vite-built Reac
 - No NestJS API, OpenAPI, database, authentication contract, cookie policy, or domain-model changes.
 - No adoption of React Router loaders/actions as a replacement for TanStack Query or the generated Orval client.
 - No SSR, static prerendering, React Server Components, or server-side BFF.
-- No changes to production Vercel settings or environment variables from this worktree.
+- No deployment-provider changes beyond the Vercel web framework/output settings and API URL environment variables required by the migration.
 - No browser screenshot QA without an explicit user request.
 
-## Current State
+## Pre-Migration State
 
 - `packages/web` uses Next.js 16.1 and React 19.2.
 - App Router owns 12 page entry files, auth/dashboard layouts, two dynamic token routes, metadata, font loading, icons, and the root provider boundary.
@@ -218,6 +218,13 @@ pnpm test
 4. Verify the new service worker activates, deletes the old `finnn-v3` cache, and does not cache documents or financial responses.
 5. Deploy PROD after DEV verification.
 6. Remove the obsolete Vercel `NEXT_PUBLIC_API_URL` after both environments are confirmed on the Vite build.
+
+The rollout completed on 2026-07-30. Vercel now uses the Vite framework preset, the `packages/web` root, and `dist`
+output. `VITE_API_URL` is configured independently for Development, Preview, and Production; the obsolete
+`NEXT_PUBLIC_API_URL` entries were removed after a successful Preview build. PR #15 deployed and verified DEV before
+PR #16 promoted the same migration to PROD. Both shared domains serve Vite assets and SPA deep links, target the
+correct API origin, pass API health and credentialed CORS preflight checks, and serve the `finnn-v4` service worker
+without Next.js cache paths.
 
 ## Risks and Mitigations
 
