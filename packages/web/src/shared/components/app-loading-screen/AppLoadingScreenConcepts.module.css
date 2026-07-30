@@ -12,6 +12,9 @@
   --logo-mark-color: #f7f7f7;
 
   position: relative;
+  width: clamp(8rem, 14vw, 11.25rem);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 1.25rem 1.5rem color-mix(in srgb, var(--foreground) 12%, transparent));
 }
 
 html[class~="dark"] .scene {
@@ -19,221 +22,267 @@ html[class~="dark"] .scene {
   --logo-mark-color: #1c1c1c;
 }
 
-.logoFrame {
-  position: relative;
-  width: clamp(8rem, 14vw, 11.25rem);
-  aspect-ratio: 1;
-  overflow: hidden;
-  border-radius: 25%;
-  box-shadow: 0 1.25rem 3rem color-mix(in srgb, var(--foreground) 12%, transparent);
-}
-
-.logoFrame img {
+.logo {
+  display: block;
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
-.markMask {
-  position: absolute;
-  inset: 0;
-  -webkit-mask: url("/logo-mark-mask.svg") center / 100% 100% no-repeat;
-  mask: url("/logo-mark-mask.svg") center / 100% 100% no-repeat;
-}
-
-.sweepMask {
-  overflow: hidden;
-}
-
-.sweepFill {
-  position: absolute;
-  top: -38%;
-  right: -32%;
-  bottom: -38%;
-  left: -32%;
-  background: var(--primary);
-  transform: translateY(92%) rotate(-14deg);
+.tile {
+  fill: var(--logo-tile-color);
+  transform-box: fill-box;
   transform-origin: center;
-  animation: inner-sweep 2.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
-.markCover {
-  background: var(--logo-tile-color);
+.markPath {
+  fill: var(--logo-mark-color);
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
-.assemblyLeft,
-.assemblyBridge,
-.assemblyRight,
-.assemblyComplete {
-  background: var(--logo-mark-color);
-  opacity: 0;
+.pathDraw .leftPath,
+.pathDraw .rightPath {
+  fill: transparent;
+  stroke: var(--primary);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 17;
 }
 
-.assemblyLeft {
-  clip-path: inset(20% 52% 20% 10%);
-  animation: assemble-left 3s ease-in-out infinite;
+.pathDraw .leftPath {
+  animation: draw-left-path 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
-.assemblyBridge {
-  clip-path: polygon(35% 18%, 78% 18%, 78% 82%, 35% 82%);
-  animation: assemble-bridge 3s ease-in-out infinite;
+.pathDraw .rightPath {
+  animation: draw-right-path 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
-.assemblyRight {
-  clip-path: inset(20% 10% 20% 68%);
-  animation: assemble-right 3s ease-in-out infinite;
+.pathAssembly .tile {
+  animation: assemble-tile 3s ease-in-out infinite;
 }
 
-.assemblyComplete {
-  animation: assemble-complete 3s ease-in-out infinite;
+.pathAssembly .leftPath {
+  animation: assemble-left-path 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 
-.balanceMask {
-  display: flex;
-  align-items: flex-end;
+.pathAssembly .rightPath {
+  animation: assemble-right-path 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 
-.balanceBand {
-  width: 25%;
-  height: 72%;
-  flex: none;
-  background: var(--primary);
-  transform: scaleY(0.24);
-  transform-origin: bottom;
-  animation: balance-rise 2.4s ease-in-out infinite;
+.pathPulse .tile {
+  animation: pulse-tile 2.6s ease-in-out infinite;
 }
 
-.balanceBandTwo {
-  animation-delay: -1.8s;
+.pathPulse .leftPath {
+  animation: pulse-left-path 2.6s ease-in-out infinite;
 }
 
-.balanceBandThree {
-  animation-delay: -1.2s;
+.pathPulse .rightPath {
+  animation: pulse-right-path 2.6s ease-in-out infinite;
 }
 
-.balanceBandFour {
-  animation-delay: -0.6s;
-}
-
-@keyframes inner-sweep {
+@keyframes draw-left-path {
   0%,
-  12% {
-    transform: translateY(92%) rotate(-14deg);
+  8% {
+    fill: transparent;
+    stroke: var(--primary);
+    stroke-dashoffset: 1;
+    opacity: 0;
   }
 
-  58%,
-  72% {
-    transform: translateY(-8%) rotate(-14deg);
+  16% {
+    opacity: 1;
+  }
+
+  44%,
+  55% {
+    fill: transparent;
+    stroke: var(--primary);
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+
+  66%,
+  88% {
+    fill: var(--logo-mark-color);
+    stroke: transparent;
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
 
   100% {
-    transform: translateY(-118%) rotate(-14deg);
+    fill: var(--logo-mark-color);
+    stroke: transparent;
+    stroke-dashoffset: 0;
+    opacity: 0;
   }
 }
 
-@keyframes assemble-left {
+@keyframes draw-right-path {
   0%,
-  10%,
-  92%,
+  18% {
+    fill: transparent;
+    stroke: var(--primary);
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  54%,
+  60% {
+    fill: transparent;
+    stroke: var(--primary);
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+
+  70%,
+  88% {
+    fill: var(--logo-mark-color);
+    stroke: transparent;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+
+  100% {
+    fill: var(--logo-mark-color);
+    stroke: transparent;
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes assemble-tile {
+  0%,
   100% {
     opacity: 0;
-    transform: translateY(8%);
+    transform: scale(0.88);
   }
 
-  18%,
-  78% {
+  16%,
+  86% {
     opacity: 1;
-    background: var(--primary);
-    transform: translateY(0);
-  }
-
-  84% {
-    opacity: 1;
-    background: var(--logo-mark-color);
-    transform: translateY(0);
+    transform: scale(1);
   }
 }
 
-@keyframes assemble-bridge {
+@keyframes assemble-left-path {
   0%,
-  24%,
-  92%,
-  100% {
+  10% {
+    fill: var(--primary);
     opacity: 0;
-    transform: translateY(8%);
+    transform: translate(-18%, 9%) rotate(-4deg) scale(0.92);
   }
 
   34%,
-  78% {
+  58% {
+    fill: var(--primary);
     opacity: 1;
-    background: var(--primary);
-    transform: translateY(0);
+    transform: translate(0) rotate(0) scale(1);
   }
 
-  84% {
+  70%,
+  86% {
+    fill: var(--logo-mark-color);
     opacity: 1;
-    background: var(--logo-mark-color);
-    transform: translateY(0);
+    transform: translate(0) rotate(0) scale(1);
   }
-}
 
-@keyframes assemble-right {
-  0%,
-  38%,
-  92%,
   100% {
+    fill: var(--logo-mark-color);
     opacity: 0;
-    transform: translateY(8%);
-  }
-
-  48%,
-  78% {
-    opacity: 1;
-    background: var(--primary);
-    transform: translateY(0);
-  }
-
-  84% {
-    opacity: 1;
-    background: var(--logo-mark-color);
-    transform: translateY(0);
+    transform: translate(0) rotate(0) scale(0.96);
   }
 }
 
-@keyframes assemble-complete {
+@keyframes assemble-right-path {
   0%,
+  22% {
+    fill: var(--primary);
+    opacity: 0;
+    transform: translate(18%, -9%) rotate(4deg) scale(0.92);
+  }
+
+  46%,
+  62% {
+    fill: var(--primary);
+    opacity: 1;
+    transform: translate(0) rotate(0) scale(1);
+  }
+
   74%,
-  94%,
-  100% {
-    opacity: 0;
+  86% {
+    fill: var(--logo-mark-color);
+    opacity: 1;
+    transform: translate(0) rotate(0) scale(1);
   }
 
-  82%,
-  90% {
-    opacity: 1;
+  100% {
+    fill: var(--logo-mark-color);
+    opacity: 0;
+    transform: translate(0) rotate(0) scale(0.96);
   }
 }
 
-@keyframes balance-rise {
+@keyframes pulse-tile {
   0%,
   100% {
-    opacity: 0.42;
-    transform: scaleY(0.24);
+    transform: scale(1);
   }
 
-  46% {
-    opacity: 0.95;
-    transform: scaleY(1);
+  50% {
+    transform: scale(0.985);
+  }
+}
+
+@keyframes pulse-left-path {
+  0%,
+  100% {
+    fill: var(--logo-mark-color);
+  }
+
+  22%,
+  38% {
+    fill: var(--primary);
+  }
+
+  54% {
+    fill: var(--logo-mark-color);
+  }
+}
+
+@keyframes pulse-right-path {
+  0%,
+  100% {
+    fill: var(--logo-mark-color);
+  }
+
+  42%,
+  58% {
+    fill: var(--primary);
+  }
+
+  74% {
+    fill: var(--logo-mark-color);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sweepFill,
-  .markCover,
-  .assemblyLeft,
-  .assemblyBridge,
-  .assemblyRight,
-  .assemblyComplete,
-  .balanceBand {
-    display: none;
+  .tile,
+  .markPath {
+    animation: none;
+  }
+
+  .pathDraw .markPath {
+    fill: var(--logo-mark-color);
+    stroke: transparent;
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
 }

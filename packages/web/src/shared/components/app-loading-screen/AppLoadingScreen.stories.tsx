@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { AppLoadingScreen } from "./AppLoadingScreen";
-import { InnerSweepSplash, LivingBalanceSplash, StrokeAssemblySplash } from "./AppLoadingScreenConcepts";
+import { SvgPathAssemblySplash, SvgPathDrawSplash, SvgPathPulseSplash } from "./AppLoadingScreenConcepts";
 
 const meta = {
   title: "Shared Components/App Loading Screen",
@@ -43,8 +43,8 @@ export const Dark: Story = {
   },
 };
 
-export const InnerSweep: Story = {
-  render: (args) => <InnerSweepSplash label={args.label} />,
+export const SvgPathDraw: Story = {
+  render: (args) => <SvgPathDrawSplash label={args.label} />,
   parameters: {
     themes: {
       themeOverride: "light",
@@ -52,8 +52,8 @@ export const InnerSweep: Story = {
   },
 };
 
-export const StrokeAssembly: Story = {
-  render: (args) => <StrokeAssemblySplash label={args.label} />,
+export const SvgPathAssembly: Story = {
+  render: (args) => <SvgPathAssemblySplash label={args.label} />,
   parameters: {
     themes: {
       themeOverride: "dark",
@@ -61,8 +61,8 @@ export const StrokeAssembly: Story = {
   },
 };
 
-export const LivingBalance: Story = {
-  render: (args) => <LivingBalanceSplash label={args.label} />,
+export const SvgPathPulse: Story = {
+  render: (args) => <SvgPathPulseSplash label={args.label} />,
   parameters: {
     themes: {
       themeOverride: "light",
