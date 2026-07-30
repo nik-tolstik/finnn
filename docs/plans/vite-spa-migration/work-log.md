@@ -170,3 +170,35 @@ The worktree dependency directories were moved to the system trash and recreated
 
 - No repository blocker remains.
 - Browser screenshot QA was not run because repository instructions prohibit it without an explicit request.
+
+## 2026-07-30 11:30 +0300 - Codex / Migration Checker Retirement
+
+### Scope
+
+- Removed `scripts/check-no-next-artifacts.mjs` after the final audit and cleanup completed successfully.
+- Removed `check:no-next-artifacts` from the root package scripts and restored `pnpm check` to the repository's ongoing validation concerns.
+- Updated the migration plan to describe the artifact audit as a one-time migration gate whose results remain recorded in this work log.
+
+### Commands Run
+
+```bash
+pnpm check
+pnpm typecheck
+git diff --check
+```
+
+### Results
+
+- The normal workspace check passes without the migration-only command.
+- Full workspace typecheck passes.
+- Historical audit commands and results remain available in the preceding work-log entries.
+- `git diff --check` passes.
+
+### Decisions
+
+- The completed audit is preserved through Git history and this work log instead of retaining a permanent checker for a finished migration.
+- Ongoing regressions remain covered by package checks, typechecking, tests, production builds, dependency review, and the Vite/React Router-focused SPA shell tests.
+
+### Blockers / Follow-ups
+
+- No repository blocker remains.

@@ -1,6 +1,6 @@
 # Vite SPA Migration Plan
 
-Status: repository implementation complete on 2026-07-29; shared-environment rollout remains an external follow-up.
+Status: repository implementation and artifact cleanup complete on 2026-07-30; shared-environment rollout remains an external follow-up.
 
 ## Summary
 
@@ -14,7 +14,7 @@ Replace the Next.js 16 App Router shell in `packages/web` with a Vite-built Reac
 - Preserve HTTP-only cookie authentication and cross-origin API requests with `credentials: "include"`.
 - Preserve the PWA manifest, service-worker update flow, icons, theme metadata, Onest typography, Telegram Web App bootstrap, and Vercel Speed Insights.
 - Remove Next.js runtime, build, routing, image, font, script, metadata, Storybook, test, and documentation dependencies.
-- Add an automated Next.js artifact audit and run it as part of the workspace validation path.
+- Complete and record an explicit one-time Next.js artifact audit before removing migration-only tooling.
 - Keep this plan and `work-log.md` current throughout implementation.
 
 ## Non-Goals
@@ -145,9 +145,9 @@ Use React Router declarative/library mode. Continue using TanStack Query for all
    - remove the obsolete `NEXT_PUBLIC_API_URL` only after the new variable is present in both environments.
 4. Keep the existing DEV/PROD domains and API CORS origins unchanged.
 
-### Phase 6: Next.js Artifact Audit
+### Phase 6: One-Time Next.js Artifact Audit
 
-Add a durable `scripts/check-no-next-artifacts.mjs` command, exposed as `pnpm check:no-next-artifacts` and included in `pnpm check`. The check must fail for runtime/configuration artifacts including:
+Use a temporary automated check during the migration. It must fail for runtime/configuration artifacts including:
 
 - `packages/web/next.config.*`, `next-env.d.ts`, or a `.next` build directory;
 - direct `next`, `@storybook/nextjs-*`, or other Next-only dependencies in `packages/web/package.json`;
@@ -158,7 +158,7 @@ Add a durable `scripts/check-no-next-artifacts.mjs` command, exposed as `pnpm ch
 - stale Next-specific Storybook framework configuration or test mocks;
 - a direct `next` dependency visible through the web package dependency graph.
 
-The audit may allow this migration plan/work log to describe historical Next.js artifacts, but active source, configuration, scripts, examples, and current architecture/operations documentation must be clean. Supplement the script with explicit `rg`, `find`, and `pnpm --filter web list next --depth Infinity` checks during final verification.
+The audit may allow this migration plan/work log to describe historical Next.js artifacts, but active source, configuration, examples, and current architecture/operations documentation must be clean. Supplement the temporary check with explicit `rg`, `find`, and `pnpm --filter web list next --depth Infinity` checks during final verification. After the clean result is recorded in `work-log.md`, remove the temporary checker and its package script so migration-only machinery does not become permanent maintenance surface.
 
 ## Test Plan
 
@@ -171,7 +171,6 @@ pnpm --filter web typecheck
 pnpm --filter web check
 pnpm --filter web build
 pnpm --filter web build:storybook
-pnpm check:no-next-artifacts
 pnpm api:check-generated
 pnpm typecheck
 pnpm check
@@ -230,7 +229,7 @@ pnpm test
 - **Typography shift:** self-host Onest and keep the existing CSS variable/fallback contract.
 - **Deep import churn:** move route-local code mechanically and use `rg` to update every old `@/app/(dashboard)` import.
 - **Deployment env mismatch:** document a two-phase `VITE_API_URL` rollout before removing the old variable.
-- **False-negative artifact audit:** combine a committed script, package graph check, source scans, path scans, and clean-build verification.
+- **False-negative artifact audit:** combine the temporary automated check, package graph check, source scans, path scans, and clean-build verification, then record the results before removing migration-only tooling.
 
 ## Open Questions
 
@@ -242,6 +241,6 @@ No blocking product questions. Implementation will use the latest mutually compa
 - All existing URLs and client-side guards behave equivalently under React Router.
 - The frontend is deployable as static `dist` output with a working Vercel history fallback.
 - Existing unit tests plus new routing/static-output/artifact tests pass.
-- `pnpm check:no-next-artifacts`, package-local checks, full workspace checks, and generated API drift checks pass.
+- The one-time artifact audit is recorded as clean; package-local checks, full workspace checks, and generated API drift checks pass.
 - Current documentation describes Vite, React Router, `VITE_API_URL`, and the static deployment accurately.
 - The plan work log records implementation passes, subagent contributions, verification commands, and any remaining external rollout action.
