@@ -11,7 +11,7 @@ interface DashboardAuthGateProps {
 
 export function DashboardAuthGate({ children }: DashboardAuthGateProps) {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { hash, pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const { data: session, status } = useSession();
   const telegramMiniApp = useTelegramMiniApp();
@@ -24,10 +24,19 @@ export function DashboardAuthGate({ children }: DashboardAuthGateProps) {
 
     if (status === "authenticated" && userRequiresEmailVerification(session?.user)) {
       const query = searchParams.toString();
-      const returnTo = `${pathname}${query ? `?${query}` : ""}`;
+      const returnTo = `${pathname}${query ? `?${query}` : ""}${hash}`;
       navigate(`/email-required?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
     }
-  }, [navigate, pathname, searchParams, session?.user, status, telegramMiniApp.isPending, telegramMiniApp.status]);
+  }, [
+    hash,
+    navigate,
+    pathname,
+    searchParams,
+    session?.user,
+    status,
+    telegramMiniApp.isPending,
+    telegramMiniApp.status,
+  ]);
 
   if (status !== "authenticated" || telegramMiniApp.isPending || userRequiresEmailVerification(session?.user)) {
     return <AppLoadingScreen />;

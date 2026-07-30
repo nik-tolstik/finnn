@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js compatible with the project dependencies.
+- Node.js `^20.19.0` or `>=22.12.0` (Node.js 24 is used in CI and Vercel).
 - `pnpm`.
 - PostgreSQL. For local development, use the provided Docker Compose service.
 - Package-local `.env` files based on `packages/api/.env.example` and `packages/web/.env.example`.

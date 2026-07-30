@@ -14,6 +14,13 @@ describe("getApiBaseUrl", () => {
     vi.unstubAllEnvs();
   });
 
+  it("defaults to the local API during development when VITE_API_URL is empty", () => {
+    vi.stubEnv("VITE_API_URL", "");
+    stubBrowserHostname("localhost");
+
+    expect(getApiBaseUrl()).toBe("http://localhost:4000");
+  });
+
   it("removes the trailing slash from the configured API URL", () => {
     vi.stubEnv("VITE_API_URL", "http://127.0.0.1:4000/");
     stubBrowserHostname("127.0.0.1");

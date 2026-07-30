@@ -297,3 +297,57 @@ git diff --check
 - No repository blocker remains.
 
 - Browser screenshot QA was not run because repository instructions prohibit it without an explicit request.
+
+## 2026-07-30 12:23 +0300 - Codex / Release Hardening
+
+### Scope
+
+- Made `VITE_API_URL` mandatory and validated for production builds while preserving the localhost default for the local development server.
+- Centralized API base URL normalization and added focused tests for missing, malformed, credential-bearing, and non-HTTP URLs.
+- Declared Vite's supported Node.js range at the workspace and web-package boundaries and pinned Node.js 24 in CI.
+- Added a GitHub Actions verification workflow for frozen installation, typechecking, generated-client drift and Biome checks, the full test suite, and production builds.
+- Explicitly declared Vercel's `dist` output directory in addition to the Vite framework and SPA history rewrite.
+- Added Vite preload-error recovery for stale lazy chunks after a deployment and preserved URL hashes across the dashboard email-verification redirect.
+- Updated the development prerequisites and SPA-shell contract test for the hardened deployment behavior.
+
+### Commands Run
+
+```bash
+pnpm --filter web check
+pnpm --filter web typecheck
+pnpm --filter web test
+VITE_API_URL="https://api-dev.finnn.xyz" pnpm --filter web build
+VITE_API_URL="https://api-dev.finnn.xyz" pnpm --filter web build:storybook
+VITE_API_URL="" pnpm --filter web build
+pnpm typecheck
+pnpm check
+pnpm test
+VITE_API_URL="https://api-dev.finnn.xyz" pnpm build
+git diff --check
+```
+
+### Results
+
+- A production build without `VITE_API_URL` now fails before bundling with an actionable configuration error.
+- Web check and typecheck passed; all 193 web tests passed.
+- Full workspace typecheck and check passed.
+- The full test suite passed: API 267 tests passed / 12 skipped, web 193 passed, PostgreSQL backup 11 passed.
+- API, Vite application, and Storybook production builds passed with an explicit DEV API origin.
+- `git diff --check` passed.
+
+### Decisions
+
+- Keep the localhost API fallback only for `vite dev`; shared builds must never silently emit a browser bundle that calls the end user's localhost.
+- Keep Vercel Git integration as the deployment owner; CI verifies the repository without duplicating Vercel deployment credentials or deployment steps.
+- Reload the document on `vite:preloadError`, matching Vite's recommended recovery for version skew between a loaded SPA shell and newly deployed lazy chunks.
+- Preserve the existing repository prohibition on browser screenshot QA; authenticated deployment and rollout checks are recorded separately.
+
+### Subagent Contributions
+
+- An environment-hardening pass implemented and tested API URL validation, Node.js compatibility metadata, and explicit Vercel output configuration.
+- A CI pass added the secret-free GitHub Actions verification workflow.
+- A read-only Vercel audit confirmed the exact project, effective monorepo root/build/output, current preview deployment, and stale project-level framework metadata.
+
+### Blockers / Follow-ups
+
+- Complete the authenticated Vercel environment/settings update, redeploy, and DEV/PROD rollout in the next work-log entry.

@@ -7,6 +7,11 @@ import { BrowserRouter } from "react-router";
 import { App } from "@/app/App";
 import { AppProviders } from "@/providers/AppProviders";
 
+window.addEventListener("vite:preloadError", (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
 const root = document.getElementById("root");
 
 if (!root) {
