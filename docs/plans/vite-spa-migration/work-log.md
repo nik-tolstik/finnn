@@ -351,3 +351,38 @@ git diff --check
 ### Blockers / Follow-ups
 
 - Complete the authenticated Vercel environment/settings update, redeploy, and DEV/PROD rollout in the next work-log entry.
+
+## 2026-07-30 12:45 +0300 - Codex / Shared-Environment Rollout
+
+### Scope
+
+- Authenticated the Vercel CLI and resolved the exact `finnn` team and project before changing shared configuration.
+- Changed the project framework preset from Next.js to Vite, retained the `packages/web` root, and set the output directory to `dist`.
+- Added scoped `VITE_API_URL` values for Development, Preview, and Production without printing environment values.
+- Verified the new Preview bundle before deleting the obsolete Preview and Production `NEXT_PUBLIC_API_URL` entries.
+- Marked PR #15 ready and merged it into `develop`, verified the resulting DEV deployment, then promoted `develop` to `main` through PR #16 and verified PROD.
+
+### Verification
+
+- PR #15 passed the GitHub `Verify` job and Vercel Preview deployment.
+- Preview and DEV direct loads returned the SPA shell for `/dashboard`, `/invite/test-token`, and `/verify-email/test-token`.
+- The DEV HTML referenced `/assets/` and no `/_next/` assets. Its built HTTP-client chunk contained only `https://api-dev.finnn.xyz`, with no Production API URL, localhost fallback, `NEXT_PUBLIC_API_URL`, or `_next` path.
+- `https://api-dev.finnn.xyz/health` returned 200, and the credentialed CORS preflight allowed `https://dev.finnn.xyz`.
+- PR #16 and the post-merge `main` workflow passed the GitHub `Verify` job; the Vercel production deployment reached `READY` and received the `finnn.xyz` and `www.finnn.xyz` aliases.
+- Production returned the correct content types for the SPA shell, manifest, service worker, and icon. Direct loads of all public, auth, and protected route entry paths returned 200.
+- The Production HTTP-client chunk contained only `https://api.finnn.xyz`, with no DEV API URL, localhost fallback, `NEXT_PUBLIC_API_URL`, or `_next` path.
+- `https://api.finnn.xyz/health` returned 200, and the credentialed CORS preflight allowed `https://finnn.xyz`.
+- Both shared deployments served `finnn-v4`, cached `/assets/`, and contained no `/_next/static/` or `/_next/data/` service-worker paths.
+- Vercel environment metadata now contains only `VITE_API_URL` for Development, Preview, and Production.
+
+### Decisions
+
+- Keep Vercel deployment protection enabled for Preview/DEV; authenticated CLI requests were used for smoke tests without weakening access controls.
+- Use the existing Git integration and branch-domain mappings for rollout instead of manually promoting an unrelated deployment.
+- Treat credentialed Google, Telegram, and real-user session flows as product acceptance checks rather than blockers for the static runtime migration; no user credentials were available, and repository rules prohibit browser screenshot QA without an explicit request.
+
+### Results
+
+- The Vite SPA migration is complete in the repository and live in DEV and PROD.
+- Next.js runtime/configuration artifacts and obsolete Vercel environment variables are removed.
+- No migration blocker or required external follow-up remains.
