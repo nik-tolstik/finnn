@@ -100,15 +100,15 @@ html[class~="dark"] .scene {
 }
 
 .nLeftStemGuide {
-  animation: reveal-n-left-stem 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation: reveal-n-left-stem 2.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 .nDiagonalGuide {
-  animation: reveal-n-diagonal 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation: reveal-n-diagonal 2.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 .nRightStemGuide {
-  animation: reveal-n-right-stem 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation: reveal-n-right-stem 2.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 .barRevealGuide {
@@ -116,15 +116,15 @@ html[class~="dark"] .scene {
 }
 
 .topBarGuide {
-  animation: reveal-top-bar 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation: reveal-top-bar 2.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 .middleBarGuide {
-  animation: reveal-middle-bar 4.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation: reveal-middle-bar 2.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 .sequenceMarks {
-  animation: fade-sequence-marks 4.2s ease-in-out infinite;
+  animation: fade-sequence-marks 2.8s ease-in-out infinite;
 }
 
 @keyframes draw-left-path {
