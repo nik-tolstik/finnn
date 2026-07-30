@@ -475,7 +475,9 @@ the same Wi-Fi, and Windows Firewall allows the local-subnet rule.
 
 ## Service Worker
 
-The service worker is intentionally conservative. It caches only static assets and avoids financial data.
+The service worker is intentionally conservative. It uses cache-first only for same-origin, content-hashed Vite files
+under `/assets/`; Vercel also serves `/assets/*` with `Cache-Control: public, max-age=31536000, immutable`. Documents,
+API responses, financial routes, unhashed public files, and non-GET requests remain outside the service-worker cache.
 
 On touch screens, the web app provides a custom pull-to-refresh gesture. Pull down from the top of a page and release
 after the content-attached indicator reaches the ready state. The gesture ignores dialogs, nested scrollable containers,

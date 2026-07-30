@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { hasDebtWriteOff } from "@/modules/debts/components/debt-write-off-dialog";
+import { hasDebtWriteOff } from "@/modules/debts/components/debt-write-off-dialog/debt-write-off-dialog.utils";
 import { deleteDebtTransaction, deleteDebtWriteOff } from "@/modules/debts/debt.api";
 import { DebtTransactionType } from "@/modules/debts/debt.constants";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";

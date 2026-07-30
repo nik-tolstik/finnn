@@ -263,7 +263,8 @@ The API cron endpoint must be protected with `CRON_SECRET`.
 
 ## PWA Cache Boundary
 
-The service worker in `packages/web/public/sw.js` only caches static assets.
+The service worker in `packages/web/public/sw.js` uses cache-first only for same-origin Vite assets whose filenames
+contain a content hash under `/assets/`. Vercel serves that directory with a one-year immutable browser-cache policy.
 
 It must not cache:
 
@@ -271,6 +272,7 @@ It must not cache:
 - App documents and dashboard routes.
 - SPA HTML documents and protected route responses.
 - API or data responses.
+- Unhashed public assets such as the manifest, icons, and service worker itself.
 - Non-GET requests.
 
 The test `packages/web/src/shared/lib/service-worker-cache-policy.test.ts` protects this boundary.

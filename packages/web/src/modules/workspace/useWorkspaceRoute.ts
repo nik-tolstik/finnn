@@ -16,6 +16,7 @@ export function useWorkspaceRoute() {
   const workspacesQuery = useQuery({
     queryKey: workspacesKeys.list(),
     queryFn: () => getWorkspaces(),
+    staleTime: 5000,
   });
 
   const workspaces = useMemo(() => workspacesQuery.data?.data ?? [], [workspacesQuery.data?.data]);

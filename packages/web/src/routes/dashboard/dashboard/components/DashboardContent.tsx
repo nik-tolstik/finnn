@@ -13,15 +13,12 @@ import {
   getCanonicalAccountOrder,
   mergeReorderedVisibleAccounts,
 } from "@/modules/accounts/components/accounts-cards/account-display";
-import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog";
+import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog/CreateAccountDialog";
 import { useAccountDisplayPreferences } from "@/modules/accounts/hooks/useAccountDisplayPreferences";
-import { getCategories } from "@/modules/categories/category.api";
 import { CombinedTransactionsList } from "@/modules/transactions/components/combined-transactions-list";
-import {
-  TransactionsFilterButton,
-  TransactionsFilterDrawer,
-  useTransactionFilters,
-} from "@/modules/transactions/components/transactions-filters";
+import { TransactionsFilterButton } from "@/modules/transactions/components/transactions-filters/components/TransactionsFilterButton";
+import { TransactionsFilterDrawer } from "@/modules/transactions/components/transactions-filters/components/TransactionsFilterDrawer";
+import { useTransactionFilters } from "@/modules/transactions/components/transactions-filters/hooks/useTransactionFilters";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/transactions-list-skeleton";
 import { getCombinedTransactions } from "@/modules/transactions/transaction.api";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
@@ -83,6 +80,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
   const [isReorderDirty, setIsReorderDirty] = useState(false);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
+  const [isFiltersDrawerMounted, setIsFiltersDrawerMounted] = useState(false);
   const createAccountDialog = useDialogState();
   const { preferences, selectGrouping, selectSort } = useAccountDisplayPreferences(workspaceId);
 
@@ -105,14 +103,19 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
     queryFn: () => getAccounts(workspaceId),
   });
 
-  const { data: membersData } = useQuery({
+  const { data: membersData, isLoading: isMembersLoading } = useQuery({
     queryKey: workspaceKeys.members(workspaceId),
     queryFn: () => getWorkspaceMembers(workspaceId),
+    enabled: isFiltersDrawerOpen,
   });
 
-  const { data: categoriesData } = useQuery({
+  const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery({
     queryKey: categoryKeys.list(workspaceId),
-    queryFn: () => getCategories(workspaceId),
+    queryFn: async () => {
+      const { getCategories } = await import("@/modules/categories/category.api");
+      return getCategories(workspaceId);
+    },
+    enabled: isFiltersDrawerOpen,
   });
 
   const shouldSortByBalance = preferences.sort === "balance";
@@ -435,6 +438,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
               appliedFiltersCount={appliedFiltersCount}
               disabled={isFiltersNavigationPending}
               onClick={() => {
+                setIsFiltersDrawerMounted(true);
                 setIsFiltersDrawerOpen(true);
               }}
             />
@@ -442,7 +446,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
           <div className="flex flex-col lg:flex-row lg:items-start gap-4">
             <div className="flex-1 min-w-0 order-2 lg:order-1">
               {isInitialLoading ? (
-                <TransactionsListSkeleton count={30} />
+                <TransactionsListSkeleton count={8} />
               ) : displayedTransactions && displayedTransactions.length > 0 ? (
                 <CombinedTransactionsList
                   transactions={displayedTransactions}
@@ -462,16 +466,20 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
         </div>
       </div>
 
-      <TransactionsFilterDrawer
-        open={isFiltersDrawerOpen}
-        onOpenChange={setIsFiltersDrawerOpen}
-        appliedFilters={appliedFilters}
-        members={membersData?.data || []}
-        categories={categoriesData?.data || []}
-        accounts={availableAccounts}
-        onApply={handleApplyFilters}
-        onReset={handleResetFilters}
-      />
+      {isFiltersDrawerMounted ? (
+        <TransactionsFilterDrawer
+          open={isFiltersDrawerOpen}
+          onOpenChange={setIsFiltersDrawerOpen}
+          appliedFilters={appliedFilters}
+          members={membersData?.data || []}
+          categories={categoriesData?.data || []}
+          accounts={availableAccounts}
+          isCategoriesLoading={isCategoriesLoading}
+          isMembersLoading={isMembersLoading}
+          onApply={handleApplyFilters}
+          onReset={handleResetFilters}
+        />
+      ) : null}
     </div>
   );
 }

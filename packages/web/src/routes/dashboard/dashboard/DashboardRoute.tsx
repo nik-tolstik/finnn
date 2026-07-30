@@ -1,20 +1,42 @@
-import { CreateWorkspacePrompt } from "@/modules/workspace/components/create-workspace-prompt";
+import { lazy, Suspense } from "react";
+
 import { useWorkspaceRoute } from "@/modules/workspace/useWorkspaceRoute";
 import { useSession } from "@/shared/lib/api-session";
 
-import { DashboardContent } from "./components/DashboardContent";
+import { DashboardRouteSkeleton } from "./components/DashboardRouteSkeleton";
+
+const dashboardContentModule = import("./components/DashboardContent");
+
+const DashboardContent = lazy(() =>
+  dashboardContentModule.then((module) => ({
+    default: module.DashboardContent,
+  }))
+);
+const CreateWorkspacePrompt = lazy(() =>
+  import("@/modules/workspace/components/create-workspace-prompt").then((module) => ({
+    default: module.CreateWorkspacePrompt,
+  }))
+);
 
 export default function DashboardRoute() {
   const { data: session } = useSession();
   const { workspaceId, isInitialLoading, shouldShowCreateWorkspacePrompt } = useWorkspaceRoute();
 
   if (shouldShowCreateWorkspacePrompt) {
-    return <CreateWorkspacePrompt />;
+    return (
+      <Suspense fallback={<DashboardRouteSkeleton />}>
+        <CreateWorkspacePrompt />
+      </Suspense>
+    );
   }
 
   if (isInitialLoading || !workspaceId) {
-    return null;
+    return <DashboardRouteSkeleton />;
   }
 
-  return <DashboardContent initialCurrentUserId={session?.user.id} workspaceId={workspaceId} />;
+  return (
+    <Suspense fallback={<DashboardRouteSkeleton />}>
+      <DashboardContent initialCurrentUserId={session?.user.id} workspaceId={workspaceId} />
+    </Suspense>
+  );
 }

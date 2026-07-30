@@ -1,9 +1,7 @@
-const CACHE_NAME = "finnn-v4";
-const STATIC_FILE_PATTERN = /\.(?:css|js|mjs|png|jpg|jpeg|gif|webp|avif|svg|ico|woff2?|ttf|otf)$/i;
-const STATIC_PATH_PREFIXES = ["/assets/", "/images/", "/fonts/"];
-const STATIC_PATHS = new Set(["/manifest.json", "/site.webmanifest", "/apple-icon.png", "/logo-adaptive.svg"]);
+const CACHE_NAME = "finnn-assets-v5";
+const HASHED_ASSET_PATH_PATTERN = /^\/assets\/.+-[A-Za-z0-9_-]{8,}\.(?:css|js|mjs|png|jpg|jpeg|gif|webp|avif|svg|ico|woff2?|ttf|otf)$/i;
 
-function isCacheableStaticAsset(request) {
+function isCacheableHashedAsset(request) {
   if (request.method !== "GET") {
     return false;
   }
@@ -17,27 +15,7 @@ function isCacheableStaticAsset(request) {
     return false;
   }
 
-  if (url.pathname.startsWith("/api/")) {
-    return false;
-  }
-
-  if (url.pathname.startsWith("/auth/users/")) {
-    return false;
-  }
-
-  if (STATIC_PATHS.has(url.pathname)) {
-    return true;
-  }
-
-  if (STATIC_PATH_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))) {
-    return true;
-  }
-
-  if (["font", "image", "script", "style"].includes(request.destination)) {
-    return true;
-  }
-
-  return STATIC_FILE_PATTERN.test(url.pathname);
+  return HASHED_ASSET_PATH_PATTERN.test(url.pathname);
 }
 
 self.addEventListener("install", (_event) => {
@@ -64,38 +42,32 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (!isCacheableStaticAsset(event.request)) {
+  if (!isCacheableHashedAsset(event.request)) {
     return;
   }
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
+    caches
+      .open(CACHE_NAME)
+      .then(async (cache) => {
+        const cachedResponse = await cache.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        const response = await fetch(event.request);
         const isRedirect = response.status >= 300 && response.status < 400;
 
-        if (isRedirect) {
-          return response;
+        if (!isRedirect && response.status === 200 && response.type === "basic") {
+          await cache.put(event.request, response.clone());
         }
-
-        if (!response || response.status !== 200 || response.type !== "basic") {
-          return caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || response;
-          });
-        }
-
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
 
         return response;
       })
       .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          return cachedResponse || new Response("Network error", {
-            status: 408,
-            headers: { "Content-Type": "text/plain" },
-          });
+        return new Response("Network error", {
+          status: 408,
+          headers: { "Content-Type": "text/plain" },
         });
       })
   );
