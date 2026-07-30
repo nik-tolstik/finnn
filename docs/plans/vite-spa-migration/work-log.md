@@ -169,6 +169,7 @@ The worktree dependency directories were moved to the system trash and recreated
 ### Blockers / Follow-ups
 
 - No repository blocker remains.
+
 - Browser screenshot QA was not run because repository instructions prohibit it without an explicit request.
 
 ## 2026-07-30 11:30 +0300 - Codex / Migration Checker Retirement
@@ -198,6 +199,50 @@ git diff --check
 
 - The completed audit is preserved through Git history and this work log instead of retaining a permanent checker for a finished migration.
 - Ongoing regressions remain covered by package checks, typechecking, tests, production builds, dependency review, and the Vite/React Router-focused SPA shell tests.
+
+### Blockers / Follow-ups
+
+- No repository blocker remains.
+
+## 2026-07-30 11:39 +0300 - Codex / Vite Dependency Pre-Bundling
+
+### Scope
+
+- Configured Vite dependency optimization to scan the HTML entry and every application TypeScript module, including lazy route modules.
+- Excluded unit tests and Storybook stories from the application dev-server dependency graph.
+- Added a focused SPA-shell assertion for the optimizer entry contract and documented cache rebuilding for dependency/configuration changes.
+- Corrected the development guide's root `pnpm check` description after retirement of the migration-only checker.
+
+### Commands Run
+
+```bash
+pnpm --filter web exec vite optimize --force
+pnpm dev:web --force --host 127.0.0.1
+curl --fail http://127.0.0.1:3000/dashboard
+pnpm --filter web check
+pnpm --filter web test
+pnpm --filter web build
+pnpm typecheck
+pnpm check
+git diff --check
+```
+
+The deprecated standalone `vite optimize` command was used only to inspect the discovered dependency set; normal development uses Vite's automatic optimizer through `pnpm dev:web`.
+
+### Results
+
+- Vite eagerly discovered and pre-bundled 30 runtime dependency entries, including React, React Router, TanStack Query, Recharts, Motion, date-fns, form libraries, and UI dependencies.
+- Test-only and Storybook dependencies were not included in the application optimizer cache.
+- A forced cold start completed in 309 ms, and `/dashboard` returned HTTP 200 from the dev server.
+- Web check passed, all 182 web tests passed, and the production Vite build passed with the existing lazy route/chart chunks preserved.
+- Full workspace typecheck and check passed.
+- `git diff --check` passed.
+
+### Decisions
+
+- Use `optimizeDeps.entries` instead of a manually maintained `include` list. Vite can pre-bundle the actual packages reachable from all app modules while new runtime imports are discovered automatically.
+- Keep this optimization development-only. Production code splitting remains driven by the existing lazy route and analytics imports.
+- Browser screenshot QA was not run because repository instructions prohibit it without an explicit request.
 
 ### Blockers / Follow-ups
 

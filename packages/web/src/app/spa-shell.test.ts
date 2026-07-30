@@ -28,9 +28,10 @@ describe("SPA shell", () => {
     expect(appSource).toContain('<Route path="*" element={<Navigate to="/" replace />} />');
   });
 
-  it("provides the Vite entry point and a static-hosting history fallback", () => {
+  it("provides the Vite entry point, dependency optimization, and static-hosting history fallback", () => {
     const htmlEntry = readProjectFile("index.html");
     const mainSource = readProjectFile("src/main.tsx");
+    const viteConfig = readProjectFile("vite.config.ts");
     const vercelConfig = JSON.parse(readProjectFile("vercel.json")) as {
       framework?: string;
       rewrites?: Array<{ source: string; destination: string }>;
@@ -41,6 +42,10 @@ describe("SPA shell", () => {
     expect(htmlEntry).toContain('window.localStorage.getItem("theme")');
     expect(htmlEntry).toContain('window.matchMedia("(prefers-color-scheme: dark)")');
     expect(mainSource).toContain("<BrowserRouter>");
+    expect(viteConfig).toContain('"index.html"');
+    expect(viteConfig).toContain('"src/**/*.{ts,tsx}"');
+    expect(viteConfig).toContain('"!src/**/*.test.{ts,tsx}"');
+    expect(viteConfig).toContain('"!src/**/*.stories.{ts,tsx}"');
     expect(vercelConfig.framework).toBe("vite");
     expect(vercelConfig.rewrites).toEqual([{ source: "/(.*)", destination: "/index.html" }]);
   });

@@ -21,6 +21,14 @@ pnpm dev
 
 The API server runs on `http://localhost:4000`. The web dev server runs on `http://localhost:3000`.
 
+Vite scans all application TypeScript modules at startup, including lazy route modules, so their third-party
+dependencies are pre-bundled before the first navigation. Tests and Storybook stories are excluded from the app dev
+optimizer. After changing package resolution or the optimizer configuration, rebuild the dependency cache with:
+
+```bash
+pnpm dev:web --force
+```
+
 `docker-compose.yml` starts PostgreSQL 17 on port `5432`, persists data in the `postgres_data` volume, and exposes a
 `pg_isready` health check. Wait for it to become healthy before applying migrations:
 
@@ -237,7 +245,7 @@ pnpm dev          # API and web dev servers
 pnpm dev:api      # NestJS API dev server on port 4000
 pnpm dev:web      # Vite web dev server on port 3000
 pnpm build        # Build api, then web
-pnpm check        # Legacy framework audit, API contract check, and package Biome checks
+pnpm check        # API contract check and package Biome checks
 pnpm typecheck    # TypeScript without emit for both packages
 pnpm test         # Vitest run for both packages
 pnpm api:generate # Generate OpenAPI JSON and Orval web client
