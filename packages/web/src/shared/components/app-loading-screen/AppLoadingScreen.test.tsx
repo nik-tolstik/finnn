@@ -8,6 +8,7 @@ import {
   SvgPathAssemblySplash,
   SvgPathDrawSplash,
   SvgPathPulseSplash,
+  SvgStemBarsThenNSplash,
 } from "./AppLoadingScreenConcepts";
 
 describe("AppLoadingScreen", () => {
@@ -43,8 +44,8 @@ describe("AppLoadingScreen SVG concepts", () => {
     expect(markup).not.toContain("mask");
   });
 
-  it("reveals the N before the left bars inside the SVG", () => {
-    const markup = renderToStaticMarkup(createElement(SvgNThenBarsSplash));
+  it.each([SvgNThenBarsSplash, SvgStemBarsThenNSplash])("reveals the logo in ordered SVG stages with %s", (Concept) => {
+    const markup = renderToStaticMarkup(createElement(Concept));
 
     expect(markup).toContain("<mask");
     expect(markup).toContain('d="M451 780V240"');

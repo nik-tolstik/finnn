@@ -6,6 +6,7 @@ import {
   SvgPathAssemblySplash,
   SvgPathDrawSplash,
   SvgPathPulseSplash,
+  SvgStemBarsThenNSplash,
 } from "./AppLoadingScreenConcepts";
 
 const meta = {
@@ -59,6 +60,15 @@ export const SvgPathDraw: Story = {
 
 export const SvgNThenBars: Story = {
   render: (args) => <SvgNThenBarsSplash label={args.label} />,
+  parameters: {
+    themes: {
+      themeOverride: "light",
+    },
+  },
+};
+
+export const SvgStemBarsThenN: Story = {
+  render: (args) => <SvgStemBarsThenNSplash label={args.label} />,
   parameters: {
     themes: {
       themeOverride: "light",

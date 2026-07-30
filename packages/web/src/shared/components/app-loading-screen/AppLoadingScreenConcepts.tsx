@@ -6,7 +6,7 @@ interface AppLoadingScreenConceptProps {
   label?: string;
 }
 
-type Concept = "nThenBars" | "pathAssembly" | "pathDraw" | "pathPulse";
+type Concept = "nThenBars" | "pathAssembly" | "pathDraw" | "pathPulse" | "stemBarsThenN";
 
 // Keep this geometry in sync with the public Finnn logo assets.
 const LEFT_MARK_PATH =
@@ -19,7 +19,7 @@ function AnimatedLogo({ concept }: { concept: Concept }) {
   const instanceId = useId().replaceAll(":", "");
   const nRevealMaskId = `n-reveal-${instanceId}`;
   const barsRevealMaskId = `bars-reveal-${instanceId}`;
-  const drawsNThenBars = concept === "nThenBars";
+  const drawsSequence = concept === "nThenBars" || concept === "stemBarsThenN";
 
   return (
     <svg
@@ -30,7 +30,7 @@ function AnimatedLogo({ concept }: { concept: Concept }) {
       aria-hidden="true"
       focusable="false"
     >
-      {drawsNThenBars ? (
+      {drawsSequence ? (
         <defs>
           <mask id={nRevealMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1025" height="1024">
             <path className={`${styles.nRevealGuide} ${styles.nLeftStemGuide}`} d="M451 780V240" pathLength={1} />
@@ -44,7 +44,7 @@ function AnimatedLogo({ concept }: { concept: Concept }) {
         </defs>
       ) : null}
       <rect className={styles.tile} x="0.343994" width="1024" height="1024" rx="256" />
-      {drawsNThenBars ? (
+      {drawsSequence ? (
         <g className={styles.sequenceMarks}>
           <path className={styles.markPath} d={RIGHT_MARK_PATH} mask={`url(#${nRevealMaskId})`} />
           <path className={styles.markPath} d={LEFT_MARK_PATH} mask={`url(#${barsRevealMaskId})`} />
@@ -87,4 +87,8 @@ export function SvgPathPulseSplash(props: AppLoadingScreenConceptProps) {
 
 export function SvgNThenBarsSplash(props: AppLoadingScreenConceptProps) {
   return <AppLoadingScreenConcept concept="nThenBars" {...props} />;
+}
+
+export function SvgStemBarsThenNSplash(props: AppLoadingScreenConceptProps) {
+  return <AppLoadingScreenConcept concept="stemBarsThenN" {...props} />;
 }

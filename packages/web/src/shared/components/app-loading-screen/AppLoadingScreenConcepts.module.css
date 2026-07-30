@@ -127,6 +127,22 @@ html[class~="dark"] .scene {
   animation: fade-sequence-marks 2s ease-in-out infinite;
 }
 
+.stemBarsThenN .topBarGuide {
+  animation-name: reveal-early-top-bar;
+}
+
+.stemBarsThenN .middleBarGuide {
+  animation-name: reveal-early-middle-bar;
+}
+
+.stemBarsThenN .nDiagonalGuide {
+  animation-name: reveal-late-n-diagonal;
+}
+
+.stemBarsThenN .nRightStemGuide {
+  animation-name: reveal-late-n-right-stem;
+}
+
 @keyframes draw-left-path {
   0%,
   8% {
@@ -384,6 +400,54 @@ html[class~="dark"] .scene {
 
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes reveal-early-top-bar {
+  0%,
+  30% {
+    stroke-dashoffset: 1;
+  }
+
+  42%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes reveal-early-middle-bar {
+  0%,
+  43% {
+    stroke-dashoffset: 1;
+  }
+
+  54%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes reveal-late-n-diagonal {
+  0%,
+  56% {
+    stroke-dashoffset: 1;
+  }
+
+  73%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes reveal-late-n-right-stem {
+  0%,
+  75% {
+    stroke-dashoffset: 1;
+  }
+
+  87%,
+  100% {
+    stroke-dashoffset: 0;
   }
 }
 
