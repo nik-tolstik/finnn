@@ -8,6 +8,7 @@ describe("logo assets", () => {
   it("contains cropped monochrome light and dark variants", () => {
     const darkLogo = readAsset("public/logo-dark.svg");
     const lightLogo = readAsset("public/logo-light.svg");
+    const markMask = readAsset("public/logo-mark-mask.svg");
 
     expect(darkLogo).toContain('viewBox="0 0 1025 1024"');
     expect(darkLogo).toContain('<rect x="0.343994" width="1024" height="1024" rx="256" fill="#1c1c1c"/>');
@@ -20,6 +21,10 @@ describe("logo assets", () => {
     expect(lightLogo).toContain('fill="#1c1c1c"');
     expect(lightLogo).toContain('fill="#f7f7f7"');
     expect(lightLogo).not.toContain("#2F6BFF");
+
+    expect(markMask).toContain('viewBox="0 0 1025 1024"');
+    expect(markMask.match(/<path /g)).toHaveLength(2);
+    expect(markMask).not.toContain("<rect");
   });
 
   it("provides a system-theme-aware app icon and updated PWA references", () => {

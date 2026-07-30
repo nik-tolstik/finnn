@@ -1,0 +1,239 @@
+.screen {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.scene {
+  --logo-tile-color: #1c1c1c;
+  --logo-mark-color: #f7f7f7;
+
+  position: relative;
+}
+
+html[class~="dark"] .scene {
+  --logo-tile-color: #f7f7f7;
+  --logo-mark-color: #1c1c1c;
+}
+
+.logoFrame {
+  position: relative;
+  width: clamp(8rem, 14vw, 11.25rem);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 25%;
+  box-shadow: 0 1.25rem 3rem color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.logoFrame img {
+  width: 100%;
+  height: 100%;
+}
+
+.markMask {
+  position: absolute;
+  inset: 0;
+  -webkit-mask: url("/logo-mark-mask.svg") center / 100% 100% no-repeat;
+  mask: url("/logo-mark-mask.svg") center / 100% 100% no-repeat;
+}
+
+.sweepMask {
+  overflow: hidden;
+}
+
+.sweepFill {
+  position: absolute;
+  top: -38%;
+  right: -32%;
+  bottom: -38%;
+  left: -32%;
+  background: var(--primary);
+  transform: translateY(92%) rotate(-14deg);
+  transform-origin: center;
+  animation: inner-sweep 2.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.markCover {
+  background: var(--logo-tile-color);
+}
+
+.assemblyLeft,
+.assemblyBridge,
+.assemblyRight,
+.assemblyComplete {
+  background: var(--logo-mark-color);
+  opacity: 0;
+}
+
+.assemblyLeft {
+  clip-path: inset(20% 52% 20% 10%);
+  animation: assemble-left 3s ease-in-out infinite;
+}
+
+.assemblyBridge {
+  clip-path: polygon(35% 18%, 78% 18%, 78% 82%, 35% 82%);
+  animation: assemble-bridge 3s ease-in-out infinite;
+}
+
+.assemblyRight {
+  clip-path: inset(20% 10% 20% 68%);
+  animation: assemble-right 3s ease-in-out infinite;
+}
+
+.assemblyComplete {
+  animation: assemble-complete 3s ease-in-out infinite;
+}
+
+.balanceMask {
+  display: flex;
+  align-items: flex-end;
+}
+
+.balanceBand {
+  width: 25%;
+  height: 72%;
+  flex: none;
+  background: var(--primary);
+  transform: scaleY(0.24);
+  transform-origin: bottom;
+  animation: balance-rise 2.4s ease-in-out infinite;
+}
+
+.balanceBandTwo {
+  animation-delay: -1.8s;
+}
+
+.balanceBandThree {
+  animation-delay: -1.2s;
+}
+
+.balanceBandFour {
+  animation-delay: -0.6s;
+}
+
+@keyframes inner-sweep {
+  0%,
+  12% {
+    transform: translateY(92%) rotate(-14deg);
+  }
+
+  58%,
+  72% {
+    transform: translateY(-8%) rotate(-14deg);
+  }
+
+  100% {
+    transform: translateY(-118%) rotate(-14deg);
+  }
+}
+
+@keyframes assemble-left {
+  0%,
+  10%,
+  92%,
+  100% {
+    opacity: 0;
+    transform: translateY(8%);
+  }
+
+  18%,
+  78% {
+    opacity: 1;
+    background: var(--primary);
+    transform: translateY(0);
+  }
+
+  84% {
+    opacity: 1;
+    background: var(--logo-mark-color);
+    transform: translateY(0);
+  }
+}
+
+@keyframes assemble-bridge {
+  0%,
+  24%,
+  92%,
+  100% {
+    opacity: 0;
+    transform: translateY(8%);
+  }
+
+  34%,
+  78% {
+    opacity: 1;
+    background: var(--primary);
+    transform: translateY(0);
+  }
+
+  84% {
+    opacity: 1;
+    background: var(--logo-mark-color);
+    transform: translateY(0);
+  }
+}
+
+@keyframes assemble-right {
+  0%,
+  38%,
+  92%,
+  100% {
+    opacity: 0;
+    transform: translateY(8%);
+  }
+
+  48%,
+  78% {
+    opacity: 1;
+    background: var(--primary);
+    transform: translateY(0);
+  }
+
+  84% {
+    opacity: 1;
+    background: var(--logo-mark-color);
+    transform: translateY(0);
+  }
+}
+
+@keyframes assemble-complete {
+  0%,
+  74%,
+  94%,
+  100% {
+    opacity: 0;
+  }
+
+  82%,
+  90% {
+    opacity: 1;
+  }
+}
+
+@keyframes balance-rise {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scaleY(0.24);
+  }
+
+  46% {
+    opacity: 0.95;
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sweepFill,
+  .markCover,
+  .assemblyLeft,
+  .assemblyBridge,
+  .assemblyRight,
+  .assemblyComplete,
+  .balanceBand {
+    display: none;
+  }
+}
