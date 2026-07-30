@@ -1,17 +1,14 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { getSession, login } from "@/shared/api/generated/auth/auth";
 import { acceptWorkspaceInvite } from "@/shared/api/generated/workspace-invites/workspace-invites";
-import { apiSessionQueryKey, userRequiresEmailVerification } from "@/shared/lib/api-session-client";
+import { apiSessionQueryKey, userRequiresEmailVerification } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
@@ -24,8 +21,8 @@ import { GoogleAuthButton } from "../google-auth-button";
 import { TelegramAuthButton } from "../telegram-auth-button";
 
 export function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -74,8 +71,7 @@ export function LoginForm() {
       if (userRequiresEmailVerification(sessionResponse.user)) {
         const returnTo = inviteToken ? `/invite/${inviteToken}` : "/dashboard";
         startTransition(() => {
-          router.replace(`/email-required?returnTo=${encodeURIComponent(returnTo)}`);
-          router.refresh();
+          navigate(`/email-required?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
         });
         return;
       }
@@ -86,8 +82,7 @@ export function LoginForm() {
       }
 
       startTransition(() => {
-        router.replace("/dashboard");
-        router.refresh();
+        navigate("/dashboard", { replace: true });
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Что-то пошло не так";
@@ -144,7 +139,7 @@ export function LoginForm() {
           </div>
 
           <div className="flex justify-end">
-            <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
               Забыли пароль?
             </Link>
           </div>
@@ -168,7 +163,7 @@ export function LoginForm() {
         <div className="mt-4 text-center text-sm">
           <span className="text-muted-foreground">Нет аккаунта? </span>
           <Link
-            href={inviteToken ? `/register?inviteToken=${encodeURIComponent(inviteToken)}` : "/register"}
+            to={inviteToken ? `/register?inviteToken=${encodeURIComponent(inviteToken)}` : "/register"}
             className="text-primary hover:underline"
           >
             Зарегистрироваться

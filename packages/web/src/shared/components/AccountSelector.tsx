@@ -1,5 +1,3 @@
-"use client";
-
 import { WalletCards } from "lucide-react";
 
 import type { Account } from "@/modules/accounts/account.types";

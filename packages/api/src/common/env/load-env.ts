@@ -6,7 +6,7 @@ const ENV_FILE_PATHS = [".env", ".env.local"] as const;
 
 const processWithLoadEnvFile = process as ProcessWithLoadEnvFile;
 
-// Mirror Next.js-style env loading for standalone tsx scripts.
+// Load layered environment files for standalone tsx scripts.
 if (typeof processWithLoadEnvFile.loadEnvFile === "function") {
   for (const envFilePath of ENV_FILE_PATHS) {
     try {

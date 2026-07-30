@@ -1,7 +1,5 @@
-"use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { removeWorkspacesFromCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
@@ -18,7 +16,7 @@ interface LeaveWorkspaceDialogProps {
 }
 
 export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenChange }: LeaveWorkspaceDialogProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const leaveMutation = useMutation({
@@ -37,7 +35,7 @@ export function LeaveWorkspaceDialog({ workspaceId, workspaceName, open, onOpenC
       }
 
       toast.success("Вы покинули рабочий стол");
-      router.push("/dashboard");
+      navigate("/dashboard");
     },
     onError: (error: Error) => {
       toast.error(error.message || "Не удалось покинуть рабочий стол");

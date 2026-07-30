@@ -1,10 +1,8 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { requestPasswordReset } from "@/shared/api/generated/auth/auth";
@@ -16,7 +14,7 @@ import { Label } from "@/shared/ui/label";
 import { type PasswordResetRequestInput, passwordResetRequestSchema } from "../../auth.validations";
 
 export function PasswordResetRequestForm() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     register,
@@ -31,7 +29,7 @@ export function PasswordResetRequestForm() {
     try {
       await requestPasswordReset({ email: data.email });
       toast.success("Если email зарегистрирован, код восстановления отправлен");
-      router.push(`/reset-password?email=${encodeURIComponent(data.email)}`);
+      navigate(`/reset-password?email=${encodeURIComponent(data.email)}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Не удалось отправить код");
     } finally {

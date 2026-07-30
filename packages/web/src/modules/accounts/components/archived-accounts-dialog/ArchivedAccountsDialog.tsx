@@ -1,5 +1,3 @@
-"use client";
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Redo2, Trash2 } from "lucide-react";
 import { useState } from "react";

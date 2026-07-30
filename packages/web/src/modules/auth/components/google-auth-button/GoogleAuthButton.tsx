@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/shared/ui/button";
 
 import { GoogleIcon } from "../social-provider-icons";

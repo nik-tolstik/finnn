@@ -1,5 +1,3 @@
-"use client";
-
 import { CategoryIcon } from "@/shared/components/category-icon";
 import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";

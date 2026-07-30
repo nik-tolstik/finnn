@@ -4,7 +4,7 @@
 
 Finnn is a personal and shared finance tracker in a `pnpm` monorepo.
 
-- `packages/web` is the Next.js App Router frontend built with React, TypeScript, TanStack Query, Tailwind CSS, and Orval-generated API clients. Exchange-rate UI is shared across transaction and debt forms rather than owned by a standalone frontend module.
+- `packages/web` is a Vite-powered React SPA routed with React Router and built with TypeScript, TanStack Query, Tailwind CSS, and Orval-generated API clients. Exchange-rate UI is shared across transaction and debt forms rather than owned by a standalone frontend module.
 - `packages/api` is the NestJS backend built with TypeScript, Prisma, PostgreSQL, OpenAPI, and Vitest.
 - `packages/postgres-backup` is the isolated Railway cron service that streams `pg_dump` through `age` and verifies
   encrypted S3-compatible uploads.
@@ -52,13 +52,16 @@ pnpm backup:test
 
 Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishing non-trivial changes.
 
-The package-local `tsc` commands use TypeScript 7 through the `@typescript/native` alias. The `typescript` dependency intentionally aliases `@typescript/typescript6` for tools that still require the legacy compiler API; keep both aliases unless all Nest, Next, Storybook, and Orval tooling has moved to the TypeScript 7 API.
+The package-local `tsc` commands use TypeScript 7 through the `@typescript/native` alias. The `typescript` dependency intentionally aliases `@typescript/typescript6` for tools that still require the legacy compiler API; keep both aliases unless all Nest, Vite, Storybook, and Orval tooling has moved to the TypeScript 7 API.
 
 ## Architecture Map
 
-- `packages/web/src/app` contains App Router pages, layouts, and providers.
+- `packages/web/src/app` contains the SPA composition root and React Router route tree.
+- `packages/web/src/routes` contains route layouts and route entry components.
+- `packages/web/src/providers` contains application-wide client providers.
+- `packages/web/src/styles` contains global styles.
 - `packages/web/src/modules` contains frontend feature modules: accounts, analytics, auth, categories, debts, scheduled payments, transactions, and workspace. Account dashboard visibility is personal to the authenticated user; do not use it to filter account choices in financial forms.
-- `packages/web/src/shared/hooks/useCurrencyAmountSync.ts` and `packages/web/src/app/(dashboard)/components/dashboard-exchange-rates.tsx` contain the cross-cutting frontend exchange-rate behavior.
+- `packages/web/src/shared/hooks/useCurrencyAmountSync.ts` and `packages/web/src/routes/dashboard/components/dashboard-exchange-rates.tsx` contain the cross-cutting frontend exchange-rate behavior.
 - `packages/web/src/shared/api/generated` contains Orval-generated API client functions and types. Do not edit generated files manually.
 - `packages/web/src/shared/lib` contains frontend session, query keys, cache invalidation, optimistic updates, balance helpers, and domain types.
 - `packages/web/src/shared/ui` contains reusable primitive UI components.
@@ -94,7 +97,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 - Use TanStack Query keys from `packages/web/src/shared/lib/query-keys.ts`; do not invent ad hoc key shapes.
 - When client mutations need immediate UI feedback, prefer the existing optimistic update helpers in `packages/web/src/shared/lib/optimistic-workspace-updates.ts`.
 - For app-facing web forms, use the shared UI controls instead of native browser controls: `shared/ui/select` for option dropdowns, `DatePicker` or `DateTimePicker` for dates, `AccountSelector`/`SelectAccountDialog` for account selection, `UserDisplay`/`UserAvatar` for user choices, and `CURRENCY_OPTIONS` for currency choices.
-- Keep protected app routes (`/dashboard`, `/analytics`, `/debts`) CSR-first: avoid server-side session/data dependencies in their layouts/pages, and use TanStack Query for cached server state.
+- Keep protected app routes (`/dashboard`, `/analytics`, `/debts`, `/payments`) client-rendered: avoid route-loader session/data dependencies, and use TanStack Query for cached server state.
 - Use the client auth gate for protected app routes; API auth guards remain the security boundary.
 - Do not cache financial documents, API responses, dashboard routes, or data responses in the service worker.
 - Do not use Tailwind's `tabular-nums` class. Use proportional typography for money and numeric UI, and solve alignment with layout instead.
@@ -120,7 +123,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
   and service identifiers for infrastructure mutations.
 - `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `DIRECT_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`,
   email variables, and `CRON_SECRET`.
-- `packages/web/.env` owns browser-safe variables such as `NEXT_PUBLIC_API_URL`.
+- `packages/web/.env` owns browser-safe variables such as `VITE_API_URL`.
 - Vercel web domains: PROD `https://finnn.xyz`, DEV `https://dev.finnn.xyz`.
 - Railway API domains: PROD `https://api.finnn.xyz`, DEV `https://api-dev.finnn.xyz`.
 - Telegram uses two bots: one PROD bot for production domains and one DEV bot for DEV plus localhost/ngrok testing.

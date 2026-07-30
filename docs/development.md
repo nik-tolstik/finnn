@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js compatible with the project dependencies.
+- Node.js `^20.19.0` or `>=22.12.0` (Node.js 24 is used in CI and Vercel).
 - `pnpm`.
 - PostgreSQL. For local development, use the provided Docker Compose service.
 - Package-local `.env` files based on `packages/api/.env.example` and `packages/web/.env.example`.
@@ -21,6 +21,14 @@ pnpm dev
 
 The API server runs on `http://localhost:4000`. The web dev server runs on `http://localhost:3000`.
 
+Vite scans all application TypeScript modules at startup, including lazy route modules, so their third-party
+dependencies are pre-bundled before the first navigation. Tests and Storybook stories are excluded from the app dev
+optimizer. After changing package resolution or the optimizer configuration, rebuild the dependency cache with:
+
+```bash
+pnpm dev:web --force
+```
+
 `docker-compose.yml` starts PostgreSQL 17 on port `5432`, persists data in the `postgres_data` volume, and exposes a
 `pg_isready` health check. Wait for it to become healthy before applying migrations:
 
@@ -32,7 +40,7 @@ docker compose ps
 
 The API and web packages use the native TypeScript 7 compiler. The `@typescript/native` dependency is an npm alias for TypeScript 7, so package scripts that invoke `tsc` use the TypeScript 7 executable.
 
-TypeScript 7 does not expose the legacy compiler API yet. The `typescript` dependency therefore aliases `@typescript/typescript6` so tools that still load that API, including Nest CLI and Next.js configuration loading, continue to work. This compatibility package is only for tooling; `pnpm typecheck` and the package-local `tsc` commands run TypeScript 7.
+TypeScript 7 does not expose the legacy compiler API yet. The `typescript` dependency therefore aliases `@typescript/typescript6` so tools that still load that API, including Nest CLI, Storybook, and Orval, continue to work. This compatibility package is only for tooling; `pnpm typecheck` and the package-local `tsc` commands run TypeScript 7.
 
 Orval 8.12.3 does not parse npm alias ranges as semver. Its config uses `packages/web/orval.package.json`, a small generator-only manifest with a normal TypeScript 7 version, so `pnpm api:generate` remains compatible with the alias setup.
 
@@ -162,13 +170,13 @@ Use `-- --url=https://your-stable-domain.ngrok-free.dev/telegram/webhook` to ove
 
 Telegram Mini Apps must load over public HTTPS. For local testing, run the API and web app normally, then expose the web
 app through a stable HTTPS tunnel and point the DEV bot's Mini App URL at the tunnel `/dashboard` route. Keep
-`NEXT_PUBLIC_API_URL` aligned with an API URL that the WebView can reach and keep `API_ALLOWED_ORIGINS` aligned with the
+`VITE_API_URL` aligned with an API URL that the WebView can reach and keep `API_ALLOWED_ORIGINS` aligned with the
 tunnel origin.
 
 Required in `packages/web/.env` for local web operation:
 
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:4000"
+VITE_API_URL="http://localhost:4000"
 ```
 
 Telegram does not accept `localhost` redirect URIs. For local Telegram testing, expose the API through ngrok. Telegram redirects to the ngrok callback, and the API immediately relays non-local development callbacks back to the local API callback, where the local state and session cookies are available.
@@ -202,7 +210,7 @@ TELEGRAM_BOT_WEBHOOK_URL="https://your-stable-domain.ngrok-free.dev/telegram/web
 NGROK_URL="https://your-stable-domain.ngrok-free.dev"
 
 # packages/web/.env
-NEXT_PUBLIC_API_URL="http://localhost:4000"
+VITE_API_URL="http://localhost:4000"
 ```
 
 Register the same callback URI in BotFather:
@@ -235,9 +243,9 @@ openssl rand -base64 32
 ```bash
 pnpm dev          # API and web dev servers
 pnpm dev:api      # NestJS API dev server on port 4000
-pnpm dev:web      # Next.js web dev server on port 3000
+pnpm dev:web      # Vite web dev server on port 3000
 pnpm build        # Build api, then web
-pnpm check        # API contract check plus package Biome checks
+pnpm check        # API contract check and package Biome checks
 pnpm typecheck    # TypeScript without emit for both packages
 pnpm test         # Vitest run for both packages
 pnpm api:generate # Generate OpenAPI JSON and Orval web client
@@ -310,7 +318,7 @@ Broaden to the full suite when changes affect:
 - Balance rules.
 - Transactions, transfers, debts, accounts, or categories.
 - Query cache updates.
-- App Router pages, API client adapters, or generated-client contracts.
+- React Router routes, API client adapters, or generated-client contracts.
 - Service worker cache policy.
 - Prisma schema.
 

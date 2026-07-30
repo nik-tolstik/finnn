@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Wallet } from "lucide-react";
@@ -11,7 +9,7 @@ import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/wo
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { CURRENCY_OPTIONS, Currency, DEFAULT_CURRENCY } from "@/shared/constants/currency";
-import { useSession } from "@/shared/lib/api-session-client";
+import { useSession } from "@/shared/lib/api-session";
 import { insertAccountsInCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { accountKeys, workspaceKeys } from "@/shared/lib/query-keys";
 import { type CreateAccountInput, createAccountSchema } from "@/shared/lib/validations/account";

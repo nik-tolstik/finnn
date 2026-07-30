@@ -1,6 +1,6 @@
 # Web Design System
 
-The Finnn web color system is defined in `packages/web/src/app/globals.css` and has three layers. Keep the layers separate so a theme can change without forcing component-specific overrides.
+The Finnn web color system is defined in `packages/web/src/styles/globals.css` and has three layers. Keep the layers separate so a theme can change without forcing component-specific overrides.
 
 ## Typography and Text Case
 

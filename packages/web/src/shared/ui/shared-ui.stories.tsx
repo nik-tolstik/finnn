@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CreditCard, Plus, Search, WalletCards } from "lucide-react";
 import { useState } from "react";
 

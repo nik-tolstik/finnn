@@ -1,5 +1,3 @@
-"use client";
-
 import { CalendarPlus, Pencil, RotateCw, Trash2 } from "lucide-react";
 
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog";

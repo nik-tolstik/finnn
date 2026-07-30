@@ -23,8 +23,8 @@ describe("logo assets", () => {
   });
 
   it("provides a system-theme-aware app icon and updated PWA references", () => {
-    const appIcon = readAsset("src/app/icon.svg");
-    const layout = readAsset("src/app/layout.tsx");
+    const appIcon = readAsset("public/icon.svg");
+    const htmlEntry = readAsset("index.html");
     const manifest = JSON.parse(readAsset("public/manifest.json")) as {
       background_color: string;
       theme_color: string;
@@ -38,10 +38,10 @@ describe("logo assets", () => {
     expect(appIcon).toContain("#1c1c1c");
     expect(appIcon).toContain("#f7f7f7");
     expect(appIcon).not.toContain("#2F6BFF");
-    expect(layout).toContain('color: "#f7f7f7"');
-    expect(layout).toContain('color: "#1c1c1c"');
-    expect(layout).not.toContain('url: "/favicon.ico"');
-    expect(existsSync(join(process.cwd(), "src/app/favicon.ico"))).toBe(false);
+    expect(htmlEntry).toContain('content="#f7f7f7"');
+    expect(htmlEntry).toContain('content="#1c1c1c"');
+    expect(htmlEntry).not.toContain('href="/favicon.ico"');
+    expect(existsSync(join(process.cwd(), "public/favicon.ico"))).toBe(false);
     expect(manifest.background_color).toBe("#f7f7f7");
     expect(manifest.theme_color).toBe("#1c1c1c");
     expect(manifest.icons[0]).toEqual({
@@ -50,7 +50,7 @@ describe("logo assets", () => {
       type: "image/svg+xml",
       purpose: "any",
     });
-    expect(serviceWorker).toContain('const CACHE_NAME = "finnn-v3";');
+    expect(serviceWorker).toContain('const CACHE_NAME = "finnn-v4";');
     expect(serviceWorker).toContain('"/logo-adaptive.svg"');
   });
 });

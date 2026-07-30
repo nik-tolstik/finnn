@@ -1,9 +1,6 @@
-"use client";
-
 import * as Tabs from "@radix-ui/react-tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, Loader2, Search, X } from "lucide-react";
-import Image from "next/image";
 import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -223,21 +220,17 @@ function PickerTabs({
             <>
               <div className="mt-3 grid grid-cols-2 gap-2 text-left">
                 <div className="relative flex h-16 items-center justify-center rounded-lg bg-white p-2 text-slate-900">
-                  <Image
+                  <img
                     src={previewUrl}
                     alt="Предпросмотр иконки в светлой теме"
-                    fill
-                    unoptimized
-                    className="object-contain p-2"
+                    className="absolute inset-0 size-full object-contain p-2"
                   />
                 </div>
                 <div className="relative flex h-16 items-center justify-center rounded-lg bg-[var(--palette-dark-900)] p-2 text-white">
-                  <Image
+                  <img
                     src={previewUrl}
                     alt="Предпросмотр иконки в тёмной теме"
-                    fill
-                    unoptimized
-                    className="object-contain p-2"
+                    className="absolute inset-0 size-full object-contain p-2"
                   />
                 </div>
               </div>

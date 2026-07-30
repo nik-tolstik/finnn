@@ -1,5 +1,3 @@
-"use client";
-
 import { FormProvider } from "react-hook-form";
 
 import { Button } from "@/shared/ui/button";

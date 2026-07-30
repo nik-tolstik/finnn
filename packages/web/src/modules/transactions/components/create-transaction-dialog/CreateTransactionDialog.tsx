@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -16,8 +14,8 @@ import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { CategoryIcon } from "@/shared/components/category-icon";
 import { useDialogState } from "@/shared/hooks/useDialogState";
-import type { Session } from "@/shared/lib/api-session-client";
-import { useSession } from "@/shared/lib/api-session-client";
+import type { Session } from "@/shared/lib/api-session";
+import { useSession } from "@/shared/lib/api-session";
 import {
   addAccountBalanceDelta,
   getPaymentTransactionBalanceDelta,

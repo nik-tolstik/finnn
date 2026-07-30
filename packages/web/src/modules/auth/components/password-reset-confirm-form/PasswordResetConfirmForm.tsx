@@ -1,10 +1,8 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, KeyRound, Lock, Mail } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { confirmPasswordReset } from "@/shared/api/generated/auth/auth";
@@ -16,8 +14,8 @@ import { Label } from "@/shared/ui/label";
 import { type PasswordResetConfirmInput, passwordResetConfirmSchema } from "../../auth.validations";
 
 export function PasswordResetConfirmForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -41,7 +39,7 @@ export function PasswordResetConfirmForm() {
         password: data.password,
       });
       toast.success("Пароль обновлен");
-      router.push("/login");
+      navigate("/login");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Не удалось обновить пароль");
     } finally {

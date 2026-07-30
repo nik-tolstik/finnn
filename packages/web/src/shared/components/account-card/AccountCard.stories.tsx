@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import type { Account } from "@/modules/accounts/account.types";
 import { AccountCardSkeleton } from "@/shared/components/AccountCardSkeleton";

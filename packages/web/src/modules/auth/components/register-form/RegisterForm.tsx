@@ -1,11 +1,8 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import type { z } from "zod";
 
@@ -24,8 +21,8 @@ import { TelegramAuthButton } from "../telegram-auth-button";
 type RegisterFormInput = z.infer<typeof registerFormSchema>;
 
 export function RegisterForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -47,7 +44,7 @@ export function RegisterForm() {
       await registerUser(registerData);
 
       toast.success("Аккаунт создан! Письмо с подтверждением отправлено на ваш email.");
-      router.push(inviteToken ? `/login?inviteToken=${encodeURIComponent(inviteToken)}` : "/login");
+      navigate(inviteToken ? `/login?inviteToken=${encodeURIComponent(inviteToken)}` : "/login");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Что-то пошло не так");
     } finally {
@@ -162,7 +159,7 @@ export function RegisterForm() {
           <div className="text-center text-sm">
             <span className="text-muted-foreground">Уже есть аккаунт? </span>
             <Link
-              href={inviteToken ? `/login?inviteToken=${encodeURIComponent(inviteToken)}` : "/login"}
+              to={inviteToken ? `/login?inviteToken=${encodeURIComponent(inviteToken)}` : "/login"}
               className="text-primary hover:underline"
             >
               Войти

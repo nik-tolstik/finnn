@@ -23,11 +23,11 @@ This documentation is written for two audiences:
 
 ## Project At A Glance
 
-- Framework: Next.js App Router frontend and NestJS API, both in TypeScript.
+- Framework: Vite React SPA with React Router, plus a NestJS API; both are in TypeScript.
 - Data: Prisma ORM with PostgreSQL in `packages/api`.
 - Auth: API-owned HTTP-only cookie sessions.
 - Contract: NestJS OpenAPI with Orval-generated web clients.
-- Client data: TanStack Query with server-side prefetch and hydration.
+- Client data: TanStack Query with browser-side fetching, caching, and invalidation.
 - UI: Tailwind CSS, local UI primitives, lucide-react, Recharts.
 - Validation: NestJS DTO validation in `packages/api` plus frontend Zod schemas in `packages/web/src/shared/lib/validations`.
 - Tests: Vitest plus static UI structure tests in package-local `scripts`.
@@ -40,7 +40,7 @@ This documentation is written for two audiences:
 2. A workspace owner or member creates accounts and categories.
 3. A user records income, expense, transfer, or debt activity.
 4. API domain logic updates balances transactionally in PostgreSQL.
-5. The dashboard and analytics views prefetch data on the server and hydrate client components.
+5. The dashboard and analytics views fetch cached API data after the client session and workspace are resolved.
 6. The protected API cron endpoint fetches and stores exchange rates for conversion-aware analytics and UI display.
 
 ## Important Invariants
@@ -61,4 +61,4 @@ pnpm test
 pnpm build
 ```
 
-For narrow changes, run the most relevant targeted test first, then broaden verification if the change touches shared domain rules, data access, App Router behavior, or PWA caching.
+For narrow changes, run the most relevant targeted test first, then broaden verification if the change touches shared domain rules, data access, React Router behavior, or PWA caching.
