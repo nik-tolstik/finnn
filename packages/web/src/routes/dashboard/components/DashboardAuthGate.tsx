@@ -1,9 +1,12 @@
+import { useQuery } from "@tanstack/react-query";
 import { type ReactNode, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { useTelegramMiniApp } from "@/modules/telegram-mini/useTelegramMiniApp";
+import { getWorkspaces } from "@/modules/workspace/workspace.api";
 import { AppLoadingScreen } from "@/shared/components/app-loading-screen";
 import { userRequiresEmailVerification, useSession } from "@/shared/lib/api-session";
+import { workspacesKeys } from "@/shared/lib/query-keys";
 
 interface DashboardAuthGateProps {
   children: ReactNode;
@@ -15,6 +18,13 @@ export function DashboardAuthGate({ children }: DashboardAuthGateProps) {
   const [searchParams] = useSearchParams();
   const { data: session, status } = useSession();
   const telegramMiniApp = useTelegramMiniApp();
+
+  useQuery({
+    queryKey: workspacesKeys.list(),
+    queryFn: () => getWorkspaces(),
+    enabled: status === "authenticated" && !userRequiresEmailVerification(session?.user),
+    staleTime: 5000,
+  });
 
   useEffect(() => {
     if (status === "unauthenticated" && !telegramMiniApp.isPending && telegramMiniApp.status !== "authenticated") {

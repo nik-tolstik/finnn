@@ -18,14 +18,7 @@ function ThemeClassSync() {
 
   useLayoutEffect(() => {
     const root = document.documentElement;
-    const transitionBlocker = document.createElement("style");
-    transitionBlocker.textContent = "*,*::before,*::after{transition:none!important}";
-    document.head.appendChild(transitionBlocker);
-
-    root.classList.remove("light", "dark");
-    root.classList.add(resolvedTheme);
-    root.style.colorScheme = resolvedTheme;
-
+    const themeAlreadyApplied = root.classList.contains(resolvedTheme) && root.style.colorScheme === resolvedTheme;
     const faviconUrl = getThemeLogoPath(resolvedTheme);
 
     if (faviconUrl) {
@@ -38,6 +31,18 @@ function ThemeClassSync() {
         link.media = "";
       }
     }
+
+    if (themeAlreadyApplied) {
+      return;
+    }
+
+    const transitionBlocker = document.createElement("style");
+    transitionBlocker.textContent = "*,*::before,*::after{transition:none!important}";
+    document.head.appendChild(transitionBlocker);
+
+    root.classList.remove("light", "dark");
+    root.classList.add(resolvedTheme);
+    root.style.colorScheme = resolvedTheme;
 
     void window.getComputedStyle(root).color;
     const timeoutId = window.setTimeout(() => transitionBlocker.remove(), 0);

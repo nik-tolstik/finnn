@@ -1,13 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef } from "react";
+import { lazy, Suspense, useRef } from "react";
 import { toast } from "sonner";
 
 import type { Account } from "@/modules/accounts/account.types";
+import { AccountActionsDialog } from "@/modules/accounts/components/account-actions-dialog/AccountActionsDialog";
 import type {
   AccountDisplayGroup,
   AccountDisplayGrouping,
 } from "@/modules/accounts/components/accounts-cards/account-display";
-import { CreateTransactionDialog } from "@/modules/transactions/components/create-transaction-dialog";
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
@@ -16,11 +16,30 @@ import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/
 import { Badge } from "@/shared/ui/badge";
 
 import { hideAccount, showAccount } from "../../account.api";
-import { AccountActionsDialog } from "../account-actions-dialog/AccountActionsDialog";
 import { AccountsCardsSkeleton } from "../accounts-cards-skeleton/AccountsCardsSkeleton";
-import { ArchiveAccountDialog } from "../archive-account-dialog/ArchiveAccountDialog";
-import { EditAccountDialog } from "../edit-account-dialog/EditAccountDialog";
-import { AccountsCardsReorderView } from "./AccountsCardsReorderView";
+
+const AccountsCardsReorderView = lazy(() =>
+  import("./AccountsCardsReorderView").then((module) => ({ default: module.AccountsCardsReorderView }))
+);
+const loadArchiveAccountDialog = () =>
+  import("../archive-account-dialog/ArchiveAccountDialog").then((module) => ({
+    default: module.ArchiveAccountDialog,
+  }));
+const ArchiveAccountDialog = lazy(loadArchiveAccountDialog);
+const loadCreateTransactionDialog = () =>
+  import("@/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog").then((module) => ({
+    default: module.CreateTransactionDialog,
+  }));
+const CreateTransactionDialog = lazy(loadCreateTransactionDialog);
+const loadEditAccountDialog = () =>
+  import("../edit-account-dialog/EditAccountDialog").then((module) => ({ default: module.EditAccountDialog }));
+const EditAccountDialog = lazy(loadEditAccountDialog);
+
+function preloadAccountDetailsDialogs() {
+  void Promise.all([loadArchiveAccountDialog(), loadCreateTransactionDialog(), loadEditAccountDialog()]).catch(
+    () => undefined
+  );
+}
 
 type AccountWithOwner = Account & {
   owner: {
@@ -121,11 +140,13 @@ export function AccountsCards({
 
   if (reorderMode && reorderAccounts && onReorderAccountsChange) {
     return (
-      <AccountsCardsReorderView
-        accounts={reorderAccounts}
-        disabled={isReorderSaving}
-        onAccountsChange={onReorderAccountsChange}
-      />
+      <Suspense fallback={<AccountsCardsSkeleton />}>
+        <AccountsCardsReorderView
+          accounts={reorderAccounts}
+          disabled={isReorderSaving}
+          onAccountsChange={onReorderAccountsChange}
+        />
+      </Suspense>
     );
   }
 
@@ -145,6 +166,7 @@ export function AccountsCards({
                   account={account}
                   showOwner={shouldShowOwnerOnCard}
                   onClick={() => {
+                    preloadAccountDetailsDialogs();
                     accountActionsDialog.openDialog({ account });
                   }}
                 />
@@ -154,7 +176,7 @@ export function AccountsCards({
         ))}
       </div>
 
-      {accountActionsDialog.mounted && (
+      {accountActionsDialog.mounted ? (
         <AccountActionsDialog
           account={accountActionsDialog.data.account}
           open={accountActionsDialog.open}
@@ -184,36 +206,42 @@ export function AccountsCards({
             accountActionsDialog.closeDialog();
           }}
         />
-      )}
+      ) : null}
 
-      {editDialog.mounted && (
-        <EditAccountDialog
-          account={editDialog.data.account}
-          open={editDialog.open}
-          onOpenChange={editDialog.closeDialog}
-          onCloseComplete={editDialog.unmountDialog}
-        />
-      )}
+      {editDialog.mounted ? (
+        <Suspense fallback={null}>
+          <EditAccountDialog
+            account={editDialog.data.account}
+            open={editDialog.open}
+            onOpenChange={editDialog.closeDialog}
+            onCloseComplete={editDialog.unmountDialog}
+          />
+        </Suspense>
+      ) : null}
 
-      {archiveDialog.mounted && (
-        <ArchiveAccountDialog
-          account={archiveDialog.data.account}
-          open={archiveDialog.open}
-          onOpenChange={archiveDialog.closeDialog}
-          onCloseComplete={archiveDialog.unmountDialog}
-        />
-      )}
+      {archiveDialog.mounted ? (
+        <Suspense fallback={null}>
+          <ArchiveAccountDialog
+            account={archiveDialog.data.account}
+            open={archiveDialog.open}
+            onOpenChange={archiveDialog.closeDialog}
+            onCloseComplete={archiveDialog.unmountDialog}
+          />
+        </Suspense>
+      ) : null}
 
-      {createTransactionDialog.mounted && (
-        <CreateTransactionDialog
-          workspaceId={createTransactionDialog.data.workspaceId}
-          open={createTransactionDialog.open}
-          onOpenChange={createTransactionDialog.closeDialog}
-          onCloseComplete={createTransactionDialog.unmountDialog}
-          defaultType={createTransactionDialog.data.defaultType}
-          account={createTransactionDialog.data.account}
-        />
-      )}
+      {createTransactionDialog.mounted ? (
+        <Suspense fallback={null}>
+          <CreateTransactionDialog
+            workspaceId={createTransactionDialog.data.workspaceId}
+            open={createTransactionDialog.open}
+            onOpenChange={createTransactionDialog.closeDialog}
+            onCloseComplete={createTransactionDialog.unmountDialog}
+            defaultType={createTransactionDialog.data.defaultType}
+            account={createTransactionDialog.data.account}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 }

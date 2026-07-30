@@ -56,13 +56,17 @@ export function CombinedTransactionsView({
               </div>
             ) : null}
             {group.items.map((item) => (
-              <CombinedTransactionItem
+              <div
                 key={getTransactionKey(item)}
-                item={item}
-                workspaceName={workspaceName}
-                onTransactionClick={onTransactionClick}
-                onDebtTransactionClick={onDebtTransactionClick}
-              />
+                className="[contain-intrinsic-size:auto_96px] [content-visibility:auto]"
+              >
+                <CombinedTransactionItem
+                  item={item}
+                  workspaceName={workspaceName}
+                  onTransactionClick={onTransactionClick}
+                  onDebtTransactionClick={onDebtTransactionClick}
+                />
+              </div>
             ))}
           </div>
         ))

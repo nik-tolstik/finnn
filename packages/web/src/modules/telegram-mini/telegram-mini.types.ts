@@ -13,8 +13,11 @@ type TelegramWebApp = {
   ready?: () => void;
 };
 
+export type TelegramMiniAppSdkLoadResult = "loaded" | "failed";
+
 declare global {
   interface Window {
+    __finnnTelegramMiniAppSdkReady?: Promise<TelegramMiniAppSdkLoadResult>;
     Telegram?: {
       WebApp?: TelegramWebApp;
     };

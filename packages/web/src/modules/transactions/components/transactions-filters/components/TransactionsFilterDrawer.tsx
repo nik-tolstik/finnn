@@ -36,6 +36,8 @@ interface TransactionsFilterDrawerProps {
   members: TransactionFilterMember[];
   categories: TransactionFilterCategory[];
   accounts: TransactionFilterAccount[];
+  isCategoriesLoading?: boolean;
+  isMembersLoading?: boolean;
   onApply: (filters: TransactionViewFilters) => void;
   onReset: () => void;
 }
@@ -47,6 +49,8 @@ export function TransactionsFilterDrawer({
   members,
   categories,
   accounts,
+  isCategoriesLoading = false,
+  isMembersLoading = false,
   onApply,
   onReset,
 }: TransactionsFilterDrawerProps) {
@@ -97,7 +101,7 @@ export function TransactionsFilterDrawer({
   );
 
   useEffect(() => {
-    if (!draftFilters.categoryIds?.length) {
+    if (isCategoriesLoading || !draftFilters.categoryIds?.length) {
       return;
     }
 
@@ -113,9 +117,9 @@ export function TransactionsFilterDrawer({
         categoryIds: nextCategoryIds,
       })
     );
-  }, [draftFilters.categoryIds, selectableCategoryIds]);
+  }, [draftFilters.categoryIds, isCategoriesLoading, selectableCategoryIds]);
 
-  const isCategorySelectDisabled = allowedCategoryTypes.length === 0;
+  const isCategorySelectDisabled = isCategoriesLoading || allowedCategoryTypes.length === 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -150,6 +154,7 @@ export function TransactionsFilterDrawer({
             <Select
               multiple
               allowClear
+              disabled={isMembersLoading}
               label="Пользователи"
               options={memberOptions}
               renderOption={({ option, selected, isTrigger }) => {
@@ -169,7 +174,7 @@ export function TransactionsFilterDrawer({
               onChange={(userIds) => {
                 updateDraftFilter("userIds", userIds);
               }}
-              placeholder="Все пользователи"
+              placeholder={isMembersLoading ? "Загрузка…" : "Все пользователи"}
             />
           </div>
 
@@ -217,7 +222,13 @@ export function TransactionsFilterDrawer({
               onChange={(categoryIds) => {
                 updateDraftFilter("categoryIds", categoryIds);
               }}
-              placeholder={isCategorySelectDisabled ? "Недоступно для выбранных типов" : "Все категории"}
+              placeholder={
+                isCategoriesLoading
+                  ? "Загрузка…"
+                  : isCategorySelectDisabled
+                    ? "Недоступно для выбранных типов"
+                    : "Все категории"
+              }
             />
           </div>
 

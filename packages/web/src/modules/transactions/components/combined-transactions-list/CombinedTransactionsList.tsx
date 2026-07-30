@@ -16,6 +16,7 @@ export function CombinedTransactionsList({
   const groups = useGroupedCombinedTransactions(transactions);
   const { workspaceName } = useCombinedTransactionsWorkspace({ workspaceId });
   const controller = useCombinedTransactionsController({ workspaceId });
+  const hasMountedDialog = Object.values(controller.dialogs).some((dialog) => dialog.mounted);
 
   return (
     <>
@@ -29,7 +30,7 @@ export function CombinedTransactionsList({
         onTransactionClick={controller.openTransactionActions}
         onDebtTransactionClick={controller.openDebtTransactionActions}
       />
-      <CombinedTransactionsDialogs controller={controller} />
+      {hasMountedDialog ? <CombinedTransactionsDialogs controller={controller} /> : null}
     </>
   );
 }

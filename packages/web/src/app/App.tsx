@@ -3,6 +3,13 @@ import { Navigate, Route, Routes } from "react-router";
 
 import { AppLoadingScreen } from "@/shared/components/app-loading-screen";
 
+import { preloadMatchedProtectedRoute } from "./protected-route-preload";
+
+function loadOnce<T>(loader: () => Promise<T>): () => Promise<T> {
+  let promise: Promise<T> | undefined;
+  return () => (promise ??= loader());
+}
+
 const HomeRoute = lazy(() => import("@/routes/HomeRoute"));
 const AuthLayout = lazy(() => import("@/routes/auth/AuthLayout"));
 const EmailRequiredRoute = lazy(() => import("@/routes/auth/EmailRequiredRoute"));
@@ -12,11 +19,25 @@ const LoginRoute = lazy(() => import("@/routes/auth/LoginRoute"));
 const RegisterRoute = lazy(() => import("@/routes/auth/RegisterRoute"));
 const ResetPasswordRoute = lazy(() => import("@/routes/auth/ResetPasswordRoute"));
 const VerifyEmailRoute = lazy(() => import("@/routes/auth/VerifyEmailRoute"));
-const DashboardLayout = lazy(() => import("@/routes/dashboard/DashboardLayout"));
-const AnalyticsRoute = lazy(() => import("@/routes/dashboard/analytics/AnalyticsRoute"));
-const DashboardRoute = lazy(() => import("@/routes/dashboard/dashboard/DashboardRoute"));
-const DebtsRoute = lazy(() => import("@/routes/dashboard/debts/DebtsRoute"));
-const PaymentsRoute = lazy(() => import("@/routes/dashboard/payments/PaymentsRoute"));
+const loadDashboardLayout = loadOnce(() => import("@/routes/dashboard/DashboardLayout"));
+const protectedRouteLoaders = {
+  analytics: loadOnce(() => import("@/routes/dashboard/analytics/AnalyticsRoute")),
+  dashboard: loadOnce(() => import("@/routes/dashboard/dashboard/DashboardRoute")),
+  debts: loadOnce(() => import("@/routes/dashboard/debts/DebtsRoute")),
+  payments: loadOnce(() => import("@/routes/dashboard/payments/PaymentsRoute")),
+};
+const DashboardLayout = lazy(() => {
+  const layoutPromise = loadDashboardLayout();
+  const routePromise = preloadMatchedProtectedRoute(window.location.pathname, protectedRouteLoaders);
+
+  return routePromise
+    ? Promise.all([layoutPromise, routePromise]).then(([layoutModule]) => layoutModule)
+    : layoutPromise;
+});
+const AnalyticsRoute = lazy(protectedRouteLoaders.analytics);
+const DashboardRoute = lazy(protectedRouteLoaders.dashboard);
+const DebtsRoute = lazy(protectedRouteLoaders.debts);
+const PaymentsRoute = lazy(protectedRouteLoaders.payments);
 
 export function App() {
   return (
