@@ -50,7 +50,8 @@ describe("logo assets", () => {
       type: "image/svg+xml",
       purpose: "any",
     });
-    expect(serviceWorker).toContain('const CACHE_NAME = "finnn-v4";');
-    expect(serviceWorker).toContain('"/logo-adaptive.svg"');
+    expect(serviceWorker).toContain('const CACHE_NAME = "finnn-assets-v5";');
+    expect(serviceWorker).toContain("HASHED_ASSET_PATH_PATTERN");
+    expect(serviceWorker).not.toContain('"/logo-adaptive.svg"');
   });
 });

@@ -61,18 +61,28 @@ function parsePreferences(value: string | null): AccountDisplayPreferences {
 }
 
 export function useAccountDisplayPreferences(workspaceId: string) {
-  const [preferences, setPreferences] = useState<AccountDisplayPreferences>(DEFAULT_ACCOUNT_DISPLAY_PREFERENCES);
-  const [loadedStorageKey, setLoadedStorageKey] = useState<string | null>(null);
   const storageKey = `${STORAGE_KEY_PREFIX}${workspaceId}`;
+  const [preferences, setPreferences] = useState<AccountDisplayPreferences>(() => {
+    try {
+      return parsePreferences(window.localStorage.getItem(storageKey));
+    } catch {
+      return DEFAULT_ACCOUNT_DISPLAY_PREFERENCES;
+    }
+  });
+  const [loadedStorageKey, setLoadedStorageKey] = useState(storageKey);
 
   useEffect(() => {
+    if (loadedStorageKey === storageKey) {
+      return;
+    }
+
     try {
       setPreferences(parsePreferences(window.localStorage.getItem(storageKey)));
     } catch {
       setPreferences(DEFAULT_ACCOUNT_DISPLAY_PREFERENCES);
     }
     setLoadedStorageKey(storageKey);
-  }, [storageKey]);
+  }, [loadedStorageKey, storageKey]);
 
   useEffect(() => {
     if (loadedStorageKey !== storageKey) {

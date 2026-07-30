@@ -18,6 +18,12 @@ function ThemeClassSync() {
 
   useLayoutEffect(() => {
     const root = document.documentElement;
+    const themeAlreadyApplied = root.classList.contains(resolvedTheme) && root.style.colorScheme === resolvedTheme;
+
+    if (themeAlreadyApplied) {
+      return;
+    }
+
     const transitionBlocker = document.createElement("style");
     transitionBlocker.textContent = "*,*::before,*::after{transition:none!important}";
     document.head.appendChild(transitionBlocker);

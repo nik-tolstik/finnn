@@ -1,10 +1,8 @@
 import { LogOut, PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
 
-import { CategorySettingsDialog } from "@/modules/accounts/components/category-settings-dialog";
 import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
-import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
 import { useSession, useSignOut } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
@@ -15,6 +13,15 @@ import { useUIStore } from "@/stores/ui-store";
 import { CurrencyFlag, DashboardExchangeRatesList, useDashboardExchangeRates } from "./dashboard-exchange-rates";
 import { DASHBOARD_NAV_ITEMS } from "./dashboard-nav";
 import { WorkspaceDropdown } from "./WorkspaceDropdown";
+
+const UserSettingsDialog = lazy(() =>
+  import("@/modules/auth/components/user-settings-dialog").then((module) => ({ default: module.UserSettingsDialog }))
+);
+const CategorySettingsDialog = lazy(() =>
+  import("@/modules/accounts/components/category-settings-dialog").then((module) => ({
+    default: module.CategorySettingsDialog,
+  }))
+);
 
 function getDisplayName(session: ReturnType<typeof useSession>["data"]) {
   const telegramName = session?.user?.telegram.username
@@ -48,7 +55,9 @@ export function Sidebar() {
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
   const [categorySettingsDialogOpen, setCategorySettingsDialogOpen] = useState(false);
+  const [categorySettingsDialogMounted, setCategorySettingsDialogMounted] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [settingsDialogMounted, setSettingsDialogMounted] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { pathname } = useLocation();
@@ -62,6 +71,14 @@ export function Sidebar() {
     shouldRender: shouldRenderExchangeRates,
   } = useDashboardExchangeRates(workspaceId);
   const shouldShowExchangeRates = isExchangeRatesLoading || shouldRenderExchangeRates;
+  const openCategorySettingsDialog = () => {
+    setCategorySettingsDialogMounted(true);
+    setCategorySettingsDialogOpen(true);
+  };
+  const openUserSettingsDialog = () => {
+    setSettingsDialogMounted(true);
+    setSettingsDialogOpen(true);
+  };
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/login" });
   };
@@ -176,7 +193,7 @@ export function Sidebar() {
               className={cn(sidebarOpen ? "w-full justify-start" : "mx-auto")}
               collapsed={!sidebarOpen}
               currentWorkspaceId={workspaceId}
-              onCategorySettingsOpen={() => setCategorySettingsDialogOpen(true)}
+              onCategorySettingsOpen={openCategorySettingsDialog}
               placement={sidebarOpen ? "bottom-start" : "right-start"}
             />
           </div>
@@ -251,7 +268,7 @@ export function Sidebar() {
                     type="button"
                     onClick={() => {
                       setUserMenuOpen(false);
-                      setSettingsDialogOpen(true);
+                      openUserSettingsDialog();
                     }}
                     className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
@@ -281,14 +298,20 @@ export function Sidebar() {
         </div>
       </aside>
 
-      <UserSettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
-      {workspaceId && (
-        <CategorySettingsDialog
-          workspaceId={workspaceId}
-          open={categorySettingsDialogOpen}
-          onOpenChange={setCategorySettingsDialogOpen}
-        />
-      )}
+      {settingsDialogMounted ? (
+        <Suspense fallback={null}>
+          <UserSettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
+        </Suspense>
+      ) : null}
+      {workspaceId && categorySettingsDialogMounted ? (
+        <Suspense fallback={null}>
+          <CategorySettingsDialog
+            workspaceId={workspaceId}
+            open={categorySettingsDialogOpen}
+            onOpenChange={setCategorySettingsDialogOpen}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 }

@@ -36,7 +36,25 @@
         document.documentElement.style.colorScheme = theme;
       })();
     </script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      (() => {
+        const launchParams = new URLSearchParams(
+          `${window.location.search.slice(1)}&${window.location.hash.slice(1)}`
+        );
+        const isTelegramMiniApp = launchParams.has("tgWebAppData") || launchParams.has("tgWebAppVersion");
+
+        if (!isTelegramMiniApp) return;
+
+        window.__finnnTelegramMiniAppSdkReady = new Promise((resolve) => {
+          const script = document.createElement("script");
+          script.src = "https://telegram.org/js/telegram-web-app.js";
+          script.async = true;
+          script.onload = () => resolve("loaded");
+          script.onerror = () => resolve("failed");
+          document.head.appendChild(script);
+        });
+      })();
+    </script>
   </head>
   <body class="font-sans antialiased">
     <div id="root"></div>

@@ -1,37 +1,54 @@
-import { ChevronRight, LogOut } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useSearchParams } from "react-router";
 
-import { CategorySettingsDialog } from "@/modules/accounts/components/category-settings-dialog";
-import { AppearanceSettings } from "@/modules/auth/components/appearance-settings";
-import { UserSettingsDialog } from "@/modules/auth/components/user-settings-dialog";
 import { UserAvatar } from "@/shared/components/UserAvatar";
-import { useSession, useSignOut } from "@/shared/lib/api-session";
+import { useSession } from "@/shared/lib/api-session";
 import { Button } from "@/shared/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/ui/sheet";
-import { cn } from "@/shared/utils/cn";
 
-import { WorkspaceDropdown } from "./WorkspaceDropdown";
+const MobileUserMenuContent = lazy(() =>
+  import("./MobileUserMenuContent").then((module) => ({ default: module.MobileUserMenuContent }))
+);
+const UserSettingsDialog = lazy(() =>
+  import("@/modules/auth/components/user-settings-dialog").then((module) => ({ default: module.UserSettingsDialog }))
+);
+const CategorySettingsDialog = lazy(() =>
+  import("@/modules/accounts/components/category-settings-dialog").then((module) => ({
+    default: module.CategorySettingsDialog,
+  }))
+);
+
+function MenuContentFallback() {
+  return (
+    <div aria-hidden="true" className="space-y-4 px-4 pt-6">
+      <div className="h-16 rounded-lg bg-muted animate-pulse" />
+      <div className="h-32 rounded-lg bg-muted animate-pulse" />
+    </div>
+  );
+}
 
 export function MobileUserMenu() {
   const { data: session } = useSession();
-  const signOut = useSignOut();
   const [open, setOpen] = useState(false);
   const [categorySettingsDialogOpen, setCategorySettingsDialogOpen] = useState(false);
+  const [categorySettingsDialogMounted, setCategorySettingsDialogMounted] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [settingsDialogMounted, setSettingsDialogMounted] = useState(false);
   const [searchParams] = useSearchParams();
   const workspaceId = searchParams.get("workspaceId") || undefined;
-
-  const handleLogout = async () => {
-    setOpen(false);
-    await signOut({ callbackUrl: "/login" });
-  };
 
   const telegramName = session?.user?.telegram.username
     ? `@${session.user.telegram.username}`
     : session?.user?.telegram.displayName;
-  const displayName = session?.user?.name || session?.user?.email || telegramName || "User";
   const email = session?.user?.email;
+  const openCategorySettingsDialog = () => {
+    setCategorySettingsDialogMounted(true);
+    setCategorySettingsDialogOpen(true);
+  };
+  const openUserSettingsDialog = () => {
+    setSettingsDialogMounted(true);
+    setSettingsDialogOpen(true);
+  };
 
   return (
     <>
@@ -40,77 +57,42 @@ export function MobileUserMenu() {
           variant="ghost"
           size="icon"
           aria-label="Открыть меню пользователя"
-          className="md:hidden p-0 size-9 rounded-full"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          className="p-0 size-9 rounded-full"
           onClick={() => setOpen(true)}
         >
           <UserAvatar name={session?.user?.name || telegramName} email={email} image={session?.user?.image} size="lg" />
         </Button>
         <SheetContent side="right" showCloseButton={false} className="w-[calc(100vw-48px)] max-w-sm p-0">
           <SheetTitle className="sr-only">Меню пользователя</SheetTitle>
-          <div className="flex h-full flex-col">
-            <div className="px-4 mt-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setSettingsDialogOpen(true);
-                }}
-                className="flex w-full items-center gap-3 rounded-lg bg-card p-3 text-left text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              >
-                <UserAvatar
-                  name={session?.user?.name || telegramName}
-                  email={email}
-                  image={session?.user?.image}
-                  size="lg"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{displayName}</div>
-                  {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
-                </div>
-                <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
-              </button>
-            </div>
-
-            <div className="px-4 mt-4">
-              <WorkspaceDropdown
-                currentWorkspaceId={workspaceId}
-                onCategorySettingsOpen={() => {
-                  setOpen(false);
-                  setCategorySettingsDialogOpen(true);
-                }}
-                variant="list"
-                onWorkspaceSelect={() => setOpen(false)}
+          {open ? (
+            <Suspense fallback={<MenuContentFallback />}>
+              <MobileUserMenuContent
+                workspaceId={workspaceId}
+                onMenuOpenChange={setOpen}
+                onUserSettingsOpen={openUserSettingsDialog}
+                onCategorySettingsOpen={openCategorySettingsDialog}
               />
-            </div>
-
-            <div className="px-4 mt-6">
-              <AppearanceSettings title="Интерфейс" className="space-y-3" />
-            </div>
-
-            <div className="mt-auto border-t p-4 space-y-1">
-              <button
-                type="button"
-                onClick={() => {
-                  void handleLogout();
-                }}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10"
-                )}
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Выйти</span>
-              </button>
-            </div>
-          </div>
+            </Suspense>
+          ) : null}
         </SheetContent>
       </Sheet>
-      <UserSettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
-      {workspaceId && (
-        <CategorySettingsDialog
-          workspaceId={workspaceId}
-          open={categorySettingsDialogOpen}
-          onOpenChange={setCategorySettingsDialogOpen}
-        />
-      )}
+      {settingsDialogMounted ? (
+        <Suspense fallback={null}>
+          <UserSettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
+        </Suspense>
+      ) : null}
+      {workspaceId &&
+        (categorySettingsDialogMounted ? (
+          <Suspense fallback={null}>
+            <CategorySettingsDialog
+              workspaceId={workspaceId}
+              open={categorySettingsDialogOpen}
+              onOpenChange={setCategorySettingsDialogOpen}
+            />
+          </Suspense>
+        ) : null)}
     </>
   );
 }

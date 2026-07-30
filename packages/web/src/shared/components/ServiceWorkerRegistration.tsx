@@ -3,6 +3,8 @@ import { useEffect } from "react";
 export function ServiceWorkerRegistration() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
+      const hadController = Boolean(navigator.serviceWorker.controller);
+
       navigator.serviceWorker
         .register("/sw.js", { updateViaCache: "none" })
         .then((registration) => {
@@ -31,7 +33,7 @@ export function ServiceWorkerRegistration() {
 
       let refreshing = false;
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!refreshing) {
+        if (hadController && !refreshing) {
           refreshing = true;
           window.location.reload();
         }

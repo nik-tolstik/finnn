@@ -36,6 +36,10 @@ describe("SPA shell", () => {
     const vercelConfig = JSON.parse(readProjectFile("vercel.json")) as {
       framework?: string;
       outputDirectory?: string;
+      headers?: Array<{
+        source: string;
+        headers: Array<{ key: string; value: string }>;
+      }>;
       rewrites?: Array<{ source: string; destination: string }>;
     };
 
@@ -43,6 +47,10 @@ describe("SPA shell", () => {
     expect(htmlEntry).toContain('<script type="module" src="/src/main.tsx"></script>');
     expect(htmlEntry).toContain('window.localStorage.getItem("theme")');
     expect(htmlEntry).toContain('window.matchMedia("(prefers-color-scheme: dark)")');
+    expect(htmlEntry).not.toContain('<script src="https://telegram.org/js/telegram-web-app.js"></script>');
+    expect(htmlEntry).toContain('script.src = "https://telegram.org/js/telegram-web-app.js"');
+    expect(htmlEntry).toContain('launchParams.has("tgWebAppData")');
+    expect(htmlEntry).toContain("script.async = true");
     expect(mainSource).toContain("<BrowserRouter>");
     expect(mainSource).toContain('window.addEventListener("vite:preloadError"');
     expect(mainSource).toContain("event.preventDefault()");
@@ -53,6 +61,12 @@ describe("SPA shell", () => {
     expect(viteConfig).toContain('"!src/**/*.stories.{ts,tsx}"');
     expect(vercelConfig.framework).toBe("vite");
     expect(vercelConfig.outputDirectory).toBe("dist");
+    expect(vercelConfig.headers).toEqual([
+      {
+        source: "/assets/(.*)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ]);
     expect(vercelConfig.rewrites).toEqual([{ source: "/(.*)", destination: "/index.html" }]);
   });
 });
