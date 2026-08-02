@@ -90,10 +90,6 @@ export function getPreviewDebtTransactionAccount<TAccount extends { id: string; 
   });
   const nextBalance = addMoney(selectedAccount.balance, subtractMoney(nextBalanceDelta, oldBalanceDelta));
 
-  if (compareMoney(nextBalance, "0") < 0) {
-    return selectedAccount;
-  }
-
   return {
     ...selectedAccount,
     balance: nextBalance,

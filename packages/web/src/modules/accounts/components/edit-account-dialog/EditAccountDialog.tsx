@@ -205,6 +205,7 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
                   id="initialBalance"
                   placeholder="0.00"
                   className="pl-9"
+                  allowNegative
                   {...register("initialBalance")}
                   aria-invalid={errors.initialBalance ? "true" : "false"}
                 />

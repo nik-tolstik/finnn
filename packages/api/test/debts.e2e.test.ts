@@ -336,6 +336,30 @@ describe("Debts API", () => {
     });
   });
 
+  it("creates account-backed debts that make the account balance negative", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ balance: "20" }));
+
+    await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/debts")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        type: "lent",
+        personName: "Grace",
+        amount: "40",
+        currency: "BYN",
+        date: "2026-05-26T12:00:00.000Z",
+        useAccount: true,
+        accountId: "account-1",
+      })
+      .expect(201);
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-20" },
+      where: { id: "account-1" },
+    });
+  });
+
   it("rejects debt creation without the required debt currency", async () => {
     mockAuthenticatedSession(prisma);
 
@@ -390,6 +414,28 @@ describe("Debts API", () => {
     );
     expect(prisma.account.update).toHaveBeenCalledWith({
       data: { balance: "195" },
+      where: { id: "account-1" },
+    });
+  });
+
+  it("closes a borrowed debt when repayment makes the account balance negative", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.debt.findUnique.mockResolvedValue(createDebtRecord({ type: "borrowed" }));
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ balance: "10" }));
+
+    await request(app.getHttpServer())
+      .post("/debts/debt-1/close")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "30",
+        paymentAmount: "30",
+        accountId: "account-1",
+        useAccount: true,
+      })
+      .expect(200);
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-20" },
       where: { id: "account-1" },
     });
   });
@@ -618,6 +664,23 @@ describe("Debts API", () => {
     );
   });
 
+  it("adds to a lent debt when the account balance becomes negative", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ balance: "10" }));
+    prisma.debt.update.mockResolvedValue(createDebtRecord({ amount: "120", remainingAmount: "110" }));
+
+    await request(app.getHttpServer())
+      .post("/debts/debt-1/add")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ amount: "20", useAccount: true, accountId: "account-1" })
+      .expect(200);
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-10" },
+      where: { id: "account-1" },
+    });
+  });
+
   it("adds to open debts without an account", async () => {
     mockAuthenticatedSession(prisma);
     prisma.debt.update.mockResolvedValue(createDebtRecord({ amount: "120", remainingAmount: "110" }));
@@ -761,6 +824,32 @@ describe("Debts API", () => {
         data: expect.objectContaining({ remainingAmount: "80" }),
       })
     );
+  });
+
+  it("reconciles a debt transaction when the resulting account balance becomes negative", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.debtTransaction.findUnique.mockResolvedValue(
+      createDebtTransactionRecord({
+        amount: "10",
+        debt: createDebtRecord({ type: "borrowed" }),
+      })
+    );
+    prisma.account.findMany.mockResolvedValue([createAccountRecord({ balance: "10" })]);
+
+    await request(app.getHttpServer())
+      .patch("/debt-transactions/debt-transaction-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "30",
+        accountId: "account-1",
+        date: "2026-05-27T12:00:00.000Z",
+      })
+      .expect(200);
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-10" },
+      where: { id: "account-1" },
+    });
   });
 
   it("updates a linked write-off using the original amount as part of the maximum", async () => {

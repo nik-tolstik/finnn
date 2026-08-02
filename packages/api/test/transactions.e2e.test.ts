@@ -7,6 +7,7 @@ import { AUTH_COOKIE_NAME } from "../src/auth/session-cookie";
 import { configureApp } from "../src/main";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { TransactionsModule } from "../src/transactions/transactions.module";
+import { TransactionsService } from "../src/transactions/transactions.service";
 
 type MockPrisma = {
   $transaction: ReturnType<typeof vi.fn>;
@@ -229,6 +230,7 @@ function mockAuthenticatedSession(prisma: MockPrisma) {
 describe("Transactions API", () => {
   let app: INestApplication;
   let prisma: MockPrisma;
+  let transactions: TransactionsService;
 
   beforeAll(async () => {
     prisma = createPrismaMock();
@@ -239,6 +241,8 @@ describe("Transactions API", () => {
       .overrideProvider(PrismaService)
       .useValue(prisma)
       .compile();
+
+    transactions = moduleRef.get(TransactionsService);
 
     app = configureApp(moduleRef.createNestApplication(), {
       API_COOKIE_SAME_SITE: "lax",
@@ -449,10 +453,10 @@ describe("Transactions API", () => {
     });
   });
 
-  it("rejects payment expenses above account balance", async () => {
+  it("creates payment expenses that make the account balance negative", async () => {
     mockAuthenticatedSession(prisma);
 
-    const response = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post("/workspaces/workspace-1/payment-transactions")
       .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
       .send({
@@ -461,10 +465,40 @@ describe("Transactions API", () => {
         type: "expense",
         date: "2026-05-26T12:00:00.000Z",
       })
-      .expect(400);
+      .expect(201);
 
-    expect(response.body.message).toBe("Сумма не может превышать баланс счёта «Main card» (100)");
-    expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
+    expect(prisma.paymentTransaction.create).toHaveBeenCalled();
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-25" },
+      where: { id: "account-1" },
+    });
+  });
+
+  it("applies cumulative batch expenses below zero", async () => {
+    await transactions.createPaymentTransactionsBatch(
+      "workspace-1",
+      [
+        {
+          accountId: "account-1",
+          amount: "60",
+          type: "expense",
+          date: new Date("2026-05-26T12:00:00.000Z"),
+        },
+        {
+          accountId: "account-1",
+          amount: "60",
+          type: "expense",
+          date: new Date("2026-05-26T13:00:00.000Z"),
+        },
+      ],
+      { ...currentUser, emailVerified: currentUser.emailVerified.toISOString() }
+    );
+
+    expect(prisma.paymentTransaction.create).toHaveBeenCalledTimes(2);
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-20" },
+      where: { id: "account-1" },
+    });
   });
 
   it("rejects payment transactions for archived accounts", async () => {
@@ -558,6 +592,49 @@ describe("Transactions API", () => {
         }),
       })
     );
+  });
+
+  it("updates an expense so the account balance becomes negative", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findUnique.mockResolvedValue(
+      createPaymentTransactionRecord({ account: createAccountRecord({ balance: "75" }) })
+    );
+    prisma.account.findUnique.mockResolvedValue(createAccountRecord({ balance: "75" }));
+
+    await request(app.getHttpServer())
+      .patch("/payment-transactions/payment-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ amount: "125" })
+      .expect(200);
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-25" },
+      where: { id: "account-1" },
+    });
+  });
+
+  it("moves an expense to an account even when its balance becomes negative", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findUnique.mockResolvedValue(
+      createPaymentTransactionRecord({ account: createAccountRecord({ balance: "75" }) })
+    );
+    prisma.account.findUnique.mockResolvedValue(createAccountRecord({ balance: "75" }));
+    prisma.account.findFirst.mockResolvedValue(createAccountRecord({ id: "account-2", balance: "50" }));
+
+    await request(app.getHttpServer())
+      .patch("/payment-transactions/payment-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({ accountId: "account-2", amount: "60" })
+      .expect(200);
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "100" },
+      where: { id: "account-1" },
+    });
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-10" },
+      where: { id: "account-2" },
+    });
   });
 
   it("rejects payment transaction category updates outside the workspace or type", async () => {
@@ -663,6 +740,67 @@ describe("Transactions API", () => {
     });
     expect(prisma.account.update).toHaveBeenCalledWith({
       data: { balance: "39" },
+      where: { id: "account-2" },
+    });
+  });
+
+  it("creates transfers that make the source account balance negative", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst
+      .mockResolvedValueOnce(createAccountRecord({ id: "account-1", balance: "15" }))
+      .mockResolvedValueOnce(createAccountRecord({ id: "account-2", balance: "10" }));
+
+    await request(app.getHttpServer())
+      .post("/workspaces/workspace-1/transfers")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        fromAccountId: "account-1",
+        toAccountId: "account-2",
+        amount: "20",
+        toAmount: "20",
+        date: "2026-05-26T13:00:00.000Z",
+      })
+      .expect(201);
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-5" },
+      where: { id: "account-1" },
+    });
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "30" },
+      where: { id: "account-2" },
+    });
+  });
+
+  it("updates transfers even when the restored source balance becomes negative", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.account.findFirst
+      .mockResolvedValueOnce(createAccountRecord({ id: "account-1" }))
+      .mockResolvedValueOnce(createAccountRecord({ id: "account-2" }));
+    prisma.account.findUnique
+      .mockResolvedValueOnce({ balance: "70" })
+      .mockResolvedValueOnce({ balance: "39" })
+      .mockResolvedValueOnce({ balance: "100", name: "Main card" })
+      .mockResolvedValueOnce({ balance: "10" });
+
+    await request(app.getHttpServer())
+      .patch("/transfers/transfer-1")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        fromAccountId: "account-1",
+        toAccountId: "account-2",
+        amount: "125",
+        toAmount: "100",
+        date: "2026-05-26T13:00:00.000Z",
+      })
+      .expect(200);
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "-25" },
+      where: { id: "account-1" },
+    });
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      data: { balance: "110" },
       where: { id: "account-2" },
     });
   });

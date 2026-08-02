@@ -1,3 +1,5 @@
+import type { UseFormSetValue } from "react-hook-form";
+
 import type { Account } from "@/modules/accounts/account.types";
 import type { Category } from "@/modules/categories/category.types";
 import { applyPaymentTransactionBalance } from "@/shared/lib/balance-domain";
@@ -15,6 +17,19 @@ export type CreateTransactionMode =
   | PaymentTransactionType.INCOME
   | PaymentTransactionType.EXPENSE
   | typeof TRANSFER_TRANSACTION_MODE;
+
+export function applyPaymentTypeChange(
+  currentType: string,
+  nextType: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE,
+  setValue: UseFormSetValue<CreatePaymentTransactionInput>
+) {
+  if (currentType !== nextType) {
+    setValue("categoryId", undefined, { shouldValidate: true });
+    setValue("newCategory", undefined, { shouldValidate: true });
+  }
+
+  setValue("type", nextType, { shouldValidate: true });
+}
 
 type AccountOption = Account | (Partial<Account> & { id: string });
 

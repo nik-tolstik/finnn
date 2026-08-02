@@ -12,7 +12,11 @@ import { PaymentTransactionType } from "@/modules/transactions/transaction.const
 import { AccountSelector } from "@/shared/components/AccountSelector";
 import { CategorySelectModal } from "@/shared/components/CategorySelectModal";
 import { CategoryIcon } from "@/shared/components/category-icon";
-import { addAccountBalanceDelta, getPaymentTransactionBalanceDelta } from "@/shared/lib/balance-domain";
+import {
+  addAccountBalanceDelta,
+  getPaymentTransactionBalanceDelta,
+  shouldWarnAboutNegativeExpenseBalance,
+} from "@/shared/lib/balance-domain";
 import {
   runOptimisticWorkspaceMutation,
   updateAccountBalancesInCache,
@@ -23,6 +27,7 @@ import {
   type UpdatePaymentTransactionInput,
   updatePaymentTransactionSchema,
 } from "@/shared/lib/validations/transaction";
+import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
@@ -30,7 +35,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogW
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
-import { compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { updatePaymentTransaction } from "../../transaction.api";
 import type { CombinedTransaction, PaymentTransactionWithRelations, TransactionUser } from "../../transaction.types";
@@ -62,8 +67,6 @@ export function EditTransactionDialog({
     handleSubmit,
     formState: { errors, isSubmitting, isValid },
     setValue,
-    setError,
-    clearErrors,
     control,
   } = useForm<UpdatePaymentTransactionInput>({
     resolver: zodResolver(updatePaymentTransactionSchema),
@@ -131,6 +134,12 @@ export function EditTransactionDialog({
   const previewAccount = useMemo(() => {
     return getEditPaymentPreviewAccount(selectedAccount, transaction, amount);
   }, [selectedAccount, amount, transaction]);
+  const showNegativeBalanceWarning = shouldWarnAboutNegativeExpenseBalance(
+    transaction.type,
+    amount,
+    selectedAccount?.balance,
+    previewAccount?.balance
+  );
 
   const onSubmit = async (data: UpdatePaymentTransactionInput) => {
     onOpenChange(false);
@@ -242,44 +251,13 @@ export function EditTransactionDialog({
                 <NumberInput
                   id="amount"
                   placeholder="0.00"
-                  className={selectedAccount ? "pl-9 pr-12" : "pr-12"}
+                  className={selectedAccount ? "pl-9 pr-20" : "pr-20"}
                   {...register("amount", {
                     onChange: (e) => {
                       const value = e.target.value;
                       if (value && parseFloat(value) < 0) {
                         e.target.value = "";
                       }
-                      if (
-                        selectedAccount &&
-                        transaction.type === PaymentTransactionType.EXPENSE &&
-                        value &&
-                        accountBalanceBeforeTransaction
-                      ) {
-                        const amount = parseFloat(value);
-                        if (!Number.isNaN(amount) && compareMoney(amount, accountBalanceBeforeTransaction) > 0) {
-                          setError("amount", {
-                            type: "manual",
-                            message: `Сумма не может превышать баланс счёта (${accountBalanceBeforeTransaction})`,
-                          });
-                        } else {
-                          clearErrors("amount");
-                        }
-                      }
-                    },
-                    validate: (value) => {
-                      if (
-                        !selectedAccount ||
-                        transaction.type !== PaymentTransactionType.EXPENSE ||
-                        !value ||
-                        !accountBalanceBeforeTransaction
-                      )
-                        return true;
-                      const amount = parseFloat(value);
-                      if (Number.isNaN(amount)) return true;
-                      if (compareMoney(amount, accountBalanceBeforeTransaction) > 0) {
-                        return `Сумма не может превышать баланс счёта (${accountBalanceBeforeTransaction})`;
-                      }
-                      return true;
                     },
                   })}
                   aria-invalid={errors.amount ? "true" : "false"}
@@ -300,11 +278,16 @@ export function EditTransactionDialog({
                         });
                       }}
                     >
-                      Max
+                      Баланс
                     </Button>
                   )}
               </div>
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+              {showNegativeBalanceWarning && previewAccount && (
+                <Alert status="warning">
+                  Баланс счёта будет отрицательным: {formatMoney(previewAccount.balance, selectedAccount?.currency)}.
+                </Alert>
+              )}
             </div>
 
             <div className="space-y-2">

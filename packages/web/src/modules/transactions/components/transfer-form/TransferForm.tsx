@@ -16,7 +16,7 @@ import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
 import { cn } from "@/shared/utils/cn";
-import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { addMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 type TransferFormData = CreateTransferTransactionInput | UpdateTransferTransactionInput;
 
@@ -126,36 +126,14 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
           <NumberInput
             id="amount"
             placeholder="0.00"
-            className={cn(fromAccount ? "pl-9 pr-12" : "pr-12", "min-w-0 w-full")}
+            className={cn(fromAccount ? "pl-9 pr-20" : "pr-20", "min-w-0 w-full")}
             {...form.register("amount", {
               onChange: (e) => {
                 const value = e.target.value;
                 if (value && parseFloat(value) < 0) {
                   e.target.value = "";
                 }
-                if (fromAccount && value) {
-                  const amountValue = parseFloat(value);
-                  const balanceToCheck = fromAccountBalanceBeforeTransfer || fromAccount.balance;
-                  if (!Number.isNaN(amountValue) && compareMoney(amountValue, balanceToCheck) > 0) {
-                    form.setError("amount", {
-                      type: "manual",
-                      message: `Сумма не может превышать баланс счёта (${balanceToCheck})`,
-                    });
-                  } else {
-                    form.clearErrors("amount");
-                  }
-                }
                 handleAmountChange(value);
-              },
-              validate: (value) => {
-                if (!fromAccount || !value) return true;
-                const amountValue = parseFloat(value);
-                if (Number.isNaN(amountValue)) return true;
-                const balanceToCheck = fromAccountBalanceBeforeTransfer || fromAccount.balance;
-                if (compareMoney(amountValue, balanceToCheck) > 0) {
-                  return `Сумма не может превышать баланс счёта (${balanceToCheck})`;
-                }
-                return true;
               },
             })}
             aria-invalid={form.formState.errors.amount ? "true" : "false"}
@@ -167,12 +145,12 @@ export function TransferForm({ workspaceId, form, accounts, onSubmit, originalAm
               size="sm"
               className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs shrink-0"
               onClick={() => {
-                const maxAmount = fromAccountBalanceBeforeTransfer || fromAccount.balance;
-                form.setValue("amount", maxAmount, { shouldValidate: true, shouldTouch: true });
-                handleAmountChange(maxAmount);
+                const balanceAmount = fromAccountBalanceBeforeTransfer || fromAccount.balance;
+                form.setValue("amount", balanceAmount, { shouldValidate: true, shouldTouch: true });
+                handleAmountChange(balanceAmount);
               }}
             >
-              Max
+              Баланс
             </Button>
           )}
         </div>
