@@ -26,6 +26,7 @@ import { cn } from "@/shared/utils/cn";
 import { getCurrencySymbol } from "@/shared/utils/money";
 
 import { createAccount } from "../../account.api";
+import { getCreateAccountPreviewBalance } from "./create-account-dialog.utils";
 
 const DEFAULT_ACCOUNT_COLOR = "#3b82f6";
 
@@ -114,6 +115,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
   const selectedIcon = useWatch({ control, name: "icon" });
   const accountName = useWatch({ control, name: "name" });
   const initialBalance = useWatch({ control, name: "initialBalance" });
+  const previewBalance = getCreateAccountPreviewBalance(initialBalance);
 
   useEffect(() => {
     if (open && currentUserId) {
@@ -208,8 +210,8 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                 id: "",
                 workspaceId,
                 name: accountName || "",
-                balance: initialBalance || "0",
-                initialBalance: initialBalance || "0",
+                balance: previewBalance,
+                initialBalance: previewBalance,
                 currency: currency || Currency.USD,
                 color: selectedColor || DEFAULT_ACCOUNT_COLOR,
                 icon: selectedIcon || "Wallet",
@@ -265,6 +267,7 @@ export function CreateAccountDialog({ workspaceId, open, onOpenChange, onCloseCo
                   id="initialBalance"
                   placeholder="0.00"
                   className="pl-9"
+                  allowNegative
                   {...register("initialBalance")}
                   aria-invalid={errors.initialBalance ? "true" : "false"}
                 />

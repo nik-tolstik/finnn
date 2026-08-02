@@ -20,6 +20,7 @@ import {
   addAccountBalanceDelta,
   getPaymentTransactionBalanceDelta,
   getTransferTransactionBalanceDeltas,
+  shouldWarnAboutNegativeExpenseBalance,
 } from "@/shared/lib/balance-domain";
 import {
   insertTransactionsInCache,
@@ -34,6 +35,7 @@ import {
   createPaymentTransactionSchema,
   createTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
+import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
@@ -42,13 +44,14 @@ import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Segmented } from "@/shared/ui/segmented";
 import { Textarea } from "@/shared/ui/textarea";
-import { compareMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { formatMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { createPaymentTransaction, createTransferTransaction } from "../../transaction.api";
 import { PaymentTransactionType } from "../../transaction.constants";
 import type { CombinedTransaction, TransactionAccountWithOwner, TransactionUser } from "../../transaction.types";
 import { TransferForm } from "../transfer-form/TransferForm";
 import {
+  applyPaymentTypeChange,
   type CreateTransactionMode,
   getCategoryOptions,
   getCreatePaymentDefaultValues,
@@ -145,8 +148,6 @@ export function CreateTransactionDialog({
     formState: { errors, isSubmitting, isValid },
     reset,
     setValue,
-    setError,
-    clearErrors,
     control,
   } = useForm<CreatePaymentTransactionInput>({
     resolver: zodResolver(createPaymentTransactionSchema),
@@ -180,11 +181,21 @@ export function CreateTransactionDialog({
     () => resolveSelectedAccount({ accountProp, accounts: accountsData?.data, accountId, fallbackAccount: account }),
     [accountProp, accountsData?.data, accountId, account]
   );
+  const currentAccount = selectedAccount || account;
 
   const previewAccount = useMemo(() => {
-    const currentAccount = selectedAccount || account;
     return getPreviewPaymentAccount(currentAccount, transactionType, amount);
-  }, [selectedAccount, account, amount, transactionType]);
+  }, [currentAccount, amount, transactionType]);
+  const previewBalance =
+    previewAccount && "balance" in previewAccount && previewAccount.balance !== undefined
+      ? previewAccount.balance
+      : undefined;
+  const showNegativeBalanceWarning = shouldWarnAboutNegativeExpenseBalance(
+    transactionType,
+    amount,
+    currentAccount?.balance,
+    previewBalance
+  );
 
   const { data: categoriesData } = useQuery({
     queryKey: categoryKeys.list(workspaceId),
@@ -473,7 +484,7 @@ export function CreateTransactionDialog({
       return;
     }
 
-    setValue("type", value);
+    applyPaymentTypeChange(transactionType, value, setValue);
   };
 
   const handleCategorySelect = (option: ComboboxOption) => {
@@ -608,7 +619,7 @@ export function CreateTransactionDialog({
                       <NumberInput
                         id="amount"
                         placeholder="0.00"
-                        className="pl-9 pr-12"
+                        className="pl-9 pr-20"
                         autoComplete="off"
                         {...register("amount", {
                           onChange: (e) => {
@@ -616,40 +627,6 @@ export function CreateTransactionDialog({
                             if (value && parseFloat(value) < 0) {
                               e.target.value = "";
                             }
-                            const currentAccount = selectedAccount || account;
-                            if (
-                              currentAccount &&
-                              "balance" in currentAccount &&
-                              currentAccount.balance &&
-                              transactionType === PaymentTransactionType.EXPENSE &&
-                              value
-                            ) {
-                              const amount = parseFloat(value);
-                              if (!Number.isNaN(amount) && compareMoney(amount, currentAccount.balance) > 0) {
-                                setError("amount", {
-                                  type: "manual",
-                                  message: `Сумма не может превышать баланс счёта (${currentAccount.balance})`,
-                                });
-                              } else {
-                                clearErrors("amount");
-                              }
-                            }
-                          },
-                          validate: (value) => {
-                            const currentAccount = selectedAccount || account;
-                            if (
-                              !currentAccount ||
-                              !("balance" in currentAccount) ||
-                              !currentAccount.balance ||
-                              transactionType !== PaymentTransactionType.EXPENSE
-                            )
-                              return true;
-                            const amount = parseFloat(value);
-                            if (Number.isNaN(amount)) return true;
-                            if (compareMoney(amount, currentAccount.balance) > 0) {
-                              return `Сумма не может превышать баланс счёта (${currentAccount.balance})`;
-                            }
-                            return true;
                           },
                         })}
                         aria-invalid={errors.amount ? "true" : "false"}
@@ -667,11 +644,17 @@ export function CreateTransactionDialog({
                               setValue("amount", selectedAccount.balance, { shouldValidate: true, shouldTouch: true });
                             }}
                           >
-                            Max
+                            Баланс
                           </Button>
                         )}
                     </div>
                     {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+                    {showNegativeBalanceWarning && previewBalance !== undefined && (
+                      <Alert status="warning">
+                        Баланс счёта будет отрицательным:{" "}
+                        {formatMoney(previewBalance, selectedAccount?.currency || account.currency)}.
+                      </Alert>
+                    )}
                   </div>
 
                   <div className="space-y-2">

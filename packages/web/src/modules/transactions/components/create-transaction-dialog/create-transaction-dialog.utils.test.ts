@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { PaymentTransactionType } from "../../transaction.constants";
 import {
+  applyPaymentTypeChange,
   getCategoryOptions,
   getCreatePaymentDefaultValues,
   getPreviewPaymentAccount,
@@ -61,6 +62,31 @@ describe("create transaction dialog utils", () => {
       id: "a1",
       balance: "75",
     });
+    expect(getPreviewPaymentAccount({ id: "a1", balance: "100" }, PaymentTransactionType.EXPENSE, "125")).toEqual({
+      id: "a1",
+      balance: "-25",
+    });
+  });
+
+  it("clears both category fields when switching between payment types", () => {
+    const setValue = vi.fn();
+
+    applyPaymentTypeChange(PaymentTransactionType.EXPENSE, PaymentTransactionType.INCOME, setValue);
+
+    expect(setValue.mock.calls).toEqual([
+      ["categoryId", undefined, { shouldValidate: true }],
+      ["newCategory", undefined, { shouldValidate: true }],
+      ["type", PaymentTransactionType.INCOME, { shouldValidate: true }],
+    ]);
+  });
+
+  it("preserves category fields when the payment type does not change", () => {
+    const setValue = vi.fn();
+
+    applyPaymentTypeChange(PaymentTransactionType.EXPENSE, PaymentTransactionType.EXPENSE, setValue);
+
+    expect(setValue).toHaveBeenCalledOnce();
+    expect(setValue).toHaveBeenCalledWith("type", PaymentTransactionType.EXPENSE, { shouldValidate: true });
   });
 
   it("builds category options for the selected transaction type", () => {

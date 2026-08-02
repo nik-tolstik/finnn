@@ -2448,9 +2448,7 @@ describe("Telegram Bot API", () => {
       storedDraft = { ...storedDraft, ...data, updatedAt: new Date() };
       return storedDraft;
     });
-    prisma.paymentTransaction.create.mockRejectedValue(
-      new BadRequestException("Сумма не может превышать баланс счёта (5)")
-    );
+    prisma.paymentTransaction.create.mockRejectedValue(new BadRequestException("Не удалось сохранить транзакцию"));
 
     await request(app.getHttpServer())
       .post("/telegram/webhook")
@@ -2471,7 +2469,7 @@ describe("Telegram Bot API", () => {
       expect.objectContaining({
         chatId: "1001",
         messageId: 16,
-        text: "Не получилось создать операцию: Сумма не может превышать баланс счёта (5)",
+        text: "Не получилось создать операцию: Не удалось сохранить транзакцию",
       })
     );
     expect(prisma.aiFinanceDraft.updateMany).toHaveBeenCalledWith(
@@ -2648,7 +2646,7 @@ describe("Telegram Bot API", () => {
     );
   });
 
-  it("includes the source account name when a transfer draft exceeds the balance", async () => {
+  it("commits a transfer draft when its amount exceeds the source balance", async () => {
     const lowCashAccount = {
       ...cashAccount,
       balance: "15",
@@ -2732,10 +2730,19 @@ describe("Telegram Bot API", () => {
       })
       .expect(200);
 
+    expect(prisma.transferTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          amount: "150",
+          fromAccountId: lowCashAccount.id,
+          toAccountId: savingsAccount.id,
+        }),
+      })
+    );
     expect(telegram.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         chatId: "1001",
-        text: "Не получилось создать операцию: Сумма отправления не может превышать баланс счёта «Cash» (15)",
+        text: "Готово. Перевод создан.",
       })
     );
   });

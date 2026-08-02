@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   addAccountBalanceDelta,
   applyPaymentTransactionBalance,
-  assertNonNegativeBalance,
   getDebtDeletionBalanceDelta,
   getDebtInitialAccountBalanceDelta,
   getDebtTransactionBalanceDelta,
@@ -11,6 +10,7 @@ import {
   getPaymentTransactionBalanceDelta,
   getTransferTransactionBalanceDeltas,
   revertPaymentTransactionBalance,
+  shouldWarnAboutNegativeExpenseBalance,
 } from "./balance-domain";
 
 describe("balance domain helpers", () => {
@@ -20,6 +20,20 @@ describe("balance domain helpers", () => {
     expect(revertPaymentTransactionBalance("125", "income", "25")).toBe("100");
     expect(revertPaymentTransactionBalance("75", "expense", "25")).toBe("100");
     expect(getPaymentTransactionBalanceDelta("expense", "25")).toBe("-25");
+  });
+
+  it("warns only when an expense changes a non-negative balance to negative", () => {
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "125", "100", "-25")).toBe(true);
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "1", "0", "-1")).toBe(true);
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "10", "-5", "-15")).toBe(false);
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "10", "-15", "-5")).toBe(false);
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "100", "100", "0")).toBe(false);
+    expect(shouldWarnAboutNegativeExpenseBalance("income", "125", "100", "225")).toBe(false);
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "", "100", "-25")).toBe(false);
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "invalid", "100", "-25")).toBe(false);
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "0", "100", "-25")).toBe(false);
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "10", undefined, "-25")).toBe(false);
+    expect(shouldWarnAboutNegativeExpenseBalance("expense", "10", "100", undefined)).toBe(false);
   });
 
   it("returns transfer account deltas", () => {
@@ -54,7 +68,7 @@ describe("balance domain helpers", () => {
     });
   });
 
-  it("aggregates account deltas and validates negative balances", () => {
+  it("aggregates account deltas", () => {
     const deltas = new Map<string, string>();
 
     addAccountBalanceDelta(deltas, "account-1", "10");
@@ -63,7 +77,5 @@ describe("balance domain helpers", () => {
     addAccountBalanceDelta(deltas, "account-2", "0");
 
     expect([...deltas.entries()]).toEqual([["account-1", "7"]]);
-    expect(() => assertNonNegativeBalance("-0.01", "No money")).toThrow("No money");
-    expect(() => assertNonNegativeBalance("0", "No money")).not.toThrow();
   });
 });

@@ -155,12 +155,6 @@ function minMoney(a: string, b: string) {
   return compareMoney(a, b) <= 0 ? a : b;
 }
 
-function assertNonNegativeBalance(balance: string, message: string) {
-  if (compareMoney(balance, "0") < 0) {
-    throw new BadRequestException(message);
-  }
-}
-
 function addAccountBalanceDelta(
   balanceDeltasByAccount: Map<string, string>,
   accountId: string | null | undefined,
@@ -466,7 +460,6 @@ export class DebtsService {
       }
 
       const nextBalance = addMoney(account.balance, delta);
-      assertNonNegativeBalance(nextBalance, `Недостаточно средств на счёте "${account.name}" (${account.balance})`);
 
       await tx.account.update({
         where: { id: accountId },
@@ -548,7 +541,6 @@ export class DebtsService {
           account.balance,
           getDebtInitialAccountBalanceDelta(input.type, toAmount || input.amount)
         );
-        assertNonNegativeBalance(nextBalance, `Сумма не может превышать баланс счёта (${account.balance})`);
 
         await tx.account.update({
           where: { id: account.id },
@@ -738,7 +730,6 @@ export class DebtsService {
           account.balance,
           getDebtInitialAccountBalanceDelta(existingDebt.type, toAmount || input.amount)
         );
-        assertNonNegativeBalance(nextBalance, `Сумма не может превышать баланс счёта (${account.balance})`);
 
         await tx.account.update({
           where: { id: account.id },
@@ -851,7 +842,6 @@ export class DebtsService {
         }
 
         const nextBalance = addMoney(account.balance, balanceDelta);
-        assertNonNegativeBalance(nextBalance, `Сумма не может превышать баланс счёта (${account.balance})`);
 
         await tx.account.update({
           where: { id: input.accountId },

@@ -42,6 +42,25 @@ export function revertPaymentTransactionBalance(balance: MoneyInput, type: strin
   return applyBalanceDelta(balance, subtractMoney("0", getPaymentTransactionBalanceDelta(type, amount)));
 }
 
+export function shouldWarnAboutNegativeExpenseBalance(
+  type: string,
+  amount: string | undefined,
+  currentBalance: MoneyInput | undefined,
+  previewBalance: MoneyInput | undefined
+): boolean {
+  if (type !== PAYMENT_EXPENSE || !amount || currentBalance === undefined || previewBalance === undefined) {
+    return false;
+  }
+
+  const numericAmount = Number.parseFloat(amount);
+  return (
+    Number.isFinite(numericAmount) &&
+    numericAmount > 0 &&
+    compareMoney(currentBalance, "0") >= 0 &&
+    compareMoney(previewBalance, "0") < 0
+  );
+}
+
 export function getTransferTransactionBalanceDeltas(amount: MoneyInput, toAmount: MoneyInput) {
   return {
     fromDelta: subtractMoney("0", amount),
@@ -96,10 +115,4 @@ export function addAccountBalanceDelta(
 
   const currentDelta = balanceDeltasByAccount.get(accountId) || "0";
   balanceDeltasByAccount.set(accountId, addMoney(currentDelta, delta));
-}
-
-export function assertNonNegativeBalance(balance: MoneyInput, message: string) {
-  if (compareMoney(balance, "0") < 0) {
-    throw new Error(message);
-  }
 }

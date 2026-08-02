@@ -53,5 +53,18 @@ describe("close debt dialog utils", () => {
         currenciesMatch: true,
       })
     ).toEqual({ id: "account-1", balance: "130", currency: "BYN" });
+
+    expect(
+      getCloseDebtPreviewAccount({
+        selectedAccount: { id: "account-1", balance: "10", currency: "BYN" },
+        debtType: DebtType.BORROWED,
+        debtCurrency: "BYN",
+        closeAmount: "100",
+        paymentAmount: "100",
+        toAmount: "",
+        remainingAmount: "100",
+        currenciesMatch: true,
+      })
+    ).toEqual({ id: "account-1", balance: "-90", currency: "BYN" });
   });
 });

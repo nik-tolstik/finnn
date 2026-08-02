@@ -154,10 +154,6 @@ export function getCloseDebtPreviewAccount<TAccount extends Pick<Account, "balan
     categoryBalanceDelta
   );
 
-  if (compareMoney(nextBalance, "0") < 0) {
-    return selectedAccount;
-  }
-
   return {
     ...selectedAccount,
     currency: selectedAccount.currency || debtCurrency,

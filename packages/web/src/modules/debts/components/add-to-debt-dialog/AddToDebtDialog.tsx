@@ -21,11 +21,12 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { addMoney, formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { addMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { addToDebt } from "../../debt.api";
 import { DebtType } from "../../debt.constants";
 import type { DebtWithRelations } from "../../debt.types";
+import { getAddToDebtPreviewAccount } from "./add-to-debt-dialog.utils";
 
 interface AddToDebtDialogProps {
   debt: DebtWithRelations;
@@ -99,27 +100,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   });
 
   const previewAccount = useMemo(() => {
-    if (!selectedAccount || !accountAmount) {
-      return selectedAccount;
-    }
-
-    const amountNum = parseFloat(accountAmount);
-    if (Number.isNaN(amountNum)) return selectedAccount;
-
-    let newBalance = selectedAccount.balance;
-    if (debt.type === DebtType.LENT) {
-      if (parseFloat(selectedAccount.balance) < parseFloat(accountAmount)) {
-        return selectedAccount;
-      }
-      newBalance = subtractMoney(selectedAccount.balance, accountAmount);
-    } else {
-      newBalance = addMoney(selectedAccount.balance, accountAmount);
-    }
-
-    return {
-      ...selectedAccount,
-      balance: newBalance,
-    };
+    return getAddToDebtPreviewAccount({ selectedAccount, accountAmount, debtType: debt.type });
   }, [selectedAccount, accountAmount, debt.type]);
 
   const prevOpenRef = useRef(open);

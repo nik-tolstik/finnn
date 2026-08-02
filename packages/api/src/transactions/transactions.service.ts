@@ -28,14 +28,6 @@ const PAYMENT_EXPENSE = "expense";
 const TRANSFER_TRANSACTION_FILTER_VALUE = "transfer";
 const DEBT_TRANSACTION_FILTER_VALUE = "debt";
 
-function getAccountBalanceLimitMessage(account: Pick<Account, "name" | "balance">) {
-  return `Сумма не может превышать баланс счёта «${account.name}» (${account.balance})`;
-}
-
-function getTransferBalanceLimitMessage(account: Pick<Account, "name" | "balance">) {
-  return `Сумма отправления не может превышать баланс счёта «${account.name}» (${account.balance})`;
-}
-
 const ACCOUNT_OWNER_SELECT = {
   id: true,
   name: true,
@@ -557,10 +549,6 @@ export class TransactionsService {
         );
       }
 
-      if (input.type === PAYMENT_EXPENSE && compareMoney(input.amount, account.balance) > 0) {
-        throw new BadRequestException(getAccountBalanceLimitMessage(account));
-      }
-
       let finalCategoryId = input.categoryId;
       if (input.newCategory) {
         if (input.newCategory.type !== input.type) {
@@ -667,9 +655,6 @@ export class TransactionsService {
 
         const currentBalance = balancesByAccountId.get(input.accountId) || account.balance;
         const nextBalance = applyPaymentTransactionBalance(currentBalance, input.type, input.amount);
-        if (input.type === PAYMENT_EXPENSE && compareMoney(nextBalance, "0") < 0) {
-          throw new BadRequestException(getAccountBalanceLimitMessage({ ...account, balance: currentBalance }));
-        }
 
         const createdTransaction = await tx.paymentTransaction.create({
           data: {
@@ -722,10 +707,6 @@ export class TransactionsService {
 
       if (fromAccount.id === toAccount.id) {
         throw new BadRequestException("Нельзя перевести на тот же счёт");
-      }
-
-      if (compareMoney(input.amount, fromAccount.balance) > 0) {
-        throw new BadRequestException(getTransferBalanceLimitMessage(fromAccount));
       }
 
       const createdTransfer = await tx.transferTransaction.create({
@@ -843,10 +824,6 @@ export class TransactionsService {
             "Новый счёт не найден"
           );
 
-          if (existingTransaction.type === PAYMENT_EXPENSE && compareMoney(newAmount, newAccount.balance) > 0) {
-            throw new BadRequestException(getAccountBalanceLimitMessage(newAccount));
-          }
-
           await tx.account.update({
             where: { id: oldAccountId },
             data: { balance: revertedOldBalance },
@@ -859,12 +836,6 @@ export class TransactionsService {
             },
           });
         } else {
-          if (existingTransaction.type === PAYMENT_EXPENSE && compareMoney(newAmount, revertedOldBalance) > 0) {
-            throw new BadRequestException(
-              getAccountBalanceLimitMessage({ ...oldAccount, balance: revertedOldBalance })
-            );
-          }
-
           await tx.account.update({
             where: { id: oldAccountId },
             data: { balance: applyPaymentTransactionBalance(revertedOldBalance, existingTransaction.type, newAmount) },
@@ -969,10 +940,6 @@ export class TransactionsService {
 
       if (!newFromAccountCurrent || !newToAccountCurrent) {
         throw new NotFoundException("Счёт не найден");
-      }
-
-      if (compareMoney(newAmount, newFromAccountCurrent.balance) > 0) {
-        throw new BadRequestException(getTransferBalanceLimitMessage(newFromAccountCurrent));
       }
 
       const updatedTransfer = await tx.transferTransaction.update({
