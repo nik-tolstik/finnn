@@ -19,7 +19,8 @@ This documentation is written for two audiences:
 - [Encrypted PostgreSQL Backups](./postgresql-backups.md) - Railway cron, age encryption, verified S3-compatible uploads,
   completion manifests, monitoring, retention, and restore rehearsals.
 - [AI Contributor Guide](./ai-contributor-guide.md) - how Codex or another AI agent should approach changes in this repo.
-- [Feature Plans](./plans/README.md) - how to write and maintain `docs/plans/<feature>` implementation plans.
+- [Feature Plans](./plans/README.md) - the opt-in specification-first workflow, technical plans, and work logs for substantial changes.
+- [Reusable Solutions](./solutions/README.md) - durable lessons that help future agents avoid known pitfalls.
 
 ## Project At A Glance
 

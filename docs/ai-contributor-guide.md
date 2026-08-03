@@ -18,6 +18,19 @@ Then inspect the narrow module involved in the task.
 
 For framework or library behavior that may have changed, use Context7. Vite, React Router, NestJS, Prisma PostgreSQL, TanStack Query, Orval, and Tailwind changes are good candidates for documentation lookup.
 
+## Specification-First Planning
+
+For a substantial task where the user explicitly asks for formal plan tracking, use the feature folder as the durable source of truth. Otherwise, execute directly without creating plan artifacts. See [`docs/plans/README.md`](./plans/README.md) for the complete eligibility criteria.
+
+1. Read the original request and research the relevant repository areas before asking questions.
+2. Identify decisions that code and project documentation cannot answer. Ask only about product behavior, priorities, users, policy, or scope. Do not ask the user to choose files, libraries, API shapes, or other implementation details that the agent can determine.
+3. Ask concise, structured questions with a recommended answer and the impact of each choice when the interface supports it. Record resolved answers in `specification.md`.
+4. Write or update `specification.md` in plain product language. A reader should understand the desired behavior without knowing the codebase.
+5. Create the technical `README.md` only after material product decisions are resolved or an explicit, low-impact assumption is recorded in the specification.
+6. Implement autonomously from the technical plan. If a new material product decision appears, pause, explain its impact, and ask the user; otherwise resolve technical details through repository research and record them in the plan or work log.
+
+At the end of the task, verify the implementation against the specification as well as the technical checks. Capture a `docs/solutions` record only when the lesson is reusable by future work, then remove the completed feature-plan folder unless the user asks to retain it.
+
 ## Decision Rules
 
 - Use the current checkout and branch unless the user asks for a worktree or pull request.
