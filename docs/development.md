@@ -46,111 +46,36 @@ Orval 8.12.3 does not parse npm alias ranges as semver. Its config uses `package
 
 ## Environment Variables
 
-Required in `packages/api/.env` for normal local API operation:
+[`packages/api/.env.example`](../packages/api/.env.example) and
+[`packages/web/.env.example`](../packages/web/.env.example) are the canonical variable inventories and local defaults.
+Copy them during local setup, then set only the feature integrations needed for the task. Generate API secrets with:
 
-```env
-DATABASE_URL="postgresql://finnn:finnn_local@localhost:5432/finnn?schema=public"
-DIRECT_URL="postgresql://finnn:finnn_local@localhost:5432/finnn?schema=public"
-API_AUTH_SECRET="paste-generated-secret-here"
-API_COOKIE_SECRET="paste-generated-secret-here"
-API_ALLOWED_ORIGINS="http://localhost:3000"
-CRON_SECRET="paste-cron-secret-here"
+```bash
+openssl rand -base64 32
 ```
 
-Email delivery uses Resend over HTTPS. Create an API key, verify the sender domain in Resend, and set:
+Do not copy production credentials into a local file. The stable configuration rules for OAuth, email, Telegram, and
+private object storage are in [External Integrations](./operations/integrations.md).
 
-```env
-RESEND_API_KEY="re_..."
-EMAIL_FROM="Finnn <no-reply@your-verified-domain.example>"
-```
+### Local OAuth, Telegram, And Storage
 
-Required for Telegram login/linking:
+Register the local API callback URL from `packages/api/.env.example` in the relevant OAuth provider. Local Telegram
+testing needs a public HTTPS API tunnel because Telegram does not accept localhost callback URLs. Use a dedicated
+non-production bot and bucket for local development when production data must remain isolated.
 
-```env
-WEB_APP_URL="http://localhost:3000"
-TELEGRAM_CLIENT_ID="bot-or-client-id-from-botfather"
-TELEGRAM_CLIENT_SECRET="secret-from-botfather"
-TELEGRAM_REDIRECT_URI="https://your-stable-domain.ngrok-free.dev/auth/telegram/callback"
-TELEGRAM_AUTH_STATE_SECRET="paste-generated-secret-here"
-TELEGRAM_AUTH_STATE_TTL_SECONDS="600"
-```
+If object-storage variables are absent, avatar upload and read endpoints return a controlled service-unavailable error
+instead of writing incomplete profile data.
 
-Required for Google login/linking:
-
-```env
-GOOGLE_CLIENT_ID="google-oauth-client-id"
-GOOGLE_CLIENT_SECRET="google-oauth-client-secret"
-GOOGLE_REDIRECT_URI="http://localhost:4000/auth/google/callback"
-GOOGLE_AUTH_STATE_SECRET="paste-generated-secret-here"
-GOOGLE_AUTH_STATE_TTL_SECONDS="600"
-```
-
-Register these OAuth redirect URIs in Google Cloud Console:
-
-```text
-Local: http://localhost:4000/auth/google/callback
-DEV:   https://api-dev.finnn.xyz/auth/google/callback
-PROD:  https://api.finnn.xyz/auth/google/callback
-```
-
-Password reset uses the same Resend settings as email verification. Optional tuning:
-
-```env
-PASSWORD_RESET_CODE_TTL_SECONDS="900"
-PASSWORD_RESET_MAX_ATTEMPTS="5"
-PASSWORD_RESET_RESEND_COOLDOWN_SECONDS="60"
-```
-
-Required for Telegram Mini App launch authentication:
-
-```env
-TELEGRAM_BOT_TOKEN="bot-token-from-botfather"
-TELEGRAM_WEBAPP_AUTH_MAX_AGE_SECONDS="86400"
-```
-
-Required for Telegram bot finance entry:
-
-```env
-TELEGRAM_BOT_WEBHOOK_SECRET="paste-telegram-webhook-secret-here"
-TELEGRAM_BOT_WEBHOOK_URL="https://your-stable-domain.ngrok-free.dev/telegram/webhook"
-TELEGRAM_BOT_DRAFT_TTL_SECONDS="1800"
-OPENROUTER_API_KEY="openrouter-api-key"
-OPENROUTER_APP_REFERER="http://localhost:3000"
-OPENROUTER_APP_TITLE="Finnn Local"
-OPENROUTER_TEXT_MODEL="openai/gpt-4.1-mini"
-OPENROUTER_VISION_MODEL="google/gemini-2.5-flash"
-OPENROUTER_TRANSCRIPTION_MODEL="openai/gpt-4o-mini-transcribe"
-```
-
-Required for custom avatar and category icon uploads:
-
-```env
-AVATAR_BUCKET="railway-bucket-name"
-AVATAR_BUCKET_ACCESS_KEY_ID="railway-bucket-access-key-id"
-AVATAR_BUCKET_SECRET_ACCESS_KEY="railway-bucket-secret-access-key"
-AVATAR_BUCKET_REGION="auto"
-AVATAR_BUCKET_ENDPOINT="https://storage.railway.app"
-AVATAR_BUCKET_FORCE_PATH_STYLE="false"
-AVATAR_MAX_BYTES="2097152"
-AVATAR_PRESIGNED_URL_TTL_SECONDS="3600"
-```
-
-Railway Buckets expose `BUCKET`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`, `REGION`, and `ENDPOINT`; map those values into
-the `AVATAR_BUCKET_*` variables above. Use a dedicated development bucket when production avatar objects should stay
-isolated. If these variables are missing, the avatar upload and read endpoints return a controlled service-unavailable
-error instead of writing profile data.
-
-BotFather setup:
+### BotFather Setup
 
 - Create or select a bot in BotFather.
-- Use the DEV Telegram bot for localhost and ngrok testing. The PROD bot is reserved for `https://finnn.xyz`.
+- Use a dedicated non-production Telegram bot for localhost and tunnel testing.
 - Open Bot Settings > Web Login.
 - Register the ngrok callback URI used for local Telegram testing.
 - Copy the client ID and client secret into `packages/api/.env`.
 - Open Bot Settings > Mini Apps.
-- Set the DEV Mini App URL to a public HTTPS URL that points at the existing dashboard route, for example
-  `https://your-stable-domain.ngrok-free.app/dashboard` for local testing or `https://dev.finnn.xyz/dashboard` for the
-  shared DEV environment.
+- Set the Mini App URL to a public HTTPS URL that points at the existing dashboard route, such as
+  `https://your-stable-domain.ngrok-free.app/dashboard` for local testing.
 - Copy the bot token into `TELEGRAM_BOT_TOKEN`; the API uses it only to validate `Telegram.WebApp.initData`.
 - Set the bot webhook to the API tunnel URL and pass the same secret token as `TELEGRAM_BOT_WEBHOOK_SECRET`:
 
@@ -173,13 +98,9 @@ app through a stable HTTPS tunnel and point the DEV bot's Mini App URL at the tu
 `VITE_API_URL` aligned with an API URL that the WebView can reach and keep `API_ALLOWED_ORIGINS` aligned with the
 tunnel origin.
 
-Required in `packages/web/.env` for local web operation:
-
-```env
-VITE_API_URL="http://localhost:4000"
-```
-
-Telegram does not accept `localhost` redirect URIs. For local Telegram testing, expose the API through ngrok. Telegram redirects to the ngrok callback, and the API immediately relays non-local development callbacks back to the local API callback, where the local state and session cookies are available.
+For local Telegram testing, expose the API through ngrok. Telegram redirects to the tunnel callback, and the API
+immediately relays non-local development callbacks back to the local API callback, where the local state and session
+cookies are available.
 
 Use ngrok only for the API:
 
@@ -232,11 +153,51 @@ Manual Telegram bot checks:
 - Voice messages are transcribed through OpenRouter and then follow the same text draft flow.
 - No financial records are created until the Telegram `Create` button is pressed.
 
-Generate API secrets with:
+## Mobile Browser Testing From WSL2
 
-```bash
-openssl rand -base64 32
-```
+WSL2 normally runs behind a private NAT address such as `172.28.x.x`. That address is reachable from WSL and Windows,
+but it is not normally reachable from a phone on the same Wi-Fi network. Use the Windows host LAN address and forward
+the development ports into WSL.
+
+1. Find the Windows LAN IPv4 address with `ipconfig`. Use the IPv4 address from the active Wi-Fi or Ethernet adapter,
+   for example `192.168.1.102`. The phone and the Windows host must be on the same local network.
+
+2. In WSL, start the API with the Windows LAN origin allowed by CORS:
+
+   ```bash
+   FINNN_LAN_IP=192.168.1.102
+   API_ALLOWED_ORIGINS="http://${FINNN_LAN_IP}:3000,http://localhost:3000" pnpm --filter api dev
+   ```
+
+3. In a second WSL terminal, start the web app with the forwarded API URL:
+
+   ```bash
+   FINNN_LAN_IP=192.168.1.102
+   VITE_API_URL="http://${FINNN_LAN_IP}:4000" pnpm --filter web exec vite --host 0.0.0.0 --port 3000
+   ```
+
+4. In Windows PowerShell started **as Administrator**, create port forwarding and allow only local-subnet traffic:
+
+   ```powershell
+   $wslIp = (wsl.exe hostname -I).Trim().Split()[0]
+
+   netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=3000
+   netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=4000
+
+   netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=3000 connectaddress=$wslIp connectport=3000
+   netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=4000 connectaddress=$wslIp connectport=4000
+
+   New-NetFirewallRule -DisplayName "Finnn WSL Dev" -Direction Inbound -Action Allow `
+     -Protocol TCP -LocalPort 3000,4000 -RemoteAddress LocalSubnet -Profile Any
+   ```
+
+The port proxy points to the current WSL IP. Re-run the PowerShell block after `wsl --shutdown` or any WSL restart,
+because the `172.28.x.x` address can change. Open `http://192.168.1.102:3000` on the phone; do not use the WSL NAT
+address directly. Stop the API and web processes with `Ctrl+C` in their WSL terminals when testing is finished.
+
+For a quick local check, run `curl http://127.0.0.1:3000/login` and `curl http://127.0.0.1:4000/health` from WSL.
+If the phone cannot connect, verify that the Windows PowerShell commands were run as Administrator, the phone is on the
+same Wi-Fi, and Windows Firewall allows the local-subnet rule.
 
 ## Scripts
 
@@ -262,9 +223,7 @@ pnpm db:seed            # Seed sample data
 ```
 
 Root database commands delegate to `packages/api`. `packages/api/scripts/db-seed.ts` owns development seed data. The
-completed data-provider cutover and validation history lives in
-[`docs/plans/postgresql-migration`](./plans/postgresql-migration/README.md); the one-time executable migration tooling is
-no longer part of the application.
+one-time executable data-provider cutover tooling is no longer part of the application.
 
 ## Prisma Workflow
 

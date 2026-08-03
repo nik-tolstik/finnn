@@ -1,213 +1,99 @@
 # Finnn Agent Guide
 
-## Project Snapshot
+## Project And Sources Of Truth
 
 Finnn is a personal and shared finance tracker in a `pnpm` monorepo.
 
-- `packages/web` is a Vite-powered React SPA routed with React Router and built with TypeScript, TanStack Query, Tailwind CSS, and Orval-generated API clients. Exchange-rate UI is shared across transaction and debt forms rather than owned by a standalone frontend module.
-- `packages/api` is the NestJS backend built with TypeScript, Prisma, PostgreSQL, OpenAPI, and Vitest.
-- `packages/postgres-backup` is the isolated Railway cron service that streams `pg_dump` through `age` and verifies
-  encrypted S3-compatible uploads.
+- `packages/web` is the Vite React SPA.
+- `packages/api` is the NestJS API backed by Prisma and PostgreSQL.
+- `packages/postgres-backup` is the isolated encrypted PostgreSQL backup service.
 
-The app manages workspaces, members, accounts, categories, payment transactions, transfers, debts, analytics, exchange rates, PostgreSQL persistence, and PWA static asset caching.
+Read only the documentation relevant to the task:
+
+- `docs/development.md` for local setup, scripts, environment conventions, and toolchain details.
+- `docs/architecture.md` for package boundaries, request/data flow, and frontend structure.
+- `docs/domain-model.md` for finance and persistence invariants.
+- `docs/design-system.md`, `docs/account-icons.md`, and `docs/category-icons.md` for UI and asset conventions.
+- `docs/operations/README.md` and `docs/postgresql-backups.md` for safe operational procedures and ways to discover current infrastructure state.
+- `docs/ai-contributor-guide.md` for detailed task checklists.
+
+Code, configuration, schemas, generated contracts, and provider state are authoritative for facts that can change independently of documentation.
 
 ## Required Workflow
 
-- Use `pnpm` as the package manager. Do not use `npm` or `yarn` unless the repository explicitly requires them.
-- Use Context7 for library and framework documentation when it is relevant.
-- Use subagents for parallel code analysis, implementation, or verification when they can reduce risk or latency.
-- Track planned implementation in the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview)
-  and follow the Linear task workflow in `docs/ai-contributor-guide.md` when an issue is supplied or delegated.
-- Work in the current checkout and branch by default. Do not create a Git worktree or GitHub pull request unless the
-  user explicitly requests one.
-- A Finnn Linear issue explicitly delegated to an agent authorizes that agent to create or use the issue branch and
-  open or update its draft pull request. It does not authorize a worktree, merge, production change, or infrastructure
-  mutation unless the user separately requests it.
-- A pull request may be created without an explicit request only when it is materially necessary to complete unusually
-  risky work safely, such as a production data migration, or when repository protections require it. Explain the need
-  to the user before creating the pull request. There is no equivalent exception for worktrees.
-- When creating a worktree, transfer the `packages/web/.env` and `packages/api/.env` files as opaque files without reading their contents.
-- Do not revert user changes unless the user explicitly requests it.
-- Do not work directly on `main` unless the user explicitly asks for it. If the current branch is `main`, switch to `develop` before making changes.
-- After a task branch has successfully merged into `develop`, an agent may remove its own associated worktree and local
-  and remote branch. First confirm that the pull request is merged, the worktree is clean, and no active task owns the
-  branch or worktree. Never remove another task's branch or worktree.
-- Agents may inspect Railway and, when the user has authorized the infrastructure change, manage services, variables,
-  deployments, resource limits, cron schedules, buckets, and environment configuration through the authenticated
-  Railway CLI or API. Resolve the exact project, environment, and service before every mutation.
-- Treat Railway variable and bucket-credential output as secret-bearing. Never print raw values, database URLs, access
-  keys, or private encryption identities; capture and filter them locally when verification is required.
-- Agents may inspect Vercel and, when the user has authorized the frontend infrastructure change, manage project
-  settings, environment variables, deployments, aliases, and domains through an authenticated Vercel connector, CLI,
-  or API. Resolve the exact team, project, environment, Git branch, and deployment before every mutation; use explicit
-  scopes or resource IDs and follow the branch-owned Git deployment flow documented in `docs/operations.md`.
-- Treat Vercel environment values, access tokens, deployment-protection bypass tokens, and temporary share URLs as
-  secret-bearing. Never print raw values or tokens; filter API output to the required metadata. Use `vercel curl` for
-  protected Preview/DEV checks instead of weakening deployment protection. Do not run `vercel link`, `vercel pull`, or
-  `vercel env pull` in an existing checkout unless the task requires local linking or environment synchronization,
-  because those commands create local project state or can overwrite local environment files.
-- Prefer existing project patterns over introducing new abstractions.
-- Keep comments in English.
-- Do not run Browser screenshot QA with Playwright, `agent-browser`, or similar browser automation unless the user explicitly asks for screenshot/browser QA.
+- Use `pnpm`. Do not use `npm` or `yarn` unless the repository itself requires it.
+- Inspect the current branch, working tree, and narrow task scope before editing. Preserve unrelated user changes and never revert them without an explicit request.
+- Work in the current checkout and branch by default. Do not create a worktree or pull request unless the user asks, except for the delegated Linear workflow below. If repository protections or an unusually risky operation require a pull request, explain why and obtain confirmation first.
+- Do not edit on `main` unless the user explicitly requests it. If the current branch is `main`, first confirm the working tree is clean and `develop` is the intended target; otherwise ask before switching branches.
+- When the user requests a worktree, copy `packages/web/.env` and `packages/api/.env` as opaque files without reading or printing their contents.
+- Prefer existing project patterns over new abstractions.
+- Use Context7 for current library or framework behavior when it is available; otherwise use authoritative upstream documentation.
+- Use available subagents only for bounded, independent work where parallel execution materially reduces risk or latency.
+- For a user request that will result in a committed code or repository-documentation change, create or update the
+  corresponding Product Change issue in the Finnn Linear project and follow the Linear task workflow in
+  `docs/ai-contributor-guide.md`. Read-only questions, repository exploration, tiny edits that will not be committed,
+  and an explicit request to work without Linear do not require an issue.
+- Explicit delegation of a Finnn Linear issue authorizes the agent to create or use its issue branch and open or update its draft pull request. It does not authorize a worktree, merge, production change, destructive action, or infrastructure mutation.
+- Keep code comments and documentation in English.
+- Do not run screenshot or browser-automation QA unless the user explicitly requests it.
 
-## Formal Plan Tracking
+## External Review
 
-- Create or use formal implementation plans, `docs/plans/...` directories, work logs, or plan-tracking tools only when
-  the user explicitly asks to create or use a plan, or explicitly says the current task continues a named existing plan,
-  **and** the task is substantial enough to need multiple modules, meaningful product decisions, or more than one focused
-  coding session.
-- Do not create formal plan artifacts for small, narrow changes, even when the user asks for a concise plan; answer in
-  chat and execute directly instead.
-- Task complexity, multi-agent work, a branch, worktree, PR, or an existing plan file alone do not authorize formal
-  plan tracking.
-- When a user supplies a plan in chat, follow it without persisting it to repository documentation unless the user
-  explicitly requests that persistence.
-- Without explicit opt-in, execute directly with normal internal reasoning and concise commentary.
-- Update a plan work log only when the current user request explicitly invokes that plan and asks for logging, or the
-  invoked plan explicitly requires it.
-- For an eligible, explicitly requested formal plan, use the specification-first workflow in `docs/plans/README.md`:
-  research the repository, resolve material product decisions with the user, write `specification.md` in product
-  language, then write the technical plan. Ask users about behavior, priorities, and business rules—not implementation
-  choices that repository research can answer. Use structured question choices when the interface supports them.
+- Follow the active global `AGENTS.md` for the external reviewer, model, invocation, read-only restrictions, and finding-classification procedure. Do not duplicate those details here.
+- Run external review only when the user explicitly requests it or immediately before an agent-performed merge into `develop` or `main`. The pre-merge case is repository-level authorization to run the globally configured reviewer.
+- Do not run external review for ordinary implementation, local validation, or Draft PR updates that are not being merged.
+- Verify every external finding against the source code and tests. Classify it as confirmed, rejected, or uncertain, and explain disagreements before applying fixes.
+- After confirmed fixes, repeat only the focused review needed to validate them. Repeat a full review only when fixes materially change architecture, API contracts, persistence, security, concurrency, or state/data flow.
 
-## Efficient Iteration And Verification
+## Scope-Appropriate Verification
 
-- These defaults are overridden by explicit user instructions, including explicit use of a formal plan.
-- Treat consecutive follow-ups on an existing Draft PR as one iteration batch until the final handoff or the user
-  changes scope.
+Start with the smallest relevant checks and broaden only when the changed boundary requires it.
 
-- Select validation from this matrix:
-  - Presentation-only frontend: inspect the changed diff and UI source, then run relevant targeted tests when they
-    exist plus web typecheck and web check. Do not require a production build or Storybook by default.
-  - Isolated frontend logic: run targeted feature tests plus web typecheck, web check, and web production build.
-    Run Storybook only when stories or a component API/rendering contract changes.
-  - Cross-package, API, schema, configuration, or dependency changes: run affected package checks. Run one full
-    root-level or broad suite during final validation, or whenever the explicit task scope requires it. Include
-    generated-client, migration, infrastructure, or backup checks when the changed boundary requires them.
+- Presentation-only frontend: inspect the diff and UI source, run relevant targeted tests when they exist, then run `pnpm --filter web typecheck` and `pnpm --filter web check`.
+- Isolated frontend logic: run targeted web tests, `pnpm --filter web typecheck`, `pnpm --filter web check`, and `pnpm --filter web build`.
+- Isolated API behavior: run targeted API tests, `pnpm --filter api typecheck`, and `pnpm --filter api check`. Add `pnpm --filter api build` when module wiring or production compilation may be affected.
+- API contract changes: run `pnpm api:generate` and `pnpm api:check-generated`, then verify affected API and web consumers.
+- Prisma schema changes: run `pnpm db:generate`, create and review the required migration, and run affected API checks. Never use `db push` for shared environments.
+- Backup-service changes: run `pnpm --filter postgres-backup check` and `pnpm --filter postgres-backup test`.
+- Cross-package, dependency, shared configuration, migration, or similarly broad changes: run affected targeted checks first, then one final root-level suite with the relevant commands from `pnpm typecheck`, `pnpm check`, `pnpm test`, and `pnpm build`.
 
-- Do not run unrelated API, database, or backup tests for an isolated frontend change.
-- Run one full root-level or broad suite only during final validation for cross-package changes or when the task
-  explicitly requires it.
-- Executors run targeted checks while implementing. An independent verifier runs the final scope-appropriate broad
-  validation; do not duplicate the same full suite in both roles.
-- Use this order: implementation, targeted validation, external review, confirmed fixes, one final broad validation,
-  then push and update the PR.
-- Run external review once for each cohesive diff. After confirmed findings, rerun a focused review of the fixes;
-  repeat the full review only for architecture, API, persistence, security, concurrency, or significant state/data-flow
-  changes.
-- Style, copy, documentation, and test-only changes are not substantial changes for deciding whether to repeat broad
-  validation or a full external review.
-- Consolidate explicitly requested plan work-log and PR-body updates for an iteration batch instead of creating
-  process-only follow-up commits or PR edits.
-- For an already validated Draft PR, do not wait for remote CI before publishing a follow-up unless the user or
-  repository policy requires it.
-- If an isolated frontend follow-up exceeds 15 minutes, report the cause before running more broad checks.
+Do not run unrelated API, database, or backup tests for an isolated frontend change. Run Storybook only when stories or a component rendering/API contract changes. When external review is triggered, use this order: implementation, targeted validation, external review, confirmed fixes, one final scope-appropriate validation, then merge or handoff.
 
-## Key Commands
+## Critical Implementation Rules
 
-```bash
-pnpm install
-pnpm dev
-pnpm build
-pnpm typecheck
-pnpm check
-pnpm test
-pnpm db:generate
-pnpm db:migrate:dev
-pnpm db:migrate:deploy
-pnpm db:migrate:status
-pnpm db:seed
-pnpm backup:test
-```
+- Put new backend behavior in `packages/api` NestJS modules. Use DTO validation, auth and workspace guards, explicit Swagger metadata, and focused API tests for endpoints.
+- Keep complex read-modify-write logic in API services using `packages/api/src/prisma/serializable-transaction.ts`. Pass the active `Prisma.TransactionClient` into composed methods instead of opening nested transactions.
+- Keep database transactions short. Never hold them across email, Telegram, object-storage, or other network I/O; use an atomic claim/outbox or an explicit compensating workflow.
+- A scheduled-payment occurrence is unique by `(scheduledPaymentId, dueAt)`. Paying or skipping it must atomically create history, apply any financial transaction, and advance `nextDueAt`.
+- Enforce authentication and workspace authorization in the API with auth guards and `WorkspaceAccessGuard`.
+- Keep money values as strings. Use `packages/api/src/common/money.ts` for persisted logic and the frontend money and balance helpers for UI/cache projections.
+- `Account.hidden` is the authenticated user's personal dashboard-card preference. It must not affect account access or financial-form and analytics data.
+- Preserve `Account.balance = Account.initialBalance + transaction deltas` when changing the opening balance.
+- Do not edit `packages/web/src/shared/api/generated` manually. Regenerate the OpenAPI contract and web client after API contract changes.
+- Use TanStack Query keys from `packages/web/src/shared/lib/query-keys.ts` and existing optimistic update helpers instead of ad hoc cache shapes.
+- Follow `docs/design-system.md` and reuse existing shared app controls instead of native browser controls for app-facing forms.
+- Keep protected app routes client-rendered behind the client auth gate; API guards remain the security boundary.
+- Do not cache financial documents, API responses, protected routes, or data responses in the service worker.
+- Package-level `biome.json` files must extend the workspace root with `"extends": "//"`.
 
-Use `pnpm check`, `pnpm typecheck`, and targeted `pnpm test` runs before finishing non-trivial changes.
+## Infrastructure Safety
 
-The package-local `tsc` commands use TypeScript 7 through the `@typescript/native` alias. The `typescript` dependency intentionally aliases `@typescript/typescript6` for tools that still require the legacy compiler API; keep both aliases unless all Nest, Vite, Storybook, and Orval tooling has moved to the TypeScript 7 API.
+- Perform infrastructure mutations only when the user has authorized that scope. Before every mutation, resolve the exact provider, project/team, environment, service/project, branch, and deployment or resource ID.
+- Follow `docs/operations/README.md` for Railway and Vercel procedures. Prefer commands that query current provider state over copied identifiers or topology snapshots.
+- Treat environment values, database URLs, access keys, encryption identities, tokens, bucket credentials, and protected share URLs as secrets. Never print raw values; capture and filter output to the required metadata.
+- Do not run `vercel link`, `vercel pull`, or `vercel env pull` in an existing checkout unless the task explicitly requires local linking or environment synchronization.
+- Use committed Prisma migrations and `DIRECT_URL` for migration/administrative access. Use `DATABASE_URL` for API runtime access and recalculate the connection budget before adding replicas.
+- Restore backups only into a separate database during rehearsals or verification.
 
-## Architecture Map
+## Documentation And Agent-Rule Quality
 
-- `packages/web/src/app` contains the SPA composition root and React Router route tree.
-- `packages/web/src/routes` contains route layouts and route entry components.
-- `packages/web/src/providers` contains application-wide client providers.
-- `packages/web/src/styles` contains global styles.
-- `packages/web/src/modules` contains frontend feature modules: accounts, analytics, auth, categories, debts, scheduled payments, transactions, and workspace. Account dashboard visibility is personal to the authenticated user; do not use it to filter account choices in financial forms.
-- `packages/web/src/shared/hooks/useCurrencyAmountSync.ts` and `packages/web/src/routes/dashboard/components/dashboard-exchange-rates.tsx` contain the cross-cutting frontend exchange-rate behavior.
-- `packages/web/src/shared/api/generated` contains Orval-generated API client functions and types. Do not edit generated files manually.
-- `packages/web/src/shared/lib` contains frontend session, query keys, cache invalidation, optimistic updates, balance helpers, and domain types.
-- `packages/web/src/shared/ui` contains reusable primitive UI components.
-- `packages/web/src/shared/components` contains reusable composed components.
-- `packages/web/src/shared/utils` contains low-level utilities such as money formatting and arithmetic.
-- `packages/web/public/sw.js` controls the PWA service worker cache policy.
-- `packages/api/src` contains NestJS modules, controllers, DTOs, guards, services, auth/session ownership, cron, email, and finance domain logic.
-- `packages/api/prisma/schema.prisma` and `packages/api/prisma/migrations` are the source of truth for database tables,
-  relations, indexes, enums, and reviewed SQL migrations.
-- `packages/api/scripts` contains seed, operational helpers, and OpenAPI generation scripts.
-- `packages/postgres-backup` contains the PostgreSQL 18 backup image, streaming age encryption, verified object-storage
-  upload, restore helper, tests, and Railway cron configuration.
-- `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
-- `docs` contains human and AI-facing project documentation.
-- `docs/plans` contains the guide and active, user-requested plans for substantial feature work.
-- `docs/solutions` contains concise, reusable lessons from completed work.
-
-## Implementation Rules
-
-- New backend behavior should live in `packages/api` NestJS modules, not in `packages/web`.
-- Backend endpoints should use DTO validation, guards, explicit Swagger metadata, and API tests.
-- Complex transactional business logic should live in API services. Use
-  `packages/api/src/prisma/serializable-transaction.ts` for read-modify-write invariants and pass the active
-  `Prisma.TransactionClient` into composed service methods instead of opening nested transactions.
-- Keep database transactions short and never hold them across email, Telegram, object-storage, or other network I/O.
-  Use an atomic database claim/outbox or an explicit compensating workflow for those boundaries.
-- A scheduled-payment occurrence is unique by `(scheduledPaymentId, dueAt)`. Paying or skipping an occurrence must
-  atomically create its history row, apply any financial transaction, and advance `nextDueAt`.
-- Check authentication and workspace authorization in the API with auth guards and `WorkspaceAccessGuard`.
-- Keep money values as strings. Use backend money helpers in `packages/api/src/common/money.ts` for persisted logic and frontend helpers in `packages/web/src/shared/utils/money.ts` and `packages/web/src/shared/lib/balance-domain.ts` for UI/cache projections.
-- `Account.hidden` is the current user's personal dashboard-card preference. It must not change account access or remove the account from transaction, transfer, debt, scheduled-payment, or analytics data.
-- `Account.balance` is the current materialized balance and `Account.initialBalance` is the opening balance. When changing the opening balance, keep the invariant `balance = initialBalance + transaction deltas`.
-- Regenerate OpenAPI and the web client after API contract changes with `pnpm api:generate`; verify drift with `pnpm api:check-generated`.
-- Use TanStack Query keys from `packages/web/src/shared/lib/query-keys.ts`; do not invent ad hoc key shapes.
-- When client mutations need immediate UI feedback, prefer the existing optimistic update helpers in `packages/web/src/shared/lib/optimistic-workspace-updates.ts`.
-- For app-facing web forms, use the shared UI controls instead of native browser controls: `shared/ui/select` for option dropdowns, `DatePicker` or `DateTimePicker` for dates, `AccountSelector`/`SelectAccountDialog` for account selection, `UserDisplay`/`UserAvatar` for user choices, and `CURRENCY_OPTIONS` for currency choices.
-- Keep protected app routes (`/dashboard`, `/analytics`, `/debts`, `/payments`) client-rendered: avoid route-loader session/data dependencies, and use TanStack Query for cached server state.
-- Use the client auth gate for protected app routes; API auth guards remain the security boundary.
-- Do not cache financial documents, API responses, dashboard routes, or data responses in the service worker.
-- Do not use Tailwind's `tabular-nums` class. Use proportional typography for money and numeric UI, and solve alignment with layout instead.
-- For company/product brand logos, use `svgl.app` as the preferred source. Copy only the specific SVGs needed into local assets or small React SVG components; do not add an icon-pack dependency or runtime SVGL fetch for a handful of logos. If a brand has stricter sign-in/button guidelines, such as Google Sign-In, prefer the official approved sign-in mark over a heavier generic SVGL logo.
-
-## Data And Infrastructure Notes
-
-- The database is PostgreSQL through Prisma with `provider = "postgresql"`.
-- Local PostgreSQL runs through `docker-compose.yml` on port `5432`.
-- Run `pnpm db:generate` after schema changes.
-- Run `pnpm db:migrate:dev` to create and apply a reviewed local SQL migration. Railway applies committed migrations
-  with `pnpm db:migrate:deploy` in `preDeployCommand` for DEV and PROD; do not use `db push` for shared environments.
-- Use `DATABASE_URL` for API runtime connections and `DIRECT_URL` for migration and administrative connections. They
-  may be identical locally; in hosted environments `DATABASE_URL` may be pooled while `DIRECT_URL` must bypass the pool.
-- Railway API runtimes connect as the least-privilege `finnn_app` role with `connection_limit=5`, `pool_timeout=10`,
-  and `connect_timeout=5`. `DIRECT_URL` retains the administrative role for Prisma Migrate. Recalculate the total pool
-  budget before adding API replicas.
-- Shared Railway PostgreSQL instances use `max_connections=50`, `effective_cache_size=512MB`, and
-  `idle_in_transaction_session_timeout=60s`; `pg_stat_statements` is enabled for evidence-based query tuning.
-- Back up PostgreSQL with `pg_dump` and restore with `pg_restore`; rehearse restores against a separate database.
-- Railway project and service IDs, branch mappings, safe CLI usage, and the current deployment topology are documented
-  in `docs/operations.md`. The main local checkout may be linked to Production, so pass explicit project, environment,
-  and service identifiers for infrastructure mutations.
-- Vercel team/project IDs, branch and domain mappings, safe authenticated CLI/API usage, and deployment verification
-  commands are documented in `docs/operations.md`.
-- `packages/api/.env` owns backend secrets such as `DATABASE_URL`, `DIRECT_URL`, `API_AUTH_SECRET`, `API_COOKIE_SECRET`,
-  email variables, and `CRON_SECRET`.
-- `packages/web/.env` owns browser-safe variables such as `VITE_API_URL`.
-- Vercel web domains: PROD `https://finnn.xyz`, DEV `https://dev.finnn.xyz`.
-- Railway API domains: PROD `https://api.finnn.xyz`, DEV `https://api-dev.finnn.xyz`.
-- Telegram uses two bots: one PROD bot for production domains and one DEV bot for DEV plus localhost/ngrok testing.
-- `RESEND_API_KEY` and `EMAIL_FROM` are required for email delivery in all environments.
-- Backend scheduling should call the API endpoint `/cron/update-exchange-rates` with `Authorization: Bearer <CRON_SECRET>`.
-
-## Documentation Expectations
-
-- Update `AGENTS.md` and `docs/` when changing architecture, setup, data model, workflows, deployment, or agent-facing conventions.
-- When the user explicitly invokes an eligible `docs/plans/<feature>` plan, follow it, keep its execution state current,
-  and update its work log when the user or the invoked plan requires it. Return to the user only for a newly discovered
-  material product decision.
-- Keep README concise and link to detailed docs instead of duplicating large sections.
-- Prefer concrete file paths, commands, invariants, and failure modes over generic descriptions.
+- Update the narrow canonical document that owns the changed behavior. Update `AGENTS.md` only for durable, cross-task agent instructions.
+- Write stable documentation: describe intent, invariants, boundaries, procedures, exact commands, verification, and failure modes.
+- Do not record fast-changing snapshots such as current deployment state, temporary URLs, resource IDs, quotas, package-version inventories, or exhaustive file/module lists. Point to configuration, code, schemas, package manifests, provider state, or a command that discovers the current value.
+- Keep one canonical source for each rule or fact and link to it instead of copying paragraphs across `AGENTS.md`, README files, plans, and operational guides.
+- Prefer rules that are actionable and verifiable. Avoid vague advice, historical narration, speculative future requirements, and absolute wording without a defined scope or exception.
+- Use mandatory language only for correctness, security, data integrity, or an explicit project policy. Express conventions and heuristics as defaults or preferences.
+- Keep each rule focused on one concern. Include the scope, required action, and exception only when each is necessary to make the rule unambiguous.
+- Before adding an `AGENTS.md` rule, confirm that it is broadly reusable, likely to remain valid, not already enforced by code or tooling, and not owned by the global `AGENTS.md` or a canonical project document.
+- When a change makes documentation or an agent rule stale, update or remove it in the same change. Do not preserve obsolete guidance for historical context; use Git history when that context is needed.
+- Keep README files concise and navigational. Put detailed guidance in the canonical topic document without duplicating it elsewhere.

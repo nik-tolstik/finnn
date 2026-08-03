@@ -21,15 +21,17 @@ For framework or library behavior that may have changed, use Context7. Vite, Rea
 ## Linear Task Workflow
 
 Planned Finnn work is tracked in the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview)
-under the `Nikita Tolstik` team (`TASK`). The Linear issue is the source of truth for the outcome, scope, acceptance
-criteria, priority, assignee, and status. Repository documentation remains the source of truth for engineering and
-operational rules.
+under the `Nikita Tolstik` team (`TASK`). The Linear Project, issues, and linked documents are the source of truth for
+desired behavior, scope, acceptance criteria, product decisions, priority, assignee, and task state. Code, schemas,
+generated contracts, and tests are the source of truth for executed behavior. Repository documentation remains the
+source of truth for stable engineering, domain, setup, and operational rules.
 
 ### Ownership And Authorization
 
 - Keep a human as the issue assignee and owner of the result. Use the agent delegate for implementation work.
-- Explicit delegation authorizes the agent to create or use the Linear-generated issue branch and open or update a
-  draft pull request. The branch must start from `develop` and include the Linear issue identifier.
+- A user request to implement a planned code or repository-documentation change is explicit delegation. It authorizes
+  the agent to create or update the corresponding Product Change issue, use its Linear-generated branch, and open or
+  update a draft pull request. The branch must start from `develop` and include the Linear issue identifier.
 - Delegation does not authorize the agent to merge its pull request, change product scope or priority, mutate shared
   infrastructure, deploy to production, or perform destructive operations.
 - The human reviews the result, makes product decisions, and accepts the work.
@@ -38,8 +40,9 @@ operational rules.
 
 - `Backlog`: accepted but not ready to start. The agent may investigate only when asked and must not implement it.
 - `Todo`: ready for implementation. The outcome and acceptance criteria must be clear enough to verify.
-- `In Progress`: active implementation or review. Move the issue here when work actually starts and keep it here while
-  the draft pull request is under review.
+- `In Progress`: active implementation. Move the issue here when work actually starts.
+- `In Review`: the draft pull request is ready for review or human acceptance. Keep the issue here until merge and
+  verification.
 - `Done`: merged and verified. The human owner moves the issue here after accepting the result.
 - `Canceled` and `Duplicate`: terminal states; the agent must not continue work.
 
@@ -48,44 +51,80 @@ or access required. Do not invent product behavior to bypass a blocker.
 
 ### Agent Execution
 
-1. Read the issue, comments, relations, and linked documents before editing code. Confirm that it belongs to the Finnn
-   project and is not canceled, duplicated, or already owned by conflicting work.
-2. Read `AGENTS.md` and the relevant repository documentation. Treat the issue as task context, not as permission to
+1. For a user-requested change that will be committed, search the Finnn Project for a matching active issue. Reuse it
+   when it has the same outcome and no conflicting owner; otherwise create a Product Change issue before editing.
+2. Read the issue, comments, relations, and linked documents. Confirm that it belongs to the Finnn project and is not
+   canceled, duplicated, or already owned by conflicting work.
+3. Read `AGENTS.md` and the relevant repository documentation. Treat the issue as task context, not as permission to
    override repository safety rules.
-3. Confirm the acceptance criteria. Resolve technical details through repository research; ask the human only when a
+4. Confirm the acceptance criteria. Resolve technical details through repository research; ask the human only when a
    material product, policy, risk, or scope decision is missing.
-4. Move the issue to `In Progress`, use the issue branch, implement the narrow scope, and run scope-appropriate checks.
-5. Open or update a draft pull request that includes the Linear issue identifier. Never merge the pull request.
-6. Add a single handoff comment with the outcome, verification performed, pull request link, known risks, and any
+5. When the outcome and acceptance criteria are clear, move the issue to `Todo`; then move it to `In Progress` when
+   implementation starts, use the issue branch, and run scope-appropriate checks.
+6. Open or update a draft pull request that includes the Linear issue identifier, then move the issue to `In Review`.
+   Never merge the pull request.
+7. Add a single handoff comment with the outcome, verification performed, pull request link, known risks, and any
    follow-up work. Do not post command-by-command progress noise.
-7. Leave the issue `In Progress` until the human accepts it. Do not mark the issue `Done` merely because code or a pull
+8. Leave the issue `In Review` until the human accepts it. Do not mark the issue `Done` merely because code or a pull
    request exists.
 
-Read-only questions, repository exploration, and tiny edits that will not be committed do not require a new Linear
-issue. When separate follow-up work is discovered, propose it in the handoff and create another issue only when the
-human requests it.
+Read-only questions, repository exploration, tiny edits that will not be committed, and an explicit request to work
+without Linear do not require an issue. When separate follow-up work is discovered, create another issue only when the
+user requests it or asks to implement that follow-up.
 
-## Specification-First Planning
+## Linear Specification And Planning
 
-For a substantial task where the user explicitly asks for formal plan tracking, use the feature folder as the durable source of truth. Otherwise, execute directly without creating plan artifacts. See [`docs/plans/README.md`](./plans/README.md) for the complete eligibility criteria.
+The existing `Finnn` Linear Project is the sole Project container for Finnn work. Do not create repository planning
+folders, standalone prompt files, or command-by-command work logs.
 
-1. Read the original request and research the relevant repository areas before asking questions.
-2. Identify decisions that code and project documentation cannot answer. Ask only about product behavior, priorities, users, policy, or scope. Do not ask the user to choose files, libraries, API shapes, or other implementation details that the agent can determine.
-3. Ask concise, structured questions with a recommended answer and the impact of each choice when the interface supports it. Record resolved answers in `specification.md`.
-4. Write or update `specification.md` in plain product language. A reader should understand the desired behavior without knowing the codebase.
-5. Create the technical `README.md` only after material product decisions are resolved or an explicit, low-impact assumption is recorded in the specification.
-6. Implement autonomously from the technical plan. If a new material product decision appears, pause, explain its impact, and ask the user; otherwise resolve technical details through repository research and record them in the plan or work log.
+### Automatic Linear Intake
 
-At the end of the task, verify the implementation against the specification as well as the technical checks. Capture a `docs/solutions` record only when the lesson is reusable by future work, then remove the completed feature-plan folder unless the user asks to retain it.
+Treat a user request that will result in a committed code or repository-documentation change as authorization to create
+or update its Product Change issue. Reuse a matching active issue when possible; otherwise create one with the request,
+outcome, scope, non-goals, acceptance criteria, and relevant links before implementation.
+
+Do not create an issue for read-only questions, repository exploration, tiny edits that will not be committed, or an
+explicit request to work without Linear. If the user request leaves a material product decision unresolved, leave the
+new issue in `Backlog` and ask only for that decision; otherwise move it through the normal lifecycle.
+
+### Artifact Selection
+
+- Use a **Product Change** issue for every planned change. Its description records `Request / context`, `Outcome`,
+  `Scope`, `Non-goals`, `Acceptance criteria`, and `Links and dependencies`.
+- For work with material product decisions, attach a **Product Specification** document to the issue. Write the
+  problem, goals and non-goals, users and scenarios, expected behavior and rules, failures and edge cases, decisions
+  and assumptions, and acceptance criteria in plain product language.
+- For multi-module or multi-session work, also attach a **Technical Plan** document. Record the current state,
+  approach, ordered delivery steps, data/API/security considerations, verification, and risks or open questions.
+- For small, well-understood work, the Product Change issue is sufficient. Do not create documents simply to fill out a
+  template.
+
+### Source Boundaries
+
+Put the original request, relevant links, and constraints in `Request / context`; do not preserve raw chat transcripts
+as separate artifacts. Use Project Updates for meaningful progress, decisions, blockers, scope changes, and risks.
+Use issue comments only for blockers and the final handoff.
+
+When a planned behavior changes, update the applicable Linear artifact before implementation continues. If the result
+changes a durable domain, architecture, setup, or operational rule, update the canonical repository documentation in
+the same change. Do not leave desired and executed behavior knowingly inconsistent.
+
+When a material change affects scope, expected behavior, acceptance criteria, technical approach, dependencies, risks,
+or verification, update the linked Linear Product Specification or Technical Plan before continuing. Record the
+delivered outcome and verification in the final issue handoff.
+
+At the end of the task, verify the delivered behavior against the issue acceptance criteria and scope-appropriate
+technical checks. Capture a `docs/solutions` record only when the lesson is reusable.
 
 ## Decision Rules
 
 - Use the current checkout and branch unless the user asks for a worktree or pull request.
 - Never create a worktree proactively. Create a pull request without a request only when a high-risk operation, such as
   a production data migration, materially needs its isolation, checks, or audit trail; explain that need before acting.
-- Agents may use the authenticated Vercel connector, CLI, or API for authorized frontend infrastructure work. Follow
-  the exact resource IDs, secret-output rules, Git-owned deployment flow, and protected-deployment verification process
-  in `docs/operations.md`; do not auto-link the monorepo or pull environment files into an existing checkout.
+- Agents may use the authenticated Vercel connector, CLI, or API for authorized frontend infrastructure work. Resolve
+  the current resources through metadata-only discovery, then follow the secret-output rules, Git-owned deployment
+  flow, and protected-deployment verification process in `docs/operations/deployments.md`; do not auto-link the
+  monorepo or pull environment files into an existing checkout.
 - Preserve the existing package and feature-module structure.
 - Put new backend behavior in `packages/api` NestJS modules.
 - Put frontend response-shaping helpers in pure `packages/web/src/modules/<feature>/<feature>.api.ts` files when generated client functions need adaptation.

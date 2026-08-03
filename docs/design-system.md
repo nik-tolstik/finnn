@@ -6,6 +6,8 @@ The Finnn web color system is defined in `packages/web/src/styles/globals.css` a
 
 Use sentence case for interface text and content. Do not write text in all caps or apply `uppercase`/`text-transform: uppercase` unless the product or design explicitly requires it. This applies to headings, buttons, labels, tabs, table headers, statuses, and menu items. Preserve uppercase only where it is part of a proper name, acronym, or other intentional content.
 
+Use proportional typography for money and numeric UI. Do not apply Tailwind's `tabular-nums`; solve alignment with layout, spacing, or explicit column sizing instead.
+
 ## Token Layers
 
 ### Palette
