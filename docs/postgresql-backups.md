@@ -6,8 +6,7 @@
 PostgreSQL 18 custom-format dump directly into `age`, uploads only the encrypted file to private S3-compatible storage,
 re-downloads the complete object to verify its SHA-256 digest, and uploads a completion manifest last.
 
-The production Railway service currently uses the `finnn` prefix. The prefix is configurable, and the resulting object
-layout is timestamped and append-only:
+The object prefix is configurable. The resulting object layout is timestamped and append-only:
 
 ```text
 finnn/production/daily/YYYY/MM/DD/finnn-YYYYMMDDTHHMMSSsssZ.dump.age
@@ -56,16 +55,12 @@ exist. The derived recipient fingerprint in each manifest identifies which recov
 
 ## Railway Service Configuration
 
-The Production `postgres-backup-cron` service (`1e19ed24-6247-4dca-9b8e-aa847e6fc21b`) is connected to GitHub `main`.
-It has no DEV instance or public domain. The checked-in
-[`packages/postgres-backup/railway.json`](../packages/postgres-backup/railway.json) builds
-[`packages/postgres-backup/Dockerfile`](../packages/postgres-backup/Dockerfile), runs once daily at `02:00 UTC`, and uses
-`restartPolicyType: NEVER`. The image is based on PostgreSQL 18 so `pg_dump` matches the production server major, and it
-includes the `age` CLI and Node.js runtime. The service runs in Railway EU West with 0.5 vCPU and 500 MB memory.
-
-The initial deployment may be uploaded from a trusted local checkout, but that snapshot is not tied to a Git commit.
-After the implementation is merged, connect the service source to `nik-tolstik/finnn` branch `main` so subsequent
-deployments are reproducible and follow the checked-in watch patterns. Configure the service as follows:
+The exact backup service, environment, source branch, region, limits, domain state, and Bucket must be resolved from
+authenticated provider state before an operation. The checked-in
+[`packages/postgres-backup/railway.json`](../packages/postgres-backup/railway.json) and
+[`packages/postgres-backup/Dockerfile`](../packages/postgres-backup/Dockerfile) are authoritative for the service build,
+schedule, and restart behavior. Follow the shared provider-safety procedure in
+[Operations](./operations/README.md). Configure the resolved service as follows:
 
 1. Keep the service root directory at `/` because its Docker build needs the workspace lockfile and package manifest.
 2. Set the config-as-code path to `/packages/postgres-backup/railway.json`.
@@ -73,12 +68,11 @@ deployments are reproducible and follow the checked-in watch patterns. Configure
 4. Reference the direct production PostgreSQL URL as `BACKUP_DATABASE_URL`; do not route the dump through a transaction
    pooler.
 5. Reference the private backup bucket credentials. The service supports configurable endpoint, region, bucket, and URL
-   style. For the Railway virtual-host endpoint `https://t3.storageapi.dev`, keep
-   `BACKUP_S3_FORCE_PATH_STYLE="false"`.
+   style; set the addressing mode that matches the resolved provider metadata.
 6. Add alerting for every non-zero cron result and for a missing daily completion manifest.
 
-`BACKUP_DATABASE_URL` uses the same-project private PostgreSQL hostname. The Bucket is in a separate Railway project,
-so its credentials cannot be referenced across projects and must be copied securely into the cron variables:
+`BACKUP_DATABASE_URL` uses a direct PostgreSQL hostname. When the Bucket and backup service use separate provider
+projects, their credentials cannot be referenced across projects and must be copied securely into the cron variables:
 
 | Backup variable | Railway Bucket credential |
 | --- | --- |
@@ -88,9 +82,8 @@ so its credentials cannot be referenced across projects and must be copied secur
 | `BACKUP_S3_ACCESS_KEY_ID` | `ACCESS_KEY_ID` |
 | `BACKUP_S3_SECRET_ACCESS_KEY` | `SECRET_ACCESS_KEY` |
 
-The current Bucket uses virtual-host addressing at `https://t3.storageapi.dev`; keep
-`BACKUP_S3_FORCE_PATH_STYLE="false"` and set `BACKUP_S3_PREFIX="finnn"` explicitly. Never copy the age private identity
-into Railway.
+Set `BACKUP_S3_FORCE_PATH_STYLE` and `BACKUP_S3_PREFIX` explicitly for the resolved Bucket configuration. Never copy the
+age private identity into Railway.
 
 Railway cron schedules are UTC. A cron process must exit when its work finishes, and Railway skips an invocation when a
 previous execution is still active. See the official [Railway cron documentation](https://docs.railway.com/cron-jobs)
@@ -207,12 +200,12 @@ and at least quarterly. A successful upload without a successful restore rehears
 
 ## Retention And Incident Handling
 
-Railway Bucket does not currently expose a lifecycle policy for this service. Do not delete any completed backup during
-the first 90 days. After restore rehearsals establish the long-term retention tiers, implement a separately reviewed
-client-side or manual pruning procedure; do not add deletion to the backup cron itself. Pruning must inventory complete
-manifest/payload pairs, preserve the agreed minimum generations, and delete a pair only after a newer backup has passed
-an isolated restore. Preserve provider point-in-time recovery separately when available. Never expire an age identity
-before every payload encrypted to it has expired.
+Do not assume a provider lifecycle policy is configured; resolve it before setting retention or pruning. Do not delete
+any completed backup during the first 90 days. After restore rehearsals establish the long-term retention tiers,
+implement a separately reviewed client-side or manual pruning procedure; do not add deletion to the backup cron itself.
+Pruning must inventory complete manifest/payload pairs, preserve the agreed minimum generations, and delete a pair only
+after a newer backup has passed an isolated restore. Preserve provider point-in-time recovery separately when available.
+Never expire an age identity before every payload encrypted to it has expired.
 
 If a job fails:
 

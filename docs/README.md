@@ -1,66 +1,20 @@
 # Finnn Documentation
 
-Finnn is a personal and shared finance tracker. It supports workspaces, shared members, accounts, categories, payments, transfers, debts, analytics, exchange rates, PostgreSQL persistence, and a constrained PWA service worker.
+Finnn is a personal and shared finance tracker. Use this index to find the canonical document for the task at hand.
 
-This documentation is written for two audiences:
+## Start By Task
 
-- Developers who need to run, change, test, and deploy the project.
-- AI coding agents that need a fast, reliable map of the codebase before making edits.
-
-## Start Here
-
-- [Development](./development.md) - local setup, environment variables, commands, database workflow, and verification.
-- [Architecture](./architecture.md) - directory map, request/data flow, feature module conventions, and cross-cutting helpers.
-- [Web Design System](./design-system.md) - palette, semantic and component color tokens, plus shared control contracts.
-- [Account Icons](./account-icons.md) - icon registry, adaptive contrast behavior, brand icon handling, and extension rules.
-- [Category Icons](./category-icons.md) - emoji, legacy Lucide, workspace uploads, API endpoints, and picker behavior.
-- [Domain Model](./domain-model.md) - core entities, money invariants, workspaces, transactions, transfers, debts, exchange rates, and PWA cache boundaries.
-- [Operations](./operations.md) - deployment, cron, PostgreSQL migrations and backups, cutover, email, service worker, and production checks.
-- [Encrypted PostgreSQL Backups](./postgresql-backups.md) - Railway cron, age encryption, verified S3-compatible uploads,
-  completion manifests, monitoring, retention, and restore rehearsals.
-- [AI Contributor Guide](./ai-contributor-guide.md) - how Codex or another AI agent should approach changes and work
-  from the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview).
-- [Feature Plans](./plans/README.md) - the opt-in specification-first workflow, technical plans, and work logs for substantial changes.
-- [Reusable Solutions](./solutions/README.md) - durable lessons that help future agents avoid known pitfalls.
-
-## Project At A Glance
-
-- Framework: Vite React SPA with React Router, plus a NestJS API; both are in TypeScript.
-- Data: Prisma ORM with PostgreSQL in `packages/api`.
-- Auth: API-owned HTTP-only cookie sessions.
-- Contract: NestJS OpenAPI with Orval-generated web clients.
-- Client data: TanStack Query with browser-side fetching, caching, and invalidation.
-- UI: Tailwind CSS, local UI primitives, lucide-react, Recharts.
-- Validation: NestJS DTO validation in `packages/api` plus frontend Zod schemas in `packages/web/src/shared/lib/validations`.
-- Tests: Vitest plus static UI structure tests in package-local `scripts`.
-- Formatting/linting: Biome.
-- Deployment: `packages/api` on Railway or equivalent backend hosting; `packages/web` as the frontend deployment.
-
-## Primary User Flows
-
-1. A user registers, verifies email, signs in, and creates or joins a workspace.
-2. A workspace owner or member creates accounts and categories.
-3. A user records income, expense, transfer, or debt activity.
-4. API domain logic updates balances transactionally in PostgreSQL.
-5. The dashboard and analytics views fetch cached API data after the client session and workspace are resolved.
-6. The protected API cron endpoint fetches and stores exchange rates for conversion-aware analytics and UI display.
-
-## Important Invariants
-
-- Money amounts are stored as strings and should be manipulated only through money/domain helpers.
-- Workspace access must be checked on every server-side read or mutation that depends on workspace data.
-- Balance-changing operations should be transactional.
-- Query keys must come from `packages/web/src/shared/lib/query-keys.ts`.
-- Client cache invalidation should use centralized query keys and domain invalidation helpers.
-- The service worker must not cache financial app documents, API responses, or dashboard data routes.
-
-## Fast Verification
-
-```bash
-pnpm typecheck
-pnpm check
-pnpm test
-pnpm build
-```
-
-For narrow changes, run the most relevant targeted test first, then broaden verification if the change touches shared domain rules, data access, React Router behavior, or PWA caching.
+- [Development](./development.md) — local setup, environment conventions, scripts, local integrations, Prisma authoring,
+  and WSL2 mobile-browser testing.
+- [Architecture](./architecture.md) — package boundaries, request and data flow, frontend structure, and UI-system entry
+  points.
+- [Domain Model](./domain-model.md) — finance invariants, persistence rules, authorization boundaries, and data behavior.
+- [Web Design System](./design-system.md) — design tokens, shared control contracts, and visual verification.
+- [Account Icons](./account-icons.md) — shared account-mark registry, color behavior, and extension rules.
+- [Category Icons](./category-icons.md) — category-icon behavior across storage, API, and the web UI.
+- [Operations](./operations/) — safe provider discovery, deployment, database, and external-integration runbooks.
+- [Encrypted PostgreSQL Backups](./postgresql-backups.md) — encryption, monitoring, recovery, retention, and restore
+  rehearsals.
+- [AI Contributor Guide](./ai-contributor-guide.md) — Linear task workflow and implementation checklists for coding
+  agents.
+- [Reusable Solutions](./solutions/README.md) — durable, evidence-based engineering lessons.
