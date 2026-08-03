@@ -58,4 +58,16 @@ describe("debt dialog entry points", () => {
     expect(dialogSource).toContain("max-sm:max-h-[calc(100dvh-1rem)]");
     expect(dialogSource).toContain('className="flex-none shrink-0 pb-0"');
   });
+
+  it("keeps the shared debt summary card compact and neutral", () => {
+    const source = readSource("src/modules/debts/components/debt-summary-card/DebtSummaryCard.tsx");
+
+    expect(source).not.toContain("UserRound");
+    expect(source).not.toContain("lucide-react");
+    expect(source).not.toContain("destructive");
+    expect(source).not.toContain("text-success");
+    expect(source).toContain('className="text-xs text-muted-foreground"');
+    expect(source).toContain('className="h-full bg-foreground transition-[width]"');
+    expect(source).toContain('className="h-full bg-primary transition-[width]"');
+  });
 });

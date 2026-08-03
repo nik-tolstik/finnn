@@ -89,3 +89,16 @@
 - `git diff --check` — passed.
 - Focused strict no-tool Copilot CLI review with `grok-4.5` of `0670129...HEAD` reported exactly: `No actionable findings`. Final-review classifications: none confirmed, rejected, or uncertain.
 - No browser or screenshot QA was run, in accordance with `AGENTS.md`.
+
+## 2026-08-03 — Compact neutral debt summary follow-up
+
+- Simplified the shared `DebtSummaryCard` used by all three debt operation segments: removed the avatar, reduced card spacing and typography, and retained the existing Russian labels, amounts, progress arithmetic, and live pending-payment preview.
+- Made the direction neutral muted text for both debt types. The settled progress segment and its amount label now use the high-contrast neutral foreground color, while the pending preview remains primary for a clear non-danger distinction.
+- Added a focused source regression ensuring the card contains no `UserRound`, Lucide import, destructive styling, or success-direction styling, and retains the neutral/primary progress contract.
+- React review: the component remains presentational, with no added state, effects, subscriptions, or unnecessary memoization.
+- `pnpm --filter web test -- src/modules/debts` — passed: 58 test files, 251 tests.
+- `pnpm --filter web typecheck` — passed.
+- `pnpm --filter web check` — passed: 660 files checked, no fixes applied.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
+- `pnpm --filter web build:storybook` requires `VITE_API_URL` under the existing production Vite configuration; `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed (existing chunk-size warning only).
+- No browser or screenshot QA was run.

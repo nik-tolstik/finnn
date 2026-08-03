@@ -1,6 +1,3 @@
-import { UserRound } from "lucide-react";
-
-import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
 
 import { DebtType } from "../../debt.constants";
@@ -35,18 +32,13 @@ export function DebtSummaryCard({
     : `${progress.debtProgressPercent}% уже закрыто`;
 
   return (
-    <div className="space-y-4 rounded-xl bg-card p-4 shadow-sm">
+    <div className="space-y-3 rounded-xl bg-card p-3 shadow-sm">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <UserRound className="size-6" aria-hidden="true" />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <div className="truncate font-medium">{personName}</div>
-            <div className={cn("text-sm", isLent ? "text-success" : "text-destructive")}>{directionLabel}</div>
-          </div>
+        <div className="min-w-0 space-y-0.5">
+          <div className="truncate text-sm font-medium">{personName}</div>
+          <div className="text-xs text-muted-foreground">{directionLabel}</div>
         </div>
-        <div className="shrink-0 text-right text-lg font-semibold text-foreground">
+        <div className="shrink-0 text-right text-base font-semibold text-foreground">
           {formatMoney(displayedRemainingAmount, currency)}
         </div>
       </div>
@@ -63,7 +55,7 @@ export function DebtSummaryCard({
         >
           <div className="flex h-full w-full">
             <div
-              className={cn("h-full transition-[width]", isLent ? "bg-success" : "bg-destructive")}
+              className="h-full bg-foreground transition-[width]"
               style={{ width: `${progress.debtProgressPercent}%` }}
             />
             <div
@@ -74,11 +66,9 @@ export function DebtSummaryCard({
         </div>
         <div className="relative h-4 text-xs text-muted-foreground">
           <span
-            className={cn(
-              "absolute top-0 whitespace-nowrap",
-              progress.debtProgressPercent === 0 ? "left-0" : "-translate-x-1/2",
-              isLent ? "text-success" : "text-destructive"
-            )}
+            className={`absolute top-0 whitespace-nowrap text-foreground ${
+              progress.debtProgressPercent === 0 ? "left-0" : "-translate-x-1/2"
+            }`}
             style={progress.debtProgressPercent === 0 ? undefined : { left: `${progress.debtProgressPercent / 2}%` }}
           >
             {formatMoney(progress.alreadyRepaidAmount, currency)}
