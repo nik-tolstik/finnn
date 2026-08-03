@@ -36,13 +36,22 @@ interface ContextMenuActionsDialogProps extends ActionsDialogBaseProps {
 
 export type ActionsDialogProps = AnchoredActionsDialogProps | ContextMenuActionsDialogProps;
 
-function ActionList({ actions, onSelect }: { actions: ActionItem[]; onSelect: (action: ActionItem) => void }) {
+function ActionList({
+  actions,
+  onSelect,
+  size = "compact",
+}: {
+  actions: ActionItem[];
+  onSelect: (action: ActionItem) => void;
+  size?: "compact" | "touch";
+}) {
   return (
     <div className="flex flex-col gap-1">
       {actions.map((action) => (
         <button
           className={cn(
-            "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors hover:bg-control-hover disabled:pointer-events-none disabled:opacity-50",
+            "flex w-full items-center rounded-md text-left font-medium transition-colors hover:bg-control-hover disabled:pointer-events-none disabled:opacity-50",
+            size === "touch" ? "min-h-14 gap-4 px-4 py-3 text-base" : "gap-3 px-3 py-2.5 text-sm",
             action.tone === "destructive" ? "text-destructive" : "text-foreground"
           )}
           disabled={action.disabled}
@@ -50,7 +59,7 @@ function ActionList({ actions, onSelect }: { actions: ActionItem[]; onSelect: (a
           onClick={() => onSelect(action)}
           type="button"
         >
-          <span className="shrink-0 [&_svg]:size-4">{action.icon}</span>
+          <span className={cn("shrink-0", size === "touch" ? "[&_svg]:size-5" : "[&_svg]:size-4")}>{action.icon}</span>
           <span className="min-w-0 flex-1 truncate">{action.label}</span>
         </button>
       ))}
@@ -101,7 +110,7 @@ export function ActionsDialog(props: ActionsDialogProps) {
     onOpenChange(false);
     action.onSelect();
   };
-  const actionList = <ActionList actions={actions} onSelect={handleSelect} />;
+  const actionList = <ActionList actions={actions} onSelect={handleSelect} size={isMobile ? "touch" : "compact"} />;
 
   if (isMobile) {
     return (
