@@ -130,7 +130,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
   upload, restore helper, tests, and Railway cron configuration.
 - `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
 - `docs` contains human and AI-facing project documentation.
-- `docs/plans` contains user-requested feature implementation plans and their work logs.
+- `docs/plans` is reserved for user-requested feature implementation plans and their work logs.
 
 ## Implementation Rules
 
