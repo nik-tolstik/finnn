@@ -180,7 +180,7 @@ export function EditTransferDialog({
         {
           id: "delete",
           icon: <Trash2 />,
-          label: "Удалить перевод",
+          label: "Удалить",
           onSelect: onDelete,
           tone: "destructive",
           disabled: form.formState.isSubmitting,

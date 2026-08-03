@@ -231,7 +231,7 @@ export function EditTransactionDialog({
     actions.push({
       id: "repeat",
       icon: <RotateCw />,
-      label: "Повторить транзакцию",
+      label: "Повторить",
       onSelect: onRepeat,
       disabled: isSubmitting,
     });
@@ -251,7 +251,7 @@ export function EditTransactionDialog({
     actions.push({
       id: "delete",
       icon: <Trash2 />,
-      label: "Удалить транзакцию",
+      label: "Удалить",
       onSelect: onDelete,
       tone: "destructive",
       disabled: isSubmitting,

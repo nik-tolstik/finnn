@@ -50,12 +50,14 @@ interface DialogWindowProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 interface DialogWindowContextValue {
+  actions: DialogAction[];
   hasActions: boolean;
   setNestedOverlayOpen: (open: boolean) => void;
 }
 
 const DialogContext = React.createContext<DialogContextValue | null>(null);
 const DialogWindowContext = React.createContext<DialogWindowContextValue>({
+  actions: [],
   hasActions: false,
   setNestedOverlayOpen: () => undefined,
 });
@@ -278,7 +280,10 @@ function DialogWindow({
     [refs]
   );
 
-  const dialogWindowContextValue = React.useMemo(() => ({ hasActions, setNestedOverlayOpen }), [hasActions]);
+  const dialogWindowContextValue = React.useMemo(
+    () => ({ actions, hasActions, setNestedOverlayOpen }),
+    [actions, hasActions]
+  );
 
   if (!isMounted) {
     return null;
@@ -321,9 +326,9 @@ function DialogWindow({
                 data-slot="dialog-overlay-portal-root"
                 className="pointer-events-none absolute inset-0 z-50"
               />
-              {hasActions || (showCloseButton && !isMobile) ? (
+              {(hasActions && isMobile) || (showCloseButton && !isMobile) ? (
                 <div className="absolute top-4 right-4 flex items-center gap-1">
-                  {hasActions ? <DialogOptionsButton actions={actions} /> : null}
+                  {hasActions && isMobile ? <DialogOptionsButton actions={actions} /> : null}
                   {showCloseButton && !isMobile ? (
                     <DialogCloseButton disabled={closeButtonDisabled} onClick={() => onOpenChange(false)} />
                   ) : null}
@@ -343,17 +348,21 @@ function DialogContent({ className, ...props }: React.ComponentProps<"div">) {
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   const { hasActions } = React.useContext(DialogWindowContext);
+  const { isMobile } = useBreakpoints();
 
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 px-6 text-center sm:text-left", hasActions && "pr-16", className)}
+      className={cn("flex flex-col gap-2 px-6 text-center sm:text-left", hasActions && isMobile && "pr-16", className)}
       {...props}
     />
   );
 }
 
-function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+function DialogFooter({ children, className, ...props }: React.ComponentProps<"div">) {
+  const { actions, hasActions } = React.useContext(DialogWindowContext);
+  const { isMobile } = useBreakpoints();
+
   return (
     <div
       data-slot="dialog-footer"
@@ -362,7 +371,14 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
         className
       )}
       {...props}
-    />
+    >
+      {children}
+      {hasActions && !isMobile ? (
+        <span className="flex shrink-0">
+          <DialogOptionsButton actions={actions} />
+        </span>
+      ) : null}
+    </div>
   );
 }
 

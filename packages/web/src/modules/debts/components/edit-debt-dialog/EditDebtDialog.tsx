@@ -326,7 +326,7 @@ export function EditDebtDialog({
         {
           id: "delete",
           icon: <Trash2 />,
-          label: "Удалить долг",
+          label: "Удалить",
           onSelect: onDelete,
           tone: "destructive",
           disabled: isSubmitting,

@@ -60,14 +60,15 @@ describe("dashboard interaction loading", () => {
     expect(controllerSource).toContain("const openDebtTransactionDialog");
     expect(dialogsSource).not.toContain("TransactionActionsDialog");
     expect(dialogsSource).not.toContain("DebtTransactionActionsDialog");
-    expect(editTransactionSource).toContain('label: "Повторить транзакцию"');
-    expect(editTransactionSource).toContain('label: "Удалить транзакцию"');
+    expect(editTransactionSource).toContain('label: "Повторить"');
+    expect(editTransactionSource).toContain('label: "Удалить"');
     expect(dialogSource).toContain("function DialogCloseButton");
     expect(dialogSource).toContain("export interface DialogAction");
     expect(dialogSource).toContain("actions?: DialogAction[]");
     expect(dialogSource).toContain("closeButtonDisabled?: boolean");
     expect(dialogSource).toContain("<DialogCloseButton");
     expect(dialogSource).toContain("function DialogOptionsButton");
+    expect(dialogSource).toContain("function DialogFooter");
     expect(dialogSource).toContain("<Popover");
     expect(dialogSource).toContain("<Sheet");
     expect(dialogSource).toContain('aria-label="Действия"');
@@ -75,6 +76,7 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain('transform: "translateY(100%)"');
     expect(dialogSource).toContain("outsidePress: !nestedOverlayOpen");
     expect(dialogSource).toContain("showCloseButton && !isMobile");
+    expect(dialogSource).toContain("hasActions && !isMobile");
     expect(dialogSource).not.toContain("mobilePosition");
     expect(editTransactionSource).toContain("actions=");
   });
@@ -91,6 +93,7 @@ describe("dashboard interaction loading", () => {
 
     for (const source of headerDialogSources) {
       expect(source).toContain("actions=");
+      expect(source).not.toContain('label: "Удалить ');
       expect(source).not.toContain('import { Tooltip } from "@/shared/ui/tooltip"');
       expect(source).not.toContain("<DialogCloseButton");
       expect(source).not.toContain("headerActions=");

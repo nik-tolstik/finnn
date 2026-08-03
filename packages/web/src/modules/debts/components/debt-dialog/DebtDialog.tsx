@@ -2,7 +2,15 @@ import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/shared/ui/button";
-import { Dialog, type DialogAction, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Segmented } from "@/shared/ui/segmented";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -48,18 +56,21 @@ function DebtReadOnlySummary({ debt }: { debt: DebtWithRelations }) {
   const directionLabel = debt.type === DebtType.LENT ? "Мне должны" : "Я должен";
 
   return (
-    <DialogContent>
-      <div className="space-y-4 rounded-xl bg-muted/60 p-4">
-        <div className="space-y-1">
-          <div className="text-sm text-muted-foreground">{directionLabel}</div>
-          <div className="text-lg font-semibold">{debt.personName}</div>
+    <>
+      <DialogContent>
+        <div className="space-y-4 rounded-xl bg-muted/60 p-4">
+          <div className="space-y-1">
+            <div className="text-sm text-muted-foreground">{directionLabel}</div>
+            <div className="text-lg font-semibold">{debt.personName}</div>
+          </div>
+          <div className="flex items-end justify-between gap-4">
+            <div className="text-sm text-muted-foreground">Закрытый долг</div>
+            <div className="text-right text-lg font-semibold">{formatMoney(debt.amount, debt.currency)}</div>
+          </div>
         </div>
-        <div className="flex items-end justify-between gap-4">
-          <div className="text-sm text-muted-foreground">Закрытый долг</div>
-          <div className="text-right text-lg font-semibold">{formatMoney(debt.amount, debt.currency)}</div>
-        </div>
-      </div>
-    </DialogContent>
+      </DialogContent>
+      <DialogFooter />
+    </>
   );
 }
 
@@ -212,7 +223,7 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
     actions.push({
       id: "delete",
       icon: <Trash2 />,
-      label: "Удалить долг",
+      label: "Удалить",
       onSelect: () => setView("delete"),
       tone: "destructive",
       disabled: isSubmitting,

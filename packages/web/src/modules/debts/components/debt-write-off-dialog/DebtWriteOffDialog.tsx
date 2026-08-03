@@ -545,7 +545,7 @@ export function DebtWriteOffDialog({
         {
           id: "delete",
           icon: <Trash2 />,
-          label: "Удалить погашение",
+          label: "Удалить",
           onSelect: onDelete,
           tone: "destructive",
           disabled: isSubmitting,

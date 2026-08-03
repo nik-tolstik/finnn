@@ -55,7 +55,7 @@ export function EditDebtTransactionDialog({
         {
           id: "delete",
           icon: <Trash2 />,
-          label: "Удалить транзакцию долга",
+          label: "Удалить",
           onSelect: onDelete,
           tone: "destructive",
           disabled: form.formState.isSubmitting,
