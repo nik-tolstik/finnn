@@ -110,12 +110,12 @@ function SheetContent({
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "dialog" });
   const { getFloatingProps } = useInteractions([dismiss, role]);
-  const closedTransform = getClosedTransform(side);
+  const closedTransform = side === "bottom" ? undefined : getClosedTransform(side);
   const { isMounted, styles: transitionStyles } = useTransitionStyles(context, {
     duration: { close: 120, open: 180 },
-    initial: { opacity: 0, transform: closedTransform },
-    open: { opacity: 1, transform: "translate(0, 0)" },
-    close: { opacity: 0, transform: closedTransform },
+    initial: closedTransform ? { opacity: 0, transform: closedTransform } : { opacity: 0 },
+    open: closedTransform ? { opacity: 1, transform: "translate(0, 0)" } : { opacity: 1 },
+    close: closedTransform ? { opacity: 0, transform: closedTransform } : { opacity: 0 },
   });
   const closeCompleteCalledRef = React.useRef(false);
   const wasMountedRef = React.useRef(false);

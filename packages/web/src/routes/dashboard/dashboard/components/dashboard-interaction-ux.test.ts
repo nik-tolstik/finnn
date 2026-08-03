@@ -83,6 +83,7 @@ describe("dashboard interaction loading", () => {
     expect(popoverSource).toContain("reference: ReferenceType | null");
     expect(popoverSource).toContain("trigger?:");
     expect(sheetSource).toContain("onCloseComplete?: () => void");
+    expect(sheetSource).toContain('side === "bottom" ? undefined : getClosedTransform(side)');
     expect(dialogSource).toContain('aria-label="Действия"');
     expect(dialogSource).toContain("max-h-[calc(100dvh-4rem)]");
     expect(dialogSource).toContain('transform: "translateY(100%)"');
