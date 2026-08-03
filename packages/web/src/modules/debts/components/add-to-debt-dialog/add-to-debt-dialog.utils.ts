@@ -3,6 +3,7 @@ import { addMoney, compareMoney, normalizeMoneyString, subtractMoney } from "@/s
 import { DebtType } from "../../debt.constants";
 
 const COMPLETE_MONEY_AMOUNT_PATTERN = /^(?:\d+(?:\.\d+)?|\.\d+)$/;
+const TRAILING_DECIMAL_SEPARATOR_PATTERN = /^\d+\.$/;
 
 interface AddToDebtSummaryPreviewInput {
   additionalAmount?: string;
@@ -15,7 +16,10 @@ export function getAddToDebtSummaryPreview({
   remainingAmount,
   totalAmount,
 }: AddToDebtSummaryPreviewInput) {
-  const normalizedAdditionalAmount = normalizeMoneyString(additionalAmount || "");
+  const normalizedInput = normalizeMoneyString(additionalAmount || "");
+  const normalizedAdditionalAmount = TRAILING_DECIMAL_SEPARATOR_PATTERN.test(normalizedInput)
+    ? normalizedInput.slice(0, -1)
+    : normalizedInput;
 
   if (
     !COMPLETE_MONEY_AMOUNT_PATTERN.test(normalizedAdditionalAmount) ||

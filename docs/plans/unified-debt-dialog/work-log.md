@@ -131,3 +131,16 @@
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed (existing chunk-size warning only).
 - No browser or screenshot QA was run.
+
+## 2026-08-03 — Add-to-debt interim decimal preview fix
+
+- Confirmed verifier finding: the preview grammar treated a trailing decimal separator as incomplete even though the existing NumberInput/Zod flow accepts it, causing the summary to flicker back to authoritative values for `1.`.
+- Normalized `digits.` to `digits` after whitespace and comma normalization, so `1.` and `1,` retain the same preview as `1`; `.` alone still falls back, and `.5` remains valid. The fix uses exact money-string operations only.
+- Added focused coverage for trailing dot, trailing comma, leading decimal, and normalized comma/space input.
+- The prior focused Copilot no-finding conclusion missed this specific interim-input grammar issue; that conclusion is rejected for this finding.
+- `pnpm --filter web test -- src/modules/debts` — passed: 58 test files, 263 tests.
+- `pnpm --filter web typecheck` — passed.
+- `pnpm --filter web check` — passed: 660 files checked, no fixes applied.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed (existing chunk-size warning only).
+- No browser or screenshot QA was run.

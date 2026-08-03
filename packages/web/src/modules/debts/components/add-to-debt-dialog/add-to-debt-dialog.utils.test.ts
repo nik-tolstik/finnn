@@ -40,7 +40,6 @@ describe("add to debt dialog utils", () => {
     "0",
     "-1",
     ".",
-    "1.",
     "not-a-number",
   ])("keeps authoritative debt values for an incomplete or non-positive addition: %s", (additionalAmount) => {
     expect(
@@ -50,6 +49,21 @@ describe("add to debt dialog utils", () => {
         totalAmount: "100",
       })
     ).toEqual({ remainingAmount: "75", totalAmount: "100" });
+  });
+
+  it.each([
+    ["1.", { remainingAmount: "76", totalAmount: "101" }],
+    ["1,", { remainingAmount: "76", totalAmount: "101" }],
+    [".5", { remainingAmount: "75.5", totalAmount: "100.5" }],
+    [" 1,5 ", { remainingAmount: "76.5", totalAmount: "101.5" }],
+  ])("normalizes an interim or comma-separated addition: %s", (additionalAmount, expectedPreview) => {
+    expect(
+      getAddToDebtSummaryPreview({
+        additionalAmount,
+        remainingAmount: "75",
+        totalAmount: "100",
+      })
+    ).toEqual(expectedPreview);
   });
 
   it("preserves decimal and large money-string precision", () => {
