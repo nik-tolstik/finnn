@@ -36,7 +36,15 @@ interface AddToDebtDialogProps {
   onCloseComplete?: () => void;
 }
 
-export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: AddToDebtDialogProps) {
+interface AddToDebtPanelProps {
+  debt: DebtWithRelations;
+  workspaceId: string;
+  open: boolean;
+  onComplete: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
+}
+
+export function AddToDebtPanel({ debt, workspaceId, open, onComplete, onSubmittingChange }: AddToDebtPanelProps) {
   const queryClient = useQueryClient();
 
   const { data: accountsData } = useQuery({
@@ -67,6 +75,10 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     setValue,
     control,
   } = form;
+
+  useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
 
   const amount = useWatch({ control, name: "amount" });
   const toAmount = useWatch({ control, name: "toAmount" });
@@ -171,7 +183,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       }
 
       toast.success("Сумма добавлена к долгу");
-      onOpenChange(false);
+      onComplete();
     } catch {
       toast.error("Не удалось добавить сумму к долгу");
     }
@@ -182,98 +194,104 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   };
 
   return (
+    <>
+      <DialogContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="p-3 bg-muted rounded-lg space-y-1">
+            <div className="text-sm text-muted-foreground">{debt.type === DebtType.LENT ? "Должник" : "Кредитор"}</div>
+            <div className="font-medium">{debt.personName}</div>
+            <div className="text-sm text-muted-foreground">
+              Текущий долг: {formatMoney(debt.remainingAmount, debt.currency)}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="addAmount" required>
+              Дополнительная сумма
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                {getCurrencySymbol(debt.currency)}
+              </span>
+              <NumberInput
+                id="addAmount"
+                placeholder="0.00"
+                className="pl-9"
+                {...register("amount", {
+                  onChange: (event) => handleAmountChange(event.target.value),
+                })}
+              />
+            </div>
+            {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Controller
+              control={control}
+              name="useAccount"
+              render={({ field }) => (
+                <Checkbox id="addUseAccount" checked={field.value} onCheckedChange={field.onChange} />
+              )}
+            />
+            <Label htmlFor="addUseAccount" className="cursor-pointer">
+              Использовать счёт
+            </Label>
+          </div>
+
+          {useAccount ? (
+            <>
+              <AccountSelector
+                workspaceId={workspaceId}
+                account={previewAccount || selectedAccount || null}
+                onSelect={handleAccountSelect}
+                label={debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}
+                required
+                error={errors.accountId?.message}
+              />
+
+              {selectedAccount && !currenciesMatch ? (
+                <div className="space-y-2">
+                  <Label htmlFor="addToAmount" required>
+                    {debt.type === DebtType.LENT ? "Сумма списания" : "Сумма зачисления"} ({selectedAccount.currency})
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                      {getCurrencySymbol(selectedAccount.currency)}
+                    </span>
+                    <NumberInput
+                      id="addToAmount"
+                      placeholder="0.00"
+                      className="pl-9"
+                      {...register("toAmount", {
+                        onChange: (event) => handleToAmountChange(event.target.value),
+                      })}
+                    />
+                  </div>
+                  {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
+                </div>
+              ) : null}
+            </>
+          ) : null}
+        </form>
+      </DialogContent>
+
+      <DialogFooter>
+        <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
+          {isSubmitting ? "Добавление..." : "Добавить"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: AddToDebtDialogProps) {
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>{debt.type === DebtType.LENT ? "Дать ещё в долг" : "Взять ещё в долг"}</DialogTitle>
         </DialogHeader>
-        <DialogContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="p-3 bg-muted rounded-lg space-y-1">
-              <div className="text-sm text-muted-foreground">
-                {debt.type === DebtType.LENT ? "Должник" : "Кредитор"}
-              </div>
-              <div className="font-medium">{debt.personName}</div>
-              <div className="text-sm text-muted-foreground">
-                Текущий долг: {formatMoney(debt.remainingAmount, debt.currency)}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="addAmount" required>
-                Дополнительная сумма
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                  {getCurrencySymbol(debt.currency)}
-                </span>
-                <NumberInput
-                  id="addAmount"
-                  placeholder="0.00"
-                  className="pl-9"
-                  {...register("amount", {
-                    onChange: (event) => handleAmountChange(event.target.value),
-                  })}
-                />
-              </div>
-              {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Controller
-                control={control}
-                name="useAccount"
-                render={({ field }) => (
-                  <Checkbox id="addUseAccount" checked={field.value} onCheckedChange={field.onChange} />
-                )}
-              />
-              <Label htmlFor="addUseAccount" className="cursor-pointer">
-                Использовать счёт
-              </Label>
-            </div>
-
-            {useAccount ? (
-              <>
-                <AccountSelector
-                  workspaceId={workspaceId}
-                  account={previewAccount || selectedAccount || null}
-                  onSelect={handleAccountSelect}
-                  label={debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}
-                  required
-                  error={errors.accountId?.message}
-                />
-
-                {selectedAccount && !currenciesMatch ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="addToAmount" required>
-                      {debt.type === DebtType.LENT ? "Сумма списания" : "Сумма зачисления"} ({selectedAccount.currency})
-                    </Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                        {getCurrencySymbol(selectedAccount.currency)}
-                      </span>
-                      <NumberInput
-                        id="addToAmount"
-                        placeholder="0.00"
-                        className="pl-9"
-                        {...register("toAmount", {
-                          onChange: (event) => handleToAmountChange(event.target.value),
-                        })}
-                      />
-                    </div>
-                    {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
-                  </div>
-                ) : null}
-              </>
-            ) : null}
-          </form>
-        </DialogContent>
-
-        <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
-            {isSubmitting ? "Добавление..." : "Добавить"}
-          </Button>
-        </DialogFooter>
+        <AddToDebtPanel debt={debt} workspaceId={workspaceId} open={open} onComplete={() => onOpenChange(false)} />
       </DialogWindow>
     </Dialog>
   );

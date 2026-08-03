@@ -51,7 +51,15 @@ interface CloseDebtDialogProps {
   onCloseComplete?: () => void;
 }
 
-export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: CloseDebtDialogProps) {
+interface CloseDebtPanelProps {
+  debt: DebtWithRelations;
+  workspaceId: string;
+  open: boolean;
+  onComplete: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
+}
+
+export function CloseDebtPanel({ debt, workspaceId, open, onComplete, onSubmittingChange }: CloseDebtPanelProps) {
   const queryClient = useQueryClient();
   const categoryModal = useDialogState();
 
@@ -86,6 +94,10 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     setValue,
     control,
   } = form;
+
+  useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
 
   const amount = useWatch({ control, name: "amount" });
   const paymentAmount = useWatch({ control, name: "paymentAmount" });
@@ -257,7 +269,7 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
             },
           ]);
         },
-        onApplied: () => onOpenChange(false),
+        onApplied: onComplete,
         mutation: () => closeDebt(debt.id, submitData),
       });
 
@@ -296,168 +308,161 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow onCloseComplete={onCloseComplete}>
-        <DialogHeader>
-          <DialogTitle>Погасить долг</DialogTitle>
-        </DialogHeader>
-        <DialogContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex items-center justify-between gap-4 rounded-lg bg-muted p-3">
-              <div className="truncate font-medium">{debt.personName}</div>
-              <div className="shrink-0 text-right font-semibold text-foreground text-sm">
-                {formatMoney(debt.remainingAmount, debt.currency)}
-              </div>
+    <>
+      <DialogContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="flex items-center justify-between gap-4 rounded-lg bg-muted p-3">
+            <div className="truncate font-medium">{debt.personName}</div>
+            <div className="shrink-0 text-right font-semibold text-foreground text-sm">
+              {formatMoney(debt.remainingAmount, debt.currency)}
             </div>
+          </div>
 
-            <AccountSelector
-              workspaceId={workspaceId}
-              account={previewAccount || selectedAccount || null}
-              onSelect={handleAccountSelect}
-              label={debt.type === DebtType.LENT ? "Счёт для зачисления" : "Счёт для списания"}
-              required
-              error={errors.accountId?.message}
-            />
+          <AccountSelector
+            workspaceId={workspaceId}
+            account={previewAccount || selectedAccount || null}
+            onSelect={handleAccountSelect}
+            label={debt.type === DebtType.LENT ? "Счёт для зачисления" : "Счёт для списания"}
+            required
+            error={errors.accountId?.message}
+          />
 
-            {!currenciesMatch && selectedAccount ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="toAmount" required>
-                    Сумма отправления ({selectedAccount.currency})
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                      {getCurrencySymbol(selectedAccount.currency)}
-                    </span>
-                    <NumberInput
-                      id="toAmount"
-                      placeholder="0.00"
-                      className="pl-9"
-                      {...register("toAmount", {
-                        required: !currenciesMatch ? "Сумма отправления обязательна" : false,
-                        onChange: (event) => handleToAmountChange(event.target.value),
-                      })}
-                    />
-                  </div>
-                  {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
+          {!currenciesMatch && selectedAccount ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="toAmount" required>
+                  Сумма отправления ({selectedAccount.currency})
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                    {getCurrencySymbol(selectedAccount.currency)}
+                  </span>
+                  <NumberInput
+                    id="toAmount"
+                    placeholder="0.00"
+                    className="pl-9"
+                    {...register("toAmount", {
+                      required: !currenciesMatch ? "Сумма отправления обязательна" : false,
+                      onChange: (event) => handleToAmountChange(event.target.value),
+                    })}
+                  />
                 </div>
+                {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="amount" required>
-                    Сумма получения ({debt.currency})
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                      {getCurrencySymbol(debt.currency)}
-                    </span>
-                    <NumberInput
-                      id="amount"
-                      placeholder="0.00"
-                      className="pl-9 pr-16"
-                      {...register("amount", {
-                        onChange: (event) => handleAmountChange(event.target.value),
-                      })}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs"
-                      onClick={handleCloseAll}
-                    >
-                      Всё
-                    </Button>
-                  </div>
-                  {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+              <div className="space-y-2">
+                <Label htmlFor="amount" required>
+                  Сумма получения ({debt.currency})
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                    {getCurrencySymbol(debt.currency)}
+                  </span>
+                  <NumberInput
+                    id="amount"
+                    placeholder="0.00"
+                    className="pl-9 pr-16"
+                    {...register("amount", {
+                      onChange: (event) => handleAmountChange(event.target.value),
+                    })}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs"
+                    onClick={handleCloseAll}
+                  >
+                    Всё
+                  </Button>
                 </div>
-              </>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="paymentAmount" required>
-                    {debt.type === DebtType.LENT ? "Фактически получили" : "Фактически отправили"} ({debt.currency}){" "}
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                      {getCurrencySymbol(debt.currency)}
-                    </span>
-                    <NumberInput
-                      id="paymentAmount"
-                      placeholder="0.00"
-                      className="pl-9 pr-16"
-                      {...register("paymentAmount")}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs"
-                      onClick={handleCloseAll}
-                    >
-                      Всё
-                    </Button>
-                  </div>
-                  {(errors.paymentAmount || errors.amount) && (
-                    <p className="text-sm text-destructive">
-                      {errors.paymentAmount?.message || errors.amount?.message}
-                    </p>
-                  )}
+                {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="paymentAmount" required>
+                  {debt.type === DebtType.LENT ? "Фактически получили" : "Фактически отправили"} ({debt.currency}){" "}
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                    {getCurrencySymbol(debt.currency)}
+                  </span>
+                  <NumberInput
+                    id="paymentAmount"
+                    placeholder="0.00"
+                    className="pl-9 pr-16"
+                    {...register("paymentAmount")}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 text-xs"
+                    onClick={handleCloseAll}
+                  >
+                    Всё
+                  </Button>
                 </div>
-
-                {compareMoney(categoryAmount, "0") > 0 && (
-                  <div className="text-base space-y-4 mt-8">
-                    <h4 className="font-medium">Дополнительно</h4>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="categoryAmount">Сумма</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                          {getCurrencySymbol(debt.currency)}
-                        </span>
-                        <NumberInput id="categoryAmount" value={categoryAmount} readOnly className="pl-9" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="categoryId" required>
-                        Категория
-                      </Label>
-                      <Button
-                        type="button"
-                        variant="field"
-                        className="w-full justify-between"
-                        onClick={() => categoryModal.openDialog(true)}
-                      >
-                        {selectedCategory ? (
-                          <span className="flex min-w-0 items-center gap-2 truncate">
-                            {selectedCategoryData && (
-                              <CategoryIcon
-                                icon={selectedCategoryData.icon}
-                                iconAssetId={selectedCategoryData.iconAssetId}
-                                className="size-5"
-                              />
-                            )}
-                            <span className="truncate">{selectedCategory.label}</span>
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">Выберите категорию</span>
-                        )}
-                      </Button>
-                      {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}
-                    </div>
-                  </div>
+                {(errors.paymentAmount || errors.amount) && (
+                  <p className="text-sm text-destructive">{errors.paymentAmount?.message || errors.amount?.message}</p>
                 )}
               </div>
-            )}
-          </form>
-        </DialogContent>
 
-        <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
-            {isSubmitting ? "Погашение..." : "Погасить"}
-          </Button>
-        </DialogFooter>
-      </DialogWindow>
+              {compareMoney(categoryAmount, "0") > 0 && (
+                <div className="text-base space-y-4 mt-8">
+                  <h4 className="font-medium">Дополнительно</h4>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="categoryAmount">Сумма</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                        {getCurrencySymbol(debt.currency)}
+                      </span>
+                      <NumberInput id="categoryAmount" value={categoryAmount} readOnly className="pl-9" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="categoryId" required>
+                      Категория
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="field"
+                      className="w-full justify-between"
+                      onClick={() => categoryModal.openDialog(true)}
+                    >
+                      {selectedCategory ? (
+                        <span className="flex min-w-0 items-center gap-2 truncate">
+                          {selectedCategoryData && (
+                            <CategoryIcon
+                              icon={selectedCategoryData.icon}
+                              iconAssetId={selectedCategoryData.iconAssetId}
+                              className="size-5"
+                            />
+                          )}
+                          <span className="truncate">{selectedCategory.label}</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Выберите категорию</span>
+                      )}
+                    </Button>
+                    {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </form>
+      </DialogContent>
+
+      <DialogFooter>
+        <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
+          {isSubmitting ? "Погашение..." : "Погасить"}
+        </Button>
+      </DialogFooter>
 
       {categoryModal.mounted && (
         <CategorySelectModal
@@ -472,6 +477,19 @@ export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
           renderOption={renderCategoryOption}
         />
       )}
+    </>
+  );
+}
+
+export function CloseDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: CloseDebtDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow onCloseComplete={onCloseComplete}>
+        <DialogHeader>
+          <DialogTitle>Погасить долг</DialogTitle>
+        </DialogHeader>
+        <CloseDebtPanel debt={debt} workspaceId={workspaceId} open={open} onComplete={() => onOpenChange(false)} />
+      </DialogWindow>
     </Dialog>
   );
 }

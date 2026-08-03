@@ -61,6 +61,17 @@ interface DebtWriteOffDialogBaseProps {
 export type DebtWriteOffDialogProps = DebtWriteOffDialogBaseProps &
   ({ debt: DebtWriteOffDebt; transaction?: never } | { debt?: never; transaction: DebtWriteOffPaymentTransaction });
 
+interface DebtWriteOffPanelBaseProps {
+  workspaceId: string;
+  open: boolean;
+  onComplete: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
+  onSuccess?: () => void;
+}
+
+export type DebtWriteOffPanelProps = DebtWriteOffPanelBaseProps &
+  ({ debt: DebtWriteOffDebt; transaction?: never } | { debt?: never; transaction: DebtWriteOffPaymentTransaction });
+
 function toOptimisticAccount(account: Account) {
   return {
     id: account.id,
@@ -73,15 +84,15 @@ function toOptimisticAccount(account: Account) {
   };
 }
 
-export function DebtWriteOffDialog({
+export function DebtWriteOffPanel({
   debt,
   transaction,
   workspaceId,
   open,
-  onOpenChange,
-  onCloseComplete,
+  onComplete,
+  onSubmittingChange,
   onSuccess,
-}: DebtWriteOffDialogProps) {
+}: DebtWriteOffPanelProps) {
   const queryClient = useQueryClient();
   const categoryDialog = useDialogState();
   const debtDetails = useMemo(() => getDebtWriteOffDebt({ debt, transaction }), [debt, transaction]);
@@ -102,6 +113,10 @@ export function DebtWriteOffDialog({
     setError,
     setValue,
   } = form;
+
+  useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
 
   const { data: accountsData } = useQuery({
     queryKey: accountKeys.list(workspaceId),
@@ -331,7 +346,7 @@ export function DebtWriteOffDialog({
             insertTransactionsInCache(context, [optimisticTransaction]);
           }
         },
-        onApplied: () => onOpenChange(false),
+        onApplied: onComplete,
         mutation: () =>
           transaction
             ? updateDebtWriteOff(transaction.debtWriteOff.debtTransactionId, data)
@@ -350,222 +365,217 @@ export function DebtWriteOffDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Редактировать погашение" : "Погасить транзакцией"}</DialogTitle>
-        </DialogHeader>
-        <DialogContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-4 rounded-xl bg-card p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <UserRound className="size-6" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0 space-y-1">
-                    <div className="truncate font-medium">{debtDetails.personName}</div>
-                    <div className={cn("text-sm", isLent ? "text-success" : "text-destructive")}>
-                      <span>{directionLabel}</span>
-                    </div>
-                  </div>
+    <>
+      <DialogContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-4 rounded-xl bg-card p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <UserRound className="size-6" aria-hidden="true" />
                 </div>
-                <div className="shrink-0 text-right">
-                  <div className="text-lg font-semibold text-foreground">
-                    {formatMoney(previewRemainingAmount, debtDetails.currency)}
+                <div className="min-w-0 space-y-1">
+                  <div className="truncate font-medium">{debtDetails.personName}</div>
+                  <div className={cn("text-sm", isLent ? "text-success" : "text-destructive")}>
+                    <span>{directionLabel}</span>
                   </div>
                 </div>
               </div>
-
-              <fieldset className="space-y-2">
-                <legend className="sr-only">Прогресс погашения долга {debtDetails.personName}</legend>
-                <div
-                  className="h-1.5 overflow-hidden rounded-full bg-muted"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={debtProgressPercent + paymentSegmentPercent}
-                  aria-valuetext={`${debtProgressPercent}% уже закрыто, ${paymentProgressPercent}% закроется этим платежом`}
-                >
-                  <div className="flex h-full w-full">
-                    <div
-                      className={cn("h-full transition-[width]", isLent ? "bg-success" : "bg-destructive")}
-                      style={{ width: `${debtProgressPercent}%` }}
-                    />
-                    <div
-                      className="h-full bg-primary transition-[width]"
-                      style={{ width: `${paymentSegmentPercent}%` }}
-                    />
-                  </div>
+              <div className="shrink-0 text-right">
+                <div className="text-lg font-semibold text-foreground">
+                  {formatMoney(previewRemainingAmount, debtDetails.currency)}
                 </div>
-                <div className="relative h-4 text-xs text-muted-foreground">
-                  <span
-                    className={cn(
-                      "absolute top-0 whitespace-nowrap",
-                      debtProgressPercent === 0 ? "left-0" : "-translate-x-1/2",
-                      isLent ? "text-success" : "text-destructive"
-                    )}
-                    style={debtProgressPercent === 0 ? undefined : { left: `${debtProgressPercent / 2}%` }}
-                  >
-                    {formatMoney(debtAlreadyRepaidAmount, debtDetails.currency)}
-                  </span>
-                  <span className="absolute top-0 right-0 whitespace-nowrap">
-                    {formatMoney(debtTotalAmount, debtDetails.currency)}
-                  </span>
-                </div>
-              </fieldset>
+              </div>
             </div>
 
+            <fieldset className="space-y-2">
+              <legend className="sr-only">Прогресс погашения долга {debtDetails.personName}</legend>
+              <div
+                className="h-1.5 overflow-hidden rounded-full bg-muted"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={debtProgressPercent + paymentSegmentPercent}
+                aria-valuetext={`${debtProgressPercent}% уже закрыто, ${paymentProgressPercent}% закроется этим платежом`}
+              >
+                <div className="flex h-full w-full">
+                  <div
+                    className={cn("h-full transition-[width]", isLent ? "bg-success" : "bg-destructive")}
+                    style={{ width: `${debtProgressPercent}%` }}
+                  />
+                  <div
+                    className="h-full bg-primary transition-[width]"
+                    style={{ width: `${paymentSegmentPercent}%` }}
+                  />
+                </div>
+              </div>
+              <div className="relative h-4 text-xs text-muted-foreground">
+                <span
+                  className={cn(
+                    "absolute top-0 whitespace-nowrap",
+                    debtProgressPercent === 0 ? "left-0" : "-translate-x-1/2",
+                    isLent ? "text-success" : "text-destructive"
+                  )}
+                  style={debtProgressPercent === 0 ? undefined : { left: `${debtProgressPercent / 2}%` }}
+                >
+                  {formatMoney(debtAlreadyRepaidAmount, debtDetails.currency)}
+                </span>
+                <span className="absolute top-0 right-0 whitespace-nowrap">
+                  {formatMoney(debtTotalAmount, debtDetails.currency)}
+                </span>
+              </div>
+            </fieldset>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="debt-write-off-amount" required>
+              Сумма платежа ({debtDetails.currency})
+            </Label>
+            <div className="relative">
+              <NumberInput
+                id="debt-write-off-amount"
+                placeholder="0.00"
+                className="pr-24"
+                {...register("amount", {
+                  onChange: (event) => {
+                    const value = event.target.value;
+                    handleAmountChange(value);
+                    const numericValue = Number.parseFloat(value);
+                    if (!Number.isNaN(numericValue) && compareMoney(value, maximumAmount) > 0) {
+                      setError("amount", {
+                        type: "manual",
+                        message: `Сумма не может превышать ${formatMoney(maximumAmount, debtDetails.currency)}`,
+                      });
+                    } else {
+                      clearErrors("amount");
+                    }
+                  },
+                })}
+                aria-invalid={errors.amount ? "true" : "false"}
+              />
+              <span className="pointer-events-none absolute right-14 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
+                {getCurrencySymbol(debtDetails.currency)}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-1.5 top-1/2 h-7 -translate-y-1/2 px-2 text-xs text-primary"
+                onClick={handleUseMaximum}
+              >
+                Всё
+              </Button>
+            </div>
+            {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+          </div>
+
+          <Controller
+            control={control}
+            name="accountId"
+            render={() => (
+              <AccountSelector
+                workspaceId={workspaceId}
+                account={selectedAccount || null}
+                onSelect={handleAccountSelect}
+                label="Счёт"
+                required
+                error={errors.accountId?.message}
+              />
+            )}
+          />
+          {accountId && !selectedAccount ? (
+            <p className="text-sm text-destructive">Текущий счёт недоступен. Выберите другой счёт.</p>
+          ) : null}
+
+          {!currenciesMatch && selectedAccount ? (
             <div className="space-y-2">
-              <Label htmlFor="debt-write-off-amount" required>
-                Сумма платежа ({debtDetails.currency})
+              <Label htmlFor="debt-write-off-to-amount" required>
+                Сумма транзакции ({selectedAccount.currency})
               </Label>
               <div className="relative">
-                <NumberInput
-                  id="debt-write-off-amount"
-                  placeholder="0.00"
-                  className="pr-24"
-                  {...register("amount", {
-                    onChange: (event) => {
-                      const value = event.target.value;
-                      handleAmountChange(value);
-                      const numericValue = Number.parseFloat(value);
-                      if (!Number.isNaN(numericValue) && compareMoney(value, maximumAmount) > 0) {
-                        setError("amount", {
-                          type: "manual",
-                          message: `Сумма не может превышать ${formatMoney(maximumAmount, debtDetails.currency)}`,
-                        });
-                      } else {
-                        clearErrors("amount");
-                      }
-                    },
-                  })}
-                  aria-invalid={errors.amount ? "true" : "false"}
-                />
-                <span className="pointer-events-none absolute right-14 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-                  {getCurrencySymbol(debtDetails.currency)}
+                <span className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm font-medium text-muted-foreground">
+                  {getCurrencySymbol(selectedAccount.currency)}
                 </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1.5 top-1/2 h-7 -translate-y-1/2 px-2 text-xs text-primary"
-                  onClick={handleUseMaximum}
-                >
-                  Всё
-                </Button>
+                <NumberInput
+                  id="debt-write-off-to-amount"
+                  placeholder={isLoadingRate ? "Загрузка курса..." : "0.00"}
+                  className="pl-9"
+                  {...register("toAmount", {
+                    onChange: (event) => handleToAmountChange(event.target.value),
+                  })}
+                  aria-invalid={errors.toAmount ? "true" : "false"}
+                />
               </div>
-              {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+              {errors.toAmount ? <p className="text-sm text-destructive">{errors.toAmount.message}</p> : null}
             </div>
+          ) : null}
 
+          <div className="space-y-2">
+            <Label htmlFor="debt-write-off-category" required>
+              Категория ({transactionTypeLabel.toLowerCase()})
+            </Label>
+            <Button
+              id="debt-write-off-category"
+              type="button"
+              variant="field"
+              className="w-full justify-between"
+              onClick={() => categoryDialog.openDialog(null)}
+            >
+              {selectedCategory ? (
+                <span className="flex min-w-0 items-center gap-2 truncate">
+                  {selectedCategoryData && (
+                    <CategoryIcon
+                      icon={selectedCategoryData.icon}
+                      iconAssetId={selectedCategoryData.iconAssetId}
+                      className="size-5"
+                    />
+                  )}
+                  <span className="truncate">{selectedCategory.label}</span>
+                </span>
+              ) : (
+                <span className="text-muted-foreground">Выберите категорию</span>
+              )}
+            </Button>
+            {errors.categoryId ? <p className="text-sm text-destructive">{errors.categoryId.message}</p> : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="debt-write-off-description">Описание</Label>
+            <Textarea
+              id="debt-write-off-description"
+              rows={3}
+              placeholder="Описание транзакции"
+              {...register("description")}
+            />
+            {errors.description ? <p className="text-sm text-destructive">{errors.description.message}</p> : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label required>Дата и время</Label>
             <Controller
               control={control}
-              name="accountId"
-              render={() => (
-                <AccountSelector
-                  workspaceId={workspaceId}
-                  account={selectedAccount || null}
-                  onSelect={handleAccountSelect}
-                  label="Счёт"
-                  required
-                  error={errors.accountId?.message}
+              name="date"
+              render={({ field }) => (
+                <DateTimePicker
+                  date={field.value}
+                  onSelect={field.onChange}
+                  showRelativeDatePresets
+                  disabled={(candidate) =>
+                    selectedAccount ? isDateBeforeAccountCreation(candidate, selectedAccount.createdAt) : false
+                  }
                 />
               )}
             />
-            {accountId && !selectedAccount ? (
-              <p className="text-sm text-destructive">Текущий счёт недоступен. Выберите другой счёт.</p>
-            ) : null}
+            {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
+          </div>
+        </form>
+      </DialogContent>
 
-            {!currenciesMatch && selectedAccount ? (
-              <div className="space-y-2">
-                <Label htmlFor="debt-write-off-to-amount" required>
-                  Сумма транзакции ({selectedAccount.currency})
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-                    {getCurrencySymbol(selectedAccount.currency)}
-                  </span>
-                  <NumberInput
-                    id="debt-write-off-to-amount"
-                    placeholder={isLoadingRate ? "Загрузка курса..." : "0.00"}
-                    className="pl-9"
-                    {...register("toAmount", {
-                      onChange: (event) => handleToAmountChange(event.target.value),
-                    })}
-                    aria-invalid={errors.toAmount ? "true" : "false"}
-                  />
-                </div>
-                {errors.toAmount ? <p className="text-sm text-destructive">{errors.toAmount.message}</p> : null}
-              </div>
-            ) : null}
-
-            <div className="space-y-2">
-              <Label htmlFor="debt-write-off-category" required>
-                Категория ({transactionTypeLabel.toLowerCase()})
-              </Label>
-              <Button
-                id="debt-write-off-category"
-                type="button"
-                variant="field"
-                className="w-full justify-between"
-                onClick={() => categoryDialog.openDialog(null)}
-              >
-                {selectedCategory ? (
-                  <span className="flex min-w-0 items-center gap-2 truncate">
-                    {selectedCategoryData && (
-                      <CategoryIcon
-                        icon={selectedCategoryData.icon}
-                        iconAssetId={selectedCategoryData.iconAssetId}
-                        className="size-5"
-                      />
-                    )}
-                    <span className="truncate">{selectedCategory.label}</span>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">Выберите категорию</span>
-                )}
-              </Button>
-              {errors.categoryId ? <p className="text-sm text-destructive">{errors.categoryId.message}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="debt-write-off-description">Описание</Label>
-              <Textarea
-                id="debt-write-off-description"
-                rows={3}
-                placeholder="Описание транзакции"
-                {...register("description")}
-              />
-              {errors.description ? <p className="text-sm text-destructive">{errors.description.message}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label required>Дата и время</Label>
-              <Controller
-                control={control}
-                name="date"
-                render={({ field }) => (
-                  <DateTimePicker
-                    date={field.value}
-                    onSelect={field.onChange}
-                    showRelativeDatePresets
-                    disabled={(candidate) =>
-                      selectedAccount ? isDateBeforeAccountCreation(candidate, selectedAccount.createdAt) : false
-                    }
-                  />
-                )}
-              />
-              {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
-            </div>
-          </form>
-        </DialogContent>
-
-        <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
-            {isSubmitting ? (isEditing ? "Сохранение..." : "Погашение...") : submitButtonLabel}
-          </Button>
-        </DialogFooter>
-      </DialogWindow>
+      <DialogFooter>
+        <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
+          {isSubmitting ? (isEditing ? "Сохранение..." : "Погашение...") : submitButtonLabel}
+        </Button>
+      </DialogFooter>
 
       {categoryDialog.mounted ? (
         <CategorySelectModal
@@ -580,6 +590,45 @@ export function DebtWriteOffDialog({
           renderOption={renderCategoryOption}
         />
       ) : null}
+    </>
+  );
+}
+
+export function DebtWriteOffDialog({
+  debt,
+  transaction,
+  workspaceId,
+  open,
+  onOpenChange,
+  onCloseComplete,
+  onSuccess,
+}: DebtWriteOffDialogProps) {
+  const title = transaction ? "Редактировать погашение" : "Погасить транзакцией";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        {transaction ? (
+          <DebtWriteOffPanel
+            transaction={transaction}
+            workspaceId={workspaceId}
+            open={open}
+            onComplete={() => onOpenChange(false)}
+            onSuccess={onSuccess}
+          />
+        ) : (
+          <DebtWriteOffPanel
+            debt={debt}
+            workspaceId={workspaceId}
+            open={open}
+            onComplete={() => onOpenChange(false)}
+            onSuccess={onSuccess}
+          />
+        )}
+      </DialogWindow>
     </Dialog>
   );
 }

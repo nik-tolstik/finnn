@@ -8,9 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "
 import { getDebts } from "../../debt.api";
 import { DebtStatus } from "../../debt.constants";
 import type { DebtWithRelations } from "../../debt.types";
-import { DebtActionsDialog } from "../debt-actions-dialog/DebtActionsDialog";
 import { DebtCard } from "../debt-card/DebtCard";
-import { DeleteDebtDialog } from "../delete-debt-dialog/DeleteDebtDialog";
+import { DebtDialog } from "../debt-dialog/DebtDialog";
 
 interface ClosedDebtsHistoryDialogProps {
   workspaceId: string;
@@ -25,8 +24,7 @@ export function ClosedDebtsHistoryDialog({
   onOpenChange,
   onCloseComplete,
 }: ClosedDebtsHistoryDialogProps) {
-  const actionsDialog = useDialogState<DebtWithRelations>();
-  const deleteDialog = useDialogState<DebtWithRelations>();
+  const debtDialog = useDialogState<DebtWithRelations>();
 
   const debtFilters = {
     status: DebtStatus.CLOSED,
@@ -42,16 +40,7 @@ export function ClosedDebtsHistoryDialog({
   const closedDebts = data?.data || [];
 
   const handleDebtClick = (debt: DebtWithRelations) => {
-    actionsDialog.openDialog(debt);
-  };
-
-  const handleDelete = () => {
-    if (actionsDialog.data) {
-      actionsDialog.closeDialog();
-      setTimeout(() => {
-        deleteDialog.openDialog(actionsDialog.data);
-      }, 200);
-    }
+    debtDialog.openDialog(debt);
   };
 
   return (
@@ -85,26 +74,13 @@ export function ClosedDebtsHistoryDialog({
         </DialogWindow>
       </Dialog>
 
-      {actionsDialog.mounted && actionsDialog.data && (
-        <DebtActionsDialog
-          debt={actionsDialog.data}
-          open={actionsDialog.open}
-          onOpenChange={actionsDialog.closeDialog}
-          onCloseComplete={actionsDialog.unmountDialog}
-          onClose={() => {}}
-          onWriteOff={() => {}}
-          onAddMore={() => {}}
-          onDelete={handleDelete}
-          onEdit={() => {}}
-        />
-      )}
-
-      {deleteDialog.mounted && deleteDialog.data && (
-        <DeleteDebtDialog
-          debt={deleteDialog.data}
+      {debtDialog.mounted && debtDialog.data && (
+        <DebtDialog
+          debt={debtDialog.data}
           workspaceId={workspaceId}
-          open={deleteDialog.open}
-          onOpenChange={deleteDialog.closeDialog}
+          open={debtDialog.open}
+          onOpenChange={debtDialog.closeDialog}
+          onCloseComplete={debtDialog.unmountDialog}
         />
       )}
     </>

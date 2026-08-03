@@ -1,10 +1,18 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { removeDebtsFromCache, runOptimisticWorkspaceMutation } from "@/shared/lib/optimistic-workspace-updates";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { formatMoney } from "@/shared/utils/money";
 
 import { deleteDebt } from "../../debt.api";
@@ -17,9 +25,20 @@ interface DeleteDebtDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: DeleteDebtDialogProps) {
+interface DeleteDebtPanelProps {
+  debt: DebtWithRelations;
+  workspaceId: string;
+  onComplete: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
+}
+
+export function DeleteDebtPanel({ debt, workspaceId, onComplete, onSubmittingChange }: DeleteDebtPanelProps) {
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    onSubmittingChange?.(isDeleting);
+  }, [isDeleting, onSubmittingChange]);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -35,7 +54,7 @@ export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: Dele
         toast.error(result.error);
       } else {
         toast.success("Долг удалён");
-        onOpenChange(false);
+        onComplete();
       }
     } catch {
       toast.error("Не удалось удалить долг");
@@ -45,20 +64,31 @@ export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: Dele
   };
 
   return (
+    <>
+      <DialogContent>
+        <DialogDescription>
+          Вы уверены, что хотите удалить долг {debt.personName} на сумму{" "}
+          {formatMoney(debt.remainingAmount, debt.currency)}? Вместе с ним будет удалена связанная история. Это действие
+          нельзя отменить.
+        </DialogDescription>
+      </DialogContent>
+      <DialogFooter>
+        <Button onClick={handleDelete} disabled={isDeleting} size="xl" type="button" variant="danger">
+          {isDeleting ? "Удаление..." : "Удалить"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: DeleteDebtDialogProps) {
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow>
         <DialogHeader>
           <DialogTitle>Удалить долг?</DialogTitle>
-          <DialogDescription>
-            Вы уверены, что хотите удалить долг {debt.personName} на сумму{" "}
-            {formatMoney(debt.remainingAmount, debt.currency)}? Это действие нельзя отменить.
-          </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
-          <Button onClick={handleDelete} disabled={isDeleting} size="xl" type="button" variant="danger">
-            {isDeleting ? "Удаление..." : "Удалить"}
-          </Button>
-        </DialogFooter>
+        <DeleteDebtPanel debt={debt} workspaceId={workspaceId} onComplete={() => onOpenChange(false)} />
       </DialogWindow>
     </Dialog>
   );
