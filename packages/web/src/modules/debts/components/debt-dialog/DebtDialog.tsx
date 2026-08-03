@@ -1,8 +1,8 @@
-import { ArrowLeft, Pencil, Trash2, X } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { Dialog, DialogCloseButton, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Segmented } from "@/shared/ui/segmented";
 import { Tooltip } from "@/shared/ui/tooltip";
 import { formatMoney } from "@/shared/utils/money";
@@ -254,16 +254,7 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
                   </Button>
                 </Tooltip>
               ) : null}
-              <Button
-                aria-label="Закрыть"
-                disabled={isSubmitting}
-                onClick={() => handleOpenChange(false)}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-              >
-                <X />
-              </Button>
+              <DialogCloseButton disabled={isSubmitting} onClick={() => handleOpenChange(false)} />
             </div>
           </div>
         </DialogHeader>

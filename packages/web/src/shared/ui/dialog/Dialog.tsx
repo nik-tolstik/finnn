@@ -76,6 +76,23 @@ function Dialog({ children, defaultOpen = false, onOpenChange, open }: DialogPro
   return <DialogContext.Provider value={contextValue}>{children}</DialogContext.Provider>;
 }
 
+function DialogCloseButton({ className, children: _, type = "button", ...props }: React.ComponentProps<"button">) {
+  return (
+    <button
+      {...props}
+      type={type}
+      data-slot="dialog-close"
+      aria-label="Закрыть"
+      className={cn(
+        "rounded-full p-1 text-[20px] transition-all hover:bg-control-hover active:bg-control-hover focus:ring-1 focus:ring-control-focus/20 disabled:pointer-events-none disabled:opacity-50",
+        className
+      )}
+    >
+      <XIcon size="1em" />
+    </button>
+  );
+}
+
 function DialogWindow({
   className,
   children,
@@ -172,15 +189,7 @@ function DialogWindow({
               className="pointer-events-none absolute inset-0 z-50"
             />
             {showCloseButton && (
-              <button
-                type="button"
-                data-slot="dialog-close"
-                aria-label="Закрыть"
-                className="absolute top-4 right-4 rounded-full p-1 text-[20px] transition-all hover:bg-control-hover active:bg-control-hover focus:ring-1 focus:ring-control-focus/20"
-                onClick={() => onOpenChange(false)}
-              >
-                <XIcon size="1em" />
-              </button>
+              <DialogCloseButton className="absolute top-4 right-4" onClick={() => onOpenChange(false)} />
             )}
           </div>
         </FloatingFocusManager>
@@ -246,4 +255,13 @@ function DialogDescription({ className, id, ...props }: React.ComponentProps<"p"
   );
 }
 
-export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogWindow };
+export {
+  Dialog,
+  DialogCloseButton,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+};

@@ -31,7 +31,15 @@ import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  DialogCloseButton,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -267,16 +275,7 @@ export function EditTransactionDialog({
                   </Button>
                 </Tooltip>
               ) : null}
-              <button
-                data-slot="dialog-close"
-                aria-label="Закрыть"
-                className="rounded-full p-1 text-[20px] transition-all hover:bg-control-hover active:bg-control-hover focus:ring-1 focus:ring-control-focus/20"
-                disabled={isSubmitting}
-                onClick={() => onOpenChange(false)}
-                type="button"
-              >
-                <X size="1em" />
-              </button>
+              <DialogCloseButton disabled={isSubmitting} onClick={() => onOpenChange(false)} />
             </div>
           </div>
         </DialogHeader>

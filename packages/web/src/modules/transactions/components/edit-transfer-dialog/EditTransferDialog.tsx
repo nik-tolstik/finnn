@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -19,7 +19,15 @@ import {
   updateTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  DialogCloseButton,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Tooltip } from "@/shared/ui/tooltip";
 import { subtractMoney } from "@/shared/utils/money";
 
@@ -190,16 +198,7 @@ export function EditTransferDialog({
                   </Button>
                 </Tooltip>
               ) : null}
-              <Button
-                aria-label="Закрыть"
-                disabled={form.formState.isSubmitting}
-                onClick={() => onOpenChange(false)}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-              >
-                <X />
-              </Button>
+              <DialogCloseButton disabled={form.formState.isSubmitting} onClick={() => onOpenChange(false)} />
             </div>
           </div>
         </DialogHeader>

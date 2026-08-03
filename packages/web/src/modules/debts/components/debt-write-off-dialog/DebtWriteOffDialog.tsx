@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Trash2, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -27,7 +27,15 @@ import { type DebtWriteOffInput, debtWriteOffSchema } from "@/shared/lib/validat
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  DialogCloseButton,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -555,16 +563,7 @@ export function DebtWriteOffDialog({
                   </Button>
                 </Tooltip>
               ) : null}
-              <Button
-                aria-label="Закрыть"
-                disabled={isSubmitting}
-                onClick={() => onOpenChange(false)}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-              >
-                <X />
-              </Button>
+              <DialogCloseButton disabled={isSubmitting} onClick={() => onOpenChange(false)} />
             </div>
           </div>
         </DialogHeader>

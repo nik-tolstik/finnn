@@ -1,9 +1,10 @@
-import { Trash2, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { FormProvider } from "react-hook-form";
 
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
+  DialogCloseButton,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -72,16 +73,7 @@ export function EditDebtTransactionDialog({
                   </Button>
                 </Tooltip>
               ) : null}
-              <Button
-                aria-label="Закрыть"
-                disabled={form.formState.isSubmitting}
-                onClick={() => onOpenChange(false)}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-              >
-                <X />
-              </Button>
+              <DialogCloseButton disabled={form.formState.isSubmitting} onClick={() => onOpenChange(false)} />
             </div>
           </div>
           <DialogDescription>{dialogDescription}</DialogDescription>
