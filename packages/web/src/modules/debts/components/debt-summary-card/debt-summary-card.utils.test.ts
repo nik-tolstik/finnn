@@ -64,4 +64,16 @@ describe("debt summary card progress", () => {
       totalProgressPercent: 12,
     });
   });
+
+  it("does not depend on Big division precision near a large half-percent boundary", () => {
+    expect(
+      getDebtSummaryProgress({
+        totalAmount: "1000000000000000000000",
+        remainingAmount: "875000000000000000001",
+      })
+    ).toMatchObject({
+      debtProgressPercent: 12,
+      totalProgressPercent: 12,
+    });
+  });
 });

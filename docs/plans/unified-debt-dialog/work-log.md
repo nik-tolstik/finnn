@@ -68,3 +68,13 @@
 - `pnpm --filter web typecheck` — passed.
 - `pnpm --filter web check` — passed: 660 files checked, no fixes applied.
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
+
+## 2026-08-03 — External review exact-rounding follow-up
+
+- Confirmed the second Copilot P2: `Big.div` uses the constructor's default decimal precision, so the prior ratio-based implementation could still cross a large half-percent rounding boundary.
+- Replaced division-based percentage rounding with exact `big.js` arithmetic: scale the amount by 100, derive the exact quotient and remainder with `mod`, add one only when twice the remainder reaches the total, then clamp and convert the resulting integer percentage.
+- Validated `Big.mod` for both the reported integer case and a decimal case; each produced the expected exact remainder and integral quotient. Added the reported 1e21 boundary regression while retaining the first large-money regression.
+- `pnpm --filter web test -- src/modules/debts` — passed: 58 test files, 250 tests.
+- `pnpm --filter web typecheck` — passed.
+- `pnpm --filter web check` — passed: 660 files checked, no fixes applied.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.

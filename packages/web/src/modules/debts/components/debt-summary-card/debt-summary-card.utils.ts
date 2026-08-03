@@ -25,7 +25,10 @@ function getProgressPercent(amount: string, totalAmount: string) {
     return 0;
   }
 
-  const percent = value.div(total).times(100).round(0, Big.roundHalfUp);
+  const scaled = value.times(100);
+  const remainder = scaled.mod(total);
+  const whole = scaled.minus(remainder).div(total);
+  const percent = remainder.times(2).gte(total) ? whole.plus(1) : whole;
 
   if (percent.lte(0)) {
     return 0;
