@@ -144,3 +144,19 @@
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed (existing chunk-size warning only).
 - No browser or screenshot QA was run.
+
+## 2026-08-03 — Approved add-preview final verification
+
+- Approval completed on `516334d`; the prior P2 interim-decimal grammar finding is confirmed fixed.
+- `pnpm --filter web test -- src/modules/debts` — passed: 58 test files, 263 tests.
+- `pnpm --filter web typecheck` — passed.
+- `pnpm --filter web check` — passed.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed.
+- `pnpm typecheck` — passed.
+- `pnpm check` — passed.
+- `pnpm test` — passed: API 276 passed / 12 skipped, web 263 tests, and backup 11 tests.
+- `VITE_API_URL=http://localhost:4000 pnpm build` — passed.
+- `git diff --check` — passed.
+- Full strict no-tool Copilot CLI review with `grok-4.5` of `f5d1b83...HEAD` reported exactly: `No actionable findings.` No findings are classified in the current review; the historical no-finding conclusion that missed the interim-input P2 remains rejected for that issue.
+- No browser or screenshot QA was run.
