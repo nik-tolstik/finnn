@@ -1,10 +1,8 @@
 import { History, Plus } from "lucide-react";
-import { useCallback } from "react";
 
 import { ClosedDebtsHistoryDialog } from "@/modules/debts/components/closed-debts-history-dialog";
 import { CreateDebtDialog } from "@/modules/debts/components/create-debt-dialog";
 import { DebtsList } from "@/modules/debts/components/debts-list";
-import { useCtrlNShortcut } from "@/shared/hooks/useCtrlNShortcut";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { Button } from "@/shared/ui/button";
 
@@ -15,9 +13,6 @@ interface DebtsContentProps {
 export function DebtsContent({ workspaceId }: DebtsContentProps) {
   const historyDialog = useDialogState();
   const createDebtDialog = useDialogState();
-  const openCreateDebtDialog = useCallback(() => createDebtDialog.openDialog(null), [createDebtDialog.openDialog]);
-
-  useCtrlNShortcut(openCreateDebtDialog);
 
   return (
     <div className="w-full max-w-[1440px] mx-auto">
@@ -33,7 +28,7 @@ export function DebtsContent({ workspaceId }: DebtsContentProps) {
             >
               <History className="size-4" />
             </Button>
-            <Button className="hidden md:inline-flex" onClick={openCreateDebtDialog}>
+            <Button className="hidden md:inline-flex" onClick={() => createDebtDialog.openDialog(null)}>
               <Plus className="size-4" />
               Создать долг
             </Button>
