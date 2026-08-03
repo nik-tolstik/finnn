@@ -93,10 +93,11 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain('transform: "scale(0.96)"');
     expect(dialogSource).not.toContain('transform: "translateY(100%)"');
     expect(dialogSource).toContain("outsidePress: !nestedOverlayOpen");
-    expect(dialogSource).toContain("hasCloseButton: showCloseButton");
     expect(dialogSource).toContain("{showCloseButton ? (");
-    expect(dialogSource).toContain('className={isMobile ? "size-10 p-0" : undefined}');
-    expect(dialogSource).toContain('"flex flex-col gap-2 text-left"');
+    expect(dialogSource).toContain(
+      'className={isMobile ? "inline-flex size-8 items-center justify-center p-0" : undefined}'
+    );
+    expect(dialogSource).toContain('"flex flex-col gap-2 px-6 text-left"');
     expect(dialogSource).toContain('hasActions && "flex-row items-center [&>button]:flex-1"');
     expect(dialogSource).toContain("{hasActions ? (");
     expect(dialogSource).not.toContain("hasActions && isMobile ? <DialogOptionsButton");

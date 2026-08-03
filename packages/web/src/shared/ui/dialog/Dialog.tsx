@@ -44,7 +44,6 @@ interface DialogWindowProps extends React.HTMLAttributes<HTMLDivElement> {
 interface DialogWindowContextValue {
   actions: DialogAction[];
   hasActions: boolean;
-  hasCloseButton: boolean;
   setNestedOverlayOpen: (open: boolean) => void;
 }
 
@@ -52,7 +51,6 @@ const DialogContext = React.createContext<DialogContextValue | null>(null);
 const DialogWindowContext = React.createContext<DialogWindowContextValue>({
   actions: [],
   hasActions: false,
-  hasCloseButton: false,
   setNestedOverlayOpen: () => undefined,
 });
 
@@ -217,8 +215,8 @@ function DialogWindow({
   );
 
   const dialogWindowContextValue = React.useMemo(
-    () => ({ actions, hasActions, hasCloseButton: showCloseButton, setNestedOverlayOpen }),
-    [actions, hasActions, showCloseButton]
+    () => ({ actions, hasActions, setNestedOverlayOpen }),
+    [actions, hasActions]
   );
 
   if (!isMounted) {
@@ -265,7 +263,7 @@ function DialogWindow({
               {showCloseButton ? (
                 <div className="absolute top-4 right-4 flex items-center gap-1">
                   <DialogCloseButton
-                    className={isMobile ? "size-10 p-0" : undefined}
+                    className={isMobile ? "inline-flex size-8 items-center justify-center p-0" : undefined}
                     disabled={closeButtonDisabled}
                     onClick={() => onOpenChange(false)}
                   />
@@ -284,17 +282,7 @@ function DialogContent({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  const { hasCloseButton } = React.useContext(DialogWindowContext);
-  const { isMobile } = useBreakpoints();
-  const hasMobileCloseButton = isMobile && hasCloseButton;
-
-  return (
-    <div
-      data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-left", hasMobileCloseButton ? "px-16" : "px-6", className)}
-      {...props}
-    />
-  );
+  return <div data-slot="dialog-header" className={cn("flex flex-col gap-2 px-6 text-left", className)} {...props} />;
 }
 
 function DialogFooter({ children, className, ...props }: React.ComponentProps<"div">) {
