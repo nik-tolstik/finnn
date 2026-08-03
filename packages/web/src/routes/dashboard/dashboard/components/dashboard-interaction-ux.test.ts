@@ -18,6 +18,7 @@ describe("dashboard interaction loading", () => {
     expect(dashboardSource).toContain(
       'import { TransactionsFilterDrawer } from "@/modules/transactions/components/transactions-filters/components/TransactionsFilterDrawer"'
     );
+    expect(dashboardSource).toContain("const CreateTransactionDialog = lazy(loadCreateTransactionDialog)");
     expect(accountsSource).toContain(
       'import { AccountActionsDialog } from "@/modules/accounts/components/account-actions-dialog/AccountActionsDialog"'
     );
@@ -97,27 +98,57 @@ describe("dashboard interaction loading", () => {
     expect(editTransactionSource).toContain("actions=");
   });
 
-  it("anchors account and payment action menus without changing their entry points", () => {
+  it("opens account editors directly and uses a desktop context menu for account actions", () => {
     const accountCardSource = readSource("src/shared/components/account-card/AccountCard.tsx");
     const accountsCardsSource = readSource("src/modules/accounts/components/accounts-cards/AccountsCards.tsx");
     const accountActionsSource = readSource(
       "src/modules/accounts/components/account-actions-dialog/AccountActionsDialog.tsx"
     );
+    const editAccountSource = readSource("src/modules/accounts/components/edit-account-dialog/EditAccountDialog.tsx");
+    const actionsDialogSource = readSource("src/shared/ui/actions-dialog/ActionsDialog.tsx");
+    const popoverSource = readSource("src/shared/ui/popover/Popover.tsx");
+
+    expect(accountCardSource).toContain("MouseEventHandler<HTMLButtonElement>");
+    expect(accountsCardsSource).toContain("editDialog.openDialog({ account })");
+    expect(accountsCardsSource).not.toContain("accountActionsDialog.openDialog");
+    expect(accountActionsSource).toContain('label: "Добавить транзакцию"');
+    expect(accountActionsSource).toContain('label: "Изменить"');
+    expect(accountActionsSource).toContain('tone: "destructive"');
+    expect(accountActionsSource).toContain("trigger={trigger}");
+    expect(actionsDialogSource).toContain("openOnContextMenu");
+    expect(actionsDialogSource).toContain("inertTriggerProps");
+    expect(popoverSource).toContain("openOnContextMenu?: boolean");
+    expect(popoverSource).toContain("event.preventDefault()");
+    expect(popoverSource).toContain("enabled: !openOnContextMenu");
+    expect(editAccountSource).toContain("actions={actions}");
+    expect(editAccountSource).toContain("onToggleVisibility");
+    expect(editAccountSource).toContain("onArchive");
+  });
+
+  it("keeps scheduled payment action menus anchored without changing their entry point", () => {
     const scheduledPaymentListSource = readSource("src/modules/scheduled-payments/components/ScheduledPaymentList.tsx");
     const scheduledPaymentActionsSource = readSource(
       "src/modules/scheduled-payments/components/ScheduledPaymentActionsDialog.tsx"
     );
     const paymentsContentSource = readSource("src/routes/dashboard/payments/components/PaymentsContent.tsx");
 
-    expect(accountCardSource).toContain("MouseEventHandler<HTMLButtonElement>");
-    expect(accountsCardsSource).toContain("anchor: event.currentTarget");
-    expect(accountActionsSource).toContain("anchor={anchor}");
-    expect(accountActionsSource).toContain('tone: "destructive"');
     expect(scheduledPaymentListSource).toContain("onPaymentClick(payment, event.currentTarget)");
     expect(scheduledPaymentListSource).toContain("md:hidden");
     expect(paymentsContentSource).toContain("actionsDialog.openDialog({ anchor, payment })");
     expect(scheduledPaymentActionsSource).toContain("anchor={anchor}");
     expect(scheduledPaymentActionsSource).toContain('tone: "destructive"');
+  });
+
+  it("names the dashboard transaction section history and adds its desktop creation entry point", () => {
+    const dashboardSource = readSource("src/routes/dashboard/dashboard/components/DashboardContent.tsx");
+
+    expect(dashboardSource).toContain(
+      'import("@/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog")'
+    );
+    expect(dashboardSource).toContain('<h2 className="text-xl font-semibold">История</h2>');
+    expect(dashboardSource).toContain('className="hidden md:inline-flex"');
+    expect(dashboardSource).toContain("createTransactionDialog.openDialog(null)");
+    expect(dashboardSource).toContain("<CreateTransactionDialog");
   });
 
   it("moves transaction and debt dialog actions into the shared options menu", () => {

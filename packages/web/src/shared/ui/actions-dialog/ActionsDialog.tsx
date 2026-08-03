@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
-import { Popover } from "@/shared/ui/popover";
+import { Popover, type PopoverTriggerRenderProps } from "@/shared/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import { cn } from "@/shared/utils/cn";
 
@@ -14,13 +14,27 @@ export interface ActionItem {
   tone?: "default" | "destructive";
 }
 
-interface ActionsDialogProps {
+interface ActionsDialogBaseProps {
   actions: ActionItem[];
+}
+
+interface AnchoredActionsDialogProps extends ActionsDialogBaseProps {
   anchor: HTMLElement | null;
   onCloseComplete: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  trigger?: never;
 }
+
+interface ContextMenuActionsDialogProps extends ActionsDialogBaseProps {
+  anchor?: never;
+  onCloseComplete?: () => void;
+  onOpenChange?: never;
+  open?: never;
+  trigger: (props: PopoverTriggerRenderProps) => ReactNode;
+}
+
+export type ActionsDialogProps = AnchoredActionsDialogProps | ContextMenuActionsDialogProps;
 
 function ActionList({ actions, onSelect }: { actions: ActionItem[]; onSelect: (action: ActionItem) => void }) {
   return (
@@ -44,14 +58,49 @@ function ActionList({ actions, onSelect }: { actions: ActionItem[]; onSelect: (a
   );
 }
 
-export function ActionsDialog({ actions, anchor, open, onCloseComplete, onOpenChange }: ActionsDialogProps) {
+const inertTriggerProps: PopoverTriggerRenderProps = {
+  "aria-expanded": false,
+  "data-slot": "popover-trigger",
+  "data-state": "closed",
+  ref: () => undefined,
+};
+
+export function ActionsDialog(props: ActionsDialogProps) {
   const { isMobile } = useBreakpoints();
 
+  if (props.trigger) {
+    const { actions, onCloseComplete, trigger } = props;
+
+    if (isMobile) {
+      return trigger(inertTriggerProps);
+    }
+
+    return (
+      <Popover
+        className="w-56 p-1"
+        onCloseComplete={onCloseComplete}
+        openOnContextMenu
+        placement="bottom-end"
+        trigger={trigger}
+      >
+        {({ close }) => (
+          <ActionList
+            actions={actions}
+            onSelect={(action) => {
+              close();
+              action.onSelect();
+            }}
+          />
+        )}
+      </Popover>
+    );
+  }
+
+  const { actions, anchor, onCloseComplete, onOpenChange, open } = props;
   const handleSelect = (action: ActionItem) => {
     onOpenChange(false);
     action.onSelect();
   };
-
   const actionList = <ActionList actions={actions} onSelect={handleSelect} />;
 
   if (isMobile) {

@@ -42,6 +42,7 @@ interface PopoverBaseProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "c
   offset?: number;
   onCloseComplete?: () => void;
   onOpenChange?: (open: boolean) => void;
+  openOnContextMenu?: boolean;
   open?: boolean;
   placement?: Placement;
 }
@@ -96,6 +97,7 @@ function PopoverInner({
   offset = 4,
   onCloseComplete,
   onOpenChange,
+  openOnContextMenu = false,
   open,
   placement = "bottom",
   reference,
@@ -155,7 +157,7 @@ function PopoverInner({
     }
   }, [reference, refs]);
 
-  const click = useClick(context, { keyboardHandlers: true });
+  const click = useClick(context, { enabled: !openOnContextMenu, keyboardHandlers: !openOnContextMenu });
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "dialog" });
   const { getFloatingProps, getReferenceProps } = useInteractions([click, dismiss, role]);
@@ -202,12 +204,21 @@ function PopoverInner({
     setOpen(false);
   }, [setOpen]);
 
+  const handleContextMenu = React.useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      event.preventDefault();
+      setOpen(true);
+    },
+    [setOpen]
+  );
+
   const referenceProps = getReferenceProps() as React.HTMLAttributes<HTMLElement>;
   const triggerProps: PopoverTriggerRenderProps = {
     ...referenceProps,
     "aria-expanded": isOpen,
     "data-slot": "popover-trigger",
     "data-state": isOpen ? "open" : "closed",
+    ...(openOnContextMenu ? { onContextMenu: handleContextMenu } : {}),
     ref: refs.setReference as React.RefCallback<HTMLElement>,
   };
   const floatingInteractionProps = getFloatingProps(contentProps);
