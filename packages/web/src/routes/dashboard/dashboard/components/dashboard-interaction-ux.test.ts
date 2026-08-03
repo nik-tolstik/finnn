@@ -54,6 +54,8 @@ describe("dashboard interaction loading", () => {
     );
     const dialogSource = readSource("src/shared/ui/dialog/Dialog.tsx");
     const actionsDialogSource = readSource("src/shared/ui/actions-dialog/ActionsDialog.tsx");
+    const popoverSource = readSource("src/shared/ui/popover/Popover.tsx");
+    const sheetSource = readSource("src/shared/ui/sheet/Sheet.tsx");
 
     expect(transactionsSource).toContain("onTransactionClick={controller.openTransactionDialog}");
     expect(transactionsSource).toContain("onDebtTransactionClick={controller.openDebtTransactionDialog}");
@@ -64,16 +66,23 @@ describe("dashboard interaction loading", () => {
     expect(editTransactionSource).toContain('label: "Повторить"');
     expect(editTransactionSource).toContain('label: "Удалить"');
     expect(dialogSource).toContain("function DialogCloseButton");
-    expect(dialogSource).toContain("export interface DialogAction");
+    expect(dialogSource).toContain("export type DialogAction = ActionItem");
     expect(dialogSource).toContain("actions?: DialogAction[]");
     expect(dialogSource).toContain("closeButtonDisabled?: boolean");
     expect(dialogSource).toContain("<DialogCloseButton");
     expect(dialogSource).toContain("function DialogOptionsButton");
-    expect(dialogSource).toContain("function ActionsDialog");
     expect(dialogSource).toContain("<ActionsDialog");
-    expect(dialogSource).toContain('theme: action.tone === "destructive" ? "error" : "primary"');
+    expect(dialogSource).toContain("anchor={optionsButtonRef.current}");
     expect(dialogSource).toContain("function DialogFooter");
-    expect(actionsDialogSource).toContain('export { type ActionItem, ActionsDialog } from "@/shared/ui/dialog"');
+    expect(dialogSource).not.toContain("function ActionsDialog");
+    expect(actionsDialogSource).toContain("<Popover");
+    expect(actionsDialogSource).toContain("<Sheet");
+    expect(actionsDialogSource).toContain("reference={anchor}");
+    expect(actionsDialogSource).toContain("onOpenChange(false);\n    action.onSelect();");
+    expect(actionsDialogSource).toContain("max-h-[calc(100dvh-4rem)]");
+    expect(popoverSource).toContain("reference: ReferenceType | null");
+    expect(popoverSource).toContain("trigger?:");
+    expect(sheetSource).toContain("onCloseComplete?: () => void");
     expect(dialogSource).toContain('aria-label="Действия"');
     expect(dialogSource).toContain("max-h-[calc(100dvh-4rem)]");
     expect(dialogSource).toContain('transform: "translateY(100%)"');
@@ -84,6 +93,29 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain("shrink-0 items-center");
     expect(dialogSource).not.toContain("mobilePosition");
     expect(editTransactionSource).toContain("actions=");
+  });
+
+  it("anchors account and payment action menus without changing their entry points", () => {
+    const accountCardSource = readSource("src/shared/components/account-card/AccountCard.tsx");
+    const accountsCardsSource = readSource("src/modules/accounts/components/accounts-cards/AccountsCards.tsx");
+    const accountActionsSource = readSource(
+      "src/modules/accounts/components/account-actions-dialog/AccountActionsDialog.tsx"
+    );
+    const scheduledPaymentListSource = readSource("src/modules/scheduled-payments/components/ScheduledPaymentList.tsx");
+    const scheduledPaymentActionsSource = readSource(
+      "src/modules/scheduled-payments/components/ScheduledPaymentActionsDialog.tsx"
+    );
+    const paymentsContentSource = readSource("src/routes/dashboard/payments/components/PaymentsContent.tsx");
+
+    expect(accountCardSource).toContain("MouseEventHandler<HTMLButtonElement>");
+    expect(accountsCardsSource).toContain("anchor: event.currentTarget");
+    expect(accountActionsSource).toContain("anchor={anchor}");
+    expect(accountActionsSource).toContain('tone: "destructive"');
+    expect(scheduledPaymentListSource).toContain("onPaymentClick(payment, event.currentTarget)");
+    expect(scheduledPaymentListSource).toContain("md:hidden");
+    expect(paymentsContentSource).toContain("actionsDialog.openDialog({ anchor, payment })");
+    expect(scheduledPaymentActionsSource).toContain("anchor={anchor}");
+    expect(scheduledPaymentActionsSource).toContain('tone: "destructive"');
   });
 
   it("moves transaction and debt dialog actions into the shared options menu", () => {

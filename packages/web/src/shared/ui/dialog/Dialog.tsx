@@ -12,6 +12,7 @@ import { MoreVertical, XIcon } from "lucide-react";
 import * as React from "react";
 
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
+import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog/ActionsDialog";
 import { Button } from "@/shared/ui/button";
 import { OverlayPortalRootProvider } from "@/shared/ui/overlay-portal-root";
 import { Tooltip } from "@/shared/ui/tooltip";
@@ -31,35 +32,7 @@ interface DialogProps {
   open?: boolean;
 }
 
-export interface DialogAction {
-  disabled?: boolean;
-  icon: React.ReactNode;
-  id: string;
-  label: string;
-  onSelect: () => void;
-  tone?: "default" | "destructive";
-}
-
-export type ActionButtonTheme = "primary" | "error" | "secondary";
-
-export interface ActionItem {
-  className?: string;
-  disabled?: boolean;
-  icon: React.ReactNode;
-  id?: string;
-  label: string;
-  onClick: () => void;
-  theme?: ActionButtonTheme;
-}
-
-interface ActionsDialogProps {
-  actions: ActionItem[];
-  description: string;
-  onCloseComplete: () => void;
-  onOpenChange: (open: boolean) => void;
-  open: boolean;
-  title: string;
-}
+export type DialogAction = ActionItem;
 
 interface DialogWindowProps extends React.HTMLAttributes<HTMLDivElement> {
   actions?: DialogAction[];
@@ -140,6 +113,7 @@ function DialogCloseButton({ className, children: _, type = "button", ...props }
 function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
   const { isMobile } = useBreakpoints();
   const { setNestedOverlayOpen } = React.useContext(DialogWindowContext);
+  const optionsButtonRef = React.useRef<HTMLButtonElement>(null);
   const [open, setOpen] = React.useState(false);
   const disabled = actions.every((action) => action.disabled);
 
@@ -149,18 +123,6 @@ function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
     return () => setNestedOverlayOpen(false);
   }, [open, setNestedOverlayOpen]);
 
-  const actionItems: ActionItem[] = actions.map((action) => ({
-    disabled: action.disabled,
-    icon: action.icon,
-    id: action.id,
-    label: action.label,
-    onClick: () => {
-      setOpen(false);
-      action.onSelect();
-    },
-    theme: action.tone === "destructive" ? "error" : "primary",
-  }));
-
   const optionsButton = (
     <Button
       aria-label="Действия"
@@ -168,6 +130,7 @@ function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
       aria-haspopup="dialog"
       disabled={disabled}
       onClick={() => setOpen(true)}
+      ref={optionsButtonRef}
       size="icon-sm"
       type="button"
       variant="ghost"
@@ -186,79 +149,13 @@ function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
         </Tooltip>
       )}
       <ActionsDialog
-        actions={actionItems}
-        description="Выберите действие"
+        actions={actions}
+        anchor={optionsButtonRef.current}
         onCloseComplete={() => undefined}
         onOpenChange={setOpen}
         open={open}
-        title="Действия"
       />
     </>
-  );
-}
-
-const actionColorMap: Record<ActionButtonTheme, string> = {
-  primary: "text-foreground",
-  error: "text-destructive",
-  secondary: "text-secondary-foreground",
-};
-
-function ActionButton({
-  icon,
-  children,
-  onClick,
-  theme = "primary",
-  className,
-  disabled = false,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  disabled?: boolean;
-  icon: React.ReactNode;
-  onClick: () => void;
-  theme?: ActionButtonTheme;
-}) {
-  return (
-    <button
-      className={cn(
-        "flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-4 text-left transition-colors hover:bg-control-hover disabled:pointer-events-none disabled:cursor-default disabled:opacity-50",
-        actionColorMap[theme],
-        className
-      )}
-      disabled={disabled}
-      onClick={onClick}
-      type="button"
-    >
-      {icon}
-      <div className="font-medium">{children}</div>
-    </button>
-  );
-}
-
-function ActionsDialog({ title, description, actions, open, onCloseComplete, onOpenChange }: ActionsDialogProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[400px]" onCloseComplete={onCloseComplete}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogContent className="flex flex-col gap-1">
-          {actions.map((action) => (
-            <ActionButton
-              key={action.id ?? action.label}
-              className={action.className}
-              disabled={action.disabled}
-              icon={action.icon}
-              onClick={action.onClick}
-              theme={action.theme}
-            >
-              {action.label}
-            </ActionButton>
-          ))}
-        </DialogContent>
-      </DialogWindow>
-    </Dialog>
   );
 }
 
@@ -451,7 +348,6 @@ function DialogDescription({ className, id, ...props }: React.ComponentProps<"p"
 }
 
 export {
-  ActionsDialog,
   Dialog,
   DialogCloseButton,
   DialogContent,

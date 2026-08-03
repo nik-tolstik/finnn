@@ -1,10 +1,11 @@
 import { Archive, Eye, EyeOff, Pencil, Plus } from "lucide-react";
 
 import type { Account } from "@/modules/accounts/account.types";
-import { ActionsDialog } from "@/shared/ui/actions-dialog";
+import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog";
 
 interface AccountActionsDialogProps {
   account: Account;
+  anchor: HTMLElement | null;
   open: boolean;
   onCloseComplete: () => void;
   onOpenChange: (open: boolean) => void;
@@ -16,6 +17,7 @@ interface AccountActionsDialogProps {
 
 export function AccountActionsDialog({
   account,
+  anchor,
   open,
   onCloseComplete,
   onOpenChange,
@@ -24,36 +26,41 @@ export function AccountActionsDialog({
   onArchive,
   onCreateTransaction,
 }: AccountActionsDialogProps) {
+  const actions: ActionItem[] = [
+    {
+      id: "create-transaction",
+      icon: <Plus className="h-3.5 w-3.5" />,
+      label: "Добавить",
+      onSelect: onCreateTransaction,
+    },
+    {
+      id: "edit",
+      icon: <Pencil className="h-3.5 w-3.5" />,
+      label: "Изменить",
+      onSelect: onEdit,
+    },
+    {
+      id: "toggle-visibility",
+      icon: account.hidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />,
+      label: account.hidden ? "Показать" : "Скрыть",
+      onSelect: onToggleVisibility,
+    },
+    {
+      id: "archive",
+      icon: <Archive className="h-3.5 w-3.5" />,
+      label: "Архивировать",
+      onSelect: onArchive,
+      tone: "destructive",
+    },
+  ];
+
   return (
     <ActionsDialog
-      title="Действия со счётом"
-      description={`Выберите действие для счёта "${account.name}"`}
+      anchor={anchor}
       open={open}
       onCloseComplete={onCloseComplete}
       onOpenChange={onOpenChange}
-      actions={[
-        {
-          icon: <Plus className="h-3.5 w-3.5" />,
-          label: "Добавить",
-          onClick: onCreateTransaction,
-        },
-        {
-          icon: <Pencil className="h-3.5 w-3.5" />,
-          label: "Изменить",
-          onClick: onEdit,
-        },
-        {
-          icon: account.hidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />,
-          label: account.hidden ? "Показать" : "Скрыть",
-          onClick: onToggleVisibility,
-        },
-        {
-          icon: <Archive className="h-3.5 w-3.5" />,
-          label: "Архивировать",
-          onClick: onArchive,
-          theme: "error",
-        },
-      ]}
+      actions={actions}
     />
   );
 }

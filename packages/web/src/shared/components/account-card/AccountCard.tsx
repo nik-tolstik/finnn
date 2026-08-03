@@ -1,4 +1,4 @@
-import type { CSSProperties, HTMLAttributes } from "react";
+import type { CSSProperties, HTMLAttributes, MouseEventHandler } from "react";
 
 import type { Account } from "@/modules/accounts/account.types";
 import { AccountIcon } from "@/shared/utils/account-icons";
@@ -16,7 +16,7 @@ interface AccountCardProps {
   };
   className?: string;
   contentClassName?: string;
-  onClick?: () => void;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
   showOwner?: boolean;
 }
 

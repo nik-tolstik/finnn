@@ -18,7 +18,7 @@ interface ScheduledPaymentListProps {
   onDelete: (payment: ScheduledPayment) => void;
   onEdit: (payment: ScheduledPayment) => void;
   onMarkPaid: (payment: ScheduledPayment) => void;
-  onPaymentClick: (payment: ScheduledPayment) => void;
+  onPaymentClick: (payment: ScheduledPayment, anchor: HTMLButtonElement) => void;
   onSkip: (payment: ScheduledPayment) => void;
   payments: ScheduledPayment[];
 }
@@ -150,7 +150,7 @@ export function ScheduledPaymentList({
                 <div key={payment.id}>
                   <button
                     className="grid w-full gap-3 p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:hidden"
-                    onClick={() => onPaymentClick(payment)}
+                    onClick={(event) => onPaymentClick(payment, event.currentTarget)}
                     type="button"
                   >
                     <ScheduledPaymentDetails payment={payment} />

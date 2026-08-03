@@ -61,8 +61,12 @@ interface AccountsCardsProps {
   workspaceId: string;
 }
 
-type ActionDialogData = {
+type AccountDialogData = {
   account: AccountWithOwner;
+};
+
+type AccountActionDialogData = AccountDialogData & {
+  anchor: HTMLElement;
 };
 
 function AccountGroupHeader({ group }: { group: AccountDisplayGroup<AccountWithOwner> }) {
@@ -92,14 +96,14 @@ export function AccountsCards({
 }: AccountsCardsProps) {
   const queryClient = useQueryClient();
   const visibilityMutationIds = useRef(new Set<string>());
-  const accountActionsDialog = useDialogState<ActionDialogData>();
+  const accountActionsDialog = useDialogState<AccountActionDialogData>();
   const createTransactionDialog = useDialogState<{
     workspaceId: string;
     defaultType?: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
     account?: Account;
   }>();
-  const editDialog = useDialogState<ActionDialogData>();
-  const archiveDialog = useDialogState<ActionDialogData>();
+  const editDialog = useDialogState<AccountDialogData>();
+  const archiveDialog = useDialogState<AccountDialogData>();
 
   const handleToggleVisibility = async (account: AccountWithOwner) => {
     if (visibilityMutationIds.current.has(account.id)) {
@@ -165,9 +169,9 @@ export function AccountsCards({
                   key={account.id}
                   account={account}
                   showOwner={shouldShowOwnerOnCard}
-                  onClick={() => {
+                  onClick={(event) => {
                     preloadAccountDetailsDialogs();
-                    accountActionsDialog.openDialog({ account });
+                    accountActionsDialog.openDialog({ account, anchor: event.currentTarget });
                   }}
                 />
               ))}
@@ -179,6 +183,7 @@ export function AccountsCards({
       {accountActionsDialog.mounted ? (
         <AccountActionsDialog
           account={accountActionsDialog.data.account}
+          anchor={accountActionsDialog.data.anchor}
           open={accountActionsDialog.open}
           onCloseComplete={accountActionsDialog.unmountDialog}
           onEdit={() => {

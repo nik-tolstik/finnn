@@ -7,6 +7,7 @@ import {
   flip,
   offset as floatingOffset,
   type Placement,
+  type ReferenceType,
   shift,
   size,
   useClick,
@@ -35,7 +36,7 @@ interface PopoverRenderProps {
   open: boolean;
 }
 
-interface PopoverProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
+interface PopoverBaseProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
   children: React.ReactNode | ((props: PopoverRenderProps) => React.ReactNode);
   defaultOpen?: boolean;
   offset?: number;
@@ -43,8 +44,17 @@ interface PopoverProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "child
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
   placement?: Placement;
-  trigger: (props: PopoverTriggerRenderProps) => React.ReactNode;
 }
+
+type PopoverProps =
+  | (PopoverBaseProps & {
+      reference: ReferenceType | null;
+      trigger?: (props: PopoverTriggerRenderProps) => React.ReactNode;
+    })
+  | (PopoverBaseProps & {
+      reference?: undefined;
+      trigger: (props: PopoverTriggerRenderProps) => React.ReactNode;
+    });
 
 function getPlacementParts(placement: Placement) {
   const [side, align = "center"] = placement.split("-");
@@ -88,6 +98,7 @@ function PopoverInner({
   onOpenChange,
   open,
   placement = "bottom",
+  reference,
   style,
   trigger,
   ...contentProps
@@ -137,6 +148,12 @@ function PopoverInner({
       }),
     ],
   });
+
+  React.useLayoutEffect(() => {
+    if (reference !== undefined) {
+      refs.setReference(reference);
+    }
+  }, [reference, refs]);
 
   const click = useClick(context, { keyboardHandlers: true });
   const dismiss = useDismiss(context);
@@ -197,7 +214,7 @@ function PopoverInner({
 
   return (
     <>
-      {trigger(triggerProps)}
+      {trigger?.(triggerProps)}
       <FloatingNode id={nodeId}>
         {isMounted && (
           <FloatingPortal root={portalRoot ?? undefined} preserveTabOrder={false}>
