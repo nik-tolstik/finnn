@@ -31,6 +31,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogW
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
+import { Tooltip } from "@/shared/ui/tooltip";
 import { compareMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { createDebtWriteOff, updateDebtWriteOff } from "../../debt.api";
@@ -541,16 +542,18 @@ export function DebtWriteOffDialog({
             <DialogTitle className="truncate">{title}</DialogTitle>
             <div className="flex shrink-0 items-center gap-1">
               {onDelete ? (
-                <Button
-                  aria-label="Удалить погашение"
-                  disabled={isSubmitting}
-                  onClick={onDelete}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2 />
-                </Button>
+                <Tooltip content="Удалить погашение" delayDuration={0} disableHoverableContent>
+                  <Button
+                    aria-label="Удалить погашение"
+                    disabled={isSubmitting}
+                    onClick={onDelete}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Trash2 />
+                  </Button>
+                </Tooltip>
               ) : null}
               <Button
                 aria-label="Закрыть"

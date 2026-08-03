@@ -35,6 +35,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogW
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
+import { Tooltip } from "@/shared/ui/tooltip";
 import { formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { updatePaymentTransaction } from "../../transaction.api";
@@ -225,40 +226,46 @@ export function EditTransactionDialog({
             <DialogTitle className="truncate">Редактировать транзакцию</DialogTitle>
             <div className="flex shrink-0 items-center gap-1">
               {onRepeat ? (
-                <Button
-                  aria-label="Повторить транзакцию"
-                  disabled={isSubmitting}
-                  onClick={onRepeat}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <RotateCw />
-                </Button>
+                <Tooltip content="Повторить транзакцию" delayDuration={0} disableHoverableContent>
+                  <Button
+                    aria-label="Повторить транзакцию"
+                    disabled={isSubmitting}
+                    onClick={onRepeat}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <RotateCw />
+                  </Button>
+                </Tooltip>
               ) : null}
               {onCreateScheduledPayment ? (
-                <Button
-                  aria-label="Создать платёж"
-                  disabled={isSubmitting}
-                  onClick={onCreateScheduledPayment}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <CalendarPlus />
-                </Button>
+                <Tooltip content="Создать платёж" delayDuration={0} disableHoverableContent>
+                  <Button
+                    aria-label="Создать платёж"
+                    disabled={isSubmitting}
+                    onClick={onCreateScheduledPayment}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <CalendarPlus />
+                  </Button>
+                </Tooltip>
               ) : null}
               {onDelete ? (
-                <Button
-                  aria-label="Удалить транзакцию"
-                  disabled={isSubmitting}
-                  onClick={onDelete}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2 />
-                </Button>
+                <Tooltip content="Удалить транзакцию" delayDuration={0} disableHoverableContent>
+                  <Button
+                    aria-label="Удалить транзакцию"
+                    disabled={isSubmitting}
+                    onClick={onDelete}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Trash2 />
+                  </Button>
+                </Tooltip>
               ) : null}
               <Button
                 aria-label="Закрыть"

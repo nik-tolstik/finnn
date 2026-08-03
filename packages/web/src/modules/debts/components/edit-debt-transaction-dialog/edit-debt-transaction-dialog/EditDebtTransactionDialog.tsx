@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogWindow,
 } from "@/shared/ui/dialog";
+import { Tooltip } from "@/shared/ui/tooltip";
 
 import { EditDebtTransactionAccountSection } from "../edit-debt-transaction-account-section/EditDebtTransactionAccountSection";
 import { EditDebtTransactionAmountFields } from "../edit-debt-transaction-amount-fields/EditDebtTransactionAmountFields";
@@ -58,16 +59,18 @@ export function EditDebtTransactionDialog({
             <DialogTitle className="truncate">{dialogTitle}</DialogTitle>
             <div className="flex shrink-0 items-center gap-1">
               {onDelete ? (
-                <Button
-                  aria-label="Удалить транзакцию долга"
-                  disabled={form.formState.isSubmitting}
-                  onClick={onDelete}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2 />
-                </Button>
+                <Tooltip content="Удалить транзакцию долга" delayDuration={0} disableHoverableContent>
+                  <Button
+                    aria-label="Удалить транзакцию долга"
+                    disabled={form.formState.isSubmitting}
+                    onClick={onDelete}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Trash2 />
+                  </Button>
+                </Tooltip>
               ) : null}
               <Button
                 aria-label="Закрыть"

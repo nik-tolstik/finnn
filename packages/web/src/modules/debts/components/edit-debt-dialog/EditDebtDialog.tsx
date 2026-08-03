@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogW
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
+import { Tooltip } from "@/shared/ui/tooltip";
 import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { getDebtEditData, updateDebt } from "../../debt.api";
@@ -322,16 +323,18 @@ export function EditDebtDialog({
             <DialogTitle className="truncate">Редактировать долг</DialogTitle>
             <div className="flex shrink-0 items-center gap-1">
               {onDelete ? (
-                <Button
-                  aria-label="Удалить долг"
-                  disabled={isSubmitting}
-                  onClick={onDelete}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2 />
-                </Button>
+                <Tooltip content="Удалить долг" delayDuration={0} disableHoverableContent>
+                  <Button
+                    aria-label="Удалить долг"
+                    disabled={isSubmitting}
+                    onClick={onDelete}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Trash2 />
+                  </Button>
+                </Tooltip>
               ) : null}
               <Button
                 aria-label="Закрыть"

@@ -64,6 +64,22 @@ describe("dashboard interaction loading", () => {
     expect(editTransactionSource).toContain('aria-label="Удалить транзакцию"');
   });
 
+  it("explains transaction and debt dialog header actions with tooltips", () => {
+    const headerDialogSources = [
+      "src/modules/transactions/components/edit-transaction-dialog/EditTransactionDialog.tsx",
+      "src/modules/transactions/components/edit-transfer-dialog/EditTransferDialog.tsx",
+      "src/modules/debts/components/debt-write-off-dialog/DebtWriteOffDialog.tsx",
+      "src/modules/debts/components/edit-debt-dialog/EditDebtDialog.tsx",
+      "src/modules/debts/components/edit-debt-transaction-dialog/edit-debt-transaction-dialog/EditDebtTransactionDialog.tsx",
+      "src/modules/debts/components/debt-dialog/DebtDialog.tsx",
+    ].map(readSource);
+
+    for (const source of headerDialogSources) {
+      expect(source).toContain('import { Tooltip } from "@/shared/ui/tooltip"');
+      expect(source).not.toContain('<Tooltip content="Закрыть"');
+    }
+  });
+
   it("keeps the category editor instant and preloads its data", () => {
     const categoryDialogSource = readSource(
       "src/modules/accounts/components/category-settings-dialog/CategorySettingsDialog.tsx"

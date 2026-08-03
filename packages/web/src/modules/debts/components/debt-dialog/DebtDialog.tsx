@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Segmented } from "@/shared/ui/segmented";
+import { Tooltip } from "@/shared/ui/tooltip";
 import { formatMoney } from "@/shared/utils/money";
 
 import { DebtType } from "../../debt.constants";
@@ -226,28 +227,32 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
             </div>
             <div className="flex shrink-0 items-center gap-1">
               {view === "operations" && capabilities.canEdit ? (
-                <Button
-                  aria-label="Редактировать долг"
-                  disabled={isSubmitting}
-                  onClick={() => setView("edit")}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Pencil />
-                </Button>
+                <Tooltip content="Редактировать долг" delayDuration={0} disableHoverableContent>
+                  <Button
+                    aria-label="Редактировать долг"
+                    disabled={isSubmitting}
+                    onClick={() => setView("edit")}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Pencil />
+                  </Button>
+                </Tooltip>
               ) : null}
               {view === "operations" && capabilities.canDelete ? (
-                <Button
-                  aria-label="Удалить долг"
-                  disabled={isSubmitting}
-                  onClick={() => setView("delete")}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2 />
-                </Button>
+                <Tooltip content="Удалить долг" delayDuration={0} disableHoverableContent>
+                  <Button
+                    aria-label="Удалить долг"
+                    disabled={isSubmitting}
+                    onClick={() => setView("delete")}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Trash2 />
+                  </Button>
+                </Tooltip>
               ) : null}
               <Button
                 aria-label="Закрыть"

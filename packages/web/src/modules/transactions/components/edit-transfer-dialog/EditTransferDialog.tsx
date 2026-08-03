@@ -20,6 +20,7 @@ import {
 } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { Tooltip } from "@/shared/ui/tooltip";
 import { subtractMoney } from "@/shared/utils/money";
 
 import { updateTransferTransaction } from "../../transaction.api";
@@ -176,16 +177,18 @@ export function EditTransferDialog({
             <DialogTitle className="truncate">Редактировать перевод</DialogTitle>
             <div className="flex shrink-0 items-center gap-1">
               {onDelete ? (
-                <Button
-                  aria-label="Удалить перевод"
-                  disabled={form.formState.isSubmitting}
-                  onClick={onDelete}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2 />
-                </Button>
+                <Tooltip content="Удалить перевод" delayDuration={0} disableHoverableContent>
+                  <Button
+                    aria-label="Удалить перевод"
+                    disabled={form.formState.isSubmitting}
+                    onClick={onDelete}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Trash2 />
+                  </Button>
+                </Tooltip>
               ) : null}
               <Button
                 aria-label="Закрыть"
