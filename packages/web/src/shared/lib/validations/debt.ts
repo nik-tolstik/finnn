@@ -52,8 +52,8 @@ export const closeDebtSchema = z
 export const addToDebtSchema = z.object({
   amount: requiredPositiveMoneyString("Сумма обязательна"),
   toAmount: optionalPositiveMoneyString(),
-  useAccount: z.boolean(),
-  accountId: z.string().optional(),
+  useAccount: z.literal(true),
+  accountId: z.string().min(1, "Выберите счёт"),
 });
 
 export const updateDebtSchema = z.object({

@@ -25,6 +25,18 @@ describe("debt dialog entry points", () => {
     ).toBe(false);
   });
 
+  it("keeps adding to a debt account-backed", () => {
+    const source = readSource("src/modules/debts/components/add-to-debt-dialog/AddToDebtDialog.tsx");
+
+    expect(source.match(/useAccount: true/g)).toHaveLength(2);
+    expect(source).toContain("toCurrency: selectedAccount?.currency");
+    expect(source).toContain("<AccountSelector");
+    expect(source).not.toContain("Checkbox");
+    expect(source).not.toContain("Использовать счёт");
+    expect(source).not.toContain("useAccount ?");
+    expect(source).not.toContain("data.useAccount");
+  });
+
   it("only mounts operation panels when the debt supports operations", () => {
     const source = readSource("src/modules/debts/components/debt-dialog/DebtDialog.tsx");
 

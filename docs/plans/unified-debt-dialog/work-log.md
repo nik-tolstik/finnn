@@ -160,3 +160,9 @@
 - `git diff --check` — passed.
 - Full strict no-tool Copilot CLI review with `grok-4.5` of `f5d1b83...HEAD` reported exactly: `No actionable findings.` No findings are classified in the current review; the historical no-finding conclusion that missed the interim-input P2 remains rejected for that issue.
 - No browser or screenshot QA was run.
+
+## 2026-08-03 — Mandatory account for debt additions
+
+- Made the account selector mandatory and always visible for both add-to-debt directions, with account-backed
+  frontend validation and currency synchronization; removed the optional-account checkbox flow while preserving
+  balance previews and cross-currency amounts.
