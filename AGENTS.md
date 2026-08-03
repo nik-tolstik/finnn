@@ -45,14 +45,22 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 ## Formal Plan Tracking
 
 - Create or use formal implementation plans, `docs/plans/...` directories, work logs, or plan-tracking tools only when
-  the user explicitly asks to create or use a plan, or explicitly says the current task continues a named existing plan.
-- Task complexity, multi-agent work, a branch, worktree, PR, or an existing plan file do not authorize formal plan
-  tracking.
+  the user explicitly asks to create or use a plan, or explicitly says the current task continues a named existing plan,
+  **and** the task is substantial enough to need multiple modules, meaningful product decisions, or more than one focused
+  coding session.
+- Do not create formal plan artifacts for small, narrow changes, even when the user asks for a concise plan; answer in
+  chat and execute directly instead.
+- Task complexity, multi-agent work, a branch, worktree, PR, or an existing plan file alone do not authorize formal
+  plan tracking.
 - When a user supplies a plan in chat, follow it without persisting it to repository documentation unless the user
   explicitly requests that persistence.
 - Without explicit opt-in, execute directly with normal internal reasoning and concise commentary.
 - Update a plan work log only when the current user request explicitly invokes that plan and asks for logging, or the
   invoked plan explicitly requires it.
+- For an eligible, explicitly requested formal plan, use the specification-first workflow in `docs/plans/README.md`:
+  research the repository, resolve material product decisions with the user, write `specification.md` in product
+  language, then write the technical plan. Ask users about behavior, priorities, and business rules—not implementation
+  choices that repository research can answer. Use structured question choices when the interface supports them.
 
 ## Efficient Iteration And Verification
 
@@ -130,7 +138,8 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
   upload, restore helper, tests, and Railway cron configuration.
 - `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
 - `docs` contains human and AI-facing project documentation.
-- `docs/plans` is reserved for user-requested feature implementation plans and their work logs.
+- `docs/plans` contains the guide and active, user-requested plans for substantial feature work.
+- `docs/solutions` contains concise, reusable lessons from completed work.
 
 ## Implementation Rules
 
@@ -189,7 +198,8 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 ## Documentation Expectations
 
 - Update `AGENTS.md` and `docs/` when changing architecture, setup, data model, workflows, deployment, or agent-facing conventions.
-- When the user explicitly invokes `docs/plans/<feature>`, follow that plan and update its work log only when the
-  request or plan explicitly requires logging.
+- When the user explicitly invokes an eligible `docs/plans/<feature>` plan, follow it, keep its execution state current,
+  and update its work log when the user or the invoked plan requires it. Return to the user only for a newly discovered
+  material product decision.
 - Keep README concise and link to detailed docs instead of duplicating large sections.
 - Prefer concrete file paths, commands, invariants, and failure modes over generic descriptions.
