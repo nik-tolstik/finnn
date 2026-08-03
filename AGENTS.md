@@ -42,6 +42,37 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 - Keep comments in English.
 - Do not run Browser screenshot QA with Playwright, `agent-browser`, or similar browser automation unless the user explicitly asks for screenshot/browser QA.
 
+## Efficient Iteration And Verification
+
+- These defaults are overridden by explicit user instructions or an approved task plan.
+- Treat consecutive follow-ups on an existing Draft PR as one iteration batch until the task is published or the user
+  changes scope.
+
+- Select validation from this matrix:
+  - Presentation-only frontend: inspect the changed UI, run relevant targeted tests when they exist, and run web
+    typecheck, formatting, and production build checks. Run Storybook when stories or component rendering are affected.
+  - Isolated frontend logic: run targeted feature tests plus web typecheck, formatting, and production build checks.
+    Run Storybook when component rendering is affected.
+  - Cross-package, API, schema, configuration, or dependency changes: run affected package checks and the appropriate
+    root-level validation matrix. Include generated-client, migration, infrastructure, or backup checks when the
+    changed boundary requires them.
+
+- Do not run unrelated API, database, or backup tests for an isolated frontend change.
+- Executors run targeted checks while implementing. An independent verifier runs the final scope-appropriate broad
+  validation; do not duplicate the same full suite in both roles.
+- Use this order: implementation, targeted validation, external review, confirmed fixes, one final broad validation,
+  then push and update the PR.
+- Run external review once for each cohesive diff. After confirmed findings, rerun a focused review of the fixes;
+  repeat the full review only for architecture, API, persistence, security, concurrency, or significant state/data-flow
+  changes.
+- Style, copy, documentation, and test-only changes are not substantial changes for deciding whether to repeat broad
+  validation or a full external review.
+- Consolidate work-log and PR-body updates for an iteration batch instead of creating process-only follow-up commits
+  or PR edits.
+- For an already validated Draft PR, do not wait for remote CI before publishing a follow-up unless the user or
+  repository policy requires it.
+- If an isolated frontend follow-up exceeds 15 minutes, report the cause before running more broad checks.
+
 ## Key Commands
 
 ```bash
