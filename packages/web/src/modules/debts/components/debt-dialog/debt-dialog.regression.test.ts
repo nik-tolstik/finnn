@@ -72,7 +72,8 @@ describe("debt dialog entry points", () => {
     expect(dialogSource).not.toContain("mobilePosition");
     expect(dialogSource).not.toContain("max-sm:max-h");
     expect(sharedDialogSource).toContain("max-h-[calc(100dvh-4rem)]");
-    expect(sharedDialogSource).toContain('transform: "translateY(100%)"');
+    expect(sharedDialogSource).toContain('transform: "scale(0.96)"');
+    expect(sharedDialogSource).not.toContain('transform: "translateY(100%)"');
     expect(dialogSource).toContain('className="flex-none shrink-0 pb-0"');
   });
 

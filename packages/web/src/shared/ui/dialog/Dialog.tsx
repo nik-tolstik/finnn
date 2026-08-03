@@ -187,9 +187,9 @@ function DialogWindow({
   const { getFloatingProps } = useInteractions([dismiss, role]);
   const { isMounted, styles: transitionStyles } = useTransitionStyles(context, {
     duration: { close: 120, open: 180 },
-    initial: isMobile ? { opacity: 0, transform: "translateY(100%)" } : { opacity: 0, transform: "scale(0.96)" },
-    open: isMobile ? { opacity: 1, transform: "translateY(0)" } : { opacity: 1, transform: "scale(1)" },
-    close: isMobile ? { opacity: 0, transform: "translateY(100%)" } : { opacity: 0, transform: "scale(0.96)" },
+    initial: { opacity: 0, transform: "scale(0.96)" },
+    open: { opacity: 1, transform: "scale(1)" },
+    close: { opacity: 0, transform: "scale(0.96)" },
     common: { transformOrigin: isMobile ? "bottom center" : "center" },
   });
 
