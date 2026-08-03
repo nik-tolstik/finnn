@@ -96,6 +96,7 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain("hasCloseButton: showCloseButton");
     expect(dialogSource).toContain("{showCloseButton ? (");
     expect(dialogSource).toContain('className={isMobile ? "size-10 p-0" : undefined}');
+    expect(dialogSource).toContain('"flex flex-col gap-2 text-left"');
     expect(dialogSource).toContain('hasActions && "flex-row items-center [&>button]:flex-1"');
     expect(dialogSource).toContain("{hasActions ? (");
     expect(dialogSource).not.toContain("hasActions && isMobile ? <DialogOptionsButton");

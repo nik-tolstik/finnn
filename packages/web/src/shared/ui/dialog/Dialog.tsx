@@ -291,7 +291,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", hasMobileCloseButton ? "px-16" : "px-6", className)}
+      className={cn("flex flex-col gap-2 text-left", hasMobileCloseButton ? "px-16" : "px-6", className)}
       {...props}
     />
   );
