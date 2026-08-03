@@ -18,6 +18,7 @@ type SheetSide = "top" | "right" | "bottom" | "left";
 
 interface SheetContextValue {
   descriptionId: string;
+  onCloseComplete?: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
   titleId: string;
@@ -26,6 +27,7 @@ interface SheetContextValue {
 interface SheetProps {
   children: React.ReactNode;
   defaultOpen?: boolean;
+  onCloseComplete?: () => void;
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
 }
@@ -45,7 +47,7 @@ function useSheetContext() {
   return context;
 }
 
-function Sheet({ children, defaultOpen = false, onOpenChange, open }: SheetProps) {
+function Sheet({ children, defaultOpen = false, onCloseComplete, onOpenChange, open }: SheetProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
   const isControlled = open !== undefined;
   const isOpen = isControlled ? open : uncontrolledOpen;
@@ -66,11 +68,12 @@ function Sheet({ children, defaultOpen = false, onOpenChange, open }: SheetProps
   const contextValue = React.useMemo(
     () => ({
       descriptionId,
+      onCloseComplete,
       onOpenChange: setOpen,
       open: isOpen,
       titleId,
     }),
-    [descriptionId, isOpen, setOpen, titleId]
+    [descriptionId, isOpen, onCloseComplete, setOpen, titleId]
   );
 
   return <SheetContext.Provider value={contextValue}>{children}</SheetContext.Provider>;
@@ -97,7 +100,7 @@ function SheetContent({
   style,
   ...props
 }: SheetContentProps) {
-  const { descriptionId, onOpenChange, open, titleId } = useSheetContext();
+  const { descriptionId, onCloseComplete, onOpenChange, open, titleId } = useSheetContext();
   const [portalRoot, setPortalRoot] = React.useState<HTMLDivElement | null>(null);
   const { context, refs } = useFloating({
     open,
@@ -107,13 +110,31 @@ function SheetContent({
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "dialog" });
   const { getFloatingProps } = useInteractions([dismiss, role]);
-  const closedTransform = getClosedTransform(side);
+  const closedTransform = side === "bottom" ? "scale(0.96)" : getClosedTransform(side);
+  const openTransform = side === "bottom" ? "scale(1)" : "translate(0, 0)";
   const { isMounted, styles: transitionStyles } = useTransitionStyles(context, {
     duration: { close: 120, open: 180 },
     initial: { opacity: 0, transform: closedTransform },
-    open: { opacity: 1, transform: "translate(0, 0)" },
+    open: { opacity: 1, transform: openTransform },
     close: { opacity: 0, transform: closedTransform },
+    common: { transformOrigin: side === "bottom" ? "bottom center" : "center" },
   });
+  const closeCompleteCalledRef = React.useRef(false);
+  const wasMountedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isMounted) {
+      wasMountedRef.current = true;
+      closeCompleteCalledRef.current = false;
+      return;
+    }
+
+    if (wasMountedRef.current && !open && !closeCompleteCalledRef.current) {
+      closeCompleteCalledRef.current = true;
+      wasMountedRef.current = false;
+      onCloseComplete?.();
+    }
+  }, [isMounted, onCloseComplete, open]);
 
   const setFloatingRef = React.useCallback(
     (node: HTMLDivElement | null) => {

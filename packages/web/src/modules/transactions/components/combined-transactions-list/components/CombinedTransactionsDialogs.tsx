@@ -1,31 +1,17 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 
-import { DebtTransactionActionsDialog } from "@/modules/debts/components/debt-transaction-actions-dialog";
-import { hasDebtWriteOff } from "@/modules/debts/components/debt-write-off-dialog/debt-write-off-dialog.utils";
-import { DebtTransactionType } from "@/modules/debts/debt.constants";
-import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
+import { DebtWriteOffDialog } from "@/modules/debts/components/debt-write-off-dialog";
+import { EditDebtDialog } from "@/modules/debts/components/edit-debt-dialog";
+import { EditDebtTransactionDialog } from "@/modules/debts/components/edit-debt-transaction-dialog";
 
-import { TransactionActionsDialog } from "../../transaction-actions-dialog/TransactionActionsDialog";
+import { EditTransactionDialog } from "../../edit-transaction-dialog";
+import { EditTransferDialog } from "../../edit-transfer-dialog";
 import type { CombinedTransactionsController } from "../hooks/useCombinedTransactionsController";
-import type { ActionableCombinedTransaction } from "../types";
 import { canCreateScheduledPaymentFromTransaction } from "../utils/scheduledPaymentFromTransaction";
 
-const loadDebtWriteOffDialog = () =>
-  import("@/modules/debts/components/debt-write-off-dialog").then((module) => ({
-    default: module.DebtWriteOffDialog,
-  }));
-const DebtWriteOffDialog = lazy(loadDebtWriteOffDialog);
 const loadDeleteDebtDialog = () =>
   import("@/modules/debts/components/delete-debt-dialog").then((module) => ({ default: module.DeleteDebtDialog }));
 const DeleteDebtDialog = lazy(loadDeleteDebtDialog);
-const loadEditDebtDialog = () =>
-  import("@/modules/debts/components/edit-debt-dialog").then((module) => ({ default: module.EditDebtDialog }));
-const EditDebtDialog = lazy(loadEditDebtDialog);
-const loadEditDebtTransactionDialog = () =>
-  import("@/modules/debts/components/edit-debt-transaction-dialog").then((module) => ({
-    default: module.EditDebtTransactionDialog,
-  }));
-const EditDebtTransactionDialog = lazy(loadEditDebtTransactionDialog);
 const loadCreateScheduledPaymentDialog = () =>
   import("@/modules/scheduled-payments/components/CreateScheduledPaymentDialog").then((module) => ({
     default: module.CreateScheduledPaymentDialog,
@@ -36,42 +22,6 @@ const loadCreateTransactionDialog = () =>
     default: module.CreateTransactionDialog,
   }));
 const CreateTransactionDialog = lazy(loadCreateTransactionDialog);
-const loadEditTransactionDialog = () =>
-  import("../../edit-transaction-dialog/EditTransactionDialog").then((module) => ({
-    default: module.EditTransactionDialog,
-  }));
-const EditTransactionDialog = lazy(loadEditTransactionDialog);
-const loadEditTransferDialog = () =>
-  import("../../edit-transfer-dialog/EditTransferDialog").then((module) => ({ default: module.EditTransferDialog }));
-const EditTransferDialog = lazy(loadEditTransferDialog);
-
-function preloadTransactionDetailDialogs(transaction: ActionableCombinedTransaction) {
-  if (transaction.kind === "transferTransaction") {
-    void loadEditTransferDialog().catch(() => undefined);
-    return;
-  }
-
-  if (hasDebtWriteOff(transaction.data)) {
-    void loadDebtWriteOffDialog().catch(() => undefined);
-    return;
-  }
-
-  const preloadRequests = [loadCreateTransactionDialog(), loadEditTransactionDialog()];
-  if (canCreateScheduledPaymentFromTransaction(transaction)) {
-    preloadRequests.push(loadCreateScheduledPaymentDialog());
-  }
-
-  void Promise.all(preloadRequests).catch(() => undefined);
-}
-
-function preloadDebtTransactionDetailDialogs(debtTransaction: DebtTransactionWithRelations) {
-  const preloadRequests =
-    debtTransaction.type === DebtTransactionType.CREATED
-      ? [loadDeleteDebtDialog(), loadEditDebtDialog()]
-      : [loadEditDebtTransactionDialog()];
-
-  void Promise.all(preloadRequests).catch(() => undefined);
-}
 
 interface CombinedTransactionsDialogsProps {
   controller: CombinedTransactionsController;
@@ -87,88 +37,18 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
       editDebtDialog,
       editDebtTransactionDialog,
       deleteDebtDialog,
-      actionsDialog,
-      debtActionsDialog,
       createTransactionDialog,
       createScheduledPaymentDialog,
     },
     handleTransactionDelete,
-    handleTransactionEdit,
     handleTransactionRepeat,
     handleCreateScheduledPayment,
     handleDebtTransactionDelete,
-    handleDebtTransactionEdit,
   } = controller;
-  const actionTransaction = actionsDialog.mounted ? actionsDialog.data.transaction : null;
-  const debtActionTransaction = debtActionsDialog.mounted ? debtActionsDialog.data.debtTransaction : null;
-
-  useEffect(() => {
-    if (actionTransaction) {
-      preloadTransactionDetailDialogs(actionTransaction);
-    }
-    if (debtActionTransaction) {
-      preloadDebtTransactionDetailDialogs(debtActionTransaction);
-    }
-  }, [actionTransaction, debtActionTransaction]);
 
   return (
     <>
-      {actionsDialog.mounted ? (
-        <TransactionActionsDialog
-          transactionKind={actionsDialog.data.transaction.kind}
-          open={actionsDialog.open}
-          onOpenChange={actionsDialog.closeDialog}
-          onCloseComplete={actionsDialog.unmountDialog}
-          onEdit={() => {
-            handleTransactionEdit(actionsDialog.data.transaction);
-          }}
-          onDelete={() => {
-            handleTransactionDelete(actionsDialog.data.transaction);
-          }}
-          onRepeat={
-            actionsDialog.data.transaction.kind === "paymentTransaction" &&
-            actionsDialog.data.transaction.data.debtWriteOff
-              ? undefined
-              : () => {
-                  handleTransactionRepeat(actionsDialog.data.transaction);
-                }
-          }
-          onCreatePayment={
-            canCreateScheduledPaymentFromTransaction(actionsDialog.data.transaction)
-              ? () => {
-                  handleCreateScheduledPayment(actionsDialog.data.transaction);
-                }
-              : undefined
-          }
-        />
-      ) : null}
-
-      {debtActionsDialog.mounted ? (
-        <DebtTransactionActionsDialog
-          debtTransaction={debtActionsDialog.data.debtTransaction}
-          open={debtActionsDialog.open}
-          onOpenChange={debtActionsDialog.closeDialog}
-          onCloseComplete={debtActionsDialog.unmountDialog}
-          onEdit={() => {
-            handleDebtTransactionEdit(debtActionsDialog.data.debtTransaction);
-          }}
-          onDelete={() => {
-            handleDebtTransactionDelete(debtActionsDialog.data.debtTransaction);
-          }}
-        />
-      ) : null}
-
       <Suspense fallback={null}>
-        {editTransactionDialog.mounted ? (
-          <EditTransactionDialog
-            transaction={editTransactionDialog.data.transaction}
-            workspaceId={editTransactionDialog.data.workspaceId}
-            open={editTransactionDialog.open}
-            onOpenChange={editTransactionDialog.closeDialog}
-            onCloseComplete={editTransactionDialog.unmountDialog}
-          />
-        ) : null}
-
         {editDebtWriteOffDialog.mounted ? (
           <DebtWriteOffDialog
             transaction={editDebtWriteOffDialog.data.transaction}
@@ -176,16 +56,12 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
             open={editDebtWriteOffDialog.open}
             onOpenChange={editDebtWriteOffDialog.closeDialog}
             onCloseComplete={editDebtWriteOffDialog.unmountDialog}
-          />
-        ) : null}
-
-        {editTransferDialog.mounted ? (
-          <EditTransferDialog
-            transferTransaction={editTransferDialog.data.transferTransaction}
-            workspaceId={editTransferDialog.data.workspaceId}
-            open={editTransferDialog.open}
-            onOpenChange={editTransferDialog.closeDialog}
-            onCloseComplete={editTransferDialog.unmountDialog}
+            onDelete={() => {
+              handleTransactionDelete({
+                kind: "paymentTransaction",
+                data: editDebtWriteOffDialog.data.transaction,
+              });
+            }}
           />
         ) : null}
 
@@ -196,6 +72,7 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
             open={editDebtDialog.open}
             onOpenChange={editDebtDialog.closeDialog}
             onCloseComplete={editDebtDialog.unmountDialog}
+            onDelete={() => handleDebtTransactionDelete(editDebtDialog.data.debtTransaction)}
           />
         ) : null}
 
@@ -206,6 +83,7 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
             open={editDebtTransactionDialog.open}
             onOpenChange={editDebtTransactionDialog.closeDialog}
             onCloseComplete={editDebtTransactionDialog.unmountDialog}
+            onDelete={() => handleDebtTransactionDelete(editDebtTransactionDialog.data.debtTransaction)}
           />
         ) : null}
 
@@ -243,6 +121,57 @@ export function CombinedTransactionsDialogs({ controller }: CombinedTransactions
           />
         ) : null}
       </Suspense>
+
+      {editTransactionDialog.mounted ? (
+        <EditTransactionDialog
+          transaction={editTransactionDialog.data.transaction}
+          workspaceId={editTransactionDialog.data.workspaceId}
+          open={editTransactionDialog.open}
+          onOpenChange={editTransactionDialog.closeDialog}
+          onCloseComplete={editTransactionDialog.unmountDialog}
+          onDelete={() => {
+            handleTransactionDelete({
+              kind: "paymentTransaction",
+              data: editTransactionDialog.data.transaction,
+            });
+          }}
+          onRepeat={() => {
+            handleTransactionRepeat({
+              kind: "paymentTransaction",
+              data: editTransactionDialog.data.transaction,
+            });
+          }}
+          onCreateScheduledPayment={
+            canCreateScheduledPaymentFromTransaction({
+              kind: "paymentTransaction",
+              data: editTransactionDialog.data.transaction,
+            })
+              ? () => {
+                  handleCreateScheduledPayment({
+                    kind: "paymentTransaction",
+                    data: editTransactionDialog.data.transaction,
+                  });
+                }
+              : undefined
+          }
+        />
+      ) : null}
+
+      {editTransferDialog.mounted ? (
+        <EditTransferDialog
+          transferTransaction={editTransferDialog.data.transferTransaction}
+          workspaceId={editTransferDialog.data.workspaceId}
+          open={editTransferDialog.open}
+          onOpenChange={editTransferDialog.closeDialog}
+          onCloseComplete={editTransferDialog.unmountDialog}
+          onDelete={() => {
+            handleTransactionDelete({
+              kind: "transferTransaction",
+              data: editTransferDialog.data.transferTransaction,
+            });
+          }}
+        />
+      ) : null}
     </>
   );
 }

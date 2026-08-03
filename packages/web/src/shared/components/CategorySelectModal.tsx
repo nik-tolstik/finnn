@@ -58,7 +58,7 @@ export function CategorySelectModal({
         <DialogHeader>
           <DialogTitle>Выберите категорию</DialogTitle>
         </DialogHeader>
-        <DialogContent className="overflow-hidden flex flex-col">
+        <DialogContent className="flex min-h-0 flex-col overflow-hidden">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input

@@ -169,7 +169,7 @@ export function WorkspaceDropdown({
         </section>
 
         <Dialog open={switchOpen} onOpenChange={setSwitchOpen}>
-          <DialogWindow mobilePosition="bottom" className="max-h-[82dvh] rounded-t-lg sm:w-100">
+          <DialogWindow className="sm:w-100">
             <DialogHeader>
               <DialogTitle>Выберите workspace</DialogTitle>
             </DialogHeader>

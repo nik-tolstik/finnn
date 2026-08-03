@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Eye, EyeOff, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, Eye, EyeOff, Plus, X } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { getAccounts, updateAccountsOrder } from "@/modules/accounts/account.api";
@@ -57,6 +57,12 @@ type AccountWithOwner = Account & {
 
 const TRANSACTIONS_PER_PAGE = 20;
 
+const loadCreateTransactionDialog = () =>
+  import("@/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog").then((module) => ({
+    default: module.CreateTransactionDialog,
+  }));
+const CreateTransactionDialog = lazy(loadCreateTransactionDialog);
+
 function isSuccessResponse(data: any): data is { data: CombinedTransaction[]; total: number } {
   return data && "data" in data && !("error" in data);
 }
@@ -82,6 +88,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
   const [isFiltersDrawerMounted, setIsFiltersDrawerMounted] = useState(false);
   const createAccountDialog = useDialogState();
+  const createTransactionDialog = useDialogState<null>();
   const { preferences, selectGrouping, selectSort } = useAccountDisplayPreferences(workspaceId);
 
   const {
@@ -433,15 +440,26 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
 
         <div>
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold">Последние транзакции</h2>
-            <TransactionsFilterButton
-              appliedFiltersCount={appliedFiltersCount}
-              disabled={isFiltersNavigationPending}
-              onClick={() => {
-                setIsFiltersDrawerMounted(true);
-                setIsFiltersDrawerOpen(true);
-              }}
-            />
+            <h2 className="text-xl font-semibold">История</h2>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                className="hidden md:inline-flex"
+                onClick={() => createTransactionDialog.openDialog(null)}
+              >
+                <Plus className="size-4" />
+                Транзакция
+              </Button>
+              <TransactionsFilterButton
+                appliedFiltersCount={appliedFiltersCount}
+                disabled={isFiltersNavigationPending}
+                onClick={() => {
+                  setIsFiltersDrawerMounted(true);
+                  setIsFiltersDrawerOpen(true);
+                }}
+              />
+            </div>
           </div>
           <div className="flex flex-col lg:flex-row lg:items-start gap-4">
             <div className="flex-1 min-w-0 order-2 lg:order-1">
@@ -479,6 +497,16 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
           onApply={handleApplyFilters}
           onReset={handleResetFilters}
         />
+      ) : null}
+      {createTransactionDialog.mounted ? (
+        <Suspense fallback={null}>
+          <CreateTransactionDialog
+            workspaceId={workspaceId}
+            open={createTransactionDialog.open}
+            onOpenChange={createTransactionDialog.closeDialog}
+            onCloseComplete={createTransactionDialog.unmountDialog}
+          />
+        </Suspense>
       ) : null}
     </div>
   );

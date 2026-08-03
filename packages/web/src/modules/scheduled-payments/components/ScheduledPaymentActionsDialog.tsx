@@ -2,11 +2,9 @@ import { Check, Pencil, SkipForward, Trash2 } from "lucide-react";
 
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog";
 
-import type { ScheduledPayment } from "../scheduled-payment.types";
-
 interface ScheduledPaymentActionsDialogProps {
+  anchor: HTMLElement | null;
   open: boolean;
-  payment: ScheduledPayment;
   onCloseComplete: () => void;
   onOpenChange: (open: boolean) => void;
   onDelete: () => void;
@@ -16,8 +14,8 @@ interface ScheduledPaymentActionsDialogProps {
 }
 
 export function ScheduledPaymentActionsDialog({
+  anchor,
   open,
-  payment,
   onCloseComplete,
   onOpenChange,
   onDelete,
@@ -27,32 +25,35 @@ export function ScheduledPaymentActionsDialog({
 }: ScheduledPaymentActionsDialogProps) {
   const actions: ActionItem[] = [
     {
+      id: "edit",
       icon: <Pencil className="h-3.5 w-3.5" />,
       label: "Редактировать",
-      onClick: onEdit,
+      onSelect: onEdit,
     },
     {
+      id: "mark-paid",
       icon: <Check className="h-3.5 w-3.5" />,
       label: "Оплачено",
-      onClick: onMarkPaid,
+      onSelect: onMarkPaid,
     },
     {
+      id: "skip",
       icon: <SkipForward className="h-3.5 w-3.5" />,
       label: "Пропустить",
-      onClick: onSkip,
+      onSelect: onSkip,
     },
     {
+      id: "delete",
       icon: <Trash2 className="h-3.5 w-3.5" />,
       label: "Удалить",
-      onClick: onDelete,
-      theme: "error",
+      onSelect: onDelete,
+      tone: "destructive",
     },
   ];
 
   return (
     <ActionsDialog
-      title="Действия с платежом"
-      description={`Выберите действие для платежа ${payment.name}`}
+      anchor={anchor}
       open={open}
       onCloseComplete={onCloseComplete}
       onOpenChange={onOpenChange}

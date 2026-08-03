@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -17,7 +18,15 @@ import {
   type UpdateTransferTransactionInput,
   updateTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { subtractMoney } from "@/shared/utils/money";
 
 import { updateTransferTransaction } from "../../transaction.api";
@@ -37,6 +46,7 @@ interface EditTransferDialogProps {
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
   onSuccess?: () => void;
+  onDelete?: () => void;
 }
 
 function toTransactionAccount(
@@ -64,6 +74,7 @@ export function EditTransferDialog({
   onOpenChange,
   onCloseComplete,
   onSuccess,
+  onDelete,
 }: EditTransferDialogProps) {
   const queryClient = useQueryClient();
   const form = useForm<UpdateTransferTransactionInput>({
@@ -164,11 +175,29 @@ export function EditTransferDialog({
     }
   };
 
+  const actions: DialogAction[] = onDelete
+    ? [
+        {
+          id: "delete",
+          icon: <Trash2 />,
+          label: "Удалить",
+          onSelect: onDelete,
+          tone: "destructive",
+          disabled: form.formState.isSubmitting,
+        },
+      ]
+    : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow
+        className="sm:w-[500px]"
+        closeButtonDisabled={form.formState.isSubmitting}
+        actions={actions}
+        onCloseComplete={onCloseComplete}
+      >
         <DialogHeader>
-          <DialogTitle>Редактировать перевод</DialogTitle>
+          <DialogTitle className="truncate">Редактировать перевод</DialogTitle>
         </DialogHeader>
         <DialogContent>
           <TransferForm

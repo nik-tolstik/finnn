@@ -7,6 +7,7 @@ import {
   flip,
   offset as floatingOffset,
   type Placement,
+  type ReferenceType,
   shift,
   size,
   useClick,
@@ -35,16 +36,26 @@ interface PopoverRenderProps {
   open: boolean;
 }
 
-interface PopoverProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
+interface PopoverBaseProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
   children: React.ReactNode | ((props: PopoverRenderProps) => React.ReactNode);
   defaultOpen?: boolean;
   offset?: number;
   onCloseComplete?: () => void;
   onOpenChange?: (open: boolean) => void;
+  openOnContextMenu?: boolean;
   open?: boolean;
   placement?: Placement;
-  trigger: (props: PopoverTriggerRenderProps) => React.ReactNode;
 }
+
+type PopoverProps =
+  | (PopoverBaseProps & {
+      reference: ReferenceType | null;
+      trigger?: (props: PopoverTriggerRenderProps) => React.ReactNode;
+    })
+  | (PopoverBaseProps & {
+      reference?: undefined;
+      trigger: (props: PopoverTriggerRenderProps) => React.ReactNode;
+    });
 
 function getPlacementParts(placement: Placement) {
   const [side, align = "center"] = placement.split("-");
@@ -86,8 +97,10 @@ function PopoverInner({
   offset = 4,
   onCloseComplete,
   onOpenChange,
+  openOnContextMenu = false,
   open,
   placement = "bottom",
+  reference,
   style,
   trigger,
   ...contentProps
@@ -138,7 +151,13 @@ function PopoverInner({
     ],
   });
 
-  const click = useClick(context, { keyboardHandlers: true });
+  React.useLayoutEffect(() => {
+    if (reference !== undefined) {
+      refs.setReference(reference);
+    }
+  }, [reference, refs]);
+
+  const click = useClick(context, { enabled: !openOnContextMenu, keyboardHandlers: !openOnContextMenu });
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "dialog" });
   const { getFloatingProps, getReferenceProps } = useInteractions([click, dismiss, role]);
@@ -185,19 +204,28 @@ function PopoverInner({
     setOpen(false);
   }, [setOpen]);
 
+  const handleContextMenu = React.useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      event.preventDefault();
+      setOpen(true);
+    },
+    [setOpen]
+  );
+
   const referenceProps = getReferenceProps() as React.HTMLAttributes<HTMLElement>;
   const triggerProps: PopoverTriggerRenderProps = {
     ...referenceProps,
     "aria-expanded": isOpen,
     "data-slot": "popover-trigger",
     "data-state": isOpen ? "open" : "closed",
+    ...(openOnContextMenu ? { onContextMenu: handleContextMenu } : {}),
     ref: refs.setReference as React.RefCallback<HTMLElement>,
   };
   const floatingInteractionProps = getFloatingProps(contentProps);
 
   return (
     <>
-      {trigger(triggerProps)}
+      {trigger?.(triggerProps)}
       <FloatingNode id={nodeId}>
         {isMounted && (
           <FloatingPortal root={portalRoot ?? undefined} preserveTabOrder={false}>

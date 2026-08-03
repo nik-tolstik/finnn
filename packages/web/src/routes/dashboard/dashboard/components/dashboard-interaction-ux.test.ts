@@ -18,6 +18,7 @@ describe("dashboard interaction loading", () => {
     expect(dashboardSource).toContain(
       'import { TransactionsFilterDrawer } from "@/modules/transactions/components/transactions-filters/components/TransactionsFilterDrawer"'
     );
+    expect(dashboardSource).toContain("const CreateTransactionDialog = lazy(loadCreateTransactionDialog)");
     expect(accountsSource).toContain(
       'import { AccountActionsDialog } from "@/modules/accounts/components/account-actions-dialog/AccountActionsDialog"'
     );
@@ -39,14 +40,134 @@ describe("dashboard interaction loading", () => {
     }
   });
 
-  it("preloads only secondary dialogs relevant to the selected transaction", () => {
+  it("opens transaction editors directly and keeps their actions in the shared options menu", () => {
+    const transactionsSource = readSource(
+      "src/modules/transactions/components/combined-transactions-list/CombinedTransactionsList.tsx"
+    );
     const dialogsSource = readSource(
       "src/modules/transactions/components/combined-transactions-list/components/CombinedTransactionsDialogs.tsx"
     );
+    const controllerSource = readSource(
+      "src/modules/transactions/components/combined-transactions-list/hooks/useCombinedTransactionsController.ts"
+    );
+    const editTransactionSource = readSource(
+      "src/modules/transactions/components/edit-transaction-dialog/EditTransactionDialog.tsx"
+    );
+    const dialogSource = readSource("src/shared/ui/dialog/Dialog.tsx");
+    const actionsDialogSource = readSource("src/shared/ui/actions-dialog/ActionsDialog.tsx");
+    const popoverSource = readSource("src/shared/ui/popover/Popover.tsx");
+    const sheetSource = readSource("src/shared/ui/sheet/Sheet.tsx");
 
-    expect(dialogsSource).toContain('transaction.kind === "transferTransaction"');
-    expect(dialogsSource).toContain("hasDebtWriteOff(transaction.data)");
-    expect(dialogsSource).toContain("debtTransaction.type === DebtTransactionType.CREATED");
+    expect(transactionsSource).toContain("onTransactionClick={controller.openTransactionDialog}");
+    expect(transactionsSource).toContain("onDebtTransactionClick={controller.openDebtTransactionDialog}");
+    expect(controllerSource).toContain("const openTransactionDialog");
+    expect(controllerSource).toContain("const openDebtTransactionDialog");
+    expect(dialogsSource).not.toContain("TransactionActionsDialog");
+    expect(dialogsSource).not.toContain("DebtTransactionActionsDialog");
+    expect(editTransactionSource).toContain('label: "Повторить"');
+    expect(editTransactionSource).toContain('label: "Удалить"');
+    expect(dialogSource).toContain("function DialogCloseButton");
+    expect(dialogSource).toContain("export type DialogAction = ActionItem");
+    expect(dialogSource).toContain("actions?: DialogAction[]");
+    expect(dialogSource).toContain("closeButtonDisabled?: boolean");
+    expect(dialogSource).toContain("<DialogCloseButton");
+    expect(dialogSource).toContain("function DialogOptionsButton");
+    expect(dialogSource).toContain("<ActionsDialog");
+    expect(dialogSource).toContain("anchor={optionsButtonRef.current}");
+    expect(dialogSource).toContain("function DialogFooter");
+    expect(dialogSource).not.toContain("function ActionsDialog");
+    expect(actionsDialogSource).toContain("<Popover");
+    expect(actionsDialogSource).toContain("<Sheet");
+    expect(actionsDialogSource).toContain("reference={anchor}");
+    expect(actionsDialogSource).toContain("onOpenChange(false);\n    action.onSelect();");
+    expect(actionsDialogSource).toContain("max-h-[calc(100dvh-4rem)]");
+    expect(popoverSource).toContain("reference: ReferenceType | null");
+    expect(popoverSource).toContain("trigger?:");
+    expect(sheetSource).toContain("onCloseComplete?: () => void");
+    expect(sheetSource).toContain('side === "bottom" ? "scale(0.96)" : getClosedTransform(side)');
+    expect(dialogSource).toContain('aria-label="Действия"');
+    expect(dialogSource).toContain("max-h-[calc(100dvh-4rem)]");
+    expect(dialogSource).toContain('transform: "scale(0.96)"');
+    expect(dialogSource).not.toContain('transform: "translateY(100%)"');
+    expect(dialogSource).toContain("outsidePress: !nestedOverlayOpen");
+    expect(dialogSource).toContain("showCloseButton && !isMobile");
+    expect(dialogSource).toContain("hasActions && !isMobile");
+    expect(dialogSource).toContain("[&>button]:flex-1");
+    expect(dialogSource).toContain("shrink-0 items-center");
+    expect(dialogSource).not.toContain("mobilePosition");
+    expect(editTransactionSource).toContain("actions=");
+  });
+
+  it("opens account editors directly and uses a desktop context menu for account actions", () => {
+    const accountCardSource = readSource("src/shared/components/account-card/AccountCard.tsx");
+    const accountsCardsSource = readSource("src/modules/accounts/components/accounts-cards/AccountsCards.tsx");
+    const accountActionsSource = readSource(
+      "src/modules/accounts/components/account-actions-dialog/AccountActionsDialog.tsx"
+    );
+    const editAccountSource = readSource("src/modules/accounts/components/edit-account-dialog/EditAccountDialog.tsx");
+    const actionsDialogSource = readSource("src/shared/ui/actions-dialog/ActionsDialog.tsx");
+    const popoverSource = readSource("src/shared/ui/popover/Popover.tsx");
+
+    expect(accountCardSource).toContain("MouseEventHandler<HTMLButtonElement>");
+    expect(accountsCardsSource).toContain("editDialog.openDialog({ account })");
+    expect(accountsCardsSource).not.toContain("accountActionsDialog.openDialog");
+    expect(accountActionsSource).toContain('label: "Транзакция"');
+    expect(accountActionsSource).toContain('label: "Изменить"');
+    expect(accountActionsSource).toContain('tone: "destructive"');
+    expect(accountActionsSource).toContain("trigger={trigger}");
+    expect(actionsDialogSource).toContain("openOnContextMenu");
+    expect(actionsDialogSource).toContain("inertTriggerProps");
+    expect(popoverSource).toContain("openOnContextMenu?: boolean");
+    expect(popoverSource).toContain("event.preventDefault()");
+    expect(popoverSource).toContain("enabled: !openOnContextMenu");
+    expect(editAccountSource).toContain("actions={actions}");
+    expect(editAccountSource).toContain("onToggleVisibility");
+    expect(editAccountSource).toContain("onArchive");
+  });
+
+  it("keeps scheduled payment action menus anchored without changing their entry point", () => {
+    const scheduledPaymentListSource = readSource("src/modules/scheduled-payments/components/ScheduledPaymentList.tsx");
+    const scheduledPaymentActionsSource = readSource(
+      "src/modules/scheduled-payments/components/ScheduledPaymentActionsDialog.tsx"
+    );
+    const paymentsContentSource = readSource("src/routes/dashboard/payments/components/PaymentsContent.tsx");
+
+    expect(scheduledPaymentListSource).toContain("onPaymentClick(payment, event.currentTarget)");
+    expect(scheduledPaymentListSource).toContain("md:hidden");
+    expect(paymentsContentSource).toContain("actionsDialog.openDialog({ anchor, payment })");
+    expect(scheduledPaymentActionsSource).toContain("anchor={anchor}");
+    expect(scheduledPaymentActionsSource).toContain('tone: "destructive"');
+  });
+
+  it("names the dashboard transaction section history and adds its desktop creation entry point", () => {
+    const dashboardSource = readSource("src/routes/dashboard/dashboard/components/DashboardContent.tsx");
+
+    expect(dashboardSource).toContain(
+      'import("@/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog")'
+    );
+    expect(dashboardSource).toContain('<h2 className="text-xl font-semibold">История</h2>');
+    expect(dashboardSource).toContain('className="hidden md:inline-flex"');
+    expect(dashboardSource).toContain("createTransactionDialog.openDialog(null)");
+    expect(dashboardSource).toContain("<CreateTransactionDialog");
+  });
+
+  it("moves transaction and debt dialog actions into the shared options menu", () => {
+    const headerDialogSources = [
+      "src/modules/transactions/components/edit-transaction-dialog/EditTransactionDialog.tsx",
+      "src/modules/transactions/components/edit-transfer-dialog/EditTransferDialog.tsx",
+      "src/modules/debts/components/debt-write-off-dialog/DebtWriteOffDialog.tsx",
+      "src/modules/debts/components/edit-debt-dialog/EditDebtDialog.tsx",
+      "src/modules/debts/components/edit-debt-transaction-dialog/edit-debt-transaction-dialog/EditDebtTransactionDialog.tsx",
+      "src/modules/debts/components/debt-dialog/DebtDialog.tsx",
+    ].map(readSource);
+
+    for (const source of headerDialogSources) {
+      expect(source).toContain("actions=");
+      expect(source).not.toContain('label: "Удалить ');
+      expect(source).not.toContain('import { Tooltip } from "@/shared/ui/tooltip"');
+      expect(source).not.toContain("<DialogCloseButton");
+      expect(source).not.toContain("headerActions=");
+    }
   });
 
   it("keeps the category editor instant and preloads its data", () => {

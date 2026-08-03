@@ -2,7 +2,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { useEffect, useMemo } from "react";
+import { Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -26,7 +27,15 @@ import { type DebtWriteOffInput, debtWriteOffSchema } from "@/shared/lib/validat
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -57,7 +66,10 @@ interface DebtWriteOffDialogBaseProps {
 }
 
 export type DebtWriteOffDialogProps = DebtWriteOffDialogBaseProps &
-  ({ debt: DebtWriteOffDebt; transaction?: never } | { debt?: never; transaction: DebtWriteOffPaymentTransaction });
+  (
+    | { debt: DebtWriteOffDebt; transaction?: never; onDelete?: never }
+    | { debt?: never; transaction: DebtWriteOffPaymentTransaction; onDelete?: () => void }
+  );
 
 interface DebtWriteOffPanelBaseProps {
   workspaceId: string;
@@ -524,14 +536,33 @@ export function DebtWriteOffDialog({
   onOpenChange,
   onCloseComplete,
   onSuccess,
+  onDelete,
 }: DebtWriteOffDialogProps) {
   const title = transaction ? "Редактировать погашение" : "Погасить транзакцией";
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const actions: DialogAction[] = onDelete
+    ? [
+        {
+          id: "delete",
+          icon: <Trash2 />,
+          label: "Удалить",
+          onSelect: onDelete,
+          tone: "destructive",
+          disabled: isSubmitting,
+        },
+      ]
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow
+        className="sm:w-[500px]"
+        closeButtonDisabled={isSubmitting}
+        actions={actions}
+        onCloseComplete={onCloseComplete}
+      >
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="truncate">{title}</DialogTitle>
         </DialogHeader>
         {transaction ? (
           <DebtWriteOffPanel
@@ -539,6 +570,7 @@ export function DebtWriteOffDialog({
             workspaceId={workspaceId}
             open={open}
             onComplete={() => onOpenChange(false)}
+            onSubmittingChange={setIsSubmitting}
             onSuccess={onSuccess}
           />
         ) : (
@@ -547,6 +579,7 @@ export function DebtWriteOffDialog({
             workspaceId={workspaceId}
             open={open}
             onComplete={() => onOpenChange(false)}
+            onSubmittingChange={setIsSubmitting}
             onSuccess={onSuccess}
           />
         )}

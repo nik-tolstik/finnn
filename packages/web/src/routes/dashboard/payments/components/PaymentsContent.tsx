@@ -43,6 +43,11 @@ const DIALOG_TRANSITION_DELAY_MS = 200;
 
 type MaybeActionData<T> = T | { data?: T; error?: string; success?: boolean } | undefined;
 
+interface ScheduledPaymentActionDialogData {
+  anchor: HTMLElement | null;
+  payment: ScheduledPayment;
+}
+
 function invalidatePaymentNeighbors(queryClient: ReturnType<typeof useQueryClient>, workspaceId: string) {
   void queryClient.invalidateQueries({ queryKey: scheduledPaymentKeys.all(workspaceId) });
   void queryClient.invalidateQueries({ queryKey: transactionKeys.all(workspaceId) });
@@ -69,7 +74,7 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
   const formDialog = useDialogState<ScheduledPayment | null>();
   const paidDialog = useDialogState<ScheduledPayment>();
   const deleteDialog = useDialogState<ScheduledPayment>();
-  const actionsDialog = useDialogState<ScheduledPayment>();
+  const actionsDialog = useDialogState<ScheduledPaymentActionDialogData>();
 
   const paymentsQuery = useQuery({
     queryKey: scheduledPaymentKeys.list(workspaceId),
@@ -162,7 +167,7 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
 
   const handleActionEdit = () => {
     if (!actionsDialog.data) return;
-    const payment = actionsDialog.data;
+    const payment = actionsDialog.data.payment;
     actionsDialog.closeDialog();
     setTimeout(() => {
       formDialog.openDialog(payment);
@@ -171,7 +176,7 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
 
   const handleActionMarkPaid = () => {
     if (!actionsDialog.data) return;
-    const payment = actionsDialog.data;
+    const payment = actionsDialog.data.payment;
     actionsDialog.closeDialog();
     setTimeout(() => {
       paidDialog.openDialog(payment);
@@ -180,14 +185,14 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
 
   const handleActionSkip = () => {
     if (!actionsDialog.data) return;
-    const payment = actionsDialog.data;
+    const payment = actionsDialog.data.payment;
     actionsDialog.closeDialog();
     actionMutation.mutate(payment);
   };
 
   const handleActionDelete = () => {
     if (!actionsDialog.data) return;
-    const payment = actionsDialog.data;
+    const payment = actionsDialog.data.payment;
     actionsDialog.closeDialog();
     setTimeout(() => {
       deleteDialog.openDialog(payment);
@@ -210,13 +215,13 @@ export function PaymentsContent({ workspaceId }: PaymentsContentProps) {
         onDelete={(payment) => deleteDialog.openDialog(payment)}
         onEdit={(payment) => formDialog.openDialog(payment)}
         onMarkPaid={(payment) => paidDialog.openDialog(payment)}
-        onPaymentClick={(payment) => actionsDialog.openDialog(payment)}
+        onPaymentClick={(payment, anchor) => actionsDialog.openDialog({ anchor, payment })}
         onSkip={(payment) => actionMutation.mutate(payment)}
       />
 
       {actionsDialog.mounted && actionsDialog.data && (
         <ScheduledPaymentActionsDialog
-          payment={actionsDialog.data}
+          anchor={actionsDialog.data.anchor}
           open={actionsDialog.open}
           onCloseComplete={actionsDialog.unmountDialog}
           onOpenChange={actionsDialog.closeDialog}
