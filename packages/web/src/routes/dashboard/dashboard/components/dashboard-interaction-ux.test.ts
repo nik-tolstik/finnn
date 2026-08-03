@@ -111,7 +111,7 @@ describe("dashboard interaction loading", () => {
     expect(accountCardSource).toContain("MouseEventHandler<HTMLButtonElement>");
     expect(accountsCardsSource).toContain("editDialog.openDialog({ account })");
     expect(accountsCardsSource).not.toContain("accountActionsDialog.openDialog");
-    expect(accountActionsSource).toContain('label: "Добавить транзакцию"');
+    expect(accountActionsSource).toContain('label: "Транзакция"');
     expect(accountActionsSource).toContain('label: "Изменить"');
     expect(accountActionsSource).toContain('tone: "destructive"');
     expect(accountActionsSource).toContain("trigger={trigger}");

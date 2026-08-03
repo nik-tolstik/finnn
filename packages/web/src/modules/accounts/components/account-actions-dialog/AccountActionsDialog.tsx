@@ -49,7 +49,7 @@ export function AccountActionsDialog({
     {
       id: "create-transaction",
       icon: <Plus className="h-3.5 w-3.5" />,
-      label: "Добавить транзакцию",
+      label: "Транзакция",
       onSelect: deferUntilMenuCloses(onCreateTransaction),
     },
     {

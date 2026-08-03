@@ -449,7 +449,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
                 onClick={() => createTransactionDialog.openDialog(null)}
               >
                 <Plus className="size-4" />
-                Добавить транзакцию
+                Транзакция
               </Button>
               <TransactionsFilterButton
                 appliedFiltersCount={appliedFiltersCount}
