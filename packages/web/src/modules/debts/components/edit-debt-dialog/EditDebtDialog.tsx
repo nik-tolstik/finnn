@@ -35,7 +35,15 @@ interface EditDebtDialogProps {
   onCloseComplete?: () => void;
 }
 
-export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: EditDebtDialogProps) {
+interface EditDebtPanelProps {
+  debt: DebtWithRelations;
+  workspaceId: string;
+  open: boolean;
+  onComplete: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
+}
+
+export function EditDebtPanel({ debt, workspaceId, open, onComplete, onSubmittingChange }: EditDebtPanelProps) {
   const queryClient = useQueryClient();
 
   const {
@@ -84,6 +92,10 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
     reset,
     control,
   } = form;
+
+  useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
 
   useEffect(() => {
     if (open && debt?.id) {
@@ -145,7 +157,7 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
       }
 
       toast.success("Долг обновлён");
-      onOpenChange(false);
+      onComplete();
     } catch {
       toast.error("Не удалось обновить долг");
     }
@@ -198,98 +210,106 @@ export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseC
   }, [isEditDataError, editDataError?.message]);
 
   return (
+    <>
+      <DialogContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {initialAccountId && (
+            <div className="space-y-2">
+              <Label>Счёт</Label>
+              {previewAccount ? (
+                <AccountCard account={previewAccount} showOwner={false} />
+              ) : (
+                <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">
+                  {editData?.account?.name || "Счёт недоступен"}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="personName" required>
+              {debt.type === DebtType.LENT ? "Кто должен" : "Кому должен"}
+            </Label>
+            <Input
+              id="personName"
+              placeholder={debt.type === DebtType.LENT ? "Имя должника" : "Имя кредитора"}
+              {...register("personName")}
+            />
+            {errors.personName && <p className="text-sm text-destructive">{errors.personName.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="amount" required>
+              Изначальная сумма
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                {getCurrencySymbol(currency)}
+              </span>
+              <NumberInput
+                id="amount"
+                placeholder="0.00"
+                className="pl-9"
+                {...register("amount", {
+                  onChange: (event) => handleAmountChange(event.target.value),
+                })}
+                disabled={isLoadingAmount && !isEditDataError}
+              />
+            </div>
+            {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+          </div>
+
+          {fullAccount && !currenciesMatch ? (
+            <div className="space-y-2">
+              <Label htmlFor="toAmount" required>
+                {debt.type === DebtType.LENT ? "Сумма списания" : "Сумма зачисления"} ({fullAccount.currency})
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                  {getCurrencySymbol(fullAccount.currency)}
+                </span>
+                <NumberInput
+                  id="toAmount"
+                  placeholder="0.00"
+                  className="pl-9"
+                  {...register("toAmount", {
+                    onChange: (event) => handleToAmountChange(event.target.value),
+                  })}
+                  disabled={isLoadingAmount && !isEditDataError}
+                />
+              </div>
+              {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
+            </div>
+          ) : null}
+
+          <div className="space-y-2">
+            <Label>Дата</Label>
+            <Controller
+              control={control}
+              name="date"
+              render={({ field }) => <DateTimePicker date={field.value} onSelect={field.onChange} />}
+            />
+          </div>
+        </form>
+      </DialogContent>
+
+      <DialogFooter>
+        <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
+          {isSubmitting ? "Сохранение..." : "Сохранить"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: EditDebtDialogProps) {
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Редактировать долг</DialogTitle>
         </DialogHeader>
-        <DialogContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {initialAccountId && (
-              <div className="space-y-2">
-                <Label>Счёт</Label>
-                {previewAccount ? (
-                  <AccountCard account={previewAccount} showOwner={false} />
-                ) : (
-                  <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-                    {editData?.account?.name || "Счёт недоступен"}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="personName" required>
-                {debt.type === DebtType.LENT ? "Кто должен" : "Кому должен"}
-              </Label>
-              <Input
-                id="personName"
-                placeholder={debt.type === DebtType.LENT ? "Имя должника" : "Имя кредитора"}
-                {...register("personName")}
-              />
-              {errors.personName && <p className="text-sm text-destructive">{errors.personName.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amount" required>
-                Изначальная сумма
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                  {getCurrencySymbol(currency)}
-                </span>
-                <NumberInput
-                  id="amount"
-                  placeholder="0.00"
-                  className="pl-9"
-                  {...register("amount", {
-                    onChange: (event) => handleAmountChange(event.target.value),
-                  })}
-                  disabled={isLoadingAmount && !isEditDataError}
-                />
-              </div>
-              {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
-            </div>
-
-            {fullAccount && !currenciesMatch ? (
-              <div className="space-y-2">
-                <Label htmlFor="toAmount" required>
-                  {debt.type === DebtType.LENT ? "Сумма списания" : "Сумма зачисления"} ({fullAccount.currency})
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                    {getCurrencySymbol(fullAccount.currency)}
-                  </span>
-                  <NumberInput
-                    id="toAmount"
-                    placeholder="0.00"
-                    className="pl-9"
-                    {...register("toAmount", {
-                      onChange: (event) => handleToAmountChange(event.target.value),
-                    })}
-                    disabled={isLoadingAmount && !isEditDataError}
-                  />
-                </div>
-                {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
-              </div>
-            ) : null}
-
-            <div className="space-y-2">
-              <Label>Дата</Label>
-              <Controller
-                control={control}
-                name="date"
-                render={({ field }) => <DateTimePicker date={field.value} onSelect={field.onChange} />}
-              />
-            </div>
-          </form>
-        </DialogContent>
-
-        <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
-            {isSubmitting ? "Сохранение..." : "Сохранить"}
-          </Button>
-        </DialogFooter>
+        <EditDebtPanel debt={debt} workspaceId={workspaceId} open={open} onComplete={() => onOpenChange(false)} />
       </DialogWindow>
     </Dialog>
   );

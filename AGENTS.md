@@ -42,6 +42,51 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 - Keep comments in English.
 - Do not run Browser screenshot QA with Playwright, `agent-browser`, or similar browser automation unless the user explicitly asks for screenshot/browser QA.
 
+## Formal Plan Tracking
+
+- Create or use formal implementation plans, `docs/plans/...` directories, work logs, or plan-tracking tools only when
+  the user explicitly asks to create or use a plan, or explicitly says the current task continues a named existing plan.
+- Task complexity, multi-agent work, a branch, worktree, PR, or an existing plan file do not authorize formal plan
+  tracking.
+- When a user supplies a plan in chat, follow it without persisting it to repository documentation unless the user
+  explicitly requests that persistence.
+- Without explicit opt-in, execute directly with normal internal reasoning and concise commentary.
+- Update a plan work log only when the current user request explicitly invokes that plan and asks for logging, or the
+  invoked plan explicitly requires it.
+
+## Efficient Iteration And Verification
+
+- These defaults are overridden by explicit user instructions, including explicit use of a formal plan.
+- Treat consecutive follow-ups on an existing Draft PR as one iteration batch until the final handoff or the user
+  changes scope.
+
+- Select validation from this matrix:
+  - Presentation-only frontend: inspect the changed diff and UI source, then run relevant targeted tests when they
+    exist plus web typecheck and web check. Do not require a production build or Storybook by default.
+  - Isolated frontend logic: run targeted feature tests plus web typecheck, web check, and web production build.
+    Run Storybook only when stories or a component API/rendering contract changes.
+  - Cross-package, API, schema, configuration, or dependency changes: run affected package checks. Run one full
+    root-level or broad suite during final validation, or whenever the explicit task scope requires it. Include
+    generated-client, migration, infrastructure, or backup checks when the changed boundary requires them.
+
+- Do not run unrelated API, database, or backup tests for an isolated frontend change.
+- Run one full root-level or broad suite only during final validation for cross-package changes or when the task
+  explicitly requires it.
+- Executors run targeted checks while implementing. An independent verifier runs the final scope-appropriate broad
+  validation; do not duplicate the same full suite in both roles.
+- Use this order: implementation, targeted validation, external review, confirmed fixes, one final broad validation,
+  then push and update the PR.
+- Run external review once for each cohesive diff. After confirmed findings, rerun a focused review of the fixes;
+  repeat the full review only for architecture, API, persistence, security, concurrency, or significant state/data-flow
+  changes.
+- Style, copy, documentation, and test-only changes are not substantial changes for deciding whether to repeat broad
+  validation or a full external review.
+- Consolidate explicitly requested plan work-log and PR-body updates for an iteration batch instead of creating
+  process-only follow-up commits or PR edits.
+- For an already validated Draft PR, do not wait for remote CI before publishing a follow-up unless the user or
+  repository policy requires it.
+- If an isolated frontend follow-up exceeds 15 minutes, report the cause before running more broad checks.
+
 ## Key Commands
 
 ```bash
@@ -85,7 +130,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
   upload, restore helper, tests, and Railway cron configuration.
 - `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
 - `docs` contains human and AI-facing project documentation.
-- `docs/plans` contains feature implementation plans and required work logs for multi-agent tasks.
+- `docs/plans` is reserved for user-requested feature implementation plans and their work logs.
 
 ## Implementation Rules
 
@@ -144,6 +189,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 ## Documentation Expectations
 
 - Update `AGENTS.md` and `docs/` when changing architecture, setup, data model, workflows, deployment, or agent-facing conventions.
-- When implementing from `docs/plans/<feature>`, follow the plan and keep its work log current.
+- When the user explicitly invokes `docs/plans/<feature>`, follow that plan and update its work log only when the
+  request or plan explicitly requires logging.
 - Keep README concise and link to detailed docs instead of duplicating large sections.
 - Prefer concrete file paths, commands, invariants, and failure modes over generic descriptions.

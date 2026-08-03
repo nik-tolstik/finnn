@@ -15,13 +15,8 @@ import { formatMoney } from "@/shared/utils/money";
 import { getDebts } from "../../debt.api";
 import { DebtStatus, DebtType } from "../../debt.constants";
 import type { DebtWithRelations } from "../../debt.types";
-import { AddToDebtDialog } from "../add-to-debt-dialog/AddToDebtDialog";
-import { CloseDebtDialog } from "../close-debt-dialog/CloseDebtDialog";
-import { DebtActionsDialog } from "../debt-actions-dialog/DebtActionsDialog";
 import { DebtCard } from "../debt-card/DebtCard";
-import { DebtWriteOffDialog } from "../debt-write-off-dialog";
-import { DeleteDebtDialog } from "../delete-debt-dialog/DeleteDebtDialog";
-import { EditDebtDialog } from "../edit-debt-dialog/EditDebtDialog";
+import { DebtDialog } from "../debt-dialog/DebtDialog";
 
 interface DebtsListProps {
   workspaceId: string;
@@ -154,12 +149,7 @@ function DebtsTable({
 
 export function DebtsList({ workspaceId }: DebtsListProps) {
   const { isMobile } = useBreakpoints();
-  const actionsDialog = useDialogState<DebtWithRelations>();
-  const closeDialog = useDialogState<DebtWithRelations>();
-  const writeOffDialog = useDialogState<DebtWithRelations>();
-  const addMoreDialog = useDialogState<DebtWithRelations>();
-  const deleteDialog = useDialogState<DebtWithRelations>();
-  const editDialog = useDialogState<DebtWithRelations>();
+  const debtDialog = useDialogState<DebtWithRelations>();
 
   const { data, isLoading } = useQuery({
     queryKey: debtKeys.list(workspaceId),
@@ -169,52 +159,7 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
   const debts = (data?.data || []).filter((d) => d.status === DebtStatus.OPEN);
 
   const handleDebtClick = (debt: DebtWithRelations) => {
-    actionsDialog.openDialog(debt);
-  };
-
-  const handleClose = () => {
-    if (actionsDialog.data) {
-      actionsDialog.closeDialog();
-      setTimeout(() => {
-        closeDialog.openDialog(actionsDialog.data);
-      }, 200);
-    }
-  };
-
-  const handleAddMore = () => {
-    if (actionsDialog.data) {
-      actionsDialog.closeDialog();
-      setTimeout(() => {
-        addMoreDialog.openDialog(actionsDialog.data);
-      }, 200);
-    }
-  };
-
-  const handleWriteOff = () => {
-    if (actionsDialog.data) {
-      actionsDialog.closeDialog();
-      setTimeout(() => {
-        writeOffDialog.openDialog(actionsDialog.data);
-      }, 200);
-    }
-  };
-
-  const handleDelete = () => {
-    if (actionsDialog.data) {
-      actionsDialog.closeDialog();
-      setTimeout(() => {
-        deleteDialog.openDialog(actionsDialog.data);
-      }, 200);
-    }
-  };
-
-  const handleEdit = () => {
-    if (actionsDialog.data) {
-      actionsDialog.closeDialog();
-      setTimeout(() => {
-        editDialog.openDialog(actionsDialog.data);
-      }, 200);
-    }
+    debtDialog.openDialog(debt);
   };
 
   if (isLoading) {
@@ -251,66 +196,13 @@ export function DebtsList({ workspaceId }: DebtsListProps) {
         <DebtsTable debts={debts} onDebtClick={handleDebtClick} />
       )}
 
-      {actionsDialog.mounted && actionsDialog.data && (
-        <DebtActionsDialog
-          debt={actionsDialog.data}
-          open={actionsDialog.open}
-          onOpenChange={actionsDialog.closeDialog}
-          onCloseComplete={actionsDialog.unmountDialog}
-          onClose={handleClose}
-          onWriteOff={handleWriteOff}
-          onAddMore={handleAddMore}
-          onDelete={handleDelete}
-          onEdit={handleEdit}
-        />
-      )}
-
-      {editDialog.mounted && editDialog.data && (
-        <EditDebtDialog
-          debt={editDialog.data}
+      {debtDialog.mounted && debtDialog.data && (
+        <DebtDialog
+          debt={debtDialog.data}
           workspaceId={workspaceId}
-          open={editDialog.open}
-          onOpenChange={editDialog.closeDialog}
-          onCloseComplete={editDialog.unmountDialog}
-        />
-      )}
-
-      {closeDialog.mounted && closeDialog.data && (
-        <CloseDebtDialog
-          debt={closeDialog.data}
-          workspaceId={workspaceId}
-          open={closeDialog.open}
-          onOpenChange={closeDialog.closeDialog}
-          onCloseComplete={closeDialog.unmountDialog}
-        />
-      )}
-
-      {writeOffDialog.mounted && writeOffDialog.data && (
-        <DebtWriteOffDialog
-          debt={writeOffDialog.data}
-          workspaceId={workspaceId}
-          open={writeOffDialog.open}
-          onOpenChange={writeOffDialog.closeDialog}
-          onCloseComplete={writeOffDialog.unmountDialog}
-        />
-      )}
-
-      {addMoreDialog.mounted && addMoreDialog.data && (
-        <AddToDebtDialog
-          debt={addMoreDialog.data}
-          workspaceId={workspaceId}
-          open={addMoreDialog.open}
-          onOpenChange={addMoreDialog.closeDialog}
-          onCloseComplete={addMoreDialog.unmountDialog}
-        />
-      )}
-
-      {deleteDialog.mounted && deleteDialog.data && (
-        <DeleteDebtDialog
-          debt={deleteDialog.data}
-          workspaceId={workspaceId}
-          open={deleteDialog.open}
-          onOpenChange={deleteDialog.closeDialog}
+          open={debtDialog.open}
+          onOpenChange={debtDialog.closeDialog}
+          onCloseComplete={debtDialog.unmountDialog}
         />
       )}
     </>
