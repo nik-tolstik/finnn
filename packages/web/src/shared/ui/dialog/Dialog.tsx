@@ -262,16 +262,13 @@ function DialogWindow({
                 data-slot="dialog-overlay-portal-root"
                 className="pointer-events-none absolute inset-0 z-50"
               />
-              {(hasActions && isMobile) || showCloseButton ? (
+              {showCloseButton ? (
                 <div className="absolute top-4 right-4 flex items-center gap-1">
-                  {hasActions && isMobile ? <DialogOptionsButton actions={actions} /> : null}
-                  {showCloseButton ? (
-                    <DialogCloseButton
-                      className={isMobile ? "size-10 p-0" : undefined}
-                      disabled={closeButtonDisabled}
-                      onClick={() => onOpenChange(false)}
-                    />
-                  ) : null}
+                  <DialogCloseButton
+                    className={isMobile ? "size-10 p-0" : undefined}
+                    disabled={closeButtonDisabled}
+                    onClick={() => onOpenChange(false)}
+                  />
                 </div>
               ) : null}
             </div>
@@ -287,18 +284,14 @@ function DialogContent({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  const { hasActions, hasCloseButton } = React.useContext(DialogWindowContext);
+  const { hasCloseButton } = React.useContext(DialogWindowContext);
   const { isMobile } = useBreakpoints();
-  const hasMobileHeaderControls = isMobile && (hasActions || hasCloseButton);
+  const hasMobileCloseButton = isMobile && hasCloseButton;
 
   return (
     <div
       data-slot="dialog-header"
-      className={cn(
-        "flex flex-col gap-2 text-center sm:text-left",
-        hasMobileHeaderControls ? "px-16" : "px-6",
-        className
-      )}
+      className={cn("flex flex-col gap-2 text-center sm:text-left", hasMobileCloseButton ? "px-16" : "px-6", className)}
       {...props}
     />
   );
@@ -306,20 +299,19 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 
 function DialogFooter({ children, className, ...props }: React.ComponentProps<"div">) {
   const { actions, hasActions } = React.useContext(DialogWindowContext);
-  const { isMobile } = useBreakpoints();
 
   return (
     <div
       data-slot="dialog-footer"
       className={cn(
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end px-6 [&>button:only-child]:w-full",
-        hasActions && !isMobile && "[&>button]:flex-1",
+        hasActions && "flex-row items-center [&>button]:flex-1",
         className
       )}
       {...props}
     >
       {children}
-      {hasActions && !isMobile ? (
+      {hasActions ? (
         <span className="flex shrink-0 items-center">
           <DialogOptionsButton actions={actions} />
         </span>
