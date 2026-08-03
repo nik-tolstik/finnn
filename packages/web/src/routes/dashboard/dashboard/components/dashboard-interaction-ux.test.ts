@@ -151,6 +151,18 @@ describe("dashboard interaction loading", () => {
     expect(dashboardSource).toContain("<CreateTransactionDialog");
   });
 
+  it("binds Ctrl+N to the create dialog for accounts and debts", () => {
+    const dashboardSource = readSource("src/routes/dashboard/dashboard/components/DashboardContent.tsx");
+    const debtsSource = readSource("src/routes/dashboard/debts/components/DebtsContent.tsx");
+    const shortcutSource = readSource("src/shared/hooks/useCtrlNShortcut.ts");
+
+    expect(dashboardSource).toContain("useCtrlNShortcut(openCreateAccountDialog)");
+    expect(debtsSource).toContain("useCtrlNShortcut(openCreateDebtDialog)");
+    expect(shortcutSource).toContain("event.ctrlKey");
+    expect(shortcutSource).toContain('event.key.toLowerCase() !== "n"');
+    expect(shortcutSource).toContain("event.preventDefault()");
+  });
+
   it("moves transaction and debt dialog actions into the shared options menu", () => {
     const headerDialogSources = [
       "src/modules/transactions/components/edit-transaction-dialog/EditTransactionDialog.tsx",

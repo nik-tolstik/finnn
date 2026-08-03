@@ -30,6 +30,7 @@ import {
   type Currency as CurrencyCode,
   DEFAULT_CURRENCY,
 } from "@/shared/constants/currency";
+import { useCtrlNShortcut } from "@/shared/hooks/useCtrlNShortcut";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { useSession } from "@/shared/lib/api-session";
 import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";
@@ -89,7 +90,13 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
   const [isFiltersDrawerMounted, setIsFiltersDrawerMounted] = useState(false);
   const createAccountDialog = useDialogState();
   const createTransactionDialog = useDialogState<null>();
+  const openCreateAccountDialog = useCallback(
+    () => createAccountDialog.openDialog(null),
+    [createAccountDialog.openDialog]
+  );
   const { preferences, selectGrouping, selectSort } = useAccountDisplayPreferences(workspaceId);
+
+  useCtrlNShortcut(openCreateAccountDialog);
 
   const {
     appliedFilters,
@@ -398,14 +405,14 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
                 <AccountDisplayControls
                   balanceSortStatus={balanceSortStatus}
                   preferences={preferences}
-                  onCreateAccount={() => createAccountDialog.openDialog(null)}
+                  onCreateAccount={openCreateAccountDialog}
                   onGroupingChange={selectGrouping}
                   onSortChange={handleSortChange}
                 />
                 <AccountsMenu
                   preferences={preferences}
                   showAllAccounts={showAllAccounts}
-                  onCreateAccount={() => createAccountDialog.openDialog(null)}
+                  onCreateAccount={openCreateAccountDialog}
                   onGroupingChange={selectGrouping}
                   onShowAllAccountsChange={setShowAllAccounts}
                   onSortChange={handleSortChange}
