@@ -39,7 +39,7 @@ describe("dashboard interaction loading", () => {
     }
   });
 
-  it("opens transaction editors directly and keeps their actions in the editor header", () => {
+  it("opens transaction editors directly and keeps their actions in the shared options menu", () => {
     const transactionsSource = readSource(
       "src/modules/transactions/components/combined-transactions-list/CombinedTransactionsList.tsx"
     );
@@ -60,16 +60,26 @@ describe("dashboard interaction loading", () => {
     expect(controllerSource).toContain("const openDebtTransactionDialog");
     expect(dialogsSource).not.toContain("TransactionActionsDialog");
     expect(dialogsSource).not.toContain("DebtTransactionActionsDialog");
-    expect(editTransactionSource).toContain('aria-label="Повторить транзакцию"');
-    expect(editTransactionSource).toContain('aria-label="Удалить транзакцию"');
+    expect(editTransactionSource).toContain('label: "Повторить транзакцию"');
+    expect(editTransactionSource).toContain('label: "Удалить транзакцию"');
     expect(dialogSource).toContain("function DialogCloseButton");
-    expect(dialogSource).toContain("headerActions?: React.ReactNode");
+    expect(dialogSource).toContain("export interface DialogAction");
+    expect(dialogSource).toContain("actions?: DialogAction[]");
     expect(dialogSource).toContain("closeButtonDisabled?: boolean");
     expect(dialogSource).toContain("<DialogCloseButton");
-    expect(editTransactionSource).toContain("headerActions=");
+    expect(dialogSource).toContain("function DialogOptionsButton");
+    expect(dialogSource).toContain("<Popover");
+    expect(dialogSource).toContain("<Sheet");
+    expect(dialogSource).toContain('aria-label="Действия"');
+    expect(dialogSource).toContain("max-h-[calc(100dvh-4rem)]");
+    expect(dialogSource).toContain('transform: "translateY(100%)"');
+    expect(dialogSource).toContain("outsidePress: !nestedOverlayOpen");
+    expect(dialogSource).toContain("showCloseButton && !isMobile");
+    expect(dialogSource).not.toContain("mobilePosition");
+    expect(editTransactionSource).toContain("actions=");
   });
 
-  it("explains transaction and debt dialog header actions with tooltips", () => {
+  it("moves transaction and debt dialog actions into the shared options menu", () => {
     const headerDialogSources = [
       "src/modules/transactions/components/edit-transaction-dialog/EditTransactionDialog.tsx",
       "src/modules/transactions/components/edit-transfer-dialog/EditTransferDialog.tsx",
@@ -80,11 +90,10 @@ describe("dashboard interaction loading", () => {
     ].map(readSource);
 
     for (const source of headerDialogSources) {
-      expect(source).toContain('import { Tooltip } from "@/shared/ui/tooltip"');
-      expect(source).not.toContain('<Tooltip content="Закрыть"');
-      expect(source).toContain("headerActions=");
-      expect(source).toContain('size="icon-sm"');
+      expect(source).toContain("actions=");
+      expect(source).not.toContain('import { Tooltip } from "@/shared/ui/tooltip"');
       expect(source).not.toContain("<DialogCloseButton");
+      expect(source).not.toContain("headerActions=");
     }
   });
 

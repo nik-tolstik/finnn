@@ -18,9 +18,15 @@ import {
   type UpdateTransferTransactionInput,
   updateTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
-import { Button } from "@/shared/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
-import { Tooltip } from "@/shared/ui/tooltip";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { subtractMoney } from "@/shared/utils/money";
 
 import { updateTransferTransaction } from "../../transaction.api";
@@ -169,27 +175,25 @@ export function EditTransferDialog({
     }
   };
 
+  const actions: DialogAction[] = onDelete
+    ? [
+        {
+          id: "delete",
+          icon: <Trash2 />,
+          label: "Удалить перевод",
+          onSelect: onDelete,
+          tone: "destructive",
+          disabled: form.formState.isSubmitting,
+        },
+      ]
+    : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow
         className="sm:w-[500px]"
         closeButtonDisabled={form.formState.isSubmitting}
-        headerActions={
-          onDelete ? (
-            <Tooltip content="Удалить перевод" delayDuration={0} disableHoverableContent>
-              <Button
-                aria-label="Удалить перевод"
-                disabled={form.formState.isSubmitting}
-                onClick={onDelete}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-              >
-                <Trash2 />
-              </Button>
-            </Tooltip>
-          ) : null
-        }
+        actions={actions}
         onCloseComplete={onCloseComplete}
       >
         <DialogHeader>

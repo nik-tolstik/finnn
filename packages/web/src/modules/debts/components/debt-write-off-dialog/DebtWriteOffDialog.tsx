@@ -27,11 +27,18 @@ import { type DebtWriteOffInput, debtWriteOffSchema } from "@/shared/lib/validat
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
-import { Tooltip } from "@/shared/ui/tooltip";
 import { compareMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { createDebtWriteOff, updateDebtWriteOff } from "../../debt.api";
@@ -533,28 +540,25 @@ export function DebtWriteOffDialog({
 }: DebtWriteOffDialogProps) {
   const title = transaction ? "Редактировать погашение" : "Погасить транзакцией";
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const actions: DialogAction[] = onDelete
+    ? [
+        {
+          id: "delete",
+          icon: <Trash2 />,
+          label: "Удалить погашение",
+          onSelect: onDelete,
+          tone: "destructive",
+          disabled: isSubmitting,
+        },
+      ]
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow
         className="sm:w-[500px]"
         closeButtonDisabled={isSubmitting}
-        headerActions={
-          onDelete ? (
-            <Tooltip content="Удалить погашение" delayDuration={0} disableHoverableContent>
-              <Button
-                aria-label="Удалить погашение"
-                disabled={isSubmitting}
-                onClick={onDelete}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-              >
-                <Trash2 />
-              </Button>
-            </Tooltip>
-          ) : null
-        }
+        actions={actions}
         onCloseComplete={onCloseComplete}
       >
         <DialogHeader>

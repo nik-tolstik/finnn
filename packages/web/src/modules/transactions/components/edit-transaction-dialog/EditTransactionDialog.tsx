@@ -31,11 +31,18 @@ import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
-import { Tooltip } from "@/shared/ui/tooltip";
 import { formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { updatePaymentTransaction } from "../../transaction.api";
@@ -218,59 +225,45 @@ export function EditTransactionDialog({
     setValue("categoryId", option.value || null);
   };
 
+  const actions: DialogAction[] = [];
+
+  if (onRepeat) {
+    actions.push({
+      id: "repeat",
+      icon: <RotateCw />,
+      label: "Повторить транзакцию",
+      onSelect: onRepeat,
+      disabled: isSubmitting,
+    });
+  }
+
+  if (onCreateScheduledPayment) {
+    actions.push({
+      id: "create-scheduled-payment",
+      icon: <CalendarPlus />,
+      label: "Создать платёж",
+      onSelect: onCreateScheduledPayment,
+      disabled: isSubmitting,
+    });
+  }
+
+  if (onDelete) {
+    actions.push({
+      id: "delete",
+      icon: <Trash2 />,
+      label: "Удалить транзакцию",
+      onSelect: onDelete,
+      tone: "destructive",
+      disabled: isSubmitting,
+    });
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow
         className="sm:w-[500px]"
         closeButtonDisabled={isSubmitting}
-        headerActions={
-          onRepeat || onCreateScheduledPayment || onDelete ? (
-            <>
-              {onRepeat ? (
-                <Tooltip content="Повторить транзакцию" delayDuration={0} disableHoverableContent>
-                  <Button
-                    aria-label="Повторить транзакцию"
-                    disabled={isSubmitting}
-                    onClick={onRepeat}
-                    size="icon-sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <RotateCw />
-                  </Button>
-                </Tooltip>
-              ) : null}
-              {onCreateScheduledPayment ? (
-                <Tooltip content="Создать платёж" delayDuration={0} disableHoverableContent>
-                  <Button
-                    aria-label="Создать платёж"
-                    disabled={isSubmitting}
-                    onClick={onCreateScheduledPayment}
-                    size="icon-sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <CalendarPlus />
-                  </Button>
-                </Tooltip>
-              ) : null}
-              {onDelete ? (
-                <Tooltip content="Удалить транзакцию" delayDuration={0} disableHoverableContent>
-                  <Button
-                    aria-label="Удалить транзакцию"
-                    disabled={isSubmitting}
-                    onClick={onDelete}
-                    size="icon-sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Trash2 />
-                  </Button>
-                </Tooltip>
-              ) : null}
-            </>
-          ) : null
-        }
+        actions={actions}
         onCloseComplete={onCloseComplete}
       >
         <DialogHeader>

@@ -57,7 +57,7 @@ describe("debt dialog entry points", () => {
     expect(dialogSource).toContain("React.forwardRef<HTMLHeadingElement");
   });
 
-  it("reuses the debt summary card and keeps the mobile dialog compact", () => {
+  it("reuses the debt summary card and delegates mobile sizing to the shared dialog", () => {
     const writeOffPanel = readSource("src/modules/debts/components/debt-write-off-dialog/DebtWriteOffDialog.tsx");
     const closePanel = readSource("src/modules/debts/components/close-debt-dialog/CloseDebtDialog.tsx");
     const addPanel = readSource("src/modules/debts/components/add-to-debt-dialog/AddToDebtDialog.tsx");
@@ -67,8 +67,12 @@ describe("debt dialog entry points", () => {
       expect(source).toContain("DebtSummaryCard");
     }
 
-    expect(dialogSource).toContain('mobilePosition="bottom"');
-    expect(dialogSource).toContain("max-sm:max-h-[calc(100dvh-1rem)]");
+    const sharedDialogSource = readSource("src/shared/ui/dialog/Dialog.tsx");
+
+    expect(dialogSource).not.toContain("mobilePosition");
+    expect(dialogSource).not.toContain("max-sm:max-h");
+    expect(sharedDialogSource).toContain("max-h-[calc(100dvh-4rem)]");
+    expect(sharedDialogSource).toContain('transform: "translateY(100%)"');
     expect(dialogSource).toContain('className="flex-none shrink-0 pb-0"');
   });
 

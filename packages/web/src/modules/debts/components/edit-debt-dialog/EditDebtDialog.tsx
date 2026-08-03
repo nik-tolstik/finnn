@@ -18,11 +18,18 @@ import { accountKeys } from "@/shared/lib/query-keys";
 import { type UpdateDebtInput, updateDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { Tooltip } from "@/shared/ui/tooltip";
 import { addMoney, compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { getDebtEditData, updateDebt } from "../../debt.api";
@@ -314,29 +321,22 @@ export function EditDebtDialog({
   onDelete,
 }: EditDebtDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const actions: DialogAction[] = onDelete
+    ? [
+        {
+          id: "delete",
+          icon: <Trash2 />,
+          label: "Удалить долг",
+          onSelect: onDelete,
+          tone: "destructive",
+          disabled: isSubmitting,
+        },
+      ]
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow
-        closeButtonDisabled={isSubmitting}
-        headerActions={
-          onDelete ? (
-            <Tooltip content="Удалить долг" delayDuration={0} disableHoverableContent>
-              <Button
-                aria-label="Удалить долг"
-                disabled={isSubmitting}
-                onClick={onDelete}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-              >
-                <Trash2 />
-              </Button>
-            </Tooltip>
-          ) : null
-        }
-        onCloseComplete={onCloseComplete}
-      >
+      <DialogWindow closeButtonDisabled={isSubmitting} actions={actions} onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle className="truncate">Редактировать долг</DialogTitle>
         </DialogHeader>

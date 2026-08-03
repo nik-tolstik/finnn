@@ -2,9 +2,8 @@ import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { Dialog, type DialogAction, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Segmented } from "@/shared/ui/segmented";
-import { Tooltip } from "@/shared/ui/tooltip";
 import { formatMoney } from "@/shared/utils/money";
 
 import { DebtType } from "../../debt.constants";
@@ -197,47 +196,35 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
   const handleComplete = () => onOpenChange(false);
   const title =
     view === "edit" ? "Редактировать долг" : view === "delete" ? "Удалить долг?" : `Долг: ${debt.personName}`;
+  const actions: DialogAction[] = [];
+
+  if (view === "operations" && capabilities.canEdit) {
+    actions.push({
+      id: "edit",
+      icon: <Pencil />,
+      label: "Редактировать долг",
+      onSelect: () => setView("edit"),
+      disabled: isSubmitting,
+    });
+  }
+
+  if (view === "operations" && capabilities.canDelete) {
+    actions.push({
+      id: "delete",
+      icon: <Trash2 />,
+      label: "Удалить долг",
+      onSelect: () => setView("delete"),
+      tone: "destructive",
+      disabled: isSubmitting,
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogWindow
-        className="max-sm:max-h-[calc(100dvh-1rem)] sm:w-[500px]"
+        className="sm:w-[500px]"
         closeButtonDisabled={isSubmitting}
-        headerActions={
-          view === "operations" ? (
-            <>
-              {capabilities.canEdit ? (
-                <Tooltip content="Редактировать долг" delayDuration={0} disableHoverableContent>
-                  <Button
-                    aria-label="Редактировать долг"
-                    disabled={isSubmitting}
-                    onClick={() => setView("edit")}
-                    size="icon-sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Pencil />
-                  </Button>
-                </Tooltip>
-              ) : null}
-              {capabilities.canDelete ? (
-                <Tooltip content="Удалить долг" delayDuration={0} disableHoverableContent>
-                  <Button
-                    aria-label="Удалить долг"
-                    disabled={isSubmitting}
-                    onClick={() => setView("delete")}
-                    size="icon-sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Trash2 />
-                  </Button>
-                </Tooltip>
-              ) : null}
-            </>
-          ) : null
-        }
-        mobilePosition="bottom"
+        actions={actions}
         onCloseComplete={onCloseComplete}
       >
         <DialogHeader>

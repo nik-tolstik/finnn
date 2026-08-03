@@ -4,6 +4,7 @@ import { FormProvider } from "react-hook-form";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
+  type DialogAction,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -11,7 +12,6 @@ import {
   DialogTitle,
   DialogWindow,
 } from "@/shared/ui/dialog";
-import { Tooltip } from "@/shared/ui/tooltip";
 
 import { EditDebtTransactionAccountSection } from "../edit-debt-transaction-account-section/EditDebtTransactionAccountSection";
 import { EditDebtTransactionAmountFields } from "../edit-debt-transaction-amount-fields/EditDebtTransactionAmountFields";
@@ -50,28 +50,25 @@ export function EditDebtTransactionDialog({
     onOpenChange,
     onSuccess,
   });
+  const actions: DialogAction[] = onDelete
+    ? [
+        {
+          id: "delete",
+          icon: <Trash2 />,
+          label: "Удалить транзакцию долга",
+          onSelect: onDelete,
+          tone: "destructive",
+          disabled: form.formState.isSubmitting,
+        },
+      ]
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow
         className="sm:w-[500px]"
         closeButtonDisabled={form.formState.isSubmitting}
-        headerActions={
-          onDelete ? (
-            <Tooltip content="Удалить транзакцию долга" delayDuration={0} disableHoverableContent>
-              <Button
-                aria-label="Удалить транзакцию долга"
-                disabled={form.formState.isSubmitting}
-                onClick={onDelete}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-              >
-                <Trash2 />
-              </Button>
-            </Tooltip>
-          ) : null
-        }
+        actions={actions}
         onCloseComplete={onCloseComplete}
       >
         <DialogHeader>
