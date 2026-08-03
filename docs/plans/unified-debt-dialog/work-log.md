@@ -78,3 +78,14 @@
 - `pnpm --filter web typecheck` — passed.
 - `pnpm --filter web check` — passed: 660 files checked, no fixes applied.
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
+
+## 2026-08-03 — Final-final verifier
+
+- PASS on `dfd07ed`: the final verifier completed after both confirmed progress-precision fixes.
+- `pnpm typecheck` — passed.
+- `pnpm check` — passed.
+- `pnpm test` — passed: API 276 passed / 12 skipped, web 58 test files / 250 tests, and backup 11 tests.
+- `VITE_API_URL=http://localhost:4000 pnpm build` — passed.
+- `git diff --check` — passed.
+- Focused strict no-tool Copilot CLI review with `grok-4.5` of `0670129...HEAD` reported exactly: `No actionable findings`. Final-review classifications: none confirmed, rejected, or uncertain.
+- No browser or screenshot QA was run, in accordance with `AGENTS.md`.
