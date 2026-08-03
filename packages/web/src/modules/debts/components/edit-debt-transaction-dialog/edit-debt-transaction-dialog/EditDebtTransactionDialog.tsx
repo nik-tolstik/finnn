@@ -1,8 +1,10 @@
+import { Trash2 } from "lucide-react";
 import { FormProvider } from "react-hook-form";
 
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
+  type DialogAction,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -27,6 +29,7 @@ export function EditDebtTransactionDialog({
   onOpenChange,
   onCloseComplete,
   onSuccess,
+  onDelete,
 }: EditDebtTransactionDialogProps) {
   const {
     form,
@@ -47,12 +50,29 @@ export function EditDebtTransactionDialog({
     onOpenChange,
     onSuccess,
   });
+  const actions: DialogAction[] = onDelete
+    ? [
+        {
+          id: "delete",
+          icon: <Trash2 />,
+          label: "Удалить",
+          onSelect: onDelete,
+          tone: "destructive",
+          disabled: form.formState.isSubmitting,
+        },
+      ]
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow
+        className="sm:w-[500px]"
+        closeButtonDisabled={form.formState.isSubmitting}
+        actions={actions}
+        onCloseComplete={onCloseComplete}
+      >
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogTitle className="truncate">{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <DialogContent>

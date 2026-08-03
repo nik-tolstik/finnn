@@ -92,11 +92,11 @@ export function AvatarPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="flex flex-col rounded-none sm:h-[680px] sm:max-h-[680px] sm:w-[640px] sm:m-4 sm:rounded-lg">
+      <DialogWindow className="flex min-h-0 flex-col sm:m-4 sm:h-[680px] sm:max-h-[680px] sm:w-[640px]">
         <DialogHeader>
           <DialogTitle>Выберите аватар</DialogTitle>
         </DialogHeader>
-        <DialogContent className="flex-1 overflow-y-auto">
+        <DialogContent className="min-h-0 flex-1 overflow-y-auto">
           <div className="space-y-4">
             <div className="space-y-2">
               <p className="text-sm font-medium">Стандартный</p>

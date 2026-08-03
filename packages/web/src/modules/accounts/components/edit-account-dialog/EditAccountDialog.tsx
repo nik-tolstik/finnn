@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Archive, Eye, EyeOff } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,7 +15,15 @@ import { type UpdateAccountInput, updateAccountSchema } from "@/shared/lib/valid
 import { Button } from "@/shared/ui/button";
 import { ColorPicker } from "@/shared/ui/color-picker";
 import { DatePicker } from "@/shared/ui/date-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
@@ -30,10 +39,20 @@ interface EditAccountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete: () => void;
+  onArchive: () => void;
   onCancel?: () => void;
+  onToggleVisibility: () => void;
 }
 
-export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete, onCancel }: EditAccountDialogProps) {
+export function EditAccountDialog({
+  account,
+  open,
+  onOpenChange,
+  onCloseComplete,
+  onArchive,
+  onCancel,
+  onToggleVisibility,
+}: EditAccountDialogProps) {
   const queryClient = useQueryClient();
   const {
     register,
@@ -163,9 +182,25 @@ export function EditAccountDialog({ account, open, onOpenChange, onCloseComplete
     }
   };
 
+  const actions: DialogAction[] = [
+    {
+      id: "toggle-visibility",
+      icon: account.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />,
+      label: account.hidden ? "Показать" : "Скрыть",
+      onSelect: onToggleVisibility,
+    },
+    {
+      id: "archive",
+      icon: <Archive className="h-4 w-4" />,
+      label: "Архивировать",
+      onSelect: onArchive,
+      tone: "destructive",
+    },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow actions={actions} className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Редактировать счёт</DialogTitle>
         </DialogHeader>

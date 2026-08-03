@@ -115,8 +115,8 @@ export function ArchivedAccountsDialog({
               Список всех архивированных счетов. Вы можете восстановить пустой счёт или удалить его навсегда.
             </DialogDescription>
           </DialogHeader>
-          <DialogContent>
-            <div className="mt-4 max-h-[60vh] overflow-y-auto">
+          <DialogContent className="flex min-h-0 flex-col overflow-hidden">
+            <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Загрузка...</div>
               ) : archivedAccounts.length === 0 ? (

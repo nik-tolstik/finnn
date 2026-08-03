@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -17,7 +18,15 @@ import { accountKeys } from "@/shared/lib/query-keys";
 import { type UpdateDebtInput, updateDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
@@ -33,6 +42,7 @@ interface EditDebtDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
+  onDelete?: () => void;
 }
 
 interface EditDebtPanelProps {
@@ -302,14 +312,41 @@ export function EditDebtPanel({ debt, workspaceId, open, onComplete, onSubmittin
   );
 }
 
-export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: EditDebtDialogProps) {
+export function EditDebtDialog({
+  debt,
+  workspaceId,
+  open,
+  onOpenChange,
+  onCloseComplete,
+  onDelete,
+}: EditDebtDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const actions: DialogAction[] = onDelete
+    ? [
+        {
+          id: "delete",
+          icon: <Trash2 />,
+          label: "Удалить",
+          onSelect: onDelete,
+          tone: "destructive",
+          disabled: isSubmitting,
+        },
+      ]
+    : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow onCloseComplete={onCloseComplete}>
+      <DialogWindow closeButtonDisabled={isSubmitting} actions={actions} onCloseComplete={onCloseComplete}>
         <DialogHeader>
-          <DialogTitle>Редактировать долг</DialogTitle>
+          <DialogTitle className="truncate">Редактировать долг</DialogTitle>
         </DialogHeader>
-        <EditDebtPanel debt={debt} workspaceId={workspaceId} open={open} onComplete={() => onOpenChange(false)} />
+        <EditDebtPanel
+          debt={debt}
+          workspaceId={workspaceId}
+          open={open}
+          onComplete={() => onOpenChange(false)}
+          onSubmittingChange={setIsSubmitting}
+        />
       </DialogWindow>
     </Dialog>
   );

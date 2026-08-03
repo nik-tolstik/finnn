@@ -43,7 +43,7 @@ export function AccountsMenu({
       >
         <MoreVertical className="h-5 w-5" />
       </Button>
-      <DialogWindow mobilePosition="bottom" className="gap-4 rounded-t-2xl rounded-b-none pb-4">
+      <DialogWindow className="gap-4 pb-4">
         <DialogHeader className="px-5">
           <DialogTitle>Опции счетов</DialogTitle>
         </DialogHeader>

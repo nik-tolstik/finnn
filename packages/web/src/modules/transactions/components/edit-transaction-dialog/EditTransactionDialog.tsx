@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { CalendarPlus, RotateCw, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -31,7 +31,15 @@ import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -52,6 +60,9 @@ interface EditTransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
+  onDelete?: () => void;
+  onRepeat?: () => void;
+  onCreateScheduledPayment?: () => void;
 }
 
 export function EditTransactionDialog({
@@ -60,6 +71,9 @@ export function EditTransactionDialog({
   open,
   onOpenChange,
   onCloseComplete,
+  onDelete,
+  onRepeat,
+  onCreateScheduledPayment,
 }: EditTransactionDialogProps) {
   const queryClient = useQueryClient();
   const {
@@ -211,11 +225,49 @@ export function EditTransactionDialog({
     setValue("categoryId", option.value || null);
   };
 
+  const actions: DialogAction[] = [];
+
+  if (onRepeat) {
+    actions.push({
+      id: "repeat",
+      icon: <RotateCw />,
+      label: "Повторить",
+      onSelect: onRepeat,
+      disabled: isSubmitting,
+    });
+  }
+
+  if (onCreateScheduledPayment) {
+    actions.push({
+      id: "create-scheduled-payment",
+      icon: <CalendarPlus />,
+      label: "Создать платёж",
+      onSelect: onCreateScheduledPayment,
+      disabled: isSubmitting,
+    });
+  }
+
+  if (onDelete) {
+    actions.push({
+      id: "delete",
+      icon: <Trash2 />,
+      label: "Удалить",
+      onSelect: onDelete,
+      tone: "destructive",
+      disabled: isSubmitting,
+    });
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow
+        className="sm:w-[500px]"
+        closeButtonDisabled={isSubmitting}
+        actions={actions}
+        onCloseComplete={onCloseComplete}
+      >
         <DialogHeader>
-          <DialogTitle>Редактировать транзакцию</DialogTitle>
+          <DialogTitle className="truncate">Редактировать транзакцию</DialogTitle>
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -389,7 +389,7 @@ function ScheduleSettingsDropdown({
         </Button>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogWindow mobilePosition="bottom" className="h-dvh gap-0 overflow-hidden rounded-none p-0">
+          <DialogWindow className="flex min-h-0 flex-col gap-0 overflow-hidden p-0">
             <DialogHeader className="py-4">
               <DialogTitle>Дата и уведомления</DialogTitle>
             </DialogHeader>
@@ -642,11 +642,7 @@ export function ScheduledPaymentForm({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogWindow
-        className="h-dvh gap-0 rounded-none pt-6 pb-0 md:h-auto md:w-[680px] gap-6 md:rounded-lg"
-        mobilePosition="bottom"
-        onCloseComplete={onCloseComplete}
-      >
+      <DialogWindow className="min-h-0 gap-0 pt-6 pb-0 md:w-[680px] md:gap-6" onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>{isEditing ? "Редактировать платёж" : "Новый платёж"}</DialogTitle>
         </DialogHeader>

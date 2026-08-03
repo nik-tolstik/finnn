@@ -74,7 +74,7 @@ export function ArchiveAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow mobilePosition="bottom" className="rounded-t-2xl rounded-b-none" onCloseComplete={onCloseComplete}>
+      <DialogWindow onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Архивировать счёт?</DialogTitle>
           <DialogDescription>

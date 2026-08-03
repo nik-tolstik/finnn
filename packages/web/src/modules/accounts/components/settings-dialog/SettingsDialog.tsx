@@ -24,7 +24,7 @@ export function SettingsDialog({ workspaceId, open, onOpenChange }: SettingsDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="flex flex-col rounded-none sm:h-[600px] sm:max-h-[600px] sm:w-[500px] sm:m-4 sm:rounded-lg">
+      <DialogWindow className="flex min-h-0 flex-col sm:m-4 sm:h-[600px] sm:max-h-[600px] sm:w-[500px]">
         <DialogHeader>
           <DialogTitle className="mb-4">Настройки</DialogTitle>
         </DialogHeader>
@@ -45,7 +45,7 @@ export function SettingsDialog({ workspaceId, open, onOpenChange }: SettingsDial
             </button>
           ))}
         </div>
-        <DialogContent className="flex-1">
+        <DialogContent className="min-h-0 flex-1 overflow-y-auto">
           {selectedSection === "workspace" && <WorkspaceSettings workspaceId={workspaceId} />}
           {selectedSection === "members" && <MembersManagement workspaceId={workspaceId} />}
         </DialogContent>

@@ -1,8 +1,16 @@
-import { ArrowLeft, Pencil, Trash2, X } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import {
+  Dialog,
+  type DialogAction,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogWindow,
+} from "@/shared/ui/dialog";
 import { Segmented } from "@/shared/ui/segmented";
 import { formatMoney } from "@/shared/utils/money";
 
@@ -48,18 +56,21 @@ function DebtReadOnlySummary({ debt }: { debt: DebtWithRelations }) {
   const directionLabel = debt.type === DebtType.LENT ? "Мне должны" : "Я должен";
 
   return (
-    <DialogContent>
-      <div className="space-y-4 rounded-xl bg-muted/60 p-4">
-        <div className="space-y-1">
-          <div className="text-sm text-muted-foreground">{directionLabel}</div>
-          <div className="text-lg font-semibold">{debt.personName}</div>
+    <>
+      <DialogContent>
+        <div className="space-y-4 rounded-xl bg-muted/60 p-4">
+          <div className="space-y-1">
+            <div className="text-sm text-muted-foreground">{directionLabel}</div>
+            <div className="text-lg font-semibold">{debt.personName}</div>
+          </div>
+          <div className="flex items-end justify-between gap-4">
+            <div className="text-sm text-muted-foreground">Закрытый долг</div>
+            <div className="text-right text-lg font-semibold">{formatMoney(debt.amount, debt.currency)}</div>
+          </div>
         </div>
-        <div className="flex items-end justify-between gap-4">
-          <div className="text-sm text-muted-foreground">Закрытый долг</div>
-          <div className="text-right text-lg font-semibold">{formatMoney(debt.amount, debt.currency)}</div>
-        </div>
-      </div>
-    </DialogContent>
+      </DialogContent>
+      <DialogFooter />
+    </>
   );
 }
 
@@ -196,70 +207,54 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
   const handleComplete = () => onOpenChange(false);
   const title =
     view === "edit" ? "Редактировать долг" : view === "delete" ? "Удалить долг?" : `Долг: ${debt.personName}`;
+  const actions: DialogAction[] = [];
+
+  if (view === "operations" && capabilities.canEdit) {
+    actions.push({
+      id: "edit",
+      icon: <Pencil />,
+      label: "Редактировать долг",
+      onSelect: () => setView("edit"),
+      disabled: isSubmitting,
+    });
+  }
+
+  if (view === "operations" && capabilities.canDelete) {
+    actions.push({
+      id: "delete",
+      icon: <Trash2 />,
+      label: "Удалить",
+      onSelect: () => setView("delete"),
+      tone: "destructive",
+      disabled: isSubmitting,
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogWindow
-        className="max-sm:max-h-[calc(100dvh-1rem)] sm:w-[500px]"
-        mobilePosition="bottom"
+        className="sm:w-[500px]"
+        closeButtonDisabled={isSubmitting}
+        actions={actions}
         onCloseComplete={onCloseComplete}
-        showCloseButton={false}
       >
         <DialogHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-1">
-              {view !== "operations" ? (
-                <Button
-                  aria-label="Назад к действиям долга"
-                  disabled={isSubmitting}
-                  onClick={() => setView("operations")}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <ArrowLeft />
-                </Button>
-              ) : null}
-              <DialogTitle ref={titleRef} className="truncate focus:outline-none" tabIndex={-1}>
-                {title}
-              </DialogTitle>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              {view === "operations" && capabilities.canEdit ? (
-                <Button
-                  aria-label="Редактировать долг"
-                  disabled={isSubmitting}
-                  onClick={() => setView("edit")}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Pencil />
-                </Button>
-              ) : null}
-              {view === "operations" && capabilities.canDelete ? (
-                <Button
-                  aria-label="Удалить долг"
-                  disabled={isSubmitting}
-                  onClick={() => setView("delete")}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2 />
-                </Button>
-              ) : null}
+          <div className="flex min-w-0 items-center gap-1">
+            {view !== "operations" ? (
               <Button
-                aria-label="Закрыть"
+                aria-label="Назад к действиям долга"
                 disabled={isSubmitting}
-                onClick={() => handleOpenChange(false)}
+                onClick={() => setView("operations")}
                 size="icon-sm"
                 type="button"
                 variant="ghost"
               >
-                <X />
+                <ArrowLeft />
               </Button>
-            </div>
+            ) : null}
+            <DialogTitle ref={titleRef} className="truncate focus:outline-none" tabIndex={-1}>
+              {title}
+            </DialogTitle>
           </div>
         </DialogHeader>
 
