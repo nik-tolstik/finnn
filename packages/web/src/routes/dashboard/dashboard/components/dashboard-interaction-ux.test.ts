@@ -108,31 +108,26 @@ describe("dashboard interaction loading", () => {
     expect(editTransactionSource).toContain("actions=");
   });
 
-  it("opens account editors directly and uses a desktop context menu for account actions", () => {
+  it("opens account action menus from a normal card click", () => {
     const accountCardSource = readSource("src/shared/components/account-card/AccountCard.tsx");
     const accountsCardsSource = readSource("src/modules/accounts/components/accounts-cards/AccountsCards.tsx");
     const accountActionsSource = readSource(
       "src/modules/accounts/components/account-actions-dialog/AccountActionsDialog.tsx"
     );
-    const editAccountSource = readSource("src/modules/accounts/components/edit-account-dialog/EditAccountDialog.tsx");
     const actionsDialogSource = readSource("src/shared/ui/actions-dialog/ActionsDialog.tsx");
-    const popoverSource = readSource("src/shared/ui/popover/Popover.tsx");
 
     expect(accountCardSource).toContain("MouseEventHandler<HTMLButtonElement>");
-    expect(accountsCardsSource).toContain("editDialog.openDialog({ account })");
-    expect(accountsCardsSource).not.toContain("accountActionsDialog.openDialog");
+    expect(accountsCardsSource).toContain("accountActionsDialog.openDialog({ account, anchor: event.currentTarget })");
+    expect(accountsCardsSource).toContain("onClick={(event) => {");
+    expect(accountsCardsSource).not.toContain("useBreakpoints");
     expect(accountActionsSource).toContain('label: "Транзакция"');
     expect(accountActionsSource).toContain('label: "Изменить"');
     expect(accountActionsSource).toContain('tone: "destructive"');
-    expect(accountActionsSource).toContain("trigger={trigger}");
-    expect(actionsDialogSource).toContain("openOnContextMenu");
-    expect(actionsDialogSource).toContain("inertTriggerProps");
-    expect(popoverSource).toContain("openOnContextMenu?: boolean");
-    expect(popoverSource).toContain("event.preventDefault()");
-    expect(popoverSource).toContain("enabled: !openOnContextMenu");
-    expect(editAccountSource).toContain("actions={actions}");
-    expect(editAccountSource).toContain("onToggleVisibility");
-    expect(editAccountSource).toContain("onArchive");
+    expect(accountActionsSource).toContain("anchor={anchor}");
+    expect(accountActionsSource).toContain("open={open}");
+    expect(accountActionsSource).not.toContain("trigger={trigger}");
+    expect(actionsDialogSource).toContain("if (isMobile)");
+    expect(actionsDialogSource).toContain("<Sheet");
   });
 
   it("keeps scheduled payment action menus anchored without changing their entry point", () => {

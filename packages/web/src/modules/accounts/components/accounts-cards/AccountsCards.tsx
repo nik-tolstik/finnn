@@ -11,7 +11,6 @@ import type {
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
-import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { Badge } from "@/shared/ui/badge";
@@ -66,6 +65,10 @@ type AccountDialogData = {
   account: AccountWithOwner;
 };
 
+type AccountActionDialogData = AccountDialogData & {
+  anchor: HTMLElement;
+};
+
 function AccountGroupHeader({ group }: { group: AccountDisplayGroup<AccountWithOwner> }) {
   return (
     <div className="flex items-center gap-2">
@@ -91,9 +94,9 @@ export function AccountsCards({
   reorderMode = false,
   workspaceId,
 }: AccountsCardsProps) {
-  const { isMobile } = useBreakpoints();
   const queryClient = useQueryClient();
   const visibilityMutationIds = useRef(new Set<string>());
+  const accountActionsDialog = useDialogState<AccountActionDialogData>();
   const createTransactionDialog = useDialogState<{
     workspaceId: string;
     defaultType?: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
@@ -107,6 +110,8 @@ export function AccountsCards({
     if (visibilityMutationIds.current.has(account.id)) {
       return;
     }
+
+    accountActionsDialog.closeDialog();
 
     const nextHidden = !account.hidden;
     visibilityMutationIds.current.add(account.id);
@@ -182,41 +187,13 @@ export function AccountsCards({
             {shouldShowGroupHeaders ? <AccountGroupHeader group={group} /> : null}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {group.accounts.map((account) => (
-                <AccountActionsDialog
+                <AccountCard
                   key={account.id}
                   account={account}
-                  onArchive={() => {
-                    archiveDialog.openDialog({ account });
-                  }}
-                  onCreateTransaction={() => {
-                    createTransactionDialog.openDialog({
-                      workspaceId,
-                      defaultType: PaymentTransactionType.EXPENSE,
-                      account,
-                    });
-                  }}
-                  onEdit={() => openEditDialog(account)}
-                  onToggleVisibility={() => {
-                    void handleToggleVisibility(account);
-                  }}
-                  trigger={({ ref, ...triggerProps }) => {
-                    const card = (
-                      <AccountCard
-                        account={account}
-                        showOwner={shouldShowOwnerOnCard}
-                        onClick={() => openEditDialog(account)}
-                      />
-                    );
-
-                    if (isMobile) {
-                      return card;
-                    }
-
-                    return (
-                      <div ref={ref} {...triggerProps}>
-                        {card}
-                      </div>
-                    );
+                  showOwner={shouldShowOwnerOnCard}
+                  onClick={(event) => {
+                    preloadAccountDetailsDialogs();
+                    accountActionsDialog.openDialog({ account, anchor: event.currentTarget });
                   }}
                 />
               ))}
@@ -224,6 +201,30 @@ export function AccountsCards({
           </div>
         ))}
       </div>
+
+      {accountActionsDialog.mounted ? (
+        <AccountActionsDialog
+          account={accountActionsDialog.data.account}
+          anchor={accountActionsDialog.data.anchor}
+          open={accountActionsDialog.open}
+          onCloseComplete={accountActionsDialog.unmountDialog}
+          onOpenChange={accountActionsDialog.closeDialog}
+          onEdit={() => openEditDialog(accountActionsDialog.data.account)}
+          onToggleVisibility={() => {
+            void handleToggleVisibility(accountActionsDialog.data.account);
+          }}
+          onArchive={() => {
+            archiveDialog.openDialog({ account: accountActionsDialog.data.account });
+          }}
+          onCreateTransaction={() => {
+            createTransactionDialog.openDialog({
+              workspaceId,
+              defaultType: PaymentTransactionType.EXPENSE,
+              account: accountActionsDialog.data.account,
+            });
+          }}
+        />
+      ) : null}
 
       {editDialog.mounted ? (
         <Suspense fallback={null}>
