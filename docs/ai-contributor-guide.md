@@ -32,8 +32,9 @@ source of truth for stable engineering, domain, setup, and operational rules.
 - A user request to implement a planned code or repository-documentation change is explicit delegation. It authorizes
   the agent to create or update the corresponding Product Change issue, use its Linear-generated branch, and open or
   update a draft pull request. The branch must start from `develop` and include the Linear issue identifier.
-- Delegation does not authorize the agent to merge its pull request, change product scope or priority, mutate shared
-  infrastructure, deploy to production, or perform destructive operations.
+- Delegation alone does not authorize the agent to merge its pull request, change product scope or priority, mutate
+  shared infrastructure, deploy to production, or perform destructive operations. An agent may merge only when the
+  user explicitly authorizes that exact merge separately.
 - The human reviews the result, makes product decisions, and accepts the work.
 
 ### Issue Lifecycle
@@ -62,7 +63,8 @@ or access required. Do not invent product behavior to bypass a blocker.
 5. When the outcome and acceptance criteria are clear, move the issue to `Todo`; then move it to `In Progress` when
    implementation starts, use the issue branch, and run scope-appropriate checks.
 6. Open or update a draft pull request that includes the Linear issue identifier, then move the issue to `In Review`.
-   Never merge the pull request.
+   Merge only after the user explicitly authorizes that exact merge and after completing the required
+   pre-merge review.
 7. Add a single handoff comment with the outcome, verification performed, pull request link, known risks, and any
    follow-up work. Do not post command-by-command progress noise.
 8. Leave the issue `In Review` until the human accepts it. Do not mark the issue `Done` merely because code or a pull

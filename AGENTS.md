@@ -33,7 +33,7 @@ Code, configuration, schemas, generated contracts, and provider state are author
   corresponding Product Change issue in the Finnn Linear project and follow the Linear task workflow in
   `docs/ai-contributor-guide.md`. Read-only questions, repository exploration, tiny edits that will not be committed,
   and an explicit request to work without Linear do not require an issue.
-- Explicit delegation of a Finnn Linear issue authorizes the agent to create or use its issue branch and open or update its draft pull request. It does not authorize a worktree, merge, production change, destructive action, or infrastructure mutation.
+- Explicit delegation of a Finnn Linear issue authorizes the agent to create or use its issue branch and open or update its draft pull request. It does not authorize a worktree, production change, destructive action, or infrastructure mutation. An agent may merge only when the user explicitly authorizes that exact merge separately.
 - Keep code comments and documentation in English.
 - Do not run screenshot or browser-automation QA unless the user explicitly requests it.
 

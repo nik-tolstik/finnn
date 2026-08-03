@@ -94,7 +94,7 @@ Use `-- --url=https://your-stable-domain.ngrok-free.dev/telegram/webhook` to ove
 `-- --drop-pending` when switching environments and old queued updates should be discarded.
 
 Telegram Mini Apps must load over public HTTPS. For local testing, run the API and web app normally, then expose the web
-app through a stable HTTPS tunnel and point the DEV bot's Mini App URL at the tunnel `/dashboard` route. Keep
+app through a stable HTTPS tunnel and point the non-production bot's Mini App URL at the tunnel `/dashboard` route. Keep
 `VITE_API_URL` aligned with an API URL that the WebView can reach and keep `API_ALLOWED_ORIGINS` aligned with the
 tunnel origin.
 
