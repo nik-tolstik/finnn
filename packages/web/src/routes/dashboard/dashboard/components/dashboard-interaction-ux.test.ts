@@ -53,6 +53,7 @@ describe("dashboard interaction loading", () => {
       "src/modules/transactions/components/edit-transaction-dialog/EditTransactionDialog.tsx"
     );
     const dialogSource = readSource("src/shared/ui/dialog/Dialog.tsx");
+    const actionsDialogSource = readSource("src/shared/ui/actions-dialog/ActionsDialog.tsx");
 
     expect(transactionsSource).toContain("onTransactionClick={controller.openTransactionDialog}");
     expect(transactionsSource).toContain("onDebtTransactionClick={controller.openDebtTransactionDialog}");
@@ -68,9 +69,11 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain("closeButtonDisabled?: boolean");
     expect(dialogSource).toContain("<DialogCloseButton");
     expect(dialogSource).toContain("function DialogOptionsButton");
+    expect(dialogSource).toContain("function ActionsDialog");
+    expect(dialogSource).toContain("<ActionsDialog");
+    expect(dialogSource).toContain('theme: action.tone === "destructive" ? "error" : "primary"');
     expect(dialogSource).toContain("function DialogFooter");
-    expect(dialogSource).toContain("<Popover");
-    expect(dialogSource).toContain("<Sheet");
+    expect(actionsDialogSource).toContain('export { type ActionItem, ActionsDialog } from "@/shared/ui/dialog"');
     expect(dialogSource).toContain('aria-label="Действия"');
     expect(dialogSource).toContain("max-h-[calc(100dvh-4rem)]");
     expect(dialogSource).toContain('transform: "translateY(100%)"');

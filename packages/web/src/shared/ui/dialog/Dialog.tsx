@@ -14,8 +14,6 @@ import * as React from "react";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { Button } from "@/shared/ui/button";
 import { OverlayPortalRootProvider } from "@/shared/ui/overlay-portal-root";
-import { Popover } from "@/shared/ui/popover";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
 
@@ -40,6 +38,27 @@ export interface DialogAction {
   label: string;
   onSelect: () => void;
   tone?: "default" | "destructive";
+}
+
+export type ActionButtonTheme = "primary" | "error" | "secondary";
+
+export interface ActionItem {
+  className?: string;
+  disabled?: boolean;
+  icon: React.ReactNode;
+  id?: string;
+  label: string;
+  onClick: () => void;
+  theme?: ActionButtonTheme;
+}
+
+interface ActionsDialogProps {
+  actions: ActionItem[];
+  description: string;
+  onCloseComplete: () => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+  title: string;
 }
 
 interface DialogWindowProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -118,34 +137,6 @@ function DialogCloseButton({ className, children: _, type = "button", ...props }
   );
 }
 
-function DialogActionList({
-  actions,
-  onSelect,
-}: {
-  actions: DialogAction[];
-  onSelect: (action: DialogAction) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      {actions.map((action) => (
-        <button
-          key={action.id}
-          type="button"
-          disabled={action.disabled}
-          onClick={() => onSelect(action)}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors hover:bg-control-hover disabled:pointer-events-none disabled:opacity-50",
-            action.tone === "destructive" ? "text-destructive" : "text-foreground"
-          )}
-        >
-          <span className="shrink-0 [&_svg]:size-4">{action.icon}</span>
-          <span className="min-w-0 flex-1 truncate">{action.label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
   const { isMobile } = useBreakpoints();
   const { setNestedOverlayOpen } = React.useContext(DialogWindowContext);
@@ -153,75 +144,121 @@ function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
   const disabled = actions.every((action) => action.disabled);
 
   React.useEffect(() => {
-    setNestedOverlayOpen(isMobile && open);
+    setNestedOverlayOpen(open);
 
     return () => setNestedOverlayOpen(false);
-  }, [isMobile, open, setNestedOverlayOpen]);
+  }, [open, setNestedOverlayOpen]);
 
-  const handleSelect = (action: DialogAction) => {
-    setOpen(false);
-    action.onSelect();
-  };
+  const actionItems: ActionItem[] = actions.map((action) => ({
+    disabled: action.disabled,
+    icon: action.icon,
+    id: action.id,
+    label: action.label,
+    onClick: () => {
+      setOpen(false);
+      action.onSelect();
+    },
+    theme: action.tone === "destructive" ? "error" : "primary",
+  }));
 
-  if (isMobile) {
-    return (
-      <>
-        <Button
-          aria-label="Действия"
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          disabled={disabled}
-          onClick={() => setOpen(true)}
-          size="icon-sm"
-          type="button"
-          variant="ghost"
-        >
-          <MoreVertical />
-        </Button>
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent
-            side="bottom"
-            showCloseButton={false}
-            className="max-h-[calc(100dvh-4rem)] gap-0 rounded-t-lg p-0"
-          >
-            <SheetHeader className="px-6 pb-3">
-              <SheetTitle>Действия</SheetTitle>
-            </SheetHeader>
-            <div className="overflow-y-auto px-3 pb-4">
-              <DialogActionList actions={actions} onSelect={handleSelect} />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </>
-    );
-  }
+  const optionsButton = (
+    <Button
+      aria-label="Действия"
+      aria-expanded={open}
+      aria-haspopup="dialog"
+      disabled={disabled}
+      onClick={() => setOpen(true)}
+      size="icon-sm"
+      type="button"
+      variant="ghost"
+    >
+      <MoreVertical />
+    </Button>
+  );
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      placement="bottom-end"
-      className="w-56 p-1"
-      trigger={({ ref, ...triggerProps }) => (
+    <>
+      {isMobile ? (
+        optionsButton
+      ) : (
         <Tooltip content="Действия" delayDuration={0} disableHoverableContent>
-          <Button
-            {...triggerProps}
-            ref={ref}
-            aria-label="Действия"
-            aria-expanded={open}
-            aria-haspopup="dialog"
-            disabled={disabled}
-            size="icon-sm"
-            type="button"
-            variant="ghost"
-          >
-            <MoreVertical />
-          </Button>
+          {optionsButton}
         </Tooltip>
       )}
+      <ActionsDialog
+        actions={actionItems}
+        description="Выберите действие"
+        onCloseComplete={() => undefined}
+        onOpenChange={setOpen}
+        open={open}
+        title="Действия"
+      />
+    </>
+  );
+}
+
+const actionColorMap: Record<ActionButtonTheme, string> = {
+  primary: "text-foreground",
+  error: "text-destructive",
+  secondary: "text-secondary-foreground",
+};
+
+function ActionButton({
+  icon,
+  children,
+  onClick,
+  theme = "primary",
+  className,
+  disabled = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+  icon: React.ReactNode;
+  onClick: () => void;
+  theme?: ActionButtonTheme;
+}) {
+  return (
+    <button
+      className={cn(
+        "flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-4 text-left transition-colors hover:bg-control-hover disabled:pointer-events-none disabled:cursor-default disabled:opacity-50",
+        actionColorMap[theme],
+        className
+      )}
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
     >
-      <DialogActionList actions={actions} onSelect={handleSelect} />
-    </Popover>
+      {icon}
+      <div className="font-medium">{children}</div>
+    </button>
+  );
+}
+
+function ActionsDialog({ title, description, actions, open, onCloseComplete, onOpenChange }: ActionsDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogWindow className="sm:w-[400px]" onCloseComplete={onCloseComplete}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <DialogContent className="flex flex-col gap-1">
+          {actions.map((action) => (
+            <ActionButton
+              key={action.id ?? action.label}
+              className={action.className}
+              disabled={action.disabled}
+              icon={action.icon}
+              onClick={action.onClick}
+              theme={action.theme}
+            >
+              {action.label}
+            </ActionButton>
+          ))}
+        </DialogContent>
+      </DialogWindow>
+    </Dialog>
   );
 }
 
@@ -414,6 +451,7 @@ function DialogDescription({ className, id, ...props }: React.ComponentProps<"p"
 }
 
 export {
+  ActionsDialog,
   Dialog,
   DialogCloseButton,
   DialogContent,
