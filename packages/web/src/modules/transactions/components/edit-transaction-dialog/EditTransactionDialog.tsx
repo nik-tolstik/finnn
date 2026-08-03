@@ -31,15 +31,7 @@ import { Alert } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import type { ComboboxOption } from "@/shared/ui/combobox";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import {
-  Dialog,
-  DialogCloseButton,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -228,11 +220,12 @@ export function EditTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete} showCloseButton={false}>
-        <DialogHeader>
-          <div className="flex items-center justify-between gap-3">
-            <DialogTitle className="truncate">Редактировать транзакцию</DialogTitle>
-            <div className="flex shrink-0 items-center gap-1">
+      <DialogWindow
+        className="sm:w-[500px]"
+        closeButtonDisabled={isSubmitting}
+        headerActions={
+          onRepeat || onCreateScheduledPayment || onDelete ? (
+            <>
               {onRepeat ? (
                 <Tooltip content="Повторить транзакцию" delayDuration={0} disableHoverableContent>
                   <Button
@@ -275,9 +268,13 @@ export function EditTransactionDialog({
                   </Button>
                 </Tooltip>
               ) : null}
-              <DialogCloseButton disabled={isSubmitting} onClick={() => onOpenChange(false)} />
-            </div>
-          </div>
+            </>
+          ) : null
+        }
+        onCloseComplete={onCloseComplete}
+      >
+        <DialogHeader>
+          <DialogTitle className="truncate">Редактировать транзакцию</DialogTitle>
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

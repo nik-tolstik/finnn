@@ -60,12 +60,13 @@ describe("dashboard interaction loading", () => {
     expect(controllerSource).toContain("const openDebtTransactionDialog");
     expect(dialogsSource).not.toContain("TransactionActionsDialog");
     expect(dialogsSource).not.toContain("DebtTransactionActionsDialog");
-    expect(editTransactionSource).toContain("showCloseButton={false}");
     expect(editTransactionSource).toContain('aria-label="Повторить транзакцию"');
     expect(editTransactionSource).toContain('aria-label="Удалить транзакцию"');
     expect(dialogSource).toContain("function DialogCloseButton");
+    expect(dialogSource).toContain("headerActions?: React.ReactNode");
+    expect(dialogSource).toContain("closeButtonDisabled?: boolean");
     expect(dialogSource).toContain("<DialogCloseButton");
-    expect(editTransactionSource).toContain("<DialogCloseButton");
+    expect(editTransactionSource).toContain("headerActions=");
   });
 
   it("explains transaction and debt dialog header actions with tooltips", () => {
@@ -81,7 +82,9 @@ describe("dashboard interaction loading", () => {
     for (const source of headerDialogSources) {
       expect(source).toContain('import { Tooltip } from "@/shared/ui/tooltip"');
       expect(source).not.toContain('<Tooltip content="Закрыть"');
-      expect(source).toContain("<DialogCloseButton");
+      expect(source).toContain("headerActions=");
+      expect(source).toContain('size="icon-sm"');
+      expect(source).not.toContain("<DialogCloseButton");
     }
   });
 

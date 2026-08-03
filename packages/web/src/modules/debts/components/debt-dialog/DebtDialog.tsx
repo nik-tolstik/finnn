@@ -2,7 +2,7 @@ import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogCloseButton, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Segmented } from "@/shared/ui/segmented";
 import { Tooltip } from "@/shared/ui/tooltip";
 import { formatMoney } from "@/shared/utils/money";
@@ -202,31 +202,11 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogWindow
         className="max-sm:max-h-[calc(100dvh-1rem)] sm:w-[500px]"
-        mobilePosition="bottom"
-        onCloseComplete={onCloseComplete}
-        showCloseButton={false}
-      >
-        <DialogHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-1">
-              {view !== "operations" ? (
-                <Button
-                  aria-label="Назад к действиям долга"
-                  disabled={isSubmitting}
-                  onClick={() => setView("operations")}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <ArrowLeft />
-                </Button>
-              ) : null}
-              <DialogTitle ref={titleRef} className="truncate focus:outline-none" tabIndex={-1}>
-                {title}
-              </DialogTitle>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              {view === "operations" && capabilities.canEdit ? (
+        closeButtonDisabled={isSubmitting}
+        headerActions={
+          view === "operations" ? (
+            <>
+              {capabilities.canEdit ? (
                 <Tooltip content="Редактировать долг" delayDuration={0} disableHoverableContent>
                   <Button
                     aria-label="Редактировать долг"
@@ -240,7 +220,7 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
                   </Button>
                 </Tooltip>
               ) : null}
-              {view === "operations" && capabilities.canDelete ? (
+              {capabilities.canDelete ? (
                 <Tooltip content="Удалить долг" delayDuration={0} disableHoverableContent>
                   <Button
                     aria-label="Удалить долг"
@@ -254,8 +234,29 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
                   </Button>
                 </Tooltip>
               ) : null}
-              <DialogCloseButton disabled={isSubmitting} onClick={() => handleOpenChange(false)} />
-            </div>
+            </>
+          ) : null
+        }
+        mobilePosition="bottom"
+        onCloseComplete={onCloseComplete}
+      >
+        <DialogHeader>
+          <div className="flex min-w-0 items-center gap-1">
+            {view !== "operations" ? (
+              <Button
+                aria-label="Назад к действиям долга"
+                disabled={isSubmitting}
+                onClick={() => setView("operations")}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <ArrowLeft />
+              </Button>
+            ) : null}
+            <DialogTitle ref={titleRef} className="truncate focus:outline-none" tabIndex={-1}>
+              {title}
+            </DialogTitle>
           </div>
         </DialogHeader>
 

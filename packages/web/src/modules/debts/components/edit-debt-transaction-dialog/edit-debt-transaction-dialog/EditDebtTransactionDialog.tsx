@@ -4,7 +4,6 @@ import { FormProvider } from "react-hook-form";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
-  DialogCloseButton,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -54,28 +53,29 @@ export function EditDebtTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete} showCloseButton={false}>
+      <DialogWindow
+        className="sm:w-[500px]"
+        closeButtonDisabled={form.formState.isSubmitting}
+        headerActions={
+          onDelete ? (
+            <Tooltip content="Удалить транзакцию долга" delayDuration={0} disableHoverableContent>
+              <Button
+                aria-label="Удалить транзакцию долга"
+                disabled={form.formState.isSubmitting}
+                onClick={onDelete}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <Trash2 />
+              </Button>
+            </Tooltip>
+          ) : null
+        }
+        onCloseComplete={onCloseComplete}
+      >
         <DialogHeader>
-          <div className="flex items-center justify-between gap-3">
-            <DialogTitle className="truncate">{dialogTitle}</DialogTitle>
-            <div className="flex shrink-0 items-center gap-1">
-              {onDelete ? (
-                <Tooltip content="Удалить транзакцию долга" delayDuration={0} disableHoverableContent>
-                  <Button
-                    aria-label="Удалить транзакцию долга"
-                    disabled={form.formState.isSubmitting}
-                    onClick={onDelete}
-                    size="icon-sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Trash2 />
-                  </Button>
-                </Tooltip>
-              ) : null}
-              <DialogCloseButton disabled={form.formState.isSubmitting} onClick={() => onOpenChange(false)} />
-            </div>
-          </div>
+          <DialogTitle className="truncate">{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <DialogContent>

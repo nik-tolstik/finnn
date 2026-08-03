@@ -19,15 +19,7 @@ import {
   updateTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
 import { Button } from "@/shared/ui/button";
-import {
-  Dialog,
-  DialogCloseButton,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Tooltip } from "@/shared/ui/tooltip";
 import { subtractMoney } from "@/shared/utils/money";
 
@@ -179,28 +171,29 @@ export function EditTransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete} showCloseButton={false}>
+      <DialogWindow
+        className="sm:w-[500px]"
+        closeButtonDisabled={form.formState.isSubmitting}
+        headerActions={
+          onDelete ? (
+            <Tooltip content="Удалить перевод" delayDuration={0} disableHoverableContent>
+              <Button
+                aria-label="Удалить перевод"
+                disabled={form.formState.isSubmitting}
+                onClick={onDelete}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <Trash2 />
+              </Button>
+            </Tooltip>
+          ) : null
+        }
+        onCloseComplete={onCloseComplete}
+      >
         <DialogHeader>
-          <div className="flex items-center justify-between gap-3">
-            <DialogTitle className="truncate">Редактировать перевод</DialogTitle>
-            <div className="flex shrink-0 items-center gap-1">
-              {onDelete ? (
-                <Tooltip content="Удалить перевод" delayDuration={0} disableHoverableContent>
-                  <Button
-                    aria-label="Удалить перевод"
-                    disabled={form.formState.isSubmitting}
-                    onClick={onDelete}
-                    size="icon-sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Trash2 />
-                  </Button>
-                </Tooltip>
-              ) : null}
-              <DialogCloseButton disabled={form.formState.isSubmitting} onClick={() => onOpenChange(false)} />
-            </div>
-          </div>
+          <DialogTitle className="truncate">Редактировать перевод</DialogTitle>
         </DialogHeader>
         <DialogContent>
           <TransferForm

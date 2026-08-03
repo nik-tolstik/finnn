@@ -30,12 +30,19 @@ interface DialogProps {
 }
 
 interface DialogWindowProps extends React.HTMLAttributes<HTMLDivElement> {
+  closeButtonDisabled?: boolean;
+  headerActions?: React.ReactNode;
   mobilePosition?: "center" | "bottom";
   onCloseComplete?: () => void;
   showCloseButton?: boolean;
 }
 
+interface DialogWindowContextValue {
+  hasHeaderActions: boolean;
+}
+
 const DialogContext = React.createContext<DialogContextValue | null>(null);
+const DialogWindowContext = React.createContext<DialogWindowContextValue>({ hasHeaderActions: false });
 
 function useDialogContext() {
   const context = React.useContext(DialogContext);
@@ -96,6 +103,8 @@ function DialogCloseButton({ className, children: _, type = "button", ...props }
 function DialogWindow({
   className,
   children,
+  closeButtonDisabled = false,
+  headerActions,
   showCloseButton = true,
   onCloseComplete,
   mobilePosition = "center",
@@ -104,6 +113,7 @@ function DialogWindow({
 }: DialogWindowProps) {
   const { descriptionId, onOpenChange, open, titleId } = useDialogContext();
   const { isMobile } = useBreakpoints();
+  const hasHeaderActions = Boolean(headerActions);
   const [portalRoot, setPortalRoot] = React.useState<HTMLDivElement | null>(null);
   const closeCompleteCalledRef = React.useRef(false);
   const wasMountedRef = React.useRef(false);
@@ -158,40 +168,47 @@ function DialogWindow({
         className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 grid place-items-center bg-black/18 backdrop-blur-sm dark:bg-black/42"
       >
         <FloatingFocusManager context={context} initialFocus={-1} modal returnFocus>
-          <div
-            {...getFloatingProps(props)}
-            ref={setFloatingRef}
-            data-slot="dialog-content"
-            data-state={open ? "open" : "closed"}
-            role="dialog"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionId}
-            className={cn(
-              "flex flex-col gap-6",
-              "fixed z-50 rounded-lg bg-dialog p-6 shadow-lg outline-none",
-              "sm:w-125 max-h-dvh max-w-dvw m-0 py-6 px-0",
-              isMobile ? "w-dvw" : "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-fit",
-              isMobile &&
-                mobilePosition === "center" &&
-                "top-[50%] left-[50%] h-dvh translate-x-[-50%] translate-y-[-50%] !rounded-none !border-0 !shadow-none",
-              isMobile && mobilePosition === "bottom" && "bottom-0 left-0 h-auto rounded-t-lg rounded-b-none",
-              className
-            )}
-            style={{
-              ...transitionStyles,
-              ...style,
-            }}
-          >
-            <OverlayPortalRootProvider root={portalRoot}>{children}</OverlayPortalRootProvider>
+          <DialogWindowContext.Provider value={{ hasHeaderActions }}>
             <div
-              ref={setPortalRoot}
-              data-slot="dialog-overlay-portal-root"
-              className="pointer-events-none absolute inset-0 z-50"
-            />
-            {showCloseButton && (
-              <DialogCloseButton className="absolute top-4 right-4" onClick={() => onOpenChange(false)} />
-            )}
-          </div>
+              {...getFloatingProps(props)}
+              ref={setFloatingRef}
+              data-slot="dialog-content"
+              data-state={open ? "open" : "closed"}
+              role="dialog"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionId}
+              className={cn(
+                "flex flex-col gap-6",
+                "fixed z-50 rounded-lg bg-dialog p-6 shadow-lg outline-none",
+                "sm:w-125 max-h-dvh max-w-dvw m-0 py-6 px-0",
+                isMobile ? "w-dvw" : "top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] h-fit",
+                isMobile &&
+                  mobilePosition === "center" &&
+                  "top-[50%] left-[50%] h-dvh translate-x-[-50%] translate-y-[-50%] !rounded-none !border-0 !shadow-none",
+                isMobile && mobilePosition === "bottom" && "bottom-0 left-0 h-auto rounded-t-lg rounded-b-none",
+                className
+              )}
+              style={{
+                ...transitionStyles,
+                ...style,
+              }}
+            >
+              <OverlayPortalRootProvider root={portalRoot}>{children}</OverlayPortalRootProvider>
+              <div
+                ref={setPortalRoot}
+                data-slot="dialog-overlay-portal-root"
+                className="pointer-events-none absolute inset-0 z-50"
+              />
+              {showCloseButton || hasHeaderActions ? (
+                <div className="absolute top-4 right-4 flex items-center gap-1">
+                  {headerActions}
+                  {showCloseButton ? (
+                    <DialogCloseButton disabled={closeButtonDisabled} onClick={() => onOpenChange(false)} />
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </DialogWindowContext.Provider>
         </FloatingFocusManager>
       </FloatingOverlay>
     </FloatingPortal>
@@ -203,10 +220,12 @@ function DialogContent({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+  const { hasHeaderActions } = React.useContext(DialogWindowContext);
+
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left px-6", className)}
+      className={cn("flex flex-col gap-2 px-6 text-center sm:text-left", hasHeaderActions && "pr-40", className)}
       {...props}
     />
   );

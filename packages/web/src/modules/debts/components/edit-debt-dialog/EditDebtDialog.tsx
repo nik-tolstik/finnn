@@ -18,15 +18,7 @@ import { accountKeys } from "@/shared/lib/query-keys";
 import { type UpdateDebtInput, updateDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
-import {
-  Dialog,
-  DialogCloseButton,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogWindow,
-} from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
@@ -325,28 +317,28 @@ export function EditDebtDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow onCloseComplete={onCloseComplete} showCloseButton={false}>
+      <DialogWindow
+        closeButtonDisabled={isSubmitting}
+        headerActions={
+          onDelete ? (
+            <Tooltip content="Удалить долг" delayDuration={0} disableHoverableContent>
+              <Button
+                aria-label="Удалить долг"
+                disabled={isSubmitting}
+                onClick={onDelete}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <Trash2 />
+              </Button>
+            </Tooltip>
+          ) : null
+        }
+        onCloseComplete={onCloseComplete}
+      >
         <DialogHeader>
-          <div className="flex items-center justify-between gap-3">
-            <DialogTitle className="truncate">Редактировать долг</DialogTitle>
-            <div className="flex shrink-0 items-center gap-1">
-              {onDelete ? (
-                <Tooltip content="Удалить долг" delayDuration={0} disableHoverableContent>
-                  <Button
-                    aria-label="Удалить долг"
-                    disabled={isSubmitting}
-                    onClick={onDelete}
-                    size="icon-sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Trash2 />
-                  </Button>
-                </Tooltip>
-              ) : null}
-              <DialogCloseButton disabled={isSubmitting} onClick={() => onOpenChange(false)} />
-            </div>
-          </div>
+          <DialogTitle className="truncate">Редактировать долг</DialogTitle>
         </DialogHeader>
         <EditDebtPanel
           debt={debt}
