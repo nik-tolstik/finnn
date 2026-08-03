@@ -34,3 +34,13 @@
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed.
 - `git diff --check` — passed.
+
+## 2026-08-03 — Final publish verification
+
+- Focused Copilot classification: two P2 findings were rejected, one P3 finding is uncertain because the current coverage is source-level only, and no findings were confirmed in this final review pass.
+- `pnpm typecheck` — passed: API and web `tsc --noEmit`.
+- `pnpm check` — passed: generated API/client drift check, API Biome (124 files), web Biome (656 files), and backup Biome (15 files).
+- `pnpm test` — passed: API 276 passed / 12 skipped, web 244 passed, and backup 11 passed.
+- `VITE_API_URL=http://localhost:4000 pnpm build` — passed: API Nest build and web Vite production build.
+- `git diff --check` — passed with a clean task diff before this documentation-only record.
+- No browser or screenshot QA was run.
