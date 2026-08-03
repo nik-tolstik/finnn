@@ -81,6 +81,9 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("reference={anchor}");
     expect(actionsDialogSource).toContain("onOpenChange(false);\n    action.onSelect();");
     expect(actionsDialogSource).toContain("max-h-[calc(100dvh-4rem)]");
+    expect(actionsDialogSource).toContain('size={isMobile ? "touch" : "compact"}');
+    expect(actionsDialogSource).toContain("min-h-14");
+    expect(actionsDialogSource).toContain("text-base");
     expect(popoverSource).toContain("reference: ReferenceType | null");
     expect(popoverSource).toContain("trigger?:");
     expect(sheetSource).toContain("onCloseComplete?: () => void");
@@ -90,7 +93,9 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain('transform: "scale(0.96)"');
     expect(dialogSource).not.toContain('transform: "translateY(100%)"');
     expect(dialogSource).toContain("outsidePress: !nestedOverlayOpen");
-    expect(dialogSource).toContain("showCloseButton && !isMobile");
+    expect(dialogSource).toContain("hasCloseButton: showCloseButton");
+    expect(dialogSource).toContain("{showCloseButton ? (");
+    expect(dialogSource).toContain('className={isMobile ? "size-10 p-0" : undefined}');
     expect(dialogSource).toContain("hasActions && !isMobile");
     expect(dialogSource).toContain("[&>button]:flex-1");
     expect(dialogSource).toContain("shrink-0 items-center");

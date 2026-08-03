@@ -44,6 +44,7 @@ interface DialogWindowProps extends React.HTMLAttributes<HTMLDivElement> {
 interface DialogWindowContextValue {
   actions: DialogAction[];
   hasActions: boolean;
+  hasCloseButton: boolean;
   setNestedOverlayOpen: (open: boolean) => void;
 }
 
@@ -51,6 +52,7 @@ const DialogContext = React.createContext<DialogContextValue | null>(null);
 const DialogWindowContext = React.createContext<DialogWindowContextValue>({
   actions: [],
   hasActions: false,
+  hasCloseButton: false,
   setNestedOverlayOpen: () => undefined,
 });
 
@@ -215,8 +217,8 @@ function DialogWindow({
   );
 
   const dialogWindowContextValue = React.useMemo(
-    () => ({ actions, hasActions, setNestedOverlayOpen }),
-    [actions, hasActions]
+    () => ({ actions, hasActions, hasCloseButton: showCloseButton, setNestedOverlayOpen }),
+    [actions, hasActions, showCloseButton]
   );
 
   if (!isMounted) {
@@ -260,11 +262,15 @@ function DialogWindow({
                 data-slot="dialog-overlay-portal-root"
                 className="pointer-events-none absolute inset-0 z-50"
               />
-              {(hasActions && isMobile) || (showCloseButton && !isMobile) ? (
+              {(hasActions && isMobile) || showCloseButton ? (
                 <div className="absolute top-4 right-4 flex items-center gap-1">
                   {hasActions && isMobile ? <DialogOptionsButton actions={actions} /> : null}
-                  {showCloseButton && !isMobile ? (
-                    <DialogCloseButton disabled={closeButtonDisabled} onClick={() => onOpenChange(false)} />
+                  {showCloseButton ? (
+                    <DialogCloseButton
+                      className={isMobile ? "size-10 p-0" : undefined}
+                      disabled={closeButtonDisabled}
+                      onClick={() => onOpenChange(false)}
+                    />
                   ) : null}
                 </div>
               ) : null}
@@ -281,13 +287,18 @@ function DialogContent({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  const { hasActions } = React.useContext(DialogWindowContext);
+  const { hasActions, hasCloseButton } = React.useContext(DialogWindowContext);
   const { isMobile } = useBreakpoints();
+  const hasMobileHeaderControls = isMobile && (hasActions || hasCloseButton);
 
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 px-6 text-center sm:text-left", hasActions && isMobile && "pr-16", className)}
+      className={cn(
+        "flex flex-col gap-2 text-center sm:text-left",
+        hasMobileHeaderControls ? "px-16" : "px-6",
+        className
+      )}
       {...props}
     />
   );
