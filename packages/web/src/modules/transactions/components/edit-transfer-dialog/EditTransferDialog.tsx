@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Trash2, X } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import {
   type UpdateTransferTransactionInput,
   updateTransferTransactionSchema,
 } from "@/shared/lib/validations/transaction";
+import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { subtractMoney } from "@/shared/utils/money";
 
@@ -37,6 +39,7 @@ interface EditTransferDialogProps {
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
   onSuccess?: () => void;
+  onDelete?: () => void;
 }
 
 function toTransactionAccount(
@@ -64,6 +67,7 @@ export function EditTransferDialog({
   onOpenChange,
   onCloseComplete,
   onSuccess,
+  onDelete,
 }: EditTransferDialogProps) {
   const queryClient = useQueryClient();
   const form = useForm<UpdateTransferTransactionInput>({
@@ -166,9 +170,35 @@ export function EditTransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete} showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Редактировать перевод</DialogTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle className="truncate">Редактировать перевод</DialogTitle>
+            <div className="flex shrink-0 items-center gap-1">
+              {onDelete ? (
+                <Button
+                  aria-label="Удалить перевод"
+                  disabled={form.formState.isSubmitting}
+                  onClick={onDelete}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 />
+                </Button>
+              ) : null}
+              <Button
+                aria-label="Закрыть"
+                disabled={form.formState.isSubmitting}
+                onClick={() => onOpenChange(false)}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <X />
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
         <DialogContent>
           <TransferForm

@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { CalendarPlus, RotateCw, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -52,6 +52,9 @@ interface EditTransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
+  onDelete?: () => void;
+  onRepeat?: () => void;
+  onCreateScheduledPayment?: () => void;
 }
 
 export function EditTransactionDialog({
@@ -60,6 +63,9 @@ export function EditTransactionDialog({
   open,
   onOpenChange,
   onCloseComplete,
+  onDelete,
+  onRepeat,
+  onCreateScheduledPayment,
 }: EditTransactionDialogProps) {
   const queryClient = useQueryClient();
   const {
@@ -213,9 +219,59 @@ export function EditTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete} showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Редактировать транзакцию</DialogTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle className="truncate">Редактировать транзакцию</DialogTitle>
+            <div className="flex shrink-0 items-center gap-1">
+              {onRepeat ? (
+                <Button
+                  aria-label="Повторить транзакцию"
+                  disabled={isSubmitting}
+                  onClick={onRepeat}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <RotateCw />
+                </Button>
+              ) : null}
+              {onCreateScheduledPayment ? (
+                <Button
+                  aria-label="Создать платёж"
+                  disabled={isSubmitting}
+                  onClick={onCreateScheduledPayment}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <CalendarPlus />
+                </Button>
+              ) : null}
+              {onDelete ? (
+                <Button
+                  aria-label="Удалить транзакцию"
+                  disabled={isSubmitting}
+                  onClick={onDelete}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 />
+                </Button>
+              ) : null}
+              <Button
+                aria-label="Закрыть"
+                disabled={isSubmitting}
+                onClick={() => onOpenChange(false)}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <X />
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -50,6 +50,7 @@ export interface EditTransferDialogData {
 
 export interface EditDebtDialogData {
   debt: DebtWithRelations;
+  debtTransaction: DebtTransactionWithRelations;
   workspaceId: string;
 }
 
@@ -60,14 +61,6 @@ export interface EditDebtTransactionDialogData {
 
 export interface DeleteDebtDialogData {
   debt: DebtWithRelations;
-}
-
-export interface TransactionActionsDialogData {
-  transaction: ActionableCombinedTransaction;
-}
-
-export interface DebtTransactionActionsDialogData {
-  debtTransaction: DebtTransactionWithRelations;
 }
 
 export interface CreateTransactionDialogData {

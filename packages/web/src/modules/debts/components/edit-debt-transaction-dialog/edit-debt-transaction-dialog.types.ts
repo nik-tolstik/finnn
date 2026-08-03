@@ -9,6 +9,7 @@ export interface EditDebtTransactionDialogProps {
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
   onSuccess?: () => void;
+  onDelete?: () => void;
 }
 
 export type EditDebtTransactionDialogAccount = Account & {

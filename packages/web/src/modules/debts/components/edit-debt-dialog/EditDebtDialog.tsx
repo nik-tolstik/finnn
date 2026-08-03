@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -33,6 +34,7 @@ interface EditDebtDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseComplete?: () => void;
+  onDelete?: () => void;
 }
 
 interface EditDebtPanelProps {
@@ -302,14 +304,55 @@ export function EditDebtPanel({ debt, workspaceId, open, onComplete, onSubmittin
   );
 }
 
-export function EditDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: EditDebtDialogProps) {
+export function EditDebtDialog({
+  debt,
+  workspaceId,
+  open,
+  onOpenChange,
+  onCloseComplete,
+  onDelete,
+}: EditDebtDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow onCloseComplete={onCloseComplete}>
+      <DialogWindow onCloseComplete={onCloseComplete} showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Редактировать долг</DialogTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle className="truncate">Редактировать долг</DialogTitle>
+            <div className="flex shrink-0 items-center gap-1">
+              {onDelete ? (
+                <Button
+                  aria-label="Удалить долг"
+                  disabled={isSubmitting}
+                  onClick={onDelete}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 />
+                </Button>
+              ) : null}
+              <Button
+                aria-label="Закрыть"
+                disabled={isSubmitting}
+                onClick={() => onOpenChange(false)}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <X />
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
-        <EditDebtPanel debt={debt} workspaceId={workspaceId} open={open} onComplete={() => onOpenChange(false)} />
+        <EditDebtPanel
+          debt={debt}
+          workspaceId={workspaceId}
+          open={open}
+          onComplete={() => onOpenChange(false)}
+          onSubmittingChange={setIsSubmitting}
+        />
       </DialogWindow>
     </Dialog>
   );

@@ -2,7 +2,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { useEffect, useMemo } from "react";
+import { Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -57,7 +58,10 @@ interface DebtWriteOffDialogBaseProps {
 }
 
 export type DebtWriteOffDialogProps = DebtWriteOffDialogBaseProps &
-  ({ debt: DebtWriteOffDebt; transaction?: never } | { debt?: never; transaction: DebtWriteOffPaymentTransaction });
+  (
+    | { debt: DebtWriteOffDebt; transaction?: never; onDelete?: never }
+    | { debt?: never; transaction: DebtWriteOffPaymentTransaction; onDelete?: () => void }
+  );
 
 interface DebtWriteOffPanelBaseProps {
   workspaceId: string;
@@ -524,14 +528,42 @@ export function DebtWriteOffDialog({
   onOpenChange,
   onCloseComplete,
   onSuccess,
+  onDelete,
 }: DebtWriteOffDialogProps) {
   const title = transaction ? "Редактировать погашение" : "Погасить транзакцией";
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete}>
+      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete} showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle className="truncate">{title}</DialogTitle>
+            <div className="flex shrink-0 items-center gap-1">
+              {onDelete ? (
+                <Button
+                  aria-label="Удалить погашение"
+                  disabled={isSubmitting}
+                  onClick={onDelete}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 />
+                </Button>
+              ) : null}
+              <Button
+                aria-label="Закрыть"
+                disabled={isSubmitting}
+                onClick={() => onOpenChange(false)}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <X />
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
         {transaction ? (
           <DebtWriteOffPanel
@@ -539,6 +571,7 @@ export function DebtWriteOffDialog({
             workspaceId={workspaceId}
             open={open}
             onComplete={() => onOpenChange(false)}
+            onSubmittingChange={setIsSubmitting}
             onSuccess={onSuccess}
           />
         ) : (
@@ -547,6 +580,7 @@ export function DebtWriteOffDialog({
             workspaceId={workspaceId}
             open={open}
             onComplete={() => onOpenChange(false)}
+            onSubmittingChange={setIsSubmitting}
             onSuccess={onSuccess}
           />
         )}

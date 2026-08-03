@@ -39,14 +39,29 @@ describe("dashboard interaction loading", () => {
     }
   });
 
-  it("preloads only secondary dialogs relevant to the selected transaction", () => {
+  it("opens transaction editors directly and keeps their actions in the editor header", () => {
+    const transactionsSource = readSource(
+      "src/modules/transactions/components/combined-transactions-list/CombinedTransactionsList.tsx"
+    );
     const dialogsSource = readSource(
       "src/modules/transactions/components/combined-transactions-list/components/CombinedTransactionsDialogs.tsx"
     );
+    const controllerSource = readSource(
+      "src/modules/transactions/components/combined-transactions-list/hooks/useCombinedTransactionsController.ts"
+    );
+    const editTransactionSource = readSource(
+      "src/modules/transactions/components/edit-transaction-dialog/EditTransactionDialog.tsx"
+    );
 
-    expect(dialogsSource).toContain('transaction.kind === "transferTransaction"');
-    expect(dialogsSource).toContain("hasDebtWriteOff(transaction.data)");
-    expect(dialogsSource).toContain("debtTransaction.type === DebtTransactionType.CREATED");
+    expect(transactionsSource).toContain("onTransactionClick={controller.openTransactionDialog}");
+    expect(transactionsSource).toContain("onDebtTransactionClick={controller.openDebtTransactionDialog}");
+    expect(controllerSource).toContain("const openTransactionDialog");
+    expect(controllerSource).toContain("const openDebtTransactionDialog");
+    expect(dialogsSource).not.toContain("TransactionActionsDialog");
+    expect(dialogsSource).not.toContain("DebtTransactionActionsDialog");
+    expect(editTransactionSource).toContain("showCloseButton={false}");
+    expect(editTransactionSource).toContain('aria-label="Повторить транзакцию"');
+    expect(editTransactionSource).toContain('aria-label="Удалить транзакцию"');
   });
 
   it("keeps the category editor instant and preloads its data", () => {

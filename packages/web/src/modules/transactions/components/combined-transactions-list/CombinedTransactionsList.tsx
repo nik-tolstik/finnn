@@ -27,8 +27,8 @@ export function CombinedTransactionsList({
         onLoadMore={onLoadMore}
         isLoadingMore={isLoadingMore}
         showDateHeaders={showDateHeaders}
-        onTransactionClick={controller.openTransactionActions}
-        onDebtTransactionClick={controller.openDebtTransactionActions}
+        onTransactionClick={controller.openTransactionDialog}
+        onDebtTransactionClick={controller.openDebtTransactionDialog}
       />
       {hasMountedDialog ? <CombinedTransactionsDialogs controller={controller} /> : null}
     </>
