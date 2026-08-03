@@ -57,3 +57,14 @@
 - `pnpm --filter web check` — passed: 660 files checked, no fixes applied.
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed (existing chunk-size warning only).
+
+## 2026-08-03 — External review precision follow-up
+
+- Confirmed Copilot P2: the summary progress helper converted arbitrary-length money strings to JavaScript numbers before calculating the ratio, allowing precision loss to change the rounded percentage.
+- Replaced those conversions with `big.js` parsing, division, multiplication by 100, and positive half-up rounding. Only the final bounded integer percentage is converted to a JavaScript number; invalid and non-positive values still produce zero progress.
+- Added the reported regression case (`10000000000000001` total and `8750000000000001` remaining), which now produces 12% settled and 12% total progress.
+- Kept the independent rounding of settled and pending segments, and their additive total, unchanged. That preserves the existing product semantics; this focused change corrects only numeric precision of each segment.
+- `pnpm --filter web test -- src/modules/debts` — passed: 58 test files, 249 tests.
+- `pnpm --filter web typecheck` — passed.
+- `pnpm --filter web check` — passed: 660 files checked, no fixes applied.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.

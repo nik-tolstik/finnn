@@ -52,4 +52,16 @@ describe("debt summary card progress", () => {
       totalProgressPercent: 25,
     });
   });
+
+  it("rounds progress from exact large money strings", () => {
+    expect(
+      getDebtSummaryProgress({
+        totalAmount: "10000000000000001",
+        remainingAmount: "8750000000000001",
+      })
+    ).toMatchObject({
+      debtProgressPercent: 12,
+      totalProgressPercent: 12,
+    });
+  });
 });

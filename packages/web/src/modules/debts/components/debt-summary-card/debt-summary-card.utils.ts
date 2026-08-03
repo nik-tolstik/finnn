@@ -1,3 +1,5 @@
+import Big from "big.js";
+
 import { compareMoney, subtractMoney } from "@/shared/utils/money";
 
 export interface DebtSummaryProgressInput {
@@ -16,19 +18,37 @@ export interface DebtSummaryProgress {
 }
 
 function getProgressPercent(amount: string, totalAmount: string) {
-  const total = Number(totalAmount);
-  const value = Number(amount);
+  const total = getPositiveMoneyAmount(totalAmount);
+  const value = getPositiveMoneyAmount(amount);
 
-  if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(value) || value <= 0) {
+  if (!total || !value) {
     return 0;
   }
 
-  return Math.min(100, Math.max(0, Math.round((value / total) * 100)));
+  const percent = value.div(total).times(100).round(0, Big.roundHalfUp);
+
+  if (percent.lte(0)) {
+    return 0;
+  }
+
+  if (percent.gte(100)) {
+    return 100;
+  }
+
+  return Number(percent);
 }
 
-function isPositiveMoneyAmount(amount?: string): amount is string {
-  const value = Number(amount);
-  return Number.isFinite(value) && value > 0;
+function getPositiveMoneyAmount(amount?: string) {
+  if (!amount) {
+    return undefined;
+  }
+
+  try {
+    const value = new Big(amount);
+    return value.gt(0) ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function getDebtSummaryProgress({
@@ -39,7 +59,9 @@ export function getDebtSummaryProgress({
   const alreadyRepaidAmount =
     compareMoney(totalAmount, remainingAmount) > 0 ? subtractMoney(totalAmount, remainingAmount) : "0";
   const debtProgressPercent = getProgressPercent(alreadyRepaidAmount, totalAmount);
-  const pendingPaymentAmount = isPositiveMoneyAmount(pendingPaymentAmountInput) ? pendingPaymentAmountInput : undefined;
+  const pendingPaymentAmount = getPositiveMoneyAmount(pendingPaymentAmountInput)
+    ? pendingPaymentAmountInput
+    : undefined;
   const pendingPaymentPercent = pendingPaymentAmount ? getProgressPercent(pendingPaymentAmount, totalAmount) : 0;
   const pendingPaymentSegmentPercent = Math.min(100 - debtProgressPercent, pendingPaymentPercent);
   const previewRemainingAmount = pendingPaymentAmount
