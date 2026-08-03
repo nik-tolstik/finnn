@@ -1,6 +1,34 @@
-import { addMoney, subtractMoney } from "@/shared/utils/money";
+import { addMoney, compareMoney, normalizeMoneyString, subtractMoney } from "@/shared/utils/money";
 
 import { DebtType } from "../../debt.constants";
+
+const COMPLETE_MONEY_AMOUNT_PATTERN = /^(?:\d+(?:\.\d+)?|\.\d+)$/;
+
+interface AddToDebtSummaryPreviewInput {
+  additionalAmount?: string;
+  remainingAmount: string;
+  totalAmount: string;
+}
+
+export function getAddToDebtSummaryPreview({
+  additionalAmount,
+  remainingAmount,
+  totalAmount,
+}: AddToDebtSummaryPreviewInput) {
+  const normalizedAdditionalAmount = normalizeMoneyString(additionalAmount || "");
+
+  if (
+    !COMPLETE_MONEY_AMOUNT_PATTERN.test(normalizedAdditionalAmount) ||
+    compareMoney(normalizedAdditionalAmount, "0") <= 0
+  ) {
+    return { remainingAmount, totalAmount };
+  }
+
+  return {
+    remainingAmount: addMoney(remainingAmount, normalizedAdditionalAmount),
+    totalAmount: addMoney(totalAmount, normalizedAdditionalAmount),
+  };
+}
 
 export function getAddToDebtPreviewAccount<TAccount extends { balance: string }>({
   selectedAccount,

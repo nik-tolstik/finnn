@@ -118,3 +118,16 @@
 - `git diff --check` — passed.
 - Strict no-tool Copilot CLI review with `grok-4.5` of `bd76a8c...b1d0d7f` reported exactly: `No actionable findings.` No findings were classified in this final review.
 - No browser or screenshot QA was run.
+
+## 2026-08-03 — Add-to-debt summary preview follow-up
+
+- Added the pure `getAddToDebtSummaryPreview` helper and memoized its result in `AddToDebtPanel`. A complete positive amount previews post-addition total and remaining debt values in the shared summary card without using a pending-payment segment.
+- The helper validates complete decimal money strings and uses `normalizeMoneyString`, `compareMoney`, and `addMoney` only. Empty, zero, invalid, and partial input returns the authoritative debt values without performing arithmetic or throwing.
+- Added focused coverage for a positive preview, fallback values, decimal arithmetic, and large money-string precision. The existing summary-card progress calculation keeps the already-repaid absolute amount unchanged while recomputing its percentage from previewed values.
+- React review: the preview is a pure derived value memoized from the watched amount and debt amount strings; no state or effects were added.
+- `pnpm --filter web test -- src/modules/debts` — passed: 58 test files, 260 tests.
+- `pnpm --filter web typecheck` — passed.
+- `pnpm --filter web check` — passed: 660 files checked, no fixes applied.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed (existing chunk-size warning only).
+- No browser or screenshot QA was run.

@@ -27,7 +27,7 @@ import { addToDebt } from "../../debt.api";
 import { DebtType } from "../../debt.constants";
 import type { DebtWithRelations } from "../../debt.types";
 import { DebtSummaryCard } from "../debt-summary-card/DebtSummaryCard";
-import { getAddToDebtPreviewAccount } from "./add-to-debt-dialog.utils";
+import { getAddToDebtPreviewAccount, getAddToDebtSummaryPreview } from "./add-to-debt-dialog.utils";
 
 interface AddToDebtDialogProps {
   debt: DebtWithRelations;
@@ -115,6 +115,15 @@ export function AddToDebtPanel({ debt, workspaceId, open, onComplete, onSubmitti
   const previewAccount = useMemo(() => {
     return getAddToDebtPreviewAccount({ selectedAccount, accountAmount, debtType: debt.type });
   }, [selectedAccount, accountAmount, debt.type]);
+  const debtSummaryPreview = useMemo(
+    () =>
+      getAddToDebtSummaryPreview({
+        additionalAmount: amount,
+        remainingAmount: debt.remainingAmount,
+        totalAmount: debt.amount,
+      }),
+    [amount, debt.amount, debt.remainingAmount]
+  );
 
   const prevOpenRef = useRef(open);
 
@@ -202,8 +211,8 @@ export function AddToDebtPanel({ debt, workspaceId, open, onComplete, onSubmitti
             currency={debt.currency}
             debtType={debt.type}
             personName={debt.personName}
-            remainingAmount={debt.remainingAmount}
-            totalAmount={debt.amount}
+            remainingAmount={debtSummaryPreview.remainingAmount}
+            totalAmount={debtSummaryPreview.totalAmount}
           />
 
           <div className="space-y-2">
