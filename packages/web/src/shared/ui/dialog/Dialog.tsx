@@ -368,13 +368,14 @@ function DialogFooter({ children, className, ...props }: React.ComponentProps<"d
       data-slot="dialog-footer"
       className={cn(
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end px-6 [&>button:only-child]:w-full",
+        hasActions && !isMobile && "[&>button]:flex-1",
         className
       )}
       {...props}
     >
       {children}
       {hasActions && !isMobile ? (
-        <span className="flex shrink-0">
+        <span className="flex shrink-0 items-center">
           <DialogOptionsButton actions={actions} />
         </span>
       ) : null}

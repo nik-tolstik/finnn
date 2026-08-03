@@ -77,6 +77,8 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain("outsidePress: !nestedOverlayOpen");
     expect(dialogSource).toContain("showCloseButton && !isMobile");
     expect(dialogSource).toContain("hasActions && !isMobile");
+    expect(dialogSource).toContain("[&>button]:flex-1");
+    expect(dialogSource).toContain("shrink-0 items-center");
     expect(dialogSource).not.toContain("mobilePosition");
     expect(editTransactionSource).toContain("actions=");
   });
