@@ -8,6 +8,9 @@ debts, scheduled payments, exchange rates, and analytics.
 Start with [`docs/README.md`](./docs/README.md). It links the development setup, architecture and domain guides,
 operations runbook, design system, and active implementation plans.
 
+Product work is tracked in the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview).
+The agent workflow is documented in [`docs/ai-contributor-guide.md`](./docs/ai-contributor-guide.md#linear-task-workflow).
+
 ## Stack
 
 - `pnpm` workspace with `packages/web`, `packages/api`, and the isolated `packages/postgres-backup` cron service.

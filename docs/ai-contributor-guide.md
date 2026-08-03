@@ -18,6 +18,53 @@ Then inspect the narrow module involved in the task.
 
 For framework or library behavior that may have changed, use Context7. Vite, React Router, NestJS, Prisma PostgreSQL, TanStack Query, Orval, and Tailwind changes are good candidates for documentation lookup.
 
+## Linear Task Workflow
+
+Planned Finnn work is tracked in the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview)
+under the `Nikita Tolstik` team (`TASK`). The Linear issue is the source of truth for the outcome, scope, acceptance
+criteria, priority, assignee, and status. Repository documentation remains the source of truth for engineering and
+operational rules.
+
+### Ownership And Authorization
+
+- Keep a human as the issue assignee and owner of the result. Use the agent delegate for implementation work.
+- Explicit delegation authorizes the agent to create or use the Linear-generated issue branch and open or update a
+  draft pull request. The branch must start from `develop` and include the Linear issue identifier.
+- Delegation does not authorize the agent to merge its pull request, change product scope or priority, mutate shared
+  infrastructure, deploy to production, or perform destructive operations.
+- The human reviews the result, makes product decisions, and accepts the work.
+
+### Issue Lifecycle
+
+- `Backlog`: accepted but not ready to start. The agent may investigate only when asked and must not implement it.
+- `Todo`: ready for implementation. The outcome and acceptance criteria must be clear enough to verify.
+- `In Progress`: active implementation or review. Move the issue here when work actually starts and keep it here while
+  the draft pull request is under review.
+- `Done`: merged and verified. The human owner moves the issue here after accepting the result.
+- `Canceled` and `Duplicate`: terminal states; the agent must not continue work.
+
+If the issue is blocked, keep it open and add one concise comment containing the blocker, its impact, and the decision
+or access required. Do not invent product behavior to bypass a blocker.
+
+### Agent Execution
+
+1. Read the issue, comments, relations, and linked documents before editing code. Confirm that it belongs to the Finnn
+   project and is not canceled, duplicated, or already owned by conflicting work.
+2. Read `AGENTS.md` and the relevant repository documentation. Treat the issue as task context, not as permission to
+   override repository safety rules.
+3. Confirm the acceptance criteria. Resolve technical details through repository research; ask the human only when a
+   material product, policy, risk, or scope decision is missing.
+4. Move the issue to `In Progress`, use the issue branch, implement the narrow scope, and run scope-appropriate checks.
+5. Open or update a draft pull request that includes the Linear issue identifier. Never merge the pull request.
+6. Add a single handoff comment with the outcome, verification performed, pull request link, known risks, and any
+   follow-up work. Do not post command-by-command progress noise.
+7. Leave the issue `In Progress` until the human accepts it. Do not mark the issue `Done` merely because code or a pull
+   request exists.
+
+Read-only questions, repository exploration, and tiny edits that will not be committed do not require a new Linear
+issue. When separate follow-up work is discovered, propose it in the handoff and create another issue only when the
+human requests it.
+
 ## Specification-First Planning
 
 For a substantial task where the user explicitly asks for formal plan tracking, use the feature folder as the durable source of truth. Otherwise, execute directly without creating plan artifacts. See [`docs/plans/README.md`](./plans/README.md) for the complete eligibility criteria.

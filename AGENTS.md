@@ -16,8 +16,13 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 - Use `pnpm` as the package manager. Do not use `npm` or `yarn` unless the repository explicitly requires them.
 - Use Context7 for library and framework documentation when it is relevant.
 - Use subagents for parallel code analysis, implementation, or verification when they can reduce risk or latency.
+- Track planned implementation in the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview)
+  and follow the Linear task workflow in `docs/ai-contributor-guide.md` when an issue is supplied or delegated.
 - Work in the current checkout and branch by default. Do not create a Git worktree or GitHub pull request unless the
   user explicitly requests one.
+- A Finnn Linear issue explicitly delegated to an agent authorizes that agent to create or use the issue branch and
+  open or update its draft pull request. It does not authorize a worktree, merge, production change, or infrastructure
+  mutation unless the user separately requests it.
 - A pull request may be created without an explicit request only when it is materially necessary to complete unusually
   risky work safely, such as a production data migration, or when repository protections require it. Explain the need
   to the user before creating the pull request. There is no equivalent exception for worktrees.

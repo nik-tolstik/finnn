@@ -18,7 +18,8 @@ This documentation is written for two audiences:
 - [Operations](./operations.md) - deployment, cron, PostgreSQL migrations and backups, cutover, email, service worker, and production checks.
 - [Encrypted PostgreSQL Backups](./postgresql-backups.md) - Railway cron, age encryption, verified S3-compatible uploads,
   completion manifests, monitoring, retention, and restore rehearsals.
-- [AI Contributor Guide](./ai-contributor-guide.md) - how Codex or another AI agent should approach changes in this repo.
+- [AI Contributor Guide](./ai-contributor-guide.md) - how Codex or another AI agent should approach changes and work
+  from the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview).
 - [Feature Plans](./plans/README.md) - the opt-in specification-first workflow, technical plans, and work logs for substantial changes.
 - [Reusable Solutions](./solutions/README.md) - durable lessons that help future agents avoid known pitfalls.
 
