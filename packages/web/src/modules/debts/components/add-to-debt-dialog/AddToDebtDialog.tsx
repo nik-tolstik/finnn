@@ -200,6 +200,15 @@ export function AddToDebtPanel({ debt, workspaceId, open, onComplete, onSubmitti
             totalAmount={debtSummaryPreview.totalAmount}
           />
 
+          <AccountSelector
+            workspaceId={workspaceId}
+            account={previewAccount || selectedAccount || null}
+            onSelect={handleAccountSelect}
+            label={debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}
+            required
+            error={errors.accountId?.message}
+          />
+
           <div className="space-y-2">
             <Label htmlFor="addAmount" required>
               Дополнительная сумма
@@ -219,15 +228,6 @@ export function AddToDebtPanel({ debt, workspaceId, open, onComplete, onSubmitti
             </div>
             {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
           </div>
-
-          <AccountSelector
-            workspaceId={workspaceId}
-            account={previewAccount || selectedAccount || null}
-            onSelect={handleAccountSelect}
-            label={debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}
-            required
-            error={errors.accountId?.message}
-          />
 
           {selectedAccount && !currenciesMatch ? (
             <div className="space-y-2">

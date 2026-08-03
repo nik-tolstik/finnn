@@ -31,6 +31,7 @@ describe("debt dialog entry points", () => {
     expect(source.match(/useAccount: true/g)).toHaveLength(2);
     expect(source).toContain("toCurrency: selectedAccount?.currency");
     expect(source).toContain("<AccountSelector");
+    expect(source.indexOf("<AccountSelector")).toBeLessThan(source.indexOf('<Label htmlFor="addAmount" required>'));
     expect(source).not.toContain("Checkbox");
     expect(source).not.toContain("Использовать счёт");
     expect(source).not.toContain("useAccount ?");
