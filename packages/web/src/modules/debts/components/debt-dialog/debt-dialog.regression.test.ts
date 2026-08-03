@@ -24,4 +24,11 @@ describe("debt dialog entry points", () => {
       existsSync(join(process.cwd(), "src/modules/debts/components/debt-actions-dialog/DebtActionsDialog.tsx"))
     ).toBe(false);
   });
+
+  it("only mounts operation panels when the debt supports operations", () => {
+    const source = readSource("src/modules/debts/components/debt-dialog/DebtDialog.tsx");
+
+    expect(source).toContain("function DebtDialogOperations");
+    expect(source).toMatch(/\{capabilities\.hasOperations \? \(\s*<DebtDialogOperations/);
+  });
 });

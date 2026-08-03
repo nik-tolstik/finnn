@@ -30,6 +30,20 @@ interface DebtDialogProps {
   onCloseComplete?: () => void;
 }
 
+interface DebtDialogOperationsProps {
+  debt: DebtWithRelations;
+  isOperationsView: boolean;
+  isSubmitting: boolean;
+  onComplete: () => void;
+  onOperationChange: (operation: DebtDialogOperation) => void;
+  onSubmittingChange: (isSubmitting: boolean) => void;
+  operation: DebtDialogOperation;
+  operationOptions: ReturnType<typeof getDebtDialogOperationOptions>;
+  open: boolean;
+  visitedOperations: Set<DebtDialogOperation>;
+  workspaceId: string;
+}
+
 function DebtReadOnlySummary({ debt }: { debt: DebtWithRelations }) {
   const directionLabel = debt.type === DebtType.LENT ? "Мне должны" : "Я должен";
 
@@ -46,6 +60,73 @@ function DebtReadOnlySummary({ debt }: { debt: DebtWithRelations }) {
         </div>
       </div>
     </DialogContent>
+  );
+}
+
+function DebtDialogOperations({
+  debt,
+  isOperationsView,
+  isSubmitting,
+  onComplete,
+  onOperationChange,
+  onSubmittingChange,
+  operation,
+  operationOptions,
+  open,
+  visitedOperations,
+  workspaceId,
+}: DebtDialogOperationsProps) {
+  return (
+    <>
+      <div className="contents" hidden={!isOperationsView}>
+        <DialogContent className="pb-0">
+          <Segmented
+            className="w-full"
+            disabled={isSubmitting}
+            layout="fill"
+            onChange={onOperationChange}
+            options={operationOptions}
+            value={operation}
+          />
+        </DialogContent>
+      </div>
+
+      {visitedOperations.has("close") ? (
+        <div className="contents" hidden={!isOperationsView || operation !== "close"}>
+          <CloseDebtPanel
+            debt={debt}
+            workspaceId={workspaceId}
+            open={open}
+            onComplete={onComplete}
+            onSubmittingChange={onSubmittingChange}
+          />
+        </div>
+      ) : null}
+
+      {visitedOperations.has("add") ? (
+        <div className="contents" hidden={!isOperationsView || operation !== "add"}>
+          <AddToDebtPanel
+            debt={debt}
+            workspaceId={workspaceId}
+            open={open}
+            onComplete={onComplete}
+            onSubmittingChange={onSubmittingChange}
+          />
+        </div>
+      ) : null}
+
+      {visitedOperations.has("transaction") ? (
+        <div className="contents" hidden={!isOperationsView || operation !== "transaction"}>
+          <DebtWriteOffPanel
+            debt={debt}
+            workspaceId={workspaceId}
+            open={open}
+            onComplete={onComplete}
+            onSubmittingChange={onSubmittingChange}
+          />
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -157,7 +238,7 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
           </div>
         </DialogHeader>
 
-        {view === "edit" ? (
+        {view === "edit" && capabilities.canEdit ? (
           <EditDebtPanel
             debt={debt}
             workspaceId={workspaceId}
@@ -179,54 +260,19 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
         {view === "operations" && !capabilities.hasOperations ? <DebtReadOnlySummary debt={debt} /> : null}
 
         {capabilities.hasOperations ? (
-          <div className="contents" hidden={view !== "operations"}>
-            <DialogContent className="pb-0">
-              <Segmented
-                className="w-full"
-                disabled={isSubmitting}
-                layout="fill"
-                onChange={handleOperationChange}
-                options={operationOptions}
-                value={operation}
-              />
-            </DialogContent>
-          </div>
-        ) : null}
-
-        {visitedOperations.has("close") ? (
-          <div className="contents" hidden={view !== "operations" || operation !== "close"}>
-            <CloseDebtPanel
-              debt={debt}
-              workspaceId={workspaceId}
-              open={open}
-              onComplete={handleComplete}
-              onSubmittingChange={setIsSubmitting}
-            />
-          </div>
-        ) : null}
-
-        {visitedOperations.has("add") ? (
-          <div className="contents" hidden={view !== "operations" || operation !== "add"}>
-            <AddToDebtPanel
-              debt={debt}
-              workspaceId={workspaceId}
-              open={open}
-              onComplete={handleComplete}
-              onSubmittingChange={setIsSubmitting}
-            />
-          </div>
-        ) : null}
-
-        {visitedOperations.has("transaction") ? (
-          <div className="contents" hidden={view !== "operations" || operation !== "transaction"}>
-            <DebtWriteOffPanel
-              debt={debt}
-              workspaceId={workspaceId}
-              open={open}
-              onComplete={handleComplete}
-              onSubmittingChange={setIsSubmitting}
-            />
-          </div>
+          <DebtDialogOperations
+            debt={debt}
+            isOperationsView={view === "operations"}
+            isSubmitting={isSubmitting}
+            onComplete={handleComplete}
+            onOperationChange={handleOperationChange}
+            onSubmittingChange={setIsSubmitting}
+            operation={operation}
+            operationOptions={operationOptions}
+            open={open}
+            visitedOperations={visitedOperations}
+            workspaceId={workspaceId}
+          />
         ) : null}
       </DialogWindow>
     </Dialog>
