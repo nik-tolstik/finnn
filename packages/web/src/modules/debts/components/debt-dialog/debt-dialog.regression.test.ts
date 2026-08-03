@@ -31,4 +31,16 @@ describe("debt dialog entry points", () => {
     expect(source).toContain("function DebtDialogOperations");
     expect(source).toMatch(/\{capabilities\.hasOperations \? \(\s*<DebtDialogOperations/);
   });
+
+  it("moves focus to the title when the dialog opens or changes view", () => {
+    const source = readSource("src/modules/debts/components/debt-dialog/DebtDialog.tsx");
+    const dialogSource = readSource("src/shared/ui/dialog/Dialog.tsx");
+
+    expect(source).toContain("const titleRef = useRef<HTMLHeadingElement>(null)");
+    expect(source).toContain("const titleFocusKeyRef = useRef<string | null>(null)");
+    expect(source).toMatch(/const focusKey = open \? `\$\{debt\.id\}:\$\{view\}` : null/);
+    expect(source).toContain("titleRef.current?.focus()");
+    expect(source).toContain("tabIndex={-1}");
+    expect(dialogSource).toContain("React.forwardRef<HTMLHeadingElement");
+  });
 });

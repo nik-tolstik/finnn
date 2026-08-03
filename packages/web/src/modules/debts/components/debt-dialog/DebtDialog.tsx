@@ -140,6 +140,8 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const openedDebtIdRef = useRef<string | null>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleFocusKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -157,6 +159,22 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
     setVisitedOperations(new Set([DEBT_DIALOG_DEFAULT_OPERATION]));
     setIsSubmitting(false);
   }, [debt.id, open]);
+
+  useEffect(() => {
+    const focusKey = open ? `${debt.id}:${view}` : null;
+    if (focusKey === titleFocusKeyRef.current) {
+      return;
+    }
+
+    titleFocusKeyRef.current = focusKey;
+    if (!focusKey) {
+      return;
+    }
+
+    const frameId = requestAnimationFrame(() => titleRef.current?.focus());
+
+    return () => cancelAnimationFrame(frameId);
+  }, [debt.id, open, view]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen && isSubmitting) {
@@ -197,7 +215,9 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
                   <ArrowLeft />
                 </Button>
               ) : null}
-              <DialogTitle className="truncate">{title}</DialogTitle>
+              <DialogTitle ref={titleRef} className="truncate focus:outline-none" tabIndex={-1}>
+                {title}
+              </DialogTitle>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               {view === "operations" && capabilities.canEdit ? (

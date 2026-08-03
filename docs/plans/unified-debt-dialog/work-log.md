@@ -22,3 +22,15 @@
 - `pnpm --filter web check` — passed: 656 files checked, no fixes applied.
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
 - `git diff --check` — passed.
+
+## 2026-08-03 — Copilot accessibility follow-up
+
+- Copilot classification: one P3 accessibility finding was confirmed and fixed; the remaining findings were rejected after source and test review because they did not require a change to this diff.
+- Fixed focus hand-off inside `DebtDialog`: when the dialog opens or changes between operations, edit, and delete views, focus moves to the programmatically focusable dialog title after the animated window mounts. The `debt.id:view` focus key and effect dependencies prevent ordinary re-renders from stealing focus.
+- Updated the shared `DialogTitle` primitive to forward an `HTMLHeadingElement` ref and added a source-level regression assertion for the ref, focus key, title focus call, and `tabIndex={-1}`.
+- `pnpm --filter web test -- src/modules/debts` — passed: 57 test files, 244 tests.
+- `pnpm --filter web typecheck` — passed.
+- `pnpm --filter web check` — passed: 656 files checked, no fixes applied.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed.
+- `git diff --check` — passed.
