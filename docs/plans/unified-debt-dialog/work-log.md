@@ -102,3 +102,19 @@
 - `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
 - `pnpm --filter web build:storybook` requires `VITE_API_URL` under the existing production Vite configuration; `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed (existing chunk-size warning only).
 - No browser or screenshot QA was run.
+
+## 2026-08-03 — Approved compact summary final verification
+
+- Independent approval completed on `b1d0d7f`.
+- `pnpm --filter web test -- src/modules/debts` — passed: 58 test files, 251 tests.
+- `pnpm --filter web typecheck` — passed.
+- `pnpm --filter web check` — passed.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed.
+- `pnpm typecheck` — passed.
+- `pnpm check` — passed.
+- `pnpm test` — passed: API 276 passed / 12 skipped, web 251 tests, and backup 11 tests.
+- `VITE_API_URL=http://localhost:4000 pnpm build` — passed.
+- `git diff --check` — passed.
+- Strict no-tool Copilot CLI review with `grok-4.5` of `bd76a8c...b1d0d7f` reported exactly: `No actionable findings.` No findings were classified in this final review.
+- No browser or screenshot QA was run.
