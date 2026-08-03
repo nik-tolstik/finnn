@@ -24,6 +24,9 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 - When creating a worktree, transfer the `packages/web/.env` and `packages/api/.env` files as opaque files without reading their contents.
 - Do not revert user changes unless the user explicitly requests it.
 - Do not work directly on `main` unless the user explicitly asks for it. If the current branch is `main`, switch to `develop` before making changes.
+- After a task branch has successfully merged into `develop`, an agent may remove its own associated worktree and local
+  and remote branch. First confirm that the pull request is merged, the worktree is clean, and no active task owns the
+  branch or worktree. Never remove another task's branch or worktree.
 - Agents may inspect Railway and, when the user has authorized the infrastructure change, manage services, variables,
   deployments, resource limits, cron schedules, buckets, and environment configuration through the authenticated
   Railway CLI or API. Resolve the exact project, environment, and service before every mutation.
