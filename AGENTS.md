@@ -42,9 +42,21 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 - Keep comments in English.
 - Do not run Browser screenshot QA with Playwright, `agent-browser`, or similar browser automation unless the user explicitly asks for screenshot/browser QA.
 
+## Formal Plan Tracking
+
+- Create or use formal implementation plans, `docs/plans/...` directories, work logs, or plan-tracking tools only when
+  the user explicitly asks to create or use a plan, or explicitly says the current task continues a named existing plan.
+- Task complexity, multi-agent work, a branch, worktree, PR, or an existing plan file do not authorize formal plan
+  tracking.
+- When a user supplies a plan in chat, follow it without persisting it to repository documentation unless the user
+  explicitly requests that persistence.
+- Without explicit opt-in, execute directly with normal internal reasoning and concise commentary.
+- Update a plan work log only when the current user request explicitly invokes that plan and asks for logging, or the
+  invoked plan explicitly requires it.
+
 ## Efficient Iteration And Verification
 
-- These defaults are overridden by explicit user instructions or an approved task plan.
+- These defaults are overridden by explicit user instructions, including explicit use of a formal plan.
 - Treat consecutive follow-ups on an existing Draft PR as one iteration batch until the final handoff or the user
   changes scope.
 
@@ -69,8 +81,8 @@ The app manages workspaces, members, accounts, categories, payment transactions,
   changes.
 - Style, copy, documentation, and test-only changes are not substantial changes for deciding whether to repeat broad
   validation or a full external review.
-- Consolidate work-log and PR-body updates for an iteration batch instead of creating process-only follow-up commits
-  or PR edits.
+- Consolidate explicitly requested plan work-log and PR-body updates for an iteration batch instead of creating
+  process-only follow-up commits or PR edits.
 - For an already validated Draft PR, do not wait for remote CI before publishing a follow-up unless the user or
   repository policy requires it.
 - If an isolated frontend follow-up exceeds 15 minutes, report the cause before running more broad checks.
@@ -118,7 +130,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
   upload, restore helper, tests, and Railway cron configuration.
 - `biome.json` is the workspace root configuration anchor. Package-level `biome.json` files must extend it with `"extends": "//"` so CLI and VS Code resolve the same nested configuration.
 - `docs` contains human and AI-facing project documentation.
-- `docs/plans` contains feature implementation plans and required work logs for multi-agent tasks.
+- `docs/plans` contains user-requested feature implementation plans and their work logs.
 
 ## Implementation Rules
 
@@ -177,6 +189,7 @@ The package-local `tsc` commands use TypeScript 7 through the `@typescript/nativ
 ## Documentation Expectations
 
 - Update `AGENTS.md` and `docs/` when changing architecture, setup, data model, workflows, deployment, or agent-facing conventions.
-- When implementing from `docs/plans/<feature>`, follow the plan and keep its work log current.
+- When the user explicitly invokes `docs/plans/<feature>`, follow that plan and update its work log only when the
+  request or plan explicitly requires logging.
 - Keep README concise and link to detailed docs instead of duplicating large sections.
 - Prefer concrete file paths, commands, invariants, and failure modes over generic descriptions.
