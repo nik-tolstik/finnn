@@ -44,3 +44,16 @@
 - `VITE_API_URL=http://localhost:4000 pnpm build` — passed: API Nest build and web Vite production build.
 - `git diff --check` — passed with a clean task diff before this documentation-only record.
 - No browser or screenshot QA was run.
+
+## 2026-08-03 — Terra debt summary and mobile-sheet follow-up
+
+- Extracted `DebtSummaryCard` and the pure `getDebtSummaryProgress` helper from the transaction write-off panel. The helper keeps money-string arithmetic for settled and pending amounts, caps the pending visual segment at the outstanding balance, and never previews a negative remaining amount.
+- Reused the card in all Segmented operation panels. The close panel supplies its current close amount as a pending payment; the add panel deliberately supplies no pending amount and therefore shows authoritative debt values only; the transaction panel preserves its existing transaction-aware preview calculation while supplying the pending payment for the progress segment.
+- Made the unified dialog a content-height mobile bottom sheet with a one-rem viewport allowance, and made the Segmented `DialogContent` non-growing so the active panel remains the scrollable region and its footer stays reachable.
+- Added pure helper coverage for initial progress, capped pending progress, and no-pending authoritative values. Added a source regression for all three card consumers and the bottom-sheet/flex layout contract.
+- React self-review: the presentational card is an extracted component rather than inline duplicated JSX; its pure helper is inexpensive and runs during render without unnecessary memoization; form subscriptions, form-state reset effects, and mutation locks remain in their original panels.
+- `pnpm --filter web test -- src/modules/debts` — passed: 58 test files, 248 tests.
+- `pnpm --filter web typecheck` — passed.
+- `pnpm --filter web check` — passed: 660 files checked, no fixes applied.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build` — passed.
+- `VITE_API_URL=http://localhost:4000 pnpm --filter web build:storybook` — passed (existing chunk-size warning only).

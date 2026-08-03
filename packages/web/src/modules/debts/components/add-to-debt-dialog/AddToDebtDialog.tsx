@@ -21,11 +21,12 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { addMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { addMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { addToDebt } from "../../debt.api";
 import { DebtType } from "../../debt.constants";
 import type { DebtWithRelations } from "../../debt.types";
+import { DebtSummaryCard } from "../debt-summary-card/DebtSummaryCard";
 import { getAddToDebtPreviewAccount } from "./add-to-debt-dialog.utils";
 
 interface AddToDebtDialogProps {
@@ -197,13 +198,13 @@ export function AddToDebtPanel({ debt, workspaceId, open, onComplete, onSubmitti
     <>
       <DialogContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="p-3 bg-muted rounded-lg space-y-1">
-            <div className="text-sm text-muted-foreground">{debt.type === DebtType.LENT ? "Должник" : "Кредитор"}</div>
-            <div className="font-medium">{debt.personName}</div>
-            <div className="text-sm text-muted-foreground">
-              Текущий долг: {formatMoney(debt.remainingAmount, debt.currency)}
-            </div>
-          </div>
+          <DebtSummaryCard
+            currency={debt.currency}
+            debtType={debt.type}
+            personName={debt.personName}
+            remainingAmount={debt.remainingAmount}
+            totalAmount={debt.amount}
+          />
 
           <div className="space-y-2">
             <Label htmlFor="addAmount" required>

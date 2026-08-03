@@ -79,7 +79,7 @@ function DebtDialogOperations({
   return (
     <>
       <div className="contents" hidden={!isOperationsView}>
-        <DialogContent className="pb-0">
+        <DialogContent className="flex-none shrink-0 pb-0">
           <Segmented
             className="w-full"
             disabled={isSubmitting}
@@ -199,7 +199,12 @@ export function DebtDialog({ debt, workspaceId, open, onOpenChange, onCloseCompl
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogWindow className="sm:w-[500px]" onCloseComplete={onCloseComplete} showCloseButton={false}>
+      <DialogWindow
+        className="max-sm:max-h-[calc(100dvh-1rem)] sm:w-[500px]"
+        mobilePosition="bottom"
+        onCloseComplete={onCloseComplete}
+        showCloseButton={false}
+      >
         <DialogHeader>
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-1">

@@ -30,11 +30,12 @@ import type { ComboboxOption } from "@/shared/ui/combobox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { compareMoney, formatMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
+import { compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { closeDebt } from "../../debt.api";
 import { DebtTransactionType, DebtType } from "../../debt.constants";
 import type { DebtWithRelations } from "../../debt.types";
+import { DebtSummaryCard } from "../debt-summary-card/DebtSummaryCard";
 import {
   getCloseDebtCategoryAmount,
   getCloseDebtCategoryOptions,
@@ -311,12 +312,14 @@ export function CloseDebtPanel({ debt, workspaceId, open, onComplete, onSubmitti
     <>
       <DialogContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="flex items-center justify-between gap-4 rounded-lg bg-muted p-3">
-            <div className="truncate font-medium">{debt.personName}</div>
-            <div className="shrink-0 text-right font-semibold text-foreground text-sm">
-              {formatMoney(debt.remainingAmount, debt.currency)}
-            </div>
-          </div>
+          <DebtSummaryCard
+            currency={debt.currency}
+            debtType={debt.type}
+            pendingPaymentAmount={amount}
+            personName={debt.personName}
+            remainingAmount={debt.remainingAmount}
+            totalAmount={debt.amount}
+          />
 
           <AccountSelector
             workspaceId={workspaceId}

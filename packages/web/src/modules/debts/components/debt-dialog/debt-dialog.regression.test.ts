@@ -43,4 +43,19 @@ describe("debt dialog entry points", () => {
     expect(source).toContain("tabIndex={-1}");
     expect(dialogSource).toContain("React.forwardRef<HTMLHeadingElement");
   });
+
+  it("reuses the debt summary card and keeps the mobile dialog compact", () => {
+    const writeOffPanel = readSource("src/modules/debts/components/debt-write-off-dialog/DebtWriteOffDialog.tsx");
+    const closePanel = readSource("src/modules/debts/components/close-debt-dialog/CloseDebtDialog.tsx");
+    const addPanel = readSource("src/modules/debts/components/add-to-debt-dialog/AddToDebtDialog.tsx");
+    const dialogSource = readSource("src/modules/debts/components/debt-dialog/DebtDialog.tsx");
+
+    for (const source of [writeOffPanel, closePanel, addPanel]) {
+      expect(source).toContain("DebtSummaryCard");
+    }
+
+    expect(dialogSource).toContain('mobilePosition="bottom"');
+    expect(dialogSource).toContain("max-sm:max-h-[calc(100dvh-1rem)]");
+    expect(dialogSource).toContain('className="flex-none shrink-0 pb-0"');
+  });
 });
