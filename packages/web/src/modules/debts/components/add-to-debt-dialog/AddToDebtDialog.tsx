@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { getAccounts } from "@/modules/accounts/account.api";
@@ -17,16 +17,16 @@ import {
 import { accountKeys } from "@/shared/lib/query-keys";
 import { type AddToDebtInput, addToDebtSchema } from "@/shared/lib/validations/debt";
 import { Button } from "@/shared/ui/button";
-import { Checkbox } from "@/shared/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
-import { addMoney, formatMoney, getCurrencySymbol } from "@/shared/utils/money";
+import { addMoney, getCurrencySymbol } from "@/shared/utils/money";
 
 import { addToDebt } from "../../debt.api";
 import { DebtType } from "../../debt.constants";
 import type { DebtWithRelations } from "../../debt.types";
-import { getAddToDebtPreviewAccount } from "./add-to-debt-dialog.utils";
+import { DebtSummaryCard } from "../debt-summary-card/DebtSummaryCard";
+import { getAddToDebtPreviewAccount, getAddToDebtSummaryPreview } from "./add-to-debt-dialog.utils";
 
 interface AddToDebtDialogProps {
   debt: DebtWithRelations;
@@ -36,7 +36,15 @@ interface AddToDebtDialogProps {
   onCloseComplete?: () => void;
 }
 
-export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: AddToDebtDialogProps) {
+interface AddToDebtPanelProps {
+  debt: DebtWithRelations;
+  workspaceId: string;
+  open: boolean;
+  onComplete: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
+}
+
+export function AddToDebtPanel({ debt, workspaceId, open, onComplete, onSubmittingChange }: AddToDebtPanelProps) {
   const queryClient = useQueryClient();
 
   const { data: accountsData } = useQuery({
@@ -54,7 +62,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     defaultValues: {
       amount: "",
       toAmount: "",
-      useAccount: false,
+      useAccount: true,
       accountId: "",
     },
   });
@@ -68,9 +76,12 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
     control,
   } = form;
 
+  useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
+
   const amount = useWatch({ control, name: "amount" });
   const toAmount = useWatch({ control, name: "toAmount" });
-  const useAccount = useWatch({ control, name: "useAccount" });
   const accountId = useWatch({ control, name: "accountId" });
   const [rateDate, setRateDate] = useState(() => new Date());
 
@@ -94,7 +105,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   const { handleAmountChange, handleToAmountChange } = useCurrencyAmountSync({
     form,
     fromCurrency: debt.currency,
-    toCurrency: useAccount ? selectedAccount?.currency : undefined,
+    toCurrency: selectedAccount?.currency,
     date: rateDate,
     resetKey: open,
   });
@@ -102,6 +113,15 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   const previewAccount = useMemo(() => {
     return getAddToDebtPreviewAccount({ selectedAccount, accountAmount, debtType: debt.type });
   }, [selectedAccount, accountAmount, debt.type]);
+  const debtSummaryPreview = useMemo(
+    () =>
+      getAddToDebtSummaryPreview({
+        additionalAmount: amount,
+        remainingAmount: debt.remainingAmount,
+        totalAmount: debt.amount,
+      }),
+    [amount, debt.amount, debt.remainingAmount]
+  );
 
   const prevOpenRef = useRef(open);
 
@@ -110,7 +130,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       reset({
         amount: "",
         toAmount: "",
-        useAccount: false,
+        useAccount: true,
         accountId: "",
       });
     }
@@ -118,33 +138,20 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   }, [open, reset]);
 
   const onSubmit = async (data: AddToDebtInput) => {
-    const submitData: AddToDebtInput = {
-      ...data,
-      accountId: data.useAccount ? data.accountId : undefined,
-      toAmount: data.useAccount ? data.toAmount : undefined,
-    };
-
-    if (submitData.useAccount && !submitData.accountId) {
-      toast.error("Выберите счёт");
-      return;
-    }
-
-    if (submitData.useAccount && selectedAccount?.currency !== debt.currency && !submitData.toAmount) {
+    if (selectedAccount?.currency !== debt.currency && !data.toAmount) {
       toast.error("Укажите сумму в валюте счёта");
       return;
     }
 
     const balanceDeltas = new Map<string, string>();
-    if (submitData.useAccount && submitData.accountId) {
-      addAccountBalanceDelta(
-        balanceDeltas,
-        submitData.accountId,
-        getDebtInitialAccountBalanceDelta(
-          debt.type,
-          selectedAccount?.currency !== debt.currency ? data.toAmount || data.amount : data.amount
-        )
-      );
-    }
+    addAccountBalanceDelta(
+      balanceDeltas,
+      data.accountId,
+      getDebtInitialAccountBalanceDelta(
+        debt.type,
+        selectedAccount?.currency !== debt.currency ? data.toAmount || data.amount : data.amount
+      )
+    );
 
     try {
       const result = await runOptimisticWorkspaceMutation({
@@ -162,7 +169,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
             },
           ]);
         },
-        mutation: () => addToDebt(debt.id, submitData),
+        mutation: () => addToDebt(debt.id, data),
       });
 
       if (result.error) {
@@ -171,7 +178,7 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
       }
 
       toast.success("Сумма добавлена к долгу");
-      onOpenChange(false);
+      onComplete();
     } catch {
       toast.error("Не удалось добавить сумму к долгу");
     }
@@ -182,98 +189,87 @@ export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onClose
   };
 
   return (
+    <>
+      <DialogContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <DebtSummaryCard
+            currency={debt.currency}
+            debtType={debt.type}
+            personName={debt.personName}
+            remainingAmount={debtSummaryPreview.remainingAmount}
+            totalAmount={debtSummaryPreview.totalAmount}
+          />
+
+          <AccountSelector
+            workspaceId={workspaceId}
+            account={previewAccount || selectedAccount || null}
+            onSelect={handleAccountSelect}
+            label={debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}
+            required
+            error={errors.accountId?.message}
+          />
+
+          <div className="space-y-2">
+            <Label htmlFor="addAmount" required>
+              Дополнительная сумма
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                {getCurrencySymbol(debt.currency)}
+              </span>
+              <NumberInput
+                id="addAmount"
+                placeholder="0.00"
+                className="pl-9"
+                {...register("amount", {
+                  onChange: (event) => handleAmountChange(event.target.value),
+                })}
+              />
+            </div>
+            {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+          </div>
+
+          {selectedAccount && !currenciesMatch ? (
+            <div className="space-y-2">
+              <Label htmlFor="addToAmount" required>
+                {debt.type === DebtType.LENT ? "Сумма списания" : "Сумма зачисления"} ({selectedAccount.currency})
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                  {getCurrencySymbol(selectedAccount.currency)}
+                </span>
+                <NumberInput
+                  id="addToAmount"
+                  placeholder="0.00"
+                  className="pl-9"
+                  {...register("toAmount", {
+                    onChange: (event) => handleToAmountChange(event.target.value),
+                  })}
+                />
+              </div>
+              {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
+            </div>
+          ) : null}
+        </form>
+      </DialogContent>
+
+      <DialogFooter>
+        <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
+          {isSubmitting ? "Добавление..." : "Добавить"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+export function AddToDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: AddToDebtDialogProps) {
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogWindow onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>{debt.type === DebtType.LENT ? "Дать ещё в долг" : "Взять ещё в долг"}</DialogTitle>
         </DialogHeader>
-        <DialogContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="p-3 bg-muted rounded-lg space-y-1">
-              <div className="text-sm text-muted-foreground">
-                {debt.type === DebtType.LENT ? "Должник" : "Кредитор"}
-              </div>
-              <div className="font-medium">{debt.personName}</div>
-              <div className="text-sm text-muted-foreground">
-                Текущий долг: {formatMoney(debt.remainingAmount, debt.currency)}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="addAmount" required>
-                Дополнительная сумма
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                  {getCurrencySymbol(debt.currency)}
-                </span>
-                <NumberInput
-                  id="addAmount"
-                  placeholder="0.00"
-                  className="pl-9"
-                  {...register("amount", {
-                    onChange: (event) => handleAmountChange(event.target.value),
-                  })}
-                />
-              </div>
-              {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Controller
-                control={control}
-                name="useAccount"
-                render={({ field }) => (
-                  <Checkbox id="addUseAccount" checked={field.value} onCheckedChange={field.onChange} />
-                )}
-              />
-              <Label htmlFor="addUseAccount" className="cursor-pointer">
-                Использовать счёт
-              </Label>
-            </div>
-
-            {useAccount ? (
-              <>
-                <AccountSelector
-                  workspaceId={workspaceId}
-                  account={previewAccount || selectedAccount || null}
-                  onSelect={handleAccountSelect}
-                  label={debt.type === DebtType.LENT ? "Списать со счёта" : "Зачислить на счёт"}
-                  required
-                  error={errors.accountId?.message}
-                />
-
-                {selectedAccount && !currenciesMatch ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="addToAmount" required>
-                      {debt.type === DebtType.LENT ? "Сумма списания" : "Сумма зачисления"} ({selectedAccount.currency})
-                    </Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
-                        {getCurrencySymbol(selectedAccount.currency)}
-                      </span>
-                      <NumberInput
-                        id="addToAmount"
-                        placeholder="0.00"
-                        className="pl-9"
-                        {...register("toAmount", {
-                          onChange: (event) => handleToAmountChange(event.target.value),
-                        })}
-                      />
-                    </div>
-                    {errors.toAmount && <p className="text-sm text-destructive">{errors.toAmount.message}</p>}
-                  </div>
-                ) : null}
-              </>
-            ) : null}
-          </form>
-        </DialogContent>
-
-        <DialogFooter>
-          <Button type="button" onClick={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} size="xl">
-            {isSubmitting ? "Добавление..." : "Добавить"}
-          </Button>
-        </DialogFooter>
+        <AddToDebtPanel debt={debt} workspaceId={workspaceId} open={open} onComplete={() => onOpenChange(false)} />
       </DialogWindow>
     </Dialog>
   );

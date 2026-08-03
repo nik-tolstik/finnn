@@ -216,18 +216,22 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function DialogTitle({ className, id, ...props }: React.ComponentProps<"h2">) {
+const DialogTitle = React.forwardRef<HTMLHeadingElement, React.ComponentPropsWithoutRef<"h2">>(function DialogTitle(
+  { className, id, ...props },
+  ref
+) {
   const { titleId } = useDialogContext();
 
   return (
     <h2
+      ref={ref}
       id={id ?? titleId}
       data-slot="dialog-title"
       className={cn("text-lg leading-none font-semibold", className)}
       {...props}
     />
   );
-}
+});
 
 function DialogDescription({ className, id, ...props }: React.ComponentProps<"p">) {
   const { descriptionId } = useDialogContext();

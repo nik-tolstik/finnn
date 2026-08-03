@@ -58,7 +58,7 @@ export function CombinedTransactionsView({
             {group.items.map((item) => (
               <div
                 key={getTransactionKey(item)}
-                className="[contain-intrinsic-size:auto_96px] [content-visibility:auto]"
+                className="rounded-xl shadow-[var(--transaction-card-shadow)] [contain-intrinsic-size:auto_96px] [content-visibility:auto] dark:shadow-sm"
               >
                 <CombinedTransactionItem
                   item={item}
