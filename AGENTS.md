@@ -45,19 +45,21 @@ The app manages workspaces, members, accounts, categories, payment transactions,
 ## Efficient Iteration And Verification
 
 - These defaults are overridden by explicit user instructions or an approved task plan.
-- Treat consecutive follow-ups on an existing Draft PR as one iteration batch until the task is published or the user
+- Treat consecutive follow-ups on an existing Draft PR as one iteration batch until the final handoff or the user
   changes scope.
 
 - Select validation from this matrix:
-  - Presentation-only frontend: inspect the changed UI, run relevant targeted tests when they exist, and run web
-    typecheck, formatting, and production build checks. Run Storybook when stories or component rendering are affected.
-  - Isolated frontend logic: run targeted feature tests plus web typecheck, formatting, and production build checks.
-    Run Storybook when component rendering is affected.
-  - Cross-package, API, schema, configuration, or dependency changes: run affected package checks and the appropriate
-    root-level validation matrix. Include generated-client, migration, infrastructure, or backup checks when the
-    changed boundary requires them.
+  - Presentation-only frontend: inspect the changed diff and UI source, then run relevant targeted tests when they
+    exist plus web typecheck and web check. Do not require a production build or Storybook by default.
+  - Isolated frontend logic: run targeted feature tests plus web typecheck, web check, and web production build.
+    Run Storybook only when stories or a component API/rendering contract changes.
+  - Cross-package, API, schema, configuration, or dependency changes: run affected package checks. Run one full
+    root-level or broad suite during final validation, or whenever the explicit task scope requires it. Include
+    generated-client, migration, infrastructure, or backup checks when the changed boundary requires them.
 
 - Do not run unrelated API, database, or backup tests for an isolated frontend change.
+- Run one full root-level or broad suite only during final validation for cross-package changes or when the task
+  explicitly requires it.
 - Executors run targeted checks while implementing. An independent verifier runs the final scope-appropriate broad
   validation; do not duplicate the same full suite in both roles.
 - Use this order: implementation, targeted validation, external review, confirmed fixes, one final broad validation,
