@@ -62,6 +62,9 @@ describe("dashboard interaction loading", () => {
     expect(editTransactionSource).toContain("showCloseButton={false}");
     expect(editTransactionSource).toContain('aria-label="Повторить транзакцию"');
     expect(editTransactionSource).toContain('aria-label="Удалить транзакцию"');
+    expect(editTransactionSource).toContain('data-slot="dialog-close"');
+    expect(editTransactionSource).toContain('className="rounded-full p-1 text-[20px]');
+    expect(editTransactionSource).toContain('<X size="1em" />');
   });
 
   it("explains transaction and debt dialog header actions with tooltips", () => {

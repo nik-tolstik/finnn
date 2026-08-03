@@ -267,16 +267,16 @@ export function EditTransactionDialog({
                   </Button>
                 </Tooltip>
               ) : null}
-              <Button
+              <button
+                data-slot="dialog-close"
                 aria-label="Закрыть"
+                className="rounded-full p-1 text-[20px] transition-all hover:bg-control-hover active:bg-control-hover focus:ring-1 focus:ring-control-focus/20"
                 disabled={isSubmitting}
                 onClick={() => onOpenChange(false)}
-                size="icon-sm"
                 type="button"
-                variant="ghost"
               >
-                <X />
-              </Button>
+                <X size="1em" />
+              </button>
             </div>
           </div>
         </DialogHeader>
