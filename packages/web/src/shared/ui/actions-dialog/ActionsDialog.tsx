@@ -7,20 +7,18 @@ import { cn } from "@/shared/utils/cn";
 
 export interface ActionItem {
   disabled?: boolean;
-  emphasis?: "primary";
   icon: ReactNode;
   id: string;
   label: string;
   onSelect: () => void;
-  separate?: boolean;
   tone?: "default" | "destructive";
 }
 
 interface ActionsDialogBaseProps {
   actions: ActionItem[];
+  mobileActionsClassName?: string;
   mobileContentClassName?: string;
   mobileContext?: ReactNode;
-  mobileTitle?: ReactNode;
 }
 
 interface AnchoredActionsDialogProps extends ActionsDialogBaseProps {
@@ -43,27 +41,24 @@ export type ActionsDialogProps = AnchoredActionsDialogProps | ContextMenuActions
 
 function ActionList({
   actions,
-  enhancedTouchLayout = false,
+  className,
   onSelect,
   size = "compact",
 }: {
   actions: ActionItem[];
-  enhancedTouchLayout?: boolean;
+  className?: string;
   onSelect: (action: ActionItem) => void;
   size?: "compact" | "touch";
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className={cn("flex flex-col gap-1", className)}>
       {actions.map((action) => {
-        const isMobilePrimary = enhancedTouchLayout && size === "touch" && action.emphasis === "primary";
-
         return (
           <button
             className={cn(
               "flex w-full items-center rounded-md text-left font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
               size === "touch" ? "min-h-14 gap-4 px-4 py-3 text-base" : "gap-3 px-3 py-2.5 text-sm",
-              isMobilePrimary ? "bg-primary/10 hover:bg-primary/20" : "hover:bg-control-hover",
-              action.separate && size === "touch" && "mt-5",
+              "hover:bg-control-hover",
               action.tone === "destructive" ? "text-destructive" : "text-foreground"
             )}
             disabled={action.disabled}
@@ -71,17 +66,7 @@ function ActionList({
             onClick={() => onSelect(action)}
             type="button"
           >
-            <span
-              className={cn(
-                "shrink-0",
-                size === "touch" && enhancedTouchLayout
-                  ? "flex size-10 items-center justify-center [&_svg]:size-5"
-                  : size === "touch"
-                    ? "[&_svg]:size-5"
-                    : "[&_svg]:size-4",
-                isMobilePrimary && "rounded-full bg-primary/10 text-primary"
-              )}
-            >
+            <span className={cn("shrink-0", size === "touch" ? "[&_svg]:size-5" : "[&_svg]:size-4")}>
               {action.icon}
             </span>
             <span className="min-w-0 flex-1 truncate">{action.label}</span>
@@ -133,9 +118,9 @@ export function ActionsDialog(props: ActionsDialogProps) {
   const {
     actions,
     anchor,
+    mobileActionsClassName,
     mobileContentClassName,
     mobileContext,
-    mobileTitle = "Действия",
     onCloseComplete,
     onOpenChange,
     open,
@@ -147,7 +132,7 @@ export function ActionsDialog(props: ActionsDialogProps) {
   const actionList = (
     <ActionList
       actions={actions}
-      enhancedTouchLayout={Boolean(mobileContext)}
+      className={isMobile ? mobileActionsClassName : undefined}
       onSelect={handleSelect}
       size={isMobile ? "touch" : "compact"}
     />
@@ -162,7 +147,7 @@ export function ActionsDialog(props: ActionsDialogProps) {
           side="bottom"
         >
           <SheetHeader className="px-6 pb-3">
-            <SheetTitle>{mobileTitle}</SheetTitle>
+            <SheetTitle>Действия</SheetTitle>
             {mobileContext ? <div className="text-sm text-muted-foreground">{mobileContext}</div> : null}
           </SheetHeader>
           <div className={cn("overflow-y-auto px-3 pb-4", mobileContentClassName)}>{actionList}</div>

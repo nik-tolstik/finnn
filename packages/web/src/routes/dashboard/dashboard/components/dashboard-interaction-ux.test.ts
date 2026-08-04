@@ -120,13 +120,12 @@ describe("dashboard interaction loading", () => {
     expect(accountsCardsSource).toContain("accountActionsDialog.openDialog({ account, anchor: event.currentTarget })");
     expect(accountsCardsSource).toContain("onClick={(event) => {");
     expect(accountsCardsSource).not.toContain("useBreakpoints");
-    expect(accountActionsSource).toContain('label: "Добавить транзакцию"');
+    expect(accountActionsSource).toContain('label: "Транзакция"');
     expect(accountActionsSource).toContain('label: "Изменить"');
-    expect(accountActionsSource).toContain('emphasis: "primary"');
-    expect(accountActionsSource).toContain("separate: true");
     expect(accountActionsSource).toContain("formatMoney(account.balance, account.currency)");
-    expect(accountActionsSource).toContain('mobileContentClassName="px-6 pb-6"');
-    expect(accountActionsSource).toContain('mobileTitle={<span className="text-3xl leading-9 tracking-[-0.02em]">');
+    expect(accountActionsSource).toContain('mobileActionsClassName="gap-2"');
+    expect(accountActionsSource).toContain('mobileContentClassName="px-6 pt-3 pb-6"');
+    expect(accountActionsSource).toContain('className="mt-1 flex min-w-0 items-center gap-2"');
     expect(accountActionsSource).toContain('tone: "destructive"');
     expect(accountActionsSource).toContain("anchor={anchor}");
     expect(accountActionsSource).toContain("open={open}");
@@ -134,8 +133,12 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("if (isMobile)");
     expect(actionsDialogSource).toContain("<Sheet");
     expect(actionsDialogSource).toContain("mobileContext");
+    expect(actionsDialogSource).toContain("mobileActionsClassName");
     expect(actionsDialogSource).toContain("mobileContentClassName");
-    expect(actionsDialogSource).toContain("bg-primary/10 hover:bg-primary/20");
+    expect(actionsDialogSource).toContain("<SheetTitle>Действия</SheetTitle>");
+    expect(actionsDialogSource).not.toContain("emphasis");
+    expect(actionsDialogSource).not.toContain("separate");
+    expect(actionsDialogSource).not.toContain("bg-primary/10 hover:bg-primary/20");
   });
 
   it("keeps scheduled payment action menus anchored without changing their entry point", () => {

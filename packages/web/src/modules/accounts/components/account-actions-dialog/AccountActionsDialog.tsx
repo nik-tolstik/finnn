@@ -32,9 +32,8 @@ export function AccountActionsDialog({
     {
       id: "create-transaction",
       icon: <Plus className="h-3.5 w-3.5" />,
-      label: "Добавить транзакцию",
+      label: "Транзакция",
       onSelect: onCreateTransaction,
-      emphasis: "primary",
     },
     {
       id: "edit",
@@ -53,7 +52,6 @@ export function AccountActionsDialog({
       icon: <Archive className="h-3.5 w-3.5" />,
       label: "Архивировать",
       onSelect: onArchive,
-      separate: true,
       tone: "destructive",
     },
   ];
@@ -65,9 +63,10 @@ export function AccountActionsDialog({
       onCloseComplete={onCloseComplete}
       onOpenChange={onOpenChange}
       actions={actions}
-      mobileContentClassName="px-6 pb-6"
+      mobileActionsClassName="gap-2"
+      mobileContentClassName="px-6 pt-3 pb-6"
       mobileContext={
-        <span className="flex min-w-0 items-center gap-2">
+        <span className="mt-1 flex min-w-0 items-center gap-2">
           <AccountIcon
             iconName={account.icon}
             accountColor={account.color}
@@ -79,7 +78,6 @@ export function AccountActionsDialog({
           <span className="shrink-0">{formatMoney(account.balance, account.currency)}</span>
         </span>
       }
-      mobileTitle={<span className="text-3xl leading-9 tracking-[-0.02em]">Действия</span>}
     />
   );
 }
