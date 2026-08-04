@@ -10,7 +10,7 @@ describe("debt card presentation", () => {
 
     expect(source).toContain("isClosed ? (");
     expect(source).toContain(">Сумма</div>");
-    expect(source).toContain(">Остаток</div>");
+    expect(source).not.toContain(">Остаток</div>");
     expect(source).toContain("formatMoney(debt.amount, debt.currency)");
     expect(source).toContain("formatMoney(debt.remainingAmount, debt.currency)");
     expect(source).not.toContain('isClosed && "opacity-60"');

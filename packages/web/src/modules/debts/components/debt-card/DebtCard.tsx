@@ -59,18 +59,10 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
               </time>
             </div>
 
-            <div className="grid min-w-0 grid-cols-2 gap-3">
-              <div className="min-w-0">
-                <div className="text-[11px] text-muted-foreground">Сумма</div>
-                <div className="mt-0.5 break-words text-sm font-semibold text-foreground">
-                  {formatMoney(debt.amount, debt.currency)}
-                </div>
-              </div>
-              <div className="min-w-0 text-right">
-                <div className="text-[11px] text-muted-foreground">Остаток</div>
-                <div className="mt-0.5 break-words text-sm font-semibold text-foreground">
-                  {formatMoney(debt.remainingAmount, debt.currency)}
-                </div>
+            <div className="min-w-0">
+              <div className="text-[11px] text-muted-foreground">Сумма</div>
+              <div className="mt-0.5 break-words text-sm font-semibold text-foreground">
+                {formatMoney(debt.amount, debt.currency)}
               </div>
             </div>
           </div>
