@@ -185,6 +185,14 @@ export function TransactionsFilterDrawer({
               allowClear
               label="Типы транзакций"
               options={transactionTypeOptions}
+              renderOption={({ option, selected, isTrigger }) => (
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-xs")}>
+                    {option.label}
+                  </span>
+                  {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
+                </span>
+              )}
               value={draftFilters.transactionTypes || []}
               onChange={(transactionTypes) => {
                 updateDraftFilter("transactionTypes", transactionTypes);
