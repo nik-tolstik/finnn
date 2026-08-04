@@ -15,7 +15,6 @@ import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog/ActionsDialog";
 import { Button } from "@/shared/ui/button";
 import { OverlayPortalRootProvider } from "@/shared/ui/overlay-portal-root";
-import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
 
 interface DialogContextValue {
@@ -37,6 +36,8 @@ export type DialogAction = ActionItem;
 interface DialogWindowProps extends React.HTMLAttributes<HTMLDivElement> {
   actions?: DialogAction[];
   closeButtonDisabled?: boolean;
+  dismissOnEscapeKey?: boolean;
+  dismissOnOutsidePress?: boolean;
   onCloseComplete?: () => void;
   showCloseButton?: boolean;
 }
@@ -111,7 +112,6 @@ function DialogCloseButton({ className, children: _, type = "button", ...props }
 }
 
 function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
-  const { isMobile } = useBreakpoints();
   const { setNestedOverlayOpen } = React.useContext(DialogWindowContext);
   const optionsButtonRef = React.useRef<HTMLButtonElement>(null);
   const [open, setOpen] = React.useState(false);
@@ -129,7 +129,7 @@ function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
       aria-expanded={open}
       aria-haspopup="dialog"
       disabled={disabled}
-      onClick={() => setOpen(true)}
+      onClick={() => setOpen((current) => !current)}
       ref={optionsButtonRef}
       size="icon-sm"
       type="button"
@@ -141,13 +141,7 @@ function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
 
   return (
     <>
-      {isMobile ? (
-        optionsButton
-      ) : (
-        <Tooltip content="Действия" delayDuration={0} disableHoverableContent>
-          {optionsButton}
-        </Tooltip>
-      )}
+      {optionsButton}
       <ActionsDialog
         actions={actions}
         anchor={optionsButtonRef.current}
@@ -164,6 +158,8 @@ function DialogWindow({
   className,
   children,
   closeButtonDisabled = false,
+  dismissOnEscapeKey = true,
+  dismissOnOutsidePress = true,
   showCloseButton = true,
   onCloseComplete,
   style,
@@ -182,7 +178,10 @@ function DialogWindow({
     onOpenChange,
   });
 
-  const dismiss = useDismiss(context, { outsidePress: !nestedOverlayOpen });
+  const dismiss = useDismiss(context, {
+    escapeKey: dismissOnEscapeKey && !nestedOverlayOpen,
+    outsidePress: dismissOnOutsidePress && !nestedOverlayOpen,
+  });
   const role = useRole(context, { role: "dialog" });
   const { getFloatingProps } = useInteractions([dismiss, role]);
   const { isMounted, styles: transitionStyles } = useTransitionStyles(context, {

@@ -46,7 +46,12 @@ export function ClosedDebtsHistoryDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogWindow onCloseComplete={onCloseComplete} className="sm:max-h-[82dvh] sm:w-[560px]">
+        <DialogWindow
+          className="sm:max-h-[82dvh] sm:w-[560px]"
+          dismissOnEscapeKey={!debtDialog.mounted}
+          dismissOnOutsidePress={!debtDialog.mounted}
+          onCloseComplete={onCloseComplete}
+        >
           <DialogHeader>
             <DialogTitle>История закрытых долгов</DialogTitle>
           </DialogHeader>
