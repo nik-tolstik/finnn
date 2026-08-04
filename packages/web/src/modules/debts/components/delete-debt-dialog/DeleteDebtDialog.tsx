@@ -16,6 +16,7 @@ import {
 import { formatMoney } from "@/shared/utils/money";
 
 import { deleteDebt } from "../../debt.api";
+import { DebtStatus } from "../../debt.constants";
 import type { DebtWithRelations } from "../../debt.types";
 
 interface DeleteDebtDialogProps {
@@ -23,6 +24,7 @@ interface DeleteDebtDialogProps {
   workspaceId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCloseComplete?: () => void;
 }
 
 interface DeleteDebtPanelProps {
@@ -63,13 +65,14 @@ export function DeleteDebtPanel({ debt, workspaceId, onComplete, onSubmittingCha
     }
   };
 
+  const deletionAmount = debt.status === DebtStatus.CLOSED ? debt.amount : debt.remainingAmount;
+
   return (
     <>
       <DialogContent>
         <DialogDescription>
-          Вы уверены, что хотите удалить долг {debt.personName} на сумму{" "}
-          {formatMoney(debt.remainingAmount, debt.currency)}? Вместе с ним будет удалена связанная история. Это действие
-          нельзя отменить.
+          Вы уверены, что хотите удалить долг {debt.personName} на сумму {formatMoney(deletionAmount, debt.currency)}?
+          Вместе с ним будет удалена связанная история. Это действие нельзя отменить.
         </DialogDescription>
       </DialogContent>
       <DialogFooter>
@@ -81,10 +84,10 @@ export function DeleteDebtPanel({ debt, workspaceId, onComplete, onSubmittingCha
   );
 }
 
-export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange }: DeleteDebtDialogProps) {
+export function DeleteDebtDialog({ debt, workspaceId, open, onOpenChange, onCloseComplete }: DeleteDebtDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow>
+      <DialogWindow onCloseComplete={onCloseComplete}>
         <DialogHeader>
           <DialogTitle>Удалить долг?</DialogTitle>
         </DialogHeader>
