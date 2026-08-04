@@ -55,7 +55,7 @@ export function ClosedDebtsHistoryDialog({
           <DialogHeader>
             <DialogTitle>История закрытых долгов</DialogTitle>
           </DialogHeader>
-          <DialogContent className="min-h-0 overflow-y-auto">
+          <DialogContent className="min-h-0 overflow-y-auto pb-3">
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (

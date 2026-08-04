@@ -35,6 +35,14 @@ describe("debt dialog entry points", () => {
     expect(dialogSource).toContain("outsidePress: dismissOnOutsidePress && !nestedOverlayOpen");
   });
 
+  it("leaves space below the last closed debt card for its shadow", () => {
+    const closedHistory = readSource(
+      "src/modules/debts/components/closed-debts-history-dialog/ClosedDebtsHistoryDialog.tsx"
+    );
+
+    expect(closedHistory).toContain('className="min-h-0 overflow-y-auto pb-3"');
+  });
+
   it("removes the obsolete action-picker module", () => {
     expect(
       existsSync(join(process.cwd(), "src/modules/debts/components/debt-actions-dialog/DebtActionsDialog.tsx"))
