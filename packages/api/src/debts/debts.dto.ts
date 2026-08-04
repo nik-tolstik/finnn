@@ -67,6 +67,11 @@ export class CloseDebtDto {
   @Matches(POSITIVE_MONEY_PATTERN, { message: "Сумма должна быть больше 0" })
   paymentAmount?: string;
 
+  @ApiPropertyOptional({ example: "Возврат денег в мае", type: String })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
   @ApiPropertyOptional({ example: "665f5d865ef5a20c0d2f2222", type: String })
   @IsOptional()
   @IsString()
@@ -363,6 +368,9 @@ export class DebtEntryTransactionDto {
 
   @ApiPropertyOptional({ nullable: true, type: String })
   toAmount!: string | null;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  description!: string | null;
 
   @ApiProperty({ example: "2026-05-25T12:00:00.000Z", format: "date-time", type: String })
   date!: string;

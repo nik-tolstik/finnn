@@ -18,6 +18,8 @@ export interface DebtTransactionDto {
   amount: string;
   /** @nullable */
   toAmount?: string | null;
+  /** @nullable */
+  description?: string | null;
   date: string;
   createdAt: string;
   debt: DebtTransactionDebtDto;

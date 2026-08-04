@@ -98,6 +98,7 @@ function toUiDebtTransaction(transaction: DebtTransactionDto): DebtTransactionWi
     ...transaction,
     accountId: transaction.accountId ?? null,
     toAmount: transaction.toAmount ?? null,
+    description: transaction.description ?? null,
     date: toDate(transaction.date),
     createdAt: toDate(transaction.createdAt),
     debt: {

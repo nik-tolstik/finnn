@@ -192,7 +192,11 @@ function matchesDebtTransactionFilters(
     return false;
   }
 
-  if (filters?.categoryIds?.length || filters?.description) {
+  if (filters?.categoryIds?.length) {
+    return false;
+  }
+
+  if (filters?.description && !includesCaseInsensitive(debtTransaction.description, filters.description)) {
     return false;
   }
 

@@ -450,6 +450,9 @@ export class DebtTransactionDto {
   @ApiPropertyOptional({ nullable: true, type: String })
   toAmount!: string | null;
 
+  @ApiPropertyOptional({ nullable: true, type: String })
+  description!: string | null;
+
   @ApiProperty({ format: "date-time", type: String })
   date!: string;
 

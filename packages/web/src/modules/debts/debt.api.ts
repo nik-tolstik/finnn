@@ -90,6 +90,7 @@ function toUiDebtTransaction(transaction: DebtEntryTransactionDto): DebtTransact
     accountId: transaction.accountId ?? null,
     paymentTransactionId: transaction.paymentTransactionId ?? null,
     toAmount: transaction.toAmount ?? null,
+    description: transaction.description ?? null,
     date: toDate(transaction.date),
     createdAt: toDate(transaction.createdAt),
     debt: {
@@ -165,6 +166,7 @@ function toCloseDebtDto(input: CloseDebtInput): CloseDebtDto {
     paymentAmount: normalizeOptionalMoneyString(input.paymentAmount),
     categoryId: input.categoryId,
     accountId: input.accountId,
+    description: input.description?.trim() || undefined,
     useAccount: input.useAccount,
   };
 }
