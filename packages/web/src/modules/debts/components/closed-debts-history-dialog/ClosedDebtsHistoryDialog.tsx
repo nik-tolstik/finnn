@@ -59,7 +59,7 @@ export function ClosedDebtsHistoryDialog({
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
+                  <div key={i} className="h-32 animate-pulse rounded-xl bg-muted" />
                 ))}
               </div>
             ) : closedDebts.length === 0 ? (
