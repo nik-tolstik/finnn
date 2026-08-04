@@ -1,10 +1,9 @@
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ArrowDownLeft, ArrowUpRight, CheckCircle2, User } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, User } from "lucide-react";
 import type { KeyboardEvent } from "react";
 
 import { AnimatedListItem } from "@/shared/ui/animated-list";
-import { Badge } from "@/shared/ui/badge";
 import { Card } from "@/shared/ui/card";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
@@ -45,49 +44,32 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
         tabIndex={onClick ? 0 : undefined}
       >
         {isClosed ? (
-          <div className="flex min-w-0 items-start gap-3 text-sm">
-            <div
-              className={cn(
-                "flex size-10 shrink-0 items-center justify-center rounded-xl",
-                isLent ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-              )}
-            >
-              {isLent ? <ArrowDownLeft className="size-4" /> : <ArrowUpRight className="size-4" />}
-            </div>
-
-            <div className="min-w-0 flex-1 space-y-3">
-              <div className="flex min-w-0 items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground">{directionLabel}</span>
-                    <Badge variant="secondary" className="gap-1 rounded-full px-2 py-0.5 text-[11px]">
-                      <CheckCircle2 className="size-3.5" />
-                      Закрыт
-                    </Badge>
-                  </div>
-                  <div className="mt-1 flex min-w-0 items-start gap-1.5">
-                    <User className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                    <span className="min-w-0 break-words font-semibold">{debt.personName}</span>
-                  </div>
+          <div className="min-w-0 space-y-3 text-sm">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-muted-foreground">{directionLabel}</div>
+                <div className="mt-1 flex min-w-0 items-start gap-1.5">
+                  <User className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 break-words font-semibold">{debt.personName}</span>
                 </div>
-
-                <time className="shrink-0 text-xs text-muted-foreground" dateTime={debt.date.toISOString()}>
-                  {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}
-                </time>
               </div>
 
-              <div className="grid min-w-0 grid-cols-2 gap-3">
-                <div className="min-w-0">
-                  <div className="text-[11px] text-muted-foreground">Сумма</div>
-                  <div className="mt-0.5 break-words text-sm font-semibold text-foreground">
-                    {formatMoney(debt.amount, debt.currency)}
-                  </div>
+              <time className="shrink-0 text-xs text-muted-foreground" dateTime={debt.date.toISOString()}>
+                {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}
+              </time>
+            </div>
+
+            <div className="grid min-w-0 grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground">Сумма</div>
+                <div className="mt-0.5 break-words text-sm font-semibold text-foreground">
+                  {formatMoney(debt.amount, debt.currency)}
                 </div>
-                <div className="min-w-0 text-right">
-                  <div className="text-[11px] text-muted-foreground">Остаток</div>
-                  <div className="mt-0.5 break-words text-sm font-semibold text-foreground">
-                    {formatMoney(debt.remainingAmount, debt.currency)}
-                  </div>
+              </div>
+              <div className="min-w-0 text-right">
+                <div className="text-[11px] text-muted-foreground">Остаток</div>
+                <div className="mt-0.5 break-words text-sm font-semibold text-foreground">
+                  {formatMoney(debt.remainingAmount, debt.currency)}
                 </div>
               </div>
             </div>

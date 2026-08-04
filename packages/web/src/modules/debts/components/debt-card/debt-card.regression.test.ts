@@ -5,16 +5,17 @@ import { describe, expect, it } from "vitest";
 const readSource = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("debt card presentation", () => {
-  it("keeps the closed debt data visible and removes the dimmed history state", () => {
+  it("keeps the closed debt data visible without redundant state decoration", () => {
     const source = readSource("src/modules/debts/components/debt-card/DebtCard.tsx");
 
     expect(source).toContain("isClosed ? (");
-    expect(source).toContain("Закрыт");
     expect(source).toContain(">Сумма</div>");
     expect(source).toContain(">Остаток</div>");
     expect(source).toContain("formatMoney(debt.amount, debt.currency)");
     expect(source).toContain("formatMoney(debt.remainingAmount, debt.currency)");
     expect(source).not.toContain('isClosed && "opacity-60"');
+    expect(source).not.toContain("CheckCircle2");
+    expect(source).not.toContain('from "@/shared/ui/badge"');
   });
 
   it("keeps the debt card keyboard accessible without changing its click contract", () => {
