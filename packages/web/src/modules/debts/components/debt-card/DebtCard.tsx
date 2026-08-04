@@ -44,25 +44,25 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
         tabIndex={onClick ? 0 : undefined}
       >
         {isClosed ? (
-          <div className="min-w-0 space-y-3 text-sm">
-            <div className="flex min-w-0 items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-xs font-medium text-muted-foreground">{directionLabel}</div>
-                <div className="mt-1 flex min-w-0 items-start gap-1.5">
-                  <User className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 break-words font-semibold">{debt.personName}</span>
-                </div>
-              </div>
-
+          <div className="min-w-0 space-y-2 text-sm">
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <div className="min-w-0 text-xs font-medium text-muted-foreground">{directionLabel}</div>
               <time className="shrink-0 text-xs text-muted-foreground" dateTime={debt.date.toISOString()}>
                 {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}
               </time>
             </div>
 
-            <div className="min-w-0">
-              <div className="text-[11px] text-muted-foreground">Сумма</div>
-              <div className="mt-0.5 break-words text-sm font-semibold text-foreground">
-                {formatMoney(debt.amount, debt.currency)}
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-start gap-1.5">
+                <User className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 break-words font-semibold">{debt.personName}</span>
+              </div>
+
+              <div className="min-w-0 max-w-[48%] shrink-0 text-right">
+                <div className="text-[11px] text-muted-foreground">Сумма</div>
+                <div className="mt-0.5 break-words text-sm font-semibold text-foreground">
+                  {formatMoney(debt.amount, debt.currency)}
+                </div>
               </div>
             </div>
           </div>
