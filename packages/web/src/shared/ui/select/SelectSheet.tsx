@@ -200,7 +200,7 @@ export function SelectSheet<TValue extends string | number = string>(props: Sele
                         key={option.value}
                         onClick={() => handleSelect(option)}
                         className={cn(
-                          "flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-option-hover focus:outline-none",
+                          "flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-left text-sm transition-colors hover:bg-option-hover focus:outline-none",
                           selected && "bg-option-selected"
                         )}
                       >
