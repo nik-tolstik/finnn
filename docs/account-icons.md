@@ -17,6 +17,10 @@ Use `colorMode: "adaptive"` when the SVG uses `currentColor`. Lucide icons, init
 
 Use `colorMode: "brand"` when the SVG contains fixed brand colors. `AccountIcon` preserves those fills and renders the SVG at the caller's requested size without adding a theme-colored backdrop. Brand icons must not depend on `accountColor` for their internal fills.
 
+## Brand sources
+
+Prefer `svgl.app` as the source for company and product logos. Copy only the specific SVGs needed into local assets or small React components; do not add an icon-pack dependency or fetch SVGL assets at runtime for a small set of marks. When a brand publishes stricter sign-in or button guidance, use its official approved mark instead.
+
 ## Adaptive color behavior
 
 `packages/web/src/shared/utils/account-icon-colors.ts` derives two colors from the persisted account color:

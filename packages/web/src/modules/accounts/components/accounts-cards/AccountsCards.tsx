@@ -11,7 +11,6 @@ import type {
 import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { UserDisplay } from "@/shared/components/UserDisplay";
-import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";
 import { Badge } from "@/shared/ui/badge";
@@ -66,6 +65,24 @@ type AccountDialogData = {
   account: AccountWithOwner;
 };
 
+type AccountActionDialogData = AccountDialogData & {
+  anchor: HTMLElement;
+};
+
+type AccountActionAfterClose =
+  | {
+      account: AccountWithOwner;
+      type: "archive";
+    }
+  | {
+      account: AccountWithOwner;
+      type: "edit";
+    }
+  | {
+      account: AccountWithOwner;
+      type: "create-transaction";
+    };
+
 function AccountGroupHeader({ group }: { group: AccountDisplayGroup<AccountWithOwner> }) {
   return (
     <div className="flex items-center gap-2">
@@ -91,9 +108,9 @@ export function AccountsCards({
   reorderMode = false,
   workspaceId,
 }: AccountsCardsProps) {
-  const { isMobile } = useBreakpoints();
   const queryClient = useQueryClient();
   const visibilityMutationIds = useRef(new Set<string>());
+  const accountActionsDialog = useDialogState<AccountActionDialogData>();
   const createTransactionDialog = useDialogState<{
     workspaceId: string;
     defaultType?: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
@@ -102,11 +119,14 @@ export function AccountsCards({
   const editDialog = useDialogState<AccountDialogData>();
   const archiveDialog = useDialogState<AccountDialogData>();
   const archiveAfterEditRef = useRef<AccountWithOwner | null>(null);
+  const accountActionAfterCloseRef = useRef<AccountActionAfterClose | null>(null);
 
   const handleToggleVisibility = async (account: AccountWithOwner) => {
     if (visibilityMutationIds.current.has(account.id)) {
       return;
     }
+
+    accountActionsDialog.closeDialog();
 
     const nextHidden = !account.hidden;
     visibilityMutationIds.current.add(account.id);
@@ -137,6 +157,42 @@ export function AccountsCards({
   const openEditDialog = (account: AccountWithOwner) => {
     preloadAccountDetailsDialogs();
     editDialog.openDialog({ account });
+  };
+
+  const openCreateTransactionDialog = (account: AccountWithOwner) => {
+    createTransactionDialog.openDialog({
+      workspaceId,
+      defaultType: PaymentTransactionType.EXPENSE,
+      account,
+    });
+  };
+
+  const handleAccountActionsCloseComplete = () => {
+    accountActionsDialog.unmountDialog();
+
+    const nextAction = accountActionAfterCloseRef.current;
+    accountActionAfterCloseRef.current = null;
+
+    if (!nextAction) {
+      return;
+    }
+
+    switch (nextAction.type) {
+      case "archive":
+        archiveDialog.openDialog({ account: nextAction.account });
+        return;
+      case "edit":
+        openEditDialog(nextAction.account);
+        return;
+      case "create-transaction":
+        openCreateTransactionDialog(nextAction.account);
+        return;
+    }
+  };
+
+  const queueAccountActionAfterClose = (action: AccountActionAfterClose) => {
+    accountActionAfterCloseRef.current = action;
+    accountActionsDialog.closeDialog();
   };
 
   const handleEditDialogCloseComplete = () => {
@@ -182,41 +238,13 @@ export function AccountsCards({
             {shouldShowGroupHeaders ? <AccountGroupHeader group={group} /> : null}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {group.accounts.map((account) => (
-                <AccountActionsDialog
+                <AccountCard
                   key={account.id}
                   account={account}
-                  onArchive={() => {
-                    archiveDialog.openDialog({ account });
-                  }}
-                  onCreateTransaction={() => {
-                    createTransactionDialog.openDialog({
-                      workspaceId,
-                      defaultType: PaymentTransactionType.EXPENSE,
-                      account,
-                    });
-                  }}
-                  onEdit={() => openEditDialog(account)}
-                  onToggleVisibility={() => {
-                    void handleToggleVisibility(account);
-                  }}
-                  trigger={({ ref, ...triggerProps }) => {
-                    const card = (
-                      <AccountCard
-                        account={account}
-                        showOwner={shouldShowOwnerOnCard}
-                        onClick={() => openEditDialog(account)}
-                      />
-                    );
-
-                    if (isMobile) {
-                      return card;
-                    }
-
-                    return (
-                      <div ref={ref} {...triggerProps}>
-                        {card}
-                      </div>
-                    );
+                  showOwner={shouldShowOwnerOnCard}
+                  onClick={(event) => {
+                    preloadAccountDetailsDialogs();
+                    accountActionsDialog.openDialog({ account, anchor: event.currentTarget });
                   }}
                 />
               ))}
@@ -224,6 +252,26 @@ export function AccountsCards({
           </div>
         ))}
       </div>
+
+      {accountActionsDialog.mounted ? (
+        <AccountActionsDialog
+          account={accountActionsDialog.data.account}
+          anchor={accountActionsDialog.data.anchor}
+          open={accountActionsDialog.open}
+          onCloseComplete={handleAccountActionsCloseComplete}
+          onOpenChange={accountActionsDialog.closeDialog}
+          onEdit={() => queueAccountActionAfterClose({ type: "edit", account: accountActionsDialog.data.account })}
+          onToggleVisibility={() => {
+            void handleToggleVisibility(accountActionsDialog.data.account);
+          }}
+          onArchive={() => {
+            queueAccountActionAfterClose({ type: "archive", account: accountActionsDialog.data.account });
+          }}
+          onCreateTransaction={() => {
+            queueAccountActionAfterClose({ type: "create-transaction", account: accountActionsDialog.data.account });
+          }}
+        />
+      ) : null}
 
       {editDialog.mounted ? (
         <Suspense fallback={null}>

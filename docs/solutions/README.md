@@ -1,8 +1,9 @@
 # Reusable Solutions
 
-`docs/solutions` is the compound step of Finnn's planning workflow. It stores concise, searchable lessons from completed work so a future agent can avoid a known failure mode or reuse a proven approach.
+`docs/solutions` is Finnn's engineering knowledge base. It stores concise, searchable lessons from completed work so a future agent can avoid a known failure mode or reuse a proven approach.
 
-Create a solution record only when the lesson will plausibly help another task. Do not duplicate the work log, write a release summary, or create a record just because a task was completed.
+Create a solution record only when the lesson will plausibly help another task. Do not duplicate a Linear handoff or
+Project Update, write a release summary, or create a record just because a task was completed.
 
 ## Format
 

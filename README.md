@@ -6,7 +6,10 @@ debts, scheduled payments, exchange rates, and analytics.
 ## Documentation
 
 Start with [`docs/README.md`](./docs/README.md). It links the development setup, architecture and domain guides,
-operations runbook, design system, and active implementation plans.
+operations runbooks, design system, and the Linear task workflow.
+
+Product work is tracked in the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview).
+The agent workflow is documented in [`docs/ai-contributor-guide.md`](./docs/ai-contributor-guide.md#linear-task-workflow).
 
 ## Stack
 
@@ -50,8 +53,8 @@ VITE_API_URL="http://localhost:4000"
 ```
 
 Generate API secrets with `openssl rand -base64 32`. Email, Telegram, Google, OpenRouter, object storage, and hosted
-environment variables are documented in [`docs/development.md`](./docs/development.md) and
-[`docs/operations.md`](./docs/operations.md).
+environment variables are documented in [`docs/development.md`](./docs/development.md) and the
+[operations runbooks](./docs/operations/).
 
 ## Prisma And PostgreSQL
 
@@ -66,11 +69,9 @@ pnpm db:seed
 Create and review SQL migrations locally with `db:migrate:dev`. Shared DEV and production environments apply only
 committed migrations with `db:migrate:deploy`; do not use `prisma db push` for shared databases.
 
-PostgreSQL backup, restore, pooling, Railway deployment, and production cutover procedures live in
-[`docs/operations.md`](./docs/operations.md), with the encrypted cron runbook in
-[`docs/postgresql-backups.md`](./docs/postgresql-backups.md). The completed data-provider cutover is retained only as
-historical documentation in [`docs/plans/postgresql-migration`](./docs/plans/postgresql-migration/README.md); its
-one-time executable tooling has been retired.
+PostgreSQL deployment and pooling procedures live in the [database operations runbook](./docs/operations/database.md).
+The encrypted backup and restore procedure lives in [`docs/postgresql-backups.md`](./docs/postgresql-backups.md). The
+one-time executable data-provider cutover tooling is no longer part of the application.
 
 ## Verification
 

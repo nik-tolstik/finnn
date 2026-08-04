@@ -1,77 +1,83 @@
 import { Archive, Eye, EyeOff, Pencil, Plus } from "lucide-react";
-import { type ReactNode, useEffect, useRef } from "react";
 
 import type { Account } from "@/modules/accounts/account.types";
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog";
-import type { PopoverTriggerRenderProps } from "@/shared/ui/popover";
-
-const MENU_CLOSE_DURATION_MS = 200;
+import { AccountIcon } from "@/shared/utils/account-icons";
+import { formatMoney } from "@/shared/utils/money";
 
 interface AccountActionsDialogProps {
   account: Account;
+  anchor: HTMLElement | null;
+  open: boolean;
+  onCloseComplete: () => void;
+  onOpenChange: (open: boolean) => void;
   onCreateTransaction: () => void;
   onEdit: () => void;
   onToggleVisibility: () => void;
   onArchive: () => void;
-  trigger: (props: PopoverTriggerRenderProps) => ReactNode;
 }
 
 export function AccountActionsDialog({
   account,
+  anchor,
+  open,
+  onCloseComplete,
+  onOpenChange,
   onEdit,
   onToggleVisibility,
   onArchive,
   onCreateTransaction,
-  trigger,
 }: AccountActionsDialogProps) {
-  const deferredActionTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (deferredActionTimeoutRef.current !== null) {
-        window.clearTimeout(deferredActionTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const deferUntilMenuCloses = (action: () => void) => () => {
-    if (deferredActionTimeoutRef.current !== null) {
-      window.clearTimeout(deferredActionTimeoutRef.current);
-    }
-
-    deferredActionTimeoutRef.current = window.setTimeout(() => {
-      deferredActionTimeoutRef.current = null;
-      action();
-    }, MENU_CLOSE_DURATION_MS);
-  };
-
   const actions: ActionItem[] = [
     {
       id: "create-transaction",
       icon: <Plus className="h-3.5 w-3.5" />,
       label: "Транзакция",
-      onSelect: deferUntilMenuCloses(onCreateTransaction),
+      onSelect: onCreateTransaction,
     },
     {
       id: "edit",
       icon: <Pencil className="h-3.5 w-3.5" />,
       label: "Изменить",
-      onSelect: deferUntilMenuCloses(onEdit),
+      onSelect: onEdit,
     },
     {
       id: "toggle-visibility",
       icon: account.hidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />,
       label: account.hidden ? "Показать" : "Скрыть",
-      onSelect: deferUntilMenuCloses(onToggleVisibility),
+      onSelect: onToggleVisibility,
     },
     {
       id: "archive",
       icon: <Archive className="h-3.5 w-3.5" />,
       label: "Архивировать",
-      onSelect: deferUntilMenuCloses(onArchive),
+      onSelect: onArchive,
       tone: "destructive",
     },
   ];
 
-  return <ActionsDialog actions={actions} trigger={trigger} />;
+  return (
+    <ActionsDialog
+      anchor={anchor}
+      open={open}
+      onCloseComplete={onCloseComplete}
+      onOpenChange={onOpenChange}
+      actions={actions}
+      mobileActionsClassName="gap-2"
+      mobileContentClassName="px-6 pt-3 pb-6"
+      mobileContext={
+        <span className="mt-1 flex min-w-0 items-center gap-2">
+          <AccountIcon
+            iconName={account.icon}
+            accountColor={account.color}
+            accountName={account.name}
+            className="size-5 shrink-0"
+          />
+          <span className="truncate">{account.name}</span>
+          <span aria-hidden="true">•</span>
+          <span className="shrink-0">{formatMoney(account.balance, account.currency)}</span>
+        </span>
+      }
+    />
+  );
 }
