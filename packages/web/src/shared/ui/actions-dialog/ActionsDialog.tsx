@@ -7,15 +7,20 @@ import { cn } from "@/shared/utils/cn";
 
 export interface ActionItem {
   disabled?: boolean;
+  emphasis?: "primary";
   icon: ReactNode;
   id: string;
   label: string;
   onSelect: () => void;
+  separate?: boolean;
   tone?: "default" | "destructive";
 }
 
 interface ActionsDialogBaseProps {
   actions: ActionItem[];
+  mobileContentClassName?: string;
+  mobileContext?: ReactNode;
+  mobileTitle?: ReactNode;
 }
 
 interface AnchoredActionsDialogProps extends ActionsDialogBaseProps {
@@ -38,31 +43,51 @@ export type ActionsDialogProps = AnchoredActionsDialogProps | ContextMenuActions
 
 function ActionList({
   actions,
+  enhancedTouchLayout = false,
   onSelect,
   size = "compact",
 }: {
   actions: ActionItem[];
+  enhancedTouchLayout?: boolean;
   onSelect: (action: ActionItem) => void;
   size?: "compact" | "touch";
 }) {
   return (
     <div className="flex flex-col gap-1">
-      {actions.map((action) => (
-        <button
-          className={cn(
-            "flex w-full items-center rounded-md text-left font-medium transition-colors hover:bg-control-hover disabled:pointer-events-none disabled:opacity-50",
-            size === "touch" ? "min-h-14 gap-4 px-4 py-3 text-base" : "gap-3 px-3 py-2.5 text-sm",
-            action.tone === "destructive" ? "text-destructive" : "text-foreground"
-          )}
-          disabled={action.disabled}
-          key={action.id}
-          onClick={() => onSelect(action)}
-          type="button"
-        >
-          <span className={cn("shrink-0", size === "touch" ? "[&_svg]:size-5" : "[&_svg]:size-4")}>{action.icon}</span>
-          <span className="min-w-0 flex-1 truncate">{action.label}</span>
-        </button>
-      ))}
+      {actions.map((action) => {
+        const isMobilePrimary = enhancedTouchLayout && size === "touch" && action.emphasis === "primary";
+
+        return (
+          <button
+            className={cn(
+              "flex w-full items-center rounded-md text-left font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
+              size === "touch" ? "min-h-14 gap-4 px-4 py-3 text-base" : "gap-3 px-3 py-2.5 text-sm",
+              isMobilePrimary ? "bg-primary/10 hover:bg-primary/20" : "hover:bg-control-hover",
+              action.separate && size === "touch" && "mt-5",
+              action.tone === "destructive" ? "text-destructive" : "text-foreground"
+            )}
+            disabled={action.disabled}
+            key={action.id}
+            onClick={() => onSelect(action)}
+            type="button"
+          >
+            <span
+              className={cn(
+                "shrink-0",
+                size === "touch" && enhancedTouchLayout
+                  ? "flex size-10 items-center justify-center [&_svg]:size-5"
+                  : size === "touch"
+                    ? "[&_svg]:size-5"
+                    : "[&_svg]:size-4",
+                isMobilePrimary && "rounded-full bg-primary/10 text-primary"
+              )}
+            >
+              {action.icon}
+            </span>
+            <span className="min-w-0 flex-1 truncate">{action.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -105,12 +130,28 @@ export function ActionsDialog(props: ActionsDialogProps) {
     );
   }
 
-  const { actions, anchor, onCloseComplete, onOpenChange, open } = props;
+  const {
+    actions,
+    anchor,
+    mobileContentClassName,
+    mobileContext,
+    mobileTitle = "Действия",
+    onCloseComplete,
+    onOpenChange,
+    open,
+  } = props;
   const handleSelect = (action: ActionItem) => {
     onOpenChange(false);
     action.onSelect();
   };
-  const actionList = <ActionList actions={actions} onSelect={handleSelect} size={isMobile ? "touch" : "compact"} />;
+  const actionList = (
+    <ActionList
+      actions={actions}
+      enhancedTouchLayout={Boolean(mobileContext)}
+      onSelect={handleSelect}
+      size={isMobile ? "touch" : "compact"}
+    />
+  );
 
   if (isMobile) {
     return (
@@ -121,9 +162,10 @@ export function ActionsDialog(props: ActionsDialogProps) {
           side="bottom"
         >
           <SheetHeader className="px-6 pb-3">
-            <SheetTitle>Действия</SheetTitle>
+            <SheetTitle>{mobileTitle}</SheetTitle>
+            {mobileContext ? <div className="text-sm text-muted-foreground">{mobileContext}</div> : null}
           </SheetHeader>
-          <div className="overflow-y-auto px-3 pb-4">{actionList}</div>
+          <div className={cn("overflow-y-auto px-3 pb-4", mobileContentClassName)}>{actionList}</div>
         </SheetContent>
       </Sheet>
     );

@@ -120,14 +120,22 @@ describe("dashboard interaction loading", () => {
     expect(accountsCardsSource).toContain("accountActionsDialog.openDialog({ account, anchor: event.currentTarget })");
     expect(accountsCardsSource).toContain("onClick={(event) => {");
     expect(accountsCardsSource).not.toContain("useBreakpoints");
-    expect(accountActionsSource).toContain('label: "Транзакция"');
+    expect(accountActionsSource).toContain('label: "Добавить транзакцию"');
     expect(accountActionsSource).toContain('label: "Изменить"');
+    expect(accountActionsSource).toContain('emphasis: "primary"');
+    expect(accountActionsSource).toContain("separate: true");
+    expect(accountActionsSource).toContain("formatMoney(account.balance, account.currency)");
+    expect(accountActionsSource).toContain('mobileContentClassName="px-6 pb-6"');
+    expect(accountActionsSource).toContain('mobileTitle={<span className="text-3xl leading-9 tracking-[-0.02em]">');
     expect(accountActionsSource).toContain('tone: "destructive"');
     expect(accountActionsSource).toContain("anchor={anchor}");
     expect(accountActionsSource).toContain("open={open}");
     expect(accountActionsSource).not.toContain("trigger={trigger}");
     expect(actionsDialogSource).toContain("if (isMobile)");
     expect(actionsDialogSource).toContain("<Sheet");
+    expect(actionsDialogSource).toContain("mobileContext");
+    expect(actionsDialogSource).toContain("mobileContentClassName");
+    expect(actionsDialogSource).toContain("bg-primary/10 hover:bg-primary/20");
   });
 
   it("keeps scheduled payment action menus anchored without changing their entry point", () => {
