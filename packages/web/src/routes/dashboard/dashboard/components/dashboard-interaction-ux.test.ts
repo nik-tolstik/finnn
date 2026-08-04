@@ -119,6 +119,14 @@ describe("dashboard interaction loading", () => {
     expect(accountCardSource).toContain("MouseEventHandler<HTMLButtonElement>");
     expect(accountsCardsSource).toContain("accountActionsDialog.openDialog({ account, anchor: event.currentTarget })");
     expect(accountsCardsSource).toContain("onClick={(event) => {");
+    expect(accountsCardsSource).toContain(
+      "const accountActionAfterCloseRef = useRef<AccountActionAfterClose | null>(null)"
+    );
+    expect(accountsCardsSource).toContain("onCloseComplete={handleAccountActionsCloseComplete}");
+    expect(accountsCardsSource).toContain('queueAccountActionAfterClose({ type: "edit"');
+    expect(accountsCardsSource).toContain('queueAccountActionAfterClose({ type: "archive"');
+    expect(accountsCardsSource).toContain('queueAccountActionAfterClose({ type: "create-transaction"');
+    expect(accountsCardsSource).toContain("accountActionAfterCloseRef.current = null;");
     expect(accountsCardsSource).not.toContain("useBreakpoints");
     expect(accountActionsSource).toContain('label: "Транзакция"');
     expect(accountActionsSource).toContain('label: "Изменить"');
