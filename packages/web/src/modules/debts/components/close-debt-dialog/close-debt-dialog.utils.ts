@@ -21,6 +21,7 @@ export function getCloseDebtDefaultValues(debt: Pick<DebtWithRelations, "remaini
     toAmount: "",
     categoryId: undefined,
     accountId: "",
+    description: "",
     useAccount: true,
   };
 }

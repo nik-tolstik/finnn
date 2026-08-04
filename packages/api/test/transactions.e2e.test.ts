@@ -201,6 +201,7 @@ function createDebtTransactionRecord(overrides: Record<string, unknown> = {}) {
     type: "closed",
     amount: "10",
     toAmount: null,
+    description: "Returned cash in May",
     date: new Date("2026-05-26T14:00:00.000Z"),
     createdAt: new Date("2026-05-26T14:01:00.000Z"),
     debt: {
@@ -391,6 +392,39 @@ describe("Transactions API", () => {
         }),
       }),
     ]);
+  });
+
+  it("pushes description filters to debt transactions", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.paymentTransaction.findMany.mockResolvedValue([]);
+    prisma.paymentTransaction.count.mockResolvedValue(0);
+    prisma.transferTransaction.findMany.mockResolvedValue([]);
+    prisma.transferTransaction.count.mockResolvedValue(0);
+    prisma.debtTransaction.findMany.mockResolvedValue([createDebtTransactionRecord()]);
+    prisma.debtTransaction.count.mockResolvedValue(1);
+
+    const response = await request(app.getHttpServer())
+      .get("/workspaces/workspace-1/transactions")
+      .query({ description: "cash" })
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .expect(200);
+
+    expect(response.body.data[0]).toEqual(
+      expect.objectContaining({
+        kind: "debtTransaction",
+        data: expect.objectContaining({ description: "Returned cash in May" }),
+      })
+    );
+    expect(prisma.debtTransaction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ description: { contains: "cash", mode: "insensitive" } }),
+      })
+    );
+    expect(prisma.debtTransaction.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ description: { contains: "cash", mode: "insensitive" } }),
+      })
+    );
   });
 
   it("post-filters amount ranges before paginating combined transactions", async () => {

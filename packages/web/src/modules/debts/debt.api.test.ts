@@ -62,6 +62,7 @@ function createDebtTransactionDto(overrides: Record<string, unknown> = {}) {
     type: DebtTransactionType.CLOSED,
     amount: "25",
     toAmount: null,
+    description: null,
     date: "2026-04-03T00:00:00.000Z",
     createdAt: "2026-04-03T00:00:00.000Z",
     debt: {
@@ -257,6 +258,7 @@ describe("debt.api", () => {
           paymentAmount: "80",
           categoryId: "category-1",
           accountId: "account-1",
+          description: "Returned cash",
           useAccount: true,
         },
         requestOptions
@@ -277,6 +279,7 @@ describe("debt.api", () => {
         amount: "75",
         paymentAmount: "80",
         categoryId: "category-1",
+        description: "Returned cash",
       }),
       requestOptions
     );

@@ -236,6 +236,7 @@ function toDebtTransactionDto(transaction: AccessibleDebtTransaction) {
     type: transaction.type,
     amount: transaction.amount,
     toAmount: transaction.toAmount,
+    description: transaction.description,
     date: toIsoString(transaction.date),
     createdAt: toIsoString(transaction.createdAt),
     debt: toDebtTransactionDebtDto(transaction.debt),
@@ -884,6 +885,7 @@ export class DebtsService {
           type: DEBT_TRANSACTION_CLOSED,
           amount: closeAmount,
           toAmount: !currenciesMatch ? input.toAmount : null,
+          description: input.description || null,
           date: closeDate,
         },
       });

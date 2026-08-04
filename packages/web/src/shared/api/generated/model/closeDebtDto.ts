@@ -10,6 +10,7 @@ export interface CloseDebtDto {
   amount: string;
   toAmount?: string;
   paymentAmount?: string;
+  description?: string;
   categoryId?: string;
   /** @deprecated */
   closeEarly?: boolean;

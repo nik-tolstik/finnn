@@ -13,6 +13,7 @@ const debtTransaction = {
   type: DebtTransactionType.CLOSED,
   amount: "10",
   toAmount: null,
+  description: null,
   date: new Date("2026-01-02T00:00:00.000Z"),
   createdAt: new Date("2026-01-02T00:00:00.000Z"),
   debt: {
