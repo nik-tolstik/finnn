@@ -95,6 +95,7 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain("max-h-[calc(100dvh-4rem)]");
     expect(dialogSource).toContain('transform: "scale(0.96)"');
     expect(dialogSource).not.toContain('transform: "translateY(100%)"');
+    expect(dialogSource).toContain("escapeKey: dismissOnEscapeKey && !nestedOverlayOpen");
     expect(dialogSource).toContain("outsidePress: dismissOnOutsidePress && !nestedOverlayOpen");
     expect(dialogSource).toContain("{showCloseButton ? (");
     expect(dialogSource).toContain(

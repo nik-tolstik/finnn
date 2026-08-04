@@ -25,9 +25,13 @@ describe("debt dialog entry points", () => {
     );
     const dialogSource = readSource("src/shared/ui/dialog/Dialog.tsx");
 
+    expect(closedHistory).toContain("dismissOnEscapeKey={!debtDialog.mounted}");
     expect(closedHistory).toContain("dismissOnOutsidePress={!debtDialog.mounted}");
+    expect(dialogSource).toContain("dismissOnEscapeKey?: boolean");
     expect(dialogSource).toContain("dismissOnOutsidePress?: boolean");
+    expect(dialogSource).toContain("dismissOnEscapeKey = true");
     expect(dialogSource).toContain("dismissOnOutsidePress = true");
+    expect(dialogSource).toContain("escapeKey: dismissOnEscapeKey && !nestedOverlayOpen");
     expect(dialogSource).toContain("outsidePress: dismissOnOutsidePress && !nestedOverlayOpen");
   });
 

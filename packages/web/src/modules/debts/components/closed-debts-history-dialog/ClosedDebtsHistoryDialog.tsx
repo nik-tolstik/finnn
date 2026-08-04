@@ -48,6 +48,7 @@ export function ClosedDebtsHistoryDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogWindow
           className="sm:max-h-[82dvh] sm:w-[560px]"
+          dismissOnEscapeKey={!debtDialog.mounted}
           dismissOnOutsidePress={!debtDialog.mounted}
           onCloseComplete={onCloseComplete}
         >
