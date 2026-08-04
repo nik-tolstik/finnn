@@ -134,10 +134,13 @@ describe("dashboard interaction loading", () => {
     expect(accountsCardsSource).not.toContain("useBreakpoints");
     expect(accountActionsSource).toContain('label: "Транзакция"');
     expect(accountActionsSource).toContain('label: "Изменить"');
-    expect(accountActionsSource).toContain("formatMoney(account.balance, account.currency)");
+    expect(accountActionsSource).toContain(
+      'import { AccountCard } from "@/shared/components/account-card/AccountCard"'
+    );
+    expect(accountActionsSource).toContain("<AccountCard account={account} showOwner={false} />");
     expect(accountActionsSource).toContain('mobileActionsClassName="gap-2"');
+    expect(accountActionsSource).toContain('mobileActionClassName="gap-3 px-3 text-sm font-normal"');
     expect(accountActionsSource).toContain('mobileContentClassName="px-6 pt-3 pb-6"');
-    expect(accountActionsSource).toContain('className="mt-1 flex min-w-0 items-center gap-2"');
     expect(accountActionsSource).toContain('tone: "destructive"');
     expect(accountActionsSource).toContain("anchor={anchor}");
     expect(accountActionsSource).toContain("open={open}");
@@ -145,6 +148,7 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("if (isMobile)");
     expect(actionsDialogSource).toContain("<Sheet");
     expect(actionsDialogSource).toContain("mobileContext");
+    expect(actionsDialogSource).toContain("mobileActionClassName");
     expect(actionsDialogSource).toContain("mobileActionsClassName");
     expect(actionsDialogSource).toContain("mobileContentClassName");
     expect(actionsDialogSource).toContain("<SheetTitle>Действия</SheetTitle>");

@@ -1,9 +1,8 @@
 import { Archive, Eye, EyeOff, Pencil, Plus } from "lucide-react";
 
 import type { Account } from "@/modules/accounts/account.types";
+import { AccountCard } from "@/shared/components/account-card/AccountCard";
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog";
-import { AccountIcon } from "@/shared/utils/account-icons";
-import { formatMoney } from "@/shared/utils/money";
 
 interface AccountActionsDialogProps {
   account: Account;
@@ -64,20 +63,9 @@ export function AccountActionsDialog({
       onOpenChange={onOpenChange}
       actions={actions}
       mobileActionsClassName="gap-2"
+      mobileActionClassName="gap-3 px-3 text-sm font-normal"
       mobileContentClassName="px-6 pt-3 pb-6"
-      mobileContext={
-        <span className="mt-1 flex min-w-0 items-center gap-2">
-          <AccountIcon
-            iconName={account.icon}
-            accountColor={account.color}
-            accountName={account.name}
-            className="size-5 shrink-0"
-          />
-          <span className="truncate">{account.name}</span>
-          <span aria-hidden="true">•</span>
-          <span className="shrink-0">{formatMoney(account.balance, account.currency)}</span>
-        </span>
-      }
+      mobileContext={<AccountCard account={account} showOwner={false} />}
     />
   );
 }
