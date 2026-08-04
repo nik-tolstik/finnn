@@ -1,9 +1,56 @@
-import { getDebtTransactionBalanceDelta } from "@/shared/lib/balance-domain";
+import { getDebtTransactionBalanceDelta, getDebtTransactionTotalsDelta } from "@/shared/lib/balance-domain";
 import type { UpdateDebtTransactionInput } from "@/shared/lib/validations/debt";
-import { addMoney, compareMoney, subtractMoney } from "@/shared/utils/money";
+import { addMoney, compareMoney, normalizeMoneyString, subtractMoney } from "@/shared/utils/money";
 
 import { DebtTransactionType, DebtType } from "../../debt.constants";
 import type { DebtTransactionWithRelations } from "../../debt.types";
+
+const COMPLETE_MONEY_AMOUNT_PATTERN = /^(?:\d+(?:\.\d+)?|\.\d+)$/;
+const TRAILING_DECIMAL_SEPARATOR_PATTERN = /^\d+\.$/;
+
+export interface EditDebtTransactionSummaryPreview {
+  remainingAmount: string;
+  totalAmount: string;
+}
+
+export function getEditDebtTransactionSummaryPreview({
+  debtTransaction,
+  amount,
+}: {
+  debtTransaction: DebtTransactionWithRelations;
+  amount?: string;
+}): EditDebtTransactionSummaryPreview {
+  const normalizedAmount = normalizeMoneyString(amount || "");
+  const completeAmount = TRAILING_DECIMAL_SEPARATOR_PATTERN.test(normalizedAmount)
+    ? normalizedAmount.slice(0, -1)
+    : normalizedAmount;
+
+  if (!COMPLETE_MONEY_AMOUNT_PATTERN.test(completeAmount) || compareMoney(completeAmount, "0") <= 0) {
+    return {
+      remainingAmount: debtTransaction.debt.remainingAmount,
+      totalAmount: debtTransaction.debt.amount,
+    };
+  }
+
+  const currentTotals = getDebtTransactionTotalsDelta(debtTransaction.type, debtTransaction.amount);
+  const nextTotals = getDebtTransactionTotalsDelta(debtTransaction.type, completeAmount);
+  const totalDelta = subtractMoney(nextTotals.amountDelta, currentTotals.amountDelta);
+  const remainingDelta = subtractMoney(nextTotals.remainingDelta, currentTotals.remainingDelta);
+  const nextTotalAmount = addMoney(debtTransaction.debt.amount, totalDelta);
+  const nextRemainingAmount = addMoney(debtTransaction.debt.remainingAmount, remainingDelta);
+
+  if (compareMoney(nextRemainingAmount, "0") < 0) {
+    return {
+      remainingAmount: debtTransaction.debt.remainingAmount,
+      totalAmount: debtTransaction.debt.amount,
+    };
+  }
+
+  return {
+    remainingAmount: nextRemainingAmount,
+    totalAmount: nextTotalAmount,
+  };
+}
 
 interface GetPreviewDebtTransactionAccountParams<TAccount extends { id: string; balance: string; currency: string }> {
   debtTransaction: DebtTransactionWithRelations;

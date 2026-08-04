@@ -13,11 +13,11 @@ import {
   DialogWindow,
 } from "@/shared/ui/dialog";
 
+import { DebtSummaryCard } from "../../debt-summary-card/DebtSummaryCard";
 import { EditDebtTransactionAccountSection } from "../edit-debt-transaction-account-section/EditDebtTransactionAccountSection";
 import { EditDebtTransactionAmountFields } from "../edit-debt-transaction-amount-fields/EditDebtTransactionAmountFields";
 import { EditDebtTransactionDateField } from "../edit-debt-transaction-date-field/EditDebtTransactionDateField";
 import type { EditDebtTransactionDialogProps } from "../edit-debt-transaction-dialog.types";
-import { EditDebtTransactionSummary } from "../edit-debt-transaction-summary/EditDebtTransactionSummary";
 import { useEditDebtTransactionDialog } from "../useEditDebtTransactionDialog";
 
 const EDIT_DEBT_TRANSACTION_FORM_ID = "edit-debt-transaction-form";
@@ -37,6 +37,7 @@ export function EditDebtTransactionDialog({
     dialogTitle,
     dialogDescription,
     debtAmountLabel,
+    debtSummaryPreview,
     selectedAccount,
     previewAccount,
     currenciesMatch,
@@ -78,7 +79,13 @@ export function EditDebtTransactionDialog({
         <DialogContent>
           <FormProvider {...form}>
             <form id={EDIT_DEBT_TRANSACTION_FORM_ID} onSubmit={handleSubmit} className="space-y-4">
-              <EditDebtTransactionSummary debtTransaction={debtTransaction} />
+              <DebtSummaryCard
+                currency={debtTransaction.debt.currency}
+                debtType={debtTransaction.debt.type}
+                personName={debtTransaction.debt.personName}
+                remainingAmount={debtSummaryPreview.remainingAmount}
+                totalAmount={debtSummaryPreview.totalAmount}
+              />
               <EditDebtTransactionAccountSection
                 debtTransaction={debtTransaction}
                 workspaceId={workspaceId}
