@@ -18,7 +18,8 @@ describe("debt card presentation", () => {
     expect(source).not.toContain("CheckCircle2");
     expect(source).not.toContain('from "@/shared/ui/badge"');
     expect(source).toContain("shadow-inner");
-    expect(source).not.toContain("hover:shadow-md");
+    expect(source).toContain('isClosed ? "shadow-inner hover:bg-surface-hover" : "hover:shadow-md transition-shadow"');
+    expect(source).toContain('aria-haspopup={onClick ? "dialog" : undefined}');
   });
 
   it("keeps the debt card keyboard accessible without changing its click contract", () => {
@@ -26,6 +27,7 @@ describe("debt card presentation", () => {
 
     expect(source).toContain('role={onClick ? "button" : undefined}');
     expect(source).toContain("tabIndex={onClick ? 0 : undefined}");
+    expect(source).toContain('aria-haspopup={onClick ? "dialog" : undefined}');
     expect(source).toContain('event.key !== "Enter"');
     expect(source).toContain('event.key !== " "');
     expect(source).toContain("onClick(event.currentTarget);");

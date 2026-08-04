@@ -20,6 +20,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
   const isLent = debt.type === DebtType.LENT;
   const isClosed = debt.status === DebtStatus.CLOSED;
   const directionLabel = isLent ? "Мне должны" : "Я должен";
+  const debtDate = new Date(debt.date);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!onClick || (event.key !== "Enter" && event.key !== " ")) {
@@ -34,10 +35,11 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
     <AnimatedListItem>
       <Card
         className={cn(
-          "p-3 sm:p-4 shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30",
+          "p-3 sm:p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30",
           onClick && "cursor-pointer",
-          isClosed ? "hover:bg-surface-hover" : "hover:shadow-inner transition-shadow"
+          isClosed ? "shadow-inner hover:bg-surface-hover" : "hover:shadow-md transition-shadow"
         )}
+        aria-haspopup={onClick ? "dialog" : undefined}
         onClick={onClick ? (event) => onClick(event.currentTarget) : undefined}
         onKeyDown={onClick ? handleKeyDown : undefined}
         role={onClick ? "button" : undefined}
@@ -48,9 +50,9 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
             <div className="min-w-0 text-xs font-medium text-muted-foreground">{directionLabel}</div>
             <time
               className="min-w-0 break-words text-right text-xs text-muted-foreground"
-              dateTime={debt.date.toISOString()}
+              dateTime={debtDate.toISOString()}
             >
-              {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}
+              {format(debtDate, "dd.MM.yyyy", { locale: ru })}
             </time>
 
             <div className="flex min-w-0 items-start gap-1.5">
@@ -68,9 +70,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="text-xs font-medium">{directionLabel}</div>
               </div>
-              <span className="text-xs text-muted-foreground">
-                {format(new Date(debt.date), "dd.MM.yyyy", { locale: ru })}
-              </span>
+              <span className="text-xs text-muted-foreground">{format(debtDate, "dd.MM.yyyy", { locale: ru })}</span>
             </div>
 
             <div className="flex items-center gap-2 mt-3 justify-between">

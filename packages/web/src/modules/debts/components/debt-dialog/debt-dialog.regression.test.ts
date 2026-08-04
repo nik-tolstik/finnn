@@ -58,6 +58,15 @@ describe("debt dialog entry points", () => {
     ).toBe(false);
   });
 
+  it("uses the original amount when confirming deletion of a closed debt", () => {
+    const source = readSource("src/modules/debts/components/delete-debt-dialog/DeleteDebtDialog.tsx");
+
+    expect(source).toContain(
+      "const deletionAmount = debt.status === DebtStatus.CLOSED ? debt.amount : debt.remainingAmount;"
+    );
+    expect(source).toContain("formatMoney(deletionAmount, debt.currency)");
+  });
+
   it("keeps adding to a debt account-backed", () => {
     const source = readSource("src/modules/debts/components/add-to-debt-dialog/AddToDebtDialog.tsx");
 
