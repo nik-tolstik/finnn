@@ -15,7 +15,6 @@ import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { type ActionItem, ActionsDialog } from "@/shared/ui/actions-dialog/ActionsDialog";
 import { Button } from "@/shared/ui/button";
 import { OverlayPortalRootProvider } from "@/shared/ui/overlay-portal-root";
-import { Tooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/utils/cn";
 
 interface DialogContextValue {
@@ -112,7 +111,6 @@ function DialogCloseButton({ className, children: _, type = "button", ...props }
 }
 
 function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
-  const { isMobile } = useBreakpoints();
   const { setNestedOverlayOpen } = React.useContext(DialogWindowContext);
   const optionsButtonRef = React.useRef<HTMLButtonElement>(null);
   const [open, setOpen] = React.useState(false);
@@ -142,13 +140,7 @@ function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
 
   return (
     <>
-      {isMobile ? (
-        optionsButton
-      ) : (
-        <Tooltip content="Действия" delayDuration={0} disableHoverableContent>
-          {optionsButton}
-        </Tooltip>
-      )}
+      {optionsButton}
       <ActionsDialog
         actions={actions}
         anchor={optionsButtonRef.current}

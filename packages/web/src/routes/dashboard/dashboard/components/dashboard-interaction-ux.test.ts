@@ -75,6 +75,8 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain("<ActionsDialog");
     expect(dialogSource).toContain("anchor={optionsButtonRef.current}");
     expect(dialogSource).toContain("onClick={() => setOpen((current) => !current)}");
+    expect(dialogSource).not.toContain('import { Tooltip } from "@/shared/ui/tooltip"');
+    expect(dialogSource).not.toContain("<Tooltip");
     expect(dialogSource).toContain("function DialogFooter");
     expect(dialogSource).not.toContain("function ActionsDialog");
     expect(actionsDialogSource).toContain("<Popover");
