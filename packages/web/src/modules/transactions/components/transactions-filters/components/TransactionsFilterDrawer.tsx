@@ -163,7 +163,7 @@ export function TransactionsFilterDrawer({
                 return (
                   <span className="flex min-w-0 flex-1 items-center gap-2">
                     {member && <UserAvatar name={member.name} email={member.email} image={member.image} size="sm" />}
-                    <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-xs")}>
+                    <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-sm")}>
                       {option.label}
                     </span>
                     {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
@@ -185,6 +185,14 @@ export function TransactionsFilterDrawer({
               allowClear
               label="Типы транзакций"
               options={transactionTypeOptions}
+              renderOption={({ option, selected, isTrigger }) => (
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-sm")}>
+                    {option.label}
+                  </span>
+                  {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
+                </span>
+              )}
               value={draftFilters.transactionTypes || []}
               onChange={(transactionTypes) => {
                 updateDraftFilter("transactionTypes", transactionTypes);
@@ -206,13 +214,13 @@ export function TransactionsFilterDrawer({
                 const category = categoriesById.get(String(option.value));
 
                 if (!category) {
-                  return <span className="text-xs font-medium text-muted-foreground">{option.label}</span>;
+                  return <span className="text-sm font-medium text-muted-foreground">{option.label}</span>;
                 }
 
                 return (
                   <span className="flex min-w-0 flex-1 items-center gap-2">
                     <CategoryIcon icon={category.icon} iconAssetId={category.iconAssetId} className="size-4" />
-                    <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-xs")}>
+                    <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-sm")}>
                       {option.label}
                     </span>
                     {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}
@@ -252,7 +260,7 @@ export function TransactionsFilterDrawer({
                         className="size-4 shrink-0"
                       />
                     )}
-                    <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-xs")}>
+                    <span className={cn("min-w-0 flex-1 truncate font-normal", !isTrigger && "text-sm")}>
                       {option.label}
                     </span>
                     {account && !isTrigger && (
