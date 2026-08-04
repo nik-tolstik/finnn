@@ -37,6 +37,7 @@ export type DialogAction = ActionItem;
 interface DialogWindowProps extends React.HTMLAttributes<HTMLDivElement> {
   actions?: DialogAction[];
   closeButtonDisabled?: boolean;
+  dismissOnOutsidePress?: boolean;
   onCloseComplete?: () => void;
   showCloseButton?: boolean;
 }
@@ -164,6 +165,7 @@ function DialogWindow({
   className,
   children,
   closeButtonDisabled = false,
+  dismissOnOutsidePress = true,
   showCloseButton = true,
   onCloseComplete,
   style,
@@ -182,7 +184,7 @@ function DialogWindow({
     onOpenChange,
   });
 
-  const dismiss = useDismiss(context, { outsidePress: !nestedOverlayOpen });
+  const dismiss = useDismiss(context, { outsidePress: dismissOnOutsidePress && !nestedOverlayOpen });
   const role = useRole(context, { role: "dialog" });
   const { getFloatingProps } = useInteractions([dismiss, role]);
   const { isMounted, styles: transitionStyles } = useTransitionStyles(context, {

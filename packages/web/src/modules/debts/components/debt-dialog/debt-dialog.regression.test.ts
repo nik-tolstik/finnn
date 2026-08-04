@@ -19,6 +19,18 @@ describe("debt dialog entry points", () => {
     }
   });
 
+  it("keeps the closed debts history open while a debt dialog is mounted", () => {
+    const closedHistory = readSource(
+      "src/modules/debts/components/closed-debts-history-dialog/ClosedDebtsHistoryDialog.tsx"
+    );
+    const dialogSource = readSource("src/shared/ui/dialog/Dialog.tsx");
+
+    expect(closedHistory).toContain("dismissOnOutsidePress={!debtDialog.mounted}");
+    expect(dialogSource).toContain("dismissOnOutsidePress?: boolean");
+    expect(dialogSource).toContain("dismissOnOutsidePress = true");
+    expect(dialogSource).toContain("outsidePress: dismissOnOutsidePress && !nestedOverlayOpen");
+  });
+
   it("removes the obsolete action-picker module", () => {
     expect(
       existsSync(join(process.cwd(), "src/modules/debts/components/debt-actions-dialog/DebtActionsDialog.tsx"))
