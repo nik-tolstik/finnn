@@ -42,9 +42,12 @@ source of truth for stable engineering, domain, setup, and operational rules.
 - `Backlog`: accepted but not ready to start. The agent may investigate only when asked and must not implement it.
 - `Todo`: ready for implementation. The outcome and acceptance criteria must be clear enough to verify.
 - `In Progress`: active implementation. Move the issue here when work actually starts.
-- `In Review`: the draft pull request is ready for review or human acceptance. Keep the issue here until merge and
-  verification.
-- `Done`: merged and verified. The human owner moves the issue here after accepting the result.
+- `In Review`: the draft pull request is ready for review. Keep the issue here until the pull request is merged.
+- `Dev`: the pull request has been merged into `develop`. The agent moves the issue here immediately after merge, then
+  completes or confirms the required verification. If verification is pending or fails, keep the issue here and add
+  a blocker comment; do not mark the issue `Done`.
+- `Done`: merged, verified, and accepted by the human owner. The human owner moves the issue here, or explicitly asks
+  the agent to do so.
 - `Canceled` and `Duplicate`: terminal states; the agent must not continue work.
 
 If the issue is blocked, keep it open and add one concise comment containing the blocker, its impact, and the decision
@@ -66,10 +69,12 @@ or access required. Do not invent product behavior to bypass a blocker.
 6. Open or update a draft pull request that includes the Linear issue identifier, then move the issue to `In Review`.
    Merge only after the user explicitly authorizes that exact merge and after completing the required
    pre-merge review.
-7. Add a single handoff comment with the outcome, verification performed, pull request link, known risks, and any
-   follow-up work. Do not post command-by-command progress noise.
-8. Leave the issue `In Review` until the human accepts it. Do not mark the issue `Done` merely because code or a pull
-   request exists.
+7. After the pull request is merged into `develop`, move the issue to `Dev` immediately. Complete or confirm the
+   required verification there; if it is pending or fails, keep the issue in `Dev` and add a concise blocker comment.
+8. Add a single handoff comment with the outcome, verification performed, pull request and merge links, known risks,
+   and any follow-up work. Do not post command-by-command progress noise.
+9. Leave the issue in `Dev` until the human accepts it. Do not mark the issue `Done` merely because code, a pull
+   request, or a merge exists; move it to `Done` only after explicit human acceptance or instruction.
 
 Read-only questions, repository exploration, tiny edits that will not be committed, and an explicit request to work
 without Linear do not require an issue. When separate follow-up work is discovered, create another issue only when the
