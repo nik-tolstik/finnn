@@ -104,6 +104,7 @@ function createDebtTransactionDto(overrides: Record<string, unknown> = {}) {
     type: "created",
     amount: "300",
     toAmount: null,
+    description: "Initial loan",
     date: "2026-04-05T10:00:00.000Z",
     createdAt: "2026-04-05T10:00:00.000Z",
     debt: {
@@ -225,6 +226,7 @@ describe("transaction.api", () => {
           kind: "debtTransaction",
           data: expect.objectContaining({
             id: "debt-transaction-1",
+            description: "Initial loan",
             date: new Date("2026-04-05T10:00:00.000Z"),
             debt: expect.objectContaining({
               updatedAt: new Date("2026-04-06T10:00:00.000Z"),

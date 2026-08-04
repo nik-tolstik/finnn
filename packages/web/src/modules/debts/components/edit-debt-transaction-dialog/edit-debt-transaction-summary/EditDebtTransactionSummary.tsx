@@ -14,6 +14,12 @@ export function EditDebtTransactionSummary({ debtTransaction }: EditDebtTransact
       <div className="text-sm text-muted-foreground">
         Остаток долга: {formatMoney(debtTransaction.debt.remainingAmount, debtTransaction.debt.currency)}
       </div>
+      {debtTransaction.description?.trim() ? (
+        <div className="pt-2">
+          <div className="text-sm text-muted-foreground">Описание</div>
+          <div className="whitespace-pre-wrap text-sm">{debtTransaction.description.trim()}</div>
+        </div>
+      ) : null}
     </div>
   );
 }

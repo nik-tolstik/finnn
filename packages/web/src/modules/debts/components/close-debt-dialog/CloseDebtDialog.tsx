@@ -30,6 +30,7 @@ import type { ComboboxOption } from "@/shared/ui/combobox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogWindow } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { NumberInput } from "@/shared/ui/number-input";
+import { Textarea } from "@/shared/ui/textarea";
 import { compareMoney, getCurrencySymbol, subtractMoney } from "@/shared/utils/money";
 
 import { closeDebt } from "../../debt.api";
@@ -458,6 +459,17 @@ export function CloseDebtPanel({ debt, workspaceId, open, onComplete, onSubmitti
               )}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="close-debt-description">Описание</Label>
+            <Textarea
+              id="close-debt-description"
+              rows={3}
+              placeholder="Описание транзакции"
+              {...register("description")}
+            />
+            {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
+          </div>
         </form>
       </DialogContent>
 

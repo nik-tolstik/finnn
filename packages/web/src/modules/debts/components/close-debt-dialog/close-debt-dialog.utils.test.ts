@@ -18,6 +18,7 @@ describe("close debt dialog utils", () => {
       toAmount: "",
       categoryId: undefined,
       accountId: "",
+      description: "",
       useAccount: true,
     });
   });

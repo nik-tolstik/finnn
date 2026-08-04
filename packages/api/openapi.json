@@ -7310,6 +7310,10 @@
             "type": "string",
             "example": "95"
           },
+          "description": {
+            "type": "string",
+            "example": "Возврат денег в мае"
+          },
           "categoryId": {
             "type": "string",
             "example": "665f5d865ef5a20c0d2f2222"
@@ -7453,6 +7457,10 @@
             "type": "string"
           },
           "toAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
             "type": "string",
             "nullable": true
           },
@@ -8614,6 +8622,10 @@
             "type": "string"
           },
           "toAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
             "type": "string",
             "nullable": true
           },

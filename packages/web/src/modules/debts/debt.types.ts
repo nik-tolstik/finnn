@@ -21,6 +21,7 @@ export interface DebtTransactionWithRelations {
   type: string;
   amount: string;
   toAmount: string | null;
+  description: string | null;
   date: Date;
   createdAt: Date;
   debt: {

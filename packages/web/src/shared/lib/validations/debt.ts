@@ -34,6 +34,7 @@ export const closeDebtSchema = z
     paymentAmount: optionalPositiveMoneyString(),
     categoryId: z.string().optional(),
     accountId: z.string().optional(),
+    description: z.string().optional(),
     useAccount: z.boolean(),
   })
   .refine(

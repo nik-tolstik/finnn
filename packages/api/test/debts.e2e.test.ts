@@ -160,6 +160,7 @@ function createDebtTransactionRecord(overrides: Record<string, unknown> = {}) {
     type: "closed",
     amount: "10",
     toAmount: null,
+    description: null,
     date: new Date("2026-05-26T14:00:00.000Z"),
     createdAt: new Date("2026-05-26T14:01:00.000Z"),
     debt: createDebtRecord(),
@@ -394,6 +395,7 @@ describe("Debts API", () => {
         closeEarly: false,
         accountId: "account-1",
         useAccount: true,
+        description: "   ",
         date: closeDate,
       })
       .expect(200);
@@ -409,13 +411,38 @@ describe("Debts API", () => {
     });
     expect(prisma.debtTransaction.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ date: new Date(closeDate), type: "closed" }),
+        data: expect.objectContaining({ date: new Date(closeDate), description: null, type: "closed" }),
       })
     );
     expect(prisma.account.update).toHaveBeenCalledWith({
       data: { balance: "195" },
       where: { id: "account-1" },
     });
+  });
+
+  it("stores a repayment description on the debt transaction", async () => {
+    mockAuthenticatedSession(prisma);
+    prisma.debt.update.mockResolvedValue(createDebtRecord({ remainingAmount: "0", status: "closed" }));
+
+    const response = await request(app.getHttpServer())
+      .post("/debts/debt-1/close")
+      .set("Cookie", `${AUTH_COOKIE_NAME}=session-token`)
+      .send({
+        amount: "90",
+        paymentAmount: "90",
+        accountId: "account-1",
+        useAccount: true,
+        description: "Returned cash in May",
+      })
+      .expect(200);
+
+    expect(response.body.debt.status).toBe("closed");
+    expect(prisma.debtTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ description: "Returned cash in May" }),
+      })
+    );
+    expect(prisma.paymentTransaction.create).not.toHaveBeenCalled();
   });
 
   it("closes a borrowed debt when repayment makes the account balance negative", async () => {

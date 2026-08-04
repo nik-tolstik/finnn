@@ -240,7 +240,7 @@ function shouldQueryTransferTransactions(filters?: CombinedTransactionsQueryDto)
 }
 
 function shouldQueryDebtTransactions(filters?: CombinedTransactionsQueryDto) {
-  if (filters?.categoryIds?.length || filters?.description || filters?.includeDebtTransactions === false) {
+  if (filters?.categoryIds?.length || filters?.includeDebtTransactions === false) {
     return false;
   }
 
@@ -317,6 +317,7 @@ function buildDebtTransactionWhere(workspaceId: string, filters?: CombinedTransa
 
   if (date) where.date = date;
   if (filters?.accountIds?.length) where.accountId = { in: filters.accountIds };
+  if (filters?.description) where.description = { contains: filters.description, mode: "insensitive" };
   if (filters?.userIds?.length) {
     where.account = {
       is: {
@@ -427,6 +428,7 @@ function toDebtTransactionDto(transaction: DebtTransactionWithRelations) {
     type: transaction.type,
     amount: transaction.amount,
     toAmount: transaction.toAmount,
+    description: transaction.description,
     date: toIsoString(transaction.date),
     createdAt: toIsoString(transaction.createdAt),
     debt: {

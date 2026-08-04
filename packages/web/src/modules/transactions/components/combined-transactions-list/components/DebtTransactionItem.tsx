@@ -57,6 +57,8 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
           : undefined,
       }}
       amount={amount}
+      descriptionPlacement="below"
+      description={debtTransaction.description?.trim() || undefined}
       onClick={() => {
         onClick(debtTransaction);
       }}

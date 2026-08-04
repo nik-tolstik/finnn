@@ -358,6 +358,7 @@ model DebtTransaction {
   type                 String
   amount               String
   toAmount             String?
+  description          String?
   date                 DateTime            @default(now()) @db.Timestamptz(3)
   createdAt            DateTime            @default(now()) @db.Timestamptz(3)
   workspace            Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
