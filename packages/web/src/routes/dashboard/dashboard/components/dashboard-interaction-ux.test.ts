@@ -86,7 +86,7 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("max-h-[calc(100dvh-4rem)]");
     expect(actionsDialogSource).toContain('size={isMobile ? "touch" : "compact"}');
     expect(actionsDialogSource).toContain("min-h-12");
-    expect(actionsDialogSource).toContain("text-base");
+    expect(actionsDialogSource).toContain('"min-h-12 gap-3 px-3 py-2.5 text-sm font-normal"');
     expect(popoverSource).toContain("reference: ReferenceType | null");
     expect(popoverSource).toContain("trigger?:");
     expect(sheetSource).toContain("onCloseComplete?: () => void");
@@ -139,7 +139,6 @@ describe("dashboard interaction loading", () => {
     );
     expect(accountActionsSource).toContain("<AccountCard account={account} showOwner={false} />");
     expect(accountActionsSource).toContain('mobileActionsClassName="gap-2"');
-    expect(accountActionsSource).toContain('mobileActionClassName="gap-3 px-3 text-sm font-normal"');
     expect(accountActionsSource).toContain('mobileContentClassName="px-6 pt-3 pb-6"');
     expect(accountActionsSource).toContain('tone: "destructive"');
     expect(accountActionsSource).toContain("anchor={anchor}");
@@ -148,11 +147,10 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("if (isMobile)");
     expect(actionsDialogSource).toContain("<Sheet");
     expect(actionsDialogSource).toContain("mobileContext");
-    expect(actionsDialogSource).toContain("mobileActionClassName");
     expect(actionsDialogSource).toContain("mobileActionsClassName");
     expect(actionsDialogSource).toContain("mobileContentClassName");
     expect(actionsDialogSource).toContain("<SheetTitle>Действия</SheetTitle>");
-    expect(actionsDialogSource).toContain('size === "touch" ? "min-h-12 gap-4 py-2.5 text-base"');
+    expect(actionsDialogSource).toContain('"min-h-12 gap-3 px-3 py-2.5 text-sm font-normal"');
     expect(actionsDialogSource).not.toContain("emphasis");
     expect(actionsDialogSource).not.toContain("separate");
     expect(actionsDialogSource).not.toContain("bg-primary/10 hover:bg-primary/20");

@@ -63,7 +63,6 @@ export function AccountActionsDialog({
       onOpenChange={onOpenChange}
       actions={actions}
       mobileActionsClassName="gap-2"
-      mobileActionClassName="gap-3 px-3 text-sm font-normal"
       mobileContentClassName="px-6 pt-3 pb-6"
       mobileContext={<AccountCard account={account} showOwner={false} />}
     />

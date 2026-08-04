@@ -16,7 +16,6 @@ export interface ActionItem {
 
 interface ActionsDialogBaseProps {
   actions: ActionItem[];
-  mobileActionClassName?: string;
   mobileActionsClassName?: string;
   mobileContentClassName?: string;
   mobileContext?: ReactNode;
@@ -43,13 +42,11 @@ export type ActionsDialogProps = AnchoredActionsDialogProps | ContextMenuActions
 function ActionList({
   actions,
   className,
-  itemClassName,
   onSelect,
   size = "compact",
 }: {
   actions: ActionItem[];
   className?: string;
-  itemClassName?: string;
   onSelect: (action: ActionItem) => void;
   size?: "compact" | "touch";
 }) {
@@ -60,8 +57,7 @@ function ActionList({
           <button
             className={cn(
               "flex w-full items-center rounded-md text-left font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
-              size === "touch" ? "min-h-12 gap-4 py-2.5 text-base" : "gap-3 px-3 py-2.5 text-sm",
-              itemClassName,
+              size === "touch" ? "min-h-12 gap-3 px-3 py-2.5 text-sm font-normal" : "gap-3 px-3 py-2.5 text-sm",
               "hover:bg-control-hover",
               action.tone === "destructive" ? "text-destructive" : "text-foreground"
             )}
@@ -122,7 +118,6 @@ export function ActionsDialog(props: ActionsDialogProps) {
   const {
     actions,
     anchor,
-    mobileActionClassName,
     mobileActionsClassName,
     mobileContentClassName,
     mobileContext,
@@ -138,7 +133,6 @@ export function ActionsDialog(props: ActionsDialogProps) {
     <ActionList
       actions={actions}
       className={isMobile ? mobileActionsClassName : undefined}
-      itemClassName={isMobile ? mobileActionClassName : undefined}
       onSelect={handleSelect}
       size={isMobile ? "touch" : "compact"}
     />
