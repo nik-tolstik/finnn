@@ -82,7 +82,7 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("onOpenChange(false);\n    action.onSelect();");
     expect(actionsDialogSource).toContain("max-h-[calc(100dvh-4rem)]");
     expect(actionsDialogSource).toContain('size={isMobile ? "touch" : "compact"}');
-    expect(actionsDialogSource).toContain("min-h-14");
+    expect(actionsDialogSource).toContain("min-h-12");
     expect(actionsDialogSource).toContain("text-base");
     expect(popoverSource).toContain("reference: ReferenceType | null");
     expect(popoverSource).toContain("trigger?:");
@@ -108,31 +108,46 @@ describe("dashboard interaction loading", () => {
     expect(editTransactionSource).toContain("actions=");
   });
 
-  it("opens account editors directly and uses a desktop context menu for account actions", () => {
+  it("opens account action menus from a normal card click", () => {
     const accountCardSource = readSource("src/shared/components/account-card/AccountCard.tsx");
     const accountsCardsSource = readSource("src/modules/accounts/components/accounts-cards/AccountsCards.tsx");
     const accountActionsSource = readSource(
       "src/modules/accounts/components/account-actions-dialog/AccountActionsDialog.tsx"
     );
-    const editAccountSource = readSource("src/modules/accounts/components/edit-account-dialog/EditAccountDialog.tsx");
     const actionsDialogSource = readSource("src/shared/ui/actions-dialog/ActionsDialog.tsx");
-    const popoverSource = readSource("src/shared/ui/popover/Popover.tsx");
 
     expect(accountCardSource).toContain("MouseEventHandler<HTMLButtonElement>");
-    expect(accountsCardsSource).toContain("editDialog.openDialog({ account })");
-    expect(accountsCardsSource).not.toContain("accountActionsDialog.openDialog");
+    expect(accountsCardsSource).toContain("accountActionsDialog.openDialog({ account, anchor: event.currentTarget })");
+    expect(accountsCardsSource).toContain("onClick={(event) => {");
+    expect(accountsCardsSource).toContain(
+      "const accountActionAfterCloseRef = useRef<AccountActionAfterClose | null>(null)"
+    );
+    expect(accountsCardsSource).toContain("onCloseComplete={handleAccountActionsCloseComplete}");
+    expect(accountsCardsSource).toContain('queueAccountActionAfterClose({ type: "edit"');
+    expect(accountsCardsSource).toContain('queueAccountActionAfterClose({ type: "archive"');
+    expect(accountsCardsSource).toContain('queueAccountActionAfterClose({ type: "create-transaction"');
+    expect(accountsCardsSource).toContain("accountActionAfterCloseRef.current = null;");
+    expect(accountsCardsSource).not.toContain("useBreakpoints");
     expect(accountActionsSource).toContain('label: "Транзакция"');
     expect(accountActionsSource).toContain('label: "Изменить"');
+    expect(accountActionsSource).toContain("formatMoney(account.balance, account.currency)");
+    expect(accountActionsSource).toContain('mobileActionsClassName="gap-2"');
+    expect(accountActionsSource).toContain('mobileContentClassName="px-6 pt-3 pb-6"');
+    expect(accountActionsSource).toContain('className="mt-1 flex min-w-0 items-center gap-2"');
     expect(accountActionsSource).toContain('tone: "destructive"');
-    expect(accountActionsSource).toContain("trigger={trigger}");
-    expect(actionsDialogSource).toContain("openOnContextMenu");
-    expect(actionsDialogSource).toContain("inertTriggerProps");
-    expect(popoverSource).toContain("openOnContextMenu?: boolean");
-    expect(popoverSource).toContain("event.preventDefault()");
-    expect(popoverSource).toContain("enabled: !openOnContextMenu");
-    expect(editAccountSource).toContain("actions={actions}");
-    expect(editAccountSource).toContain("onToggleVisibility");
-    expect(editAccountSource).toContain("onArchive");
+    expect(accountActionsSource).toContain("anchor={anchor}");
+    expect(accountActionsSource).toContain("open={open}");
+    expect(accountActionsSource).not.toContain("trigger={trigger}");
+    expect(actionsDialogSource).toContain("if (isMobile)");
+    expect(actionsDialogSource).toContain("<Sheet");
+    expect(actionsDialogSource).toContain("mobileContext");
+    expect(actionsDialogSource).toContain("mobileActionsClassName");
+    expect(actionsDialogSource).toContain("mobileContentClassName");
+    expect(actionsDialogSource).toContain("<SheetTitle>Действия</SheetTitle>");
+    expect(actionsDialogSource).toContain('size === "touch" ? "min-h-12 gap-4 py-2.5 text-base"');
+    expect(actionsDialogSource).not.toContain("emphasis");
+    expect(actionsDialogSource).not.toContain("separate");
+    expect(actionsDialogSource).not.toContain("bg-primary/10 hover:bg-primary/20");
   });
 
   it("keeps scheduled payment action menus anchored without changing their entry point", () => {
