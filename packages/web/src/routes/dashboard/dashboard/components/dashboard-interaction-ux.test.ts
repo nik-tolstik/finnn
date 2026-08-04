@@ -74,6 +74,9 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain("function DialogOptionsButton");
     expect(dialogSource).toContain("<ActionsDialog");
     expect(dialogSource).toContain("anchor={optionsButtonRef.current}");
+    expect(dialogSource).toContain("onClick={() => setOpen((current) => !current)}");
+    expect(dialogSource).not.toContain('import { Tooltip } from "@/shared/ui/tooltip"');
+    expect(dialogSource).not.toContain("<Tooltip");
     expect(dialogSource).toContain("function DialogFooter");
     expect(dialogSource).not.toContain("function ActionsDialog");
     expect(actionsDialogSource).toContain("<Popover");
@@ -92,7 +95,8 @@ describe("dashboard interaction loading", () => {
     expect(dialogSource).toContain("max-h-[calc(100dvh-4rem)]");
     expect(dialogSource).toContain('transform: "scale(0.96)"');
     expect(dialogSource).not.toContain('transform: "translateY(100%)"');
-    expect(dialogSource).toContain("outsidePress: !nestedOverlayOpen");
+    expect(dialogSource).toContain("escapeKey: dismissOnEscapeKey && !nestedOverlayOpen");
+    expect(dialogSource).toContain("outsidePress: dismissOnOutsidePress && !nestedOverlayOpen");
     expect(dialogSource).toContain("{showCloseButton ? (");
     expect(dialogSource).toContain(
       'className={isMobile ? "inline-flex size-8 items-center justify-center p-0" : undefined}'
