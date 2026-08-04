@@ -130,7 +130,7 @@ function DialogOptionsButton({ actions }: { actions: DialogAction[] }) {
       aria-expanded={open}
       aria-haspopup="dialog"
       disabled={disabled}
-      onClick={() => setOpen(true)}
+      onClick={() => setOpen((current) => !current)}
       ref={optionsButtonRef}
       size="icon-sm"
       type="button"
