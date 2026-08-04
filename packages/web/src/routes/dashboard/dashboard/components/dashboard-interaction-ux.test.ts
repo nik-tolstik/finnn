@@ -82,7 +82,7 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("onOpenChange(false);\n    action.onSelect();");
     expect(actionsDialogSource).toContain("max-h-[calc(100dvh-4rem)]");
     expect(actionsDialogSource).toContain('size={isMobile ? "touch" : "compact"}');
-    expect(actionsDialogSource).toContain("min-h-14");
+    expect(actionsDialogSource).toContain("min-h-12");
     expect(actionsDialogSource).toContain("text-base");
     expect(popoverSource).toContain("reference: ReferenceType | null");
     expect(popoverSource).toContain("trigger?:");
@@ -136,7 +136,7 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("mobileActionsClassName");
     expect(actionsDialogSource).toContain("mobileContentClassName");
     expect(actionsDialogSource).toContain("<SheetTitle>Действия</SheetTitle>");
-    expect(actionsDialogSource).toContain('size === "touch" ? "min-h-14 gap-4 py-3 text-base"');
+    expect(actionsDialogSource).toContain('size === "touch" ? "min-h-12 gap-4 py-2.5 text-base"');
     expect(actionsDialogSource).not.toContain("emphasis");
     expect(actionsDialogSource).not.toContain("separate");
     expect(actionsDialogSource).not.toContain("bg-primary/10 hover:bg-primary/20");
