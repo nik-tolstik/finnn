@@ -89,6 +89,25 @@ Do not create an issue for read-only questions, repository exploration, tiny edi
 explicit request to work without Linear. If the user request leaves a material product decision unresolved, leave the
 new issue in `Backlog` and ask only for that decision; otherwise move it through the normal lifecycle.
 
+### Issue Intake Metadata
+
+Resolve the issue owner and type label before creating a Finnn issue. Pass both values in the same create request as
+the title, description, `Nikita Tolstik` team (`TASK`), and `Finnn` Project. Preserve any status, priority, cycle, due
+date, or other metadata selected for the request.
+
+- Assign `Nikita Tolstik` (`me`) by default. When the user explicitly names another human owner, resolve that user in
+  Linear and assign them instead. Keep the human as the assignee when an agent delegate performs the implementation.
+- Assign exactly one type label:
+  - `Bug` when existing behavior is incorrect or has regressed.
+  - `Feature` when the request adds a new user-facing or system capability.
+  - `Improvement` when the request improves existing behavior, design, documentation, tooling, or development process.
+- Do not combine type labels or use an irrelevant fallback. Ask the human before creating the issue only when its type
+  is materially ambiguous.
+- Write the issue title, description, acceptance criteria, and other user-facing issue text in Russian. Keep technical
+  field names, API names, identifiers, and code excerpts in their original form when that improves precision.
+- If the assignee or label cannot be resolved, do not create a partially populated issue. Report the unresolved field
+  and do not claim that the metadata was applied.
+
 ### Artifact Selection
 
 - Use a **Product Change** issue for every planned change. Its description records `Request / context`, `Outcome`,
