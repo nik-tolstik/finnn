@@ -5,28 +5,37 @@ import { describe, expect, it } from "vitest";
 const readSource = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("debt dialog entry points", () => {
-  it("opens DebtDialog directly from active and closed debt lists", () => {
+  it("opens DebtDialog for active debts and delete actions for closed history", () => {
     const activeList = readSource("src/modules/debts/components/debts-list/DebtsList.tsx");
     const closedHistory = readSource(
       "src/modules/debts/components/closed-debts-history-dialog/ClosedDebtsHistoryDialog.tsx"
     );
 
-    for (const source of [activeList, closedHistory]) {
-      expect(source).toContain("DebtDialog");
-      expect(source).toContain("debtDialog.openDialog(debt)");
-      expect(source).not.toContain("DebtActionsDialog");
-      expect(source).not.toContain("setTimeout");
-    }
+    expect(activeList).toContain("DebtDialog");
+    expect(activeList).toContain("debtDialog.openDialog(debt)");
+    expect(activeList).not.toContain("DebtActionsDialog");
+    expect(activeList).not.toContain("setTimeout");
+
+    expect(closedHistory).toContain("ActionsDialog");
+    expect(closedHistory).toContain("DeleteDebtDialog");
+    expect(closedHistory).toContain("actionsDialog.openDialog({ anchor, debt })");
+    expect(closedHistory).toContain("deleteDialog.openDialog(debt)");
+    expect(closedHistory).toContain('id: "delete"');
+    expect(closedHistory).toContain('label: "Удалить"');
+    expect(closedHistory).not.toContain('from "../debt-dialog/DebtDialog"');
+    expect(closedHistory).not.toContain("<DebtDialog");
+    expect(closedHistory).not.toContain("debtDialog.openDialog(debt)");
+    expect(closedHistory).not.toContain("setTimeout");
   });
 
-  it("keeps the closed debts history open while a debt dialog is mounted", () => {
+  it("keeps the closed debts history open while nested action dialogs are mounted", () => {
     const closedHistory = readSource(
       "src/modules/debts/components/closed-debts-history-dialog/ClosedDebtsHistoryDialog.tsx"
     );
     const dialogSource = readSource("src/shared/ui/dialog/Dialog.tsx");
 
-    expect(closedHistory).toContain("dismissOnEscapeKey={!debtDialog.mounted}");
-    expect(closedHistory).toContain("dismissOnOutsidePress={!debtDialog.mounted}");
+    expect(closedHistory).toContain("dismissOnEscapeKey={!actionsDialog.mounted && !deleteDialog.mounted}");
+    expect(closedHistory).toContain("dismissOnOutsidePress={!actionsDialog.mounted && !deleteDialog.mounted}");
     expect(dialogSource).toContain("dismissOnEscapeKey?: boolean");
     expect(dialogSource).toContain("dismissOnOutsidePress?: boolean");
     expect(dialogSource).toContain("dismissOnEscapeKey = true");

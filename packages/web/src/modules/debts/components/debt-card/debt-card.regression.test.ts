@@ -28,6 +28,7 @@ describe("debt card presentation", () => {
     expect(source).toContain("tabIndex={onClick ? 0 : undefined}");
     expect(source).toContain('event.key !== "Enter"');
     expect(source).toContain('event.key !== " "');
-    expect(source).toContain("onClick();");
+    expect(source).toContain("onClick(event.currentTarget);");
+    expect(source).toContain("onClick(event.currentTarget) : undefined");
   });
 });

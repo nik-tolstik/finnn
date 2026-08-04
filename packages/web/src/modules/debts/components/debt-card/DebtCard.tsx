@@ -13,7 +13,7 @@ import type { DebtWithRelations } from "../../debt.types";
 
 interface DebtCardProps {
   debt: DebtWithRelations;
-  onClick?: () => void;
+  onClick?: (anchor?: HTMLElement) => void;
 }
 
 export function DebtCard({ debt, onClick }: DebtCardProps) {
@@ -27,7 +27,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
     }
 
     event.preventDefault();
-    onClick();
+    onClick(event.currentTarget);
   };
 
   return (
@@ -38,7 +38,7 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
           onClick && "cursor-pointer",
           isClosed ? "hover:bg-surface-hover" : "hover:shadow-inner transition-shadow"
         )}
-        onClick={onClick}
+        onClick={onClick ? (event) => onClick(event.currentTarget) : undefined}
         onKeyDown={onClick ? handleKeyDown : undefined}
         role={onClick ? "button" : undefined}
         tabIndex={onClick ? 0 : undefined}
