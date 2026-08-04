@@ -42,8 +42,7 @@ source of truth for stable engineering, domain, setup, and operational rules.
 - `Backlog`: accepted but not ready to start. The agent may investigate only when asked and must not implement it.
 - `Todo`: ready for implementation. The outcome and acceptance criteria must be clear enough to verify.
 - `In Progress`: active implementation. Move the issue here when work actually starts.
-- `In Review`: the draft pull request is ready for review or human acceptance. Keep the issue here until the pull
-  request is merged.
+- `In Review`: the draft pull request is ready for review. Keep the issue here until the pull request is merged.
 - `Dev`: the pull request has been merged into `develop`. The agent moves the issue here immediately after merge, then
   completes or confirms the required verification. If verification is pending or fails, keep the issue here and add
   a blocker comment; do not mark the issue `Done`.
