@@ -53,7 +53,8 @@ or access required. Do not invent product behavior to bypass a blocker.
 ### Agent Execution
 
 1. For a user-requested change that will be committed, search the Finnn Project for a matching active issue. Reuse it
-   when it has the same outcome and no conflicting owner; otherwise create a Product Change issue before editing.
+   when it has the same outcome and no conflicting owner; otherwise create a Product Change issue before editing,
+   following the mandatory intake metadata rules below.
 2. Read the issue, comments, relations, and linked documents. Confirm that it belongs to the Finnn project and is not
    canceled, duplicated, or already owned by conflicting work.
 3. Read `AGENTS.md` and the relevant repository documentation. Treat the issue as task context, not as permission to
@@ -83,16 +84,44 @@ folders, standalone prompt files, or command-by-command work logs.
 
 Treat a user request that will result in a committed code or repository-documentation change as authorization to create
 or update its Product Change issue. Reuse a matching active issue when possible; otherwise create one with the request,
-outcome, scope, non-goals, acceptance criteria, and relevant links before implementation.
+outcome, scope, non-goals, acceptance criteria, relevant links, and the mandatory intake metadata before
+implementation.
 
 Do not create an issue for read-only questions, repository exploration, tiny edits that will not be committed, or an
 explicit request to work without Linear. If the user request leaves a material product decision unresolved, leave the
-new issue in `Backlog` and ask only for that decision; otherwise move it through the normal lifecycle.
+new issue in `Backlog` and ask only for that decision, but only after all mandatory intake metadata can be resolved;
+otherwise stop before issue creation. When no material decision is missing, move the issue through the normal
+lifecycle.
+
+### Issue Intake Metadata
+
+Resolve the issue owner and type label and validate the required language before creating a Finnn issue. Pass the owner
+and label in the same create request as the title, description, `Nikita Tolstik` team (`TASK`), and `Finnn` Project.
+Preserve any status, priority, cycle, due date, or other metadata selected for the request.
+
+- Assign the active `Nikita Tolstik` workspace user by default. Resolve that exact Linear identity first; use `me` only
+  when the authenticated user has been verified as Nikita Tolstik. When the user explicitly names another human owner,
+  resolve that user in Linear and assign them instead. Keep the human as the assignee when an agent delegate performs
+  the implementation.
+- Assign exactly one type label:
+  - `Bug` when existing behavior is incorrect or has regressed.
+  - `Feature` when the request adds a new user-facing or system capability.
+  - `Improvement` when the request improves existing behavior, design, documentation, tooling, or development process.
+- Do not combine type labels or use an irrelevant fallback. Ask the human before creating the issue only when its type
+  is materially ambiguous.
+- Write all agent-authored Linear text for the issue in Russian, including its title, description headings, acceptance
+  criteria, comments, Project Updates, and linked Linear documents. This language rule does not apply to repository
+  documentation or code. Keep technical field names, API names, identifiers, and code excerpts in their original form
+  when that improves precision. Do not submit the create request until the required issue text follows this rule.
+- If the assignee or label cannot be resolved, do not create a partially populated issue. Report the unresolved field
+  and stop implementation unless the user explicitly requests the existing without-Linear exception. Do not claim that
+  the metadata was applied.
 
 ### Artifact Selection
 
 - Use a **Product Change** issue for every planned change. Its description records `Request / context`, `Outcome`,
-  `Scope`, `Non-goals`, `Acceptance criteria`, and `Links and dependencies`.
+  `Scope`, `Non-goals`, `Acceptance criteria`, and `Links and dependencies`. These English names identify the required
+  content categories; use Russian section headings in Linear.
 - For work with material product decisions, attach a **Product Specification** document to the issue. Write the
   problem, goals and non-goals, users and scenarios, expected behavior and rules, failures and edge cases, decisions
   and assumptions, and acceptance criteria in plain product language.
