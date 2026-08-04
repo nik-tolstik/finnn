@@ -30,6 +30,7 @@ import {
   getEditDebtAmountLabel,
   getEditDebtTransactionDefaultValues,
   getEditDebtTransactionDescription,
+  getEditDebtTransactionSummaryPreview,
   getEditDebtTransactionTitle,
   getPreviewDebtTransactionAccount,
 } from "./edit-debt-transaction-dialog.utils";
@@ -102,6 +103,10 @@ export function useEditDebtTransactionDialog({
         currenciesMatch,
       }),
     [debtTransaction, selectedAccount, amount, toAmount, currenciesMatch]
+  );
+  const debtSummaryPreview = useMemo(
+    () => getEditDebtTransactionSummaryPreview({ debtTransaction, amount }),
+    [amount, debtTransaction]
   );
 
   const handleSubmit = form.handleSubmit(async (data) => {
@@ -189,6 +194,7 @@ export function useEditDebtTransactionDialog({
       selectedAccount,
       currenciesMatch,
     }),
+    debtSummaryPreview,
     selectedAccount,
     previewAccount,
     currenciesMatch,
