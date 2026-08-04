@@ -16,6 +16,8 @@ describe("debt card presentation", () => {
     expect(source).not.toContain('isClosed && "opacity-60"');
     expect(source).not.toContain("CheckCircle2");
     expect(source).not.toContain('from "@/shared/ui/badge"');
+    expect(source).toContain("shadow-inner");
+    expect(source).not.toContain("hover:shadow-md");
   });
 
   it("keeps the debt card keyboard accessible without changing its click contract", () => {

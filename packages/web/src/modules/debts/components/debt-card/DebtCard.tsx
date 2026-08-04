@@ -34,9 +34,9 @@ export function DebtCard({ debt, onClick }: DebtCardProps) {
     <AnimatedListItem>
       <Card
         className={cn(
-          "p-3 sm:p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30",
+          "p-3 sm:p-4 shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30",
           onClick && "cursor-pointer",
-          isClosed ? "hover:bg-surface-hover" : "hover:shadow-md transition-shadow"
+          isClosed ? "hover:bg-surface-hover" : "hover:shadow-inner transition-shadow"
         )}
         onClick={onClick}
         onKeyDown={onClick ? handleKeyDown : undefined}
