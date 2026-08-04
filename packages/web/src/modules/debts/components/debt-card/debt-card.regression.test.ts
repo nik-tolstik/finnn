@@ -9,9 +9,8 @@ describe("debt card presentation", () => {
     const source = readSource("src/modules/debts/components/debt-card/DebtCard.tsx");
 
     expect(source).toContain("isClosed ? (");
-    expect(source).toContain('className="min-w-0 space-y-2 text-sm"');
-    expect(source).toContain('className="min-w-0 max-w-[48%] shrink-0 text-right"');
-    expect(source).toContain(">Сумма</div>");
+    expect(source).toContain('className="grid min-w-0 grid-cols-2 items-start gap-x-3 gap-y-2 text-sm"');
+    expect(source).not.toContain(">Сумма</div>");
     expect(source).not.toContain(">Остаток</div>");
     expect(source).toContain("formatMoney(debt.amount, debt.currency)");
     expect(source).toContain("formatMoney(debt.remainingAmount, debt.currency)");
