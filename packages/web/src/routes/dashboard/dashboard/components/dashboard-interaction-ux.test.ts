@@ -86,7 +86,7 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("max-h-[calc(100dvh-4rem)]");
     expect(actionsDialogSource).toContain('size={isMobile ? "touch" : "compact"}');
     expect(actionsDialogSource).toContain("min-h-12");
-    expect(actionsDialogSource).toContain("text-base");
+    expect(actionsDialogSource).toContain('"min-h-12 gap-3 px-3 py-2.5 text-sm font-normal"');
     expect(popoverSource).toContain("reference: ReferenceType | null");
     expect(popoverSource).toContain("trigger?:");
     expect(sheetSource).toContain("onCloseComplete?: () => void");
@@ -134,10 +134,12 @@ describe("dashboard interaction loading", () => {
     expect(accountsCardsSource).not.toContain("useBreakpoints");
     expect(accountActionsSource).toContain('label: "Транзакция"');
     expect(accountActionsSource).toContain('label: "Изменить"');
-    expect(accountActionsSource).toContain("formatMoney(account.balance, account.currency)");
+    expect(accountActionsSource).toContain(
+      'import { AccountCard } from "@/shared/components/account-card/AccountCard"'
+    );
+    expect(accountActionsSource).toContain("<AccountCard account={account} showOwner={false} />");
     expect(accountActionsSource).toContain('mobileActionsClassName="gap-2"');
     expect(accountActionsSource).toContain('mobileContentClassName="px-6 pt-3 pb-6"');
-    expect(accountActionsSource).toContain('className="mt-1 flex min-w-0 items-center gap-2"');
     expect(accountActionsSource).toContain('tone: "destructive"');
     expect(accountActionsSource).toContain("anchor={anchor}");
     expect(accountActionsSource).toContain("open={open}");
@@ -148,7 +150,7 @@ describe("dashboard interaction loading", () => {
     expect(actionsDialogSource).toContain("mobileActionsClassName");
     expect(actionsDialogSource).toContain("mobileContentClassName");
     expect(actionsDialogSource).toContain("<SheetTitle>Действия</SheetTitle>");
-    expect(actionsDialogSource).toContain('size === "touch" ? "min-h-12 gap-4 py-2.5 text-base"');
+    expect(actionsDialogSource).toContain('"min-h-12 gap-3 px-3 py-2.5 text-sm font-normal"');
     expect(actionsDialogSource).not.toContain("emphasis");
     expect(actionsDialogSource).not.toContain("separate");
     expect(actionsDialogSource).not.toContain("bg-primary/10 hover:bg-primary/20");

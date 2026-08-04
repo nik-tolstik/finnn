@@ -57,7 +57,7 @@ function ActionList({
           <button
             className={cn(
               "flex w-full items-center rounded-md text-left font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
-              size === "touch" ? "min-h-12 gap-4 py-2.5 text-base" : "gap-3 px-3 py-2.5 text-sm",
+              size === "touch" ? "min-h-12 gap-3 px-3 py-2.5 text-sm font-normal" : "gap-3 px-3 py-2.5 text-sm",
               "hover:bg-control-hover",
               action.tone === "destructive" ? "text-destructive" : "text-foreground"
             )}
