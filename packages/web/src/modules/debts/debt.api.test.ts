@@ -297,6 +297,7 @@ describe("debt.api", () => {
         paymentAmount: "75,25",
         toAmount: "",
         accountId: "account-1",
+        description: "   ",
         useAccount: true,
       },
       requestOptions
@@ -308,6 +309,7 @@ describe("debt.api", () => {
         amount: "75.25",
         paymentAmount: "75.25",
         toAmount: undefined,
+        description: undefined,
       }),
       requestOptions
     );

@@ -166,7 +166,7 @@ function toCloseDebtDto(input: CloseDebtInput): CloseDebtDto {
     paymentAmount: normalizeOptionalMoneyString(input.paymentAmount),
     categoryId: input.categoryId,
     accountId: input.accountId,
-    description: input.description || undefined,
+    description: input.description?.trim() || undefined,
     useAccount: input.useAccount,
   };
 }

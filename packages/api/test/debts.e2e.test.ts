@@ -395,6 +395,7 @@ describe("Debts API", () => {
         closeEarly: false,
         accountId: "account-1",
         useAccount: true,
+        description: "   ",
         date: closeDate,
       })
       .expect(200);

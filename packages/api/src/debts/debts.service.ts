@@ -885,7 +885,7 @@ export class DebtsService {
           type: DEBT_TRANSACTION_CLOSED,
           amount: closeAmount,
           toAmount: !currenciesMatch ? input.toAmount : null,
-          description: input.description || null,
+          description: input.description?.trim() || null,
           date: closeDate,
         },
       });
