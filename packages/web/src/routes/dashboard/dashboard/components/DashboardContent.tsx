@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Check, Eye, EyeOff, HandCoins, X } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { getAccounts, updateAccountsOrder } from "@/modules/accounts/account.api";
@@ -106,6 +106,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
   const [isFiltersDrawerMounted, setIsFiltersDrawerMounted] = useState(false);
+  const historySectionRef = useRef<HTMLDivElement>(null);
   const createAccountDialog = useDialogState();
   const createTransactionDialog = useDialogState<QuickTransactionDialogData | null>();
   const createDebtDialog = useDialogState<null>();
@@ -243,6 +244,20 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
     return () => window.clearInterval(intervalId);
   }, []);
 
+  const dashboardAccountChanges = useMemo(() => {
+    const changesByAccountId = new Map(
+      dashboardBalance?.accountChanges.map((change) => [change.accountId, change.dailyChangeAmount])
+    );
+
+    return visibleAccounts.map((account) => ({
+      accountColor: account.color,
+      accountIcon: account.icon,
+      accountId: account.id,
+      accountName: account.name,
+      dailyChangeAmount: changesByAccountId.get(account.id) ?? "0",
+    }));
+  }, [dashboardBalance?.accountChanges, visibleAccounts]);
+
   const balanceSortStatus: BalanceSortStatus = useMemo(() => {
     if (!shouldSortByBalance) {
       return "idle";
@@ -332,6 +347,16 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
     setIsFiltersDrawerOpen(false);
     resetFilters();
   };
+
+  const handleBalanceAccountClick = useCallback(
+    (accountId: string) => {
+      applyFilters({ ...appliedFilters, accountIds: [accountId] });
+      window.requestAnimationFrame(() => {
+        historySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    },
+    [appliedFilters, applyFilters]
+  );
 
   const handleSortChange = useCallback(
     (sort: AccountDisplaySort) => {
@@ -451,6 +476,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
       <div className="space-y-8">
         <div>
           <AccountBalanceSummary
+            accountChanges={dashboardAccountChanges}
             actions={quickActions}
             amountsHidden={areAmountsHidden}
             balance={dashboardBalance?.currentBalance ?? "0"}
@@ -460,6 +486,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
             hasAccounts={dashboardBalanceAccountIds.length > 0}
             isError={isDashboardBalanceError}
             isLoading={isDashboardBalanceLoading}
+            onAccountClick={handleBalanceAccountClick}
             onBalanceClick={() => setAreAmountsHidden((current) => !current)}
           />
 
@@ -558,7 +585,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
           />
         )}
 
-        <div>
+        <div ref={historySectionRef}>
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-xl font-semibold">История</h2>
             <TransactionsFilterButton

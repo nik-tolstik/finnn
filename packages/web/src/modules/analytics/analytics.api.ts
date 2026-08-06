@@ -1,4 +1,5 @@
 import type {
+  AnalyticsAccountCapitalTimeSeriesPointDto,
   AnalyticsOverviewResponseDto,
   AnalyticsSummaryMetricDto,
   GetAnalyticsOverviewParams,
@@ -16,11 +17,19 @@ export interface DashboardBalanceDateRange {
 }
 
 export interface DashboardBalanceSummary {
+  accountChanges: DashboardAccountBalanceChange[];
   baseCurrency: string;
   currentBalance: string;
   dailyChangeAmount: string;
   previousBalance: string;
   percentageChange: number | null;
+}
+
+export interface DashboardAccountBalanceChange {
+  accountId: string;
+  currentBalance: string;
+  dailyChangeAmount: string;
+  previousBalance: string;
 }
 
 export function getDashboardBalanceDateRange(referenceDate = new Date()): DashboardBalanceDateRange {
@@ -41,8 +50,30 @@ function getPercentageChange(current: string, previous: string): number | null {
   return Number(roundMoney(change, 1));
 }
 
+function getDashboardAccountBalanceChanges(
+  points: AnalyticsAccountCapitalTimeSeriesPointDto[],
+  dateRange: DashboardBalanceDateRange
+) {
+  const accountIds = [...new Set(points.map((point) => point.accountId))];
+
+  return accountIds.map((accountId) => {
+    const accountPoints = points.filter((point) => point.accountId === accountId);
+    const currentPoint = accountPoints.find((point) => point.date === dateRange.today);
+    const previousPoint = accountPoints.find((point) => point.date === dateRange.previousDay);
+    const currentBalance = currentPoint?.totalInBaseCurrency ?? "0";
+    const previousBalance = previousPoint?.totalInBaseCurrency ?? "0";
+
+    return {
+      accountId,
+      currentBalance,
+      dailyChangeAmount: subtractMoney(currentBalance, previousBalance),
+      previousBalance,
+    };
+  });
+}
+
 export function toDashboardBalanceSummary(
-  response: Pick<AnalyticsOverviewResponseDto, "baseCurrency" | "capitalTimeSeries">,
+  response: Pick<AnalyticsOverviewResponseDto, "accountCapitalTimeSeries" | "baseCurrency" | "capitalTimeSeries">,
   dateRange: DashboardBalanceDateRange
 ): DashboardBalanceSummary {
   const currentPoint = response.capitalTimeSeries.find((point) => point.date === dateRange.today);
@@ -51,6 +82,7 @@ export function toDashboardBalanceSummary(
   const previousBalance = previousPoint?.totalInBaseCurrency ?? "0";
 
   return {
+    accountChanges: getDashboardAccountBalanceChanges(response.accountCapitalTimeSeries, dateRange),
     baseCurrency: response.baseCurrency,
     currentBalance,
     dailyChangeAmount: subtractMoney(currentBalance, previousBalance),

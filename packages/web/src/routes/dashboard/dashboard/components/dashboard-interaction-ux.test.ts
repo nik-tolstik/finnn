@@ -200,6 +200,9 @@ describe("dashboard interaction loading", () => {
     expect(dashboardSource).toContain('label: "Перевод"');
     expect(dashboardSource).toContain('label: "Долг"');
     expect(dashboardSource).toContain("useDashboardAmountsVisibility");
+    expect(dashboardSource).toContain("accountChanges={dashboardAccountChanges}");
+    expect(dashboardSource).toContain("onAccountClick={handleBalanceAccountClick}");
+    expect(dashboardSource).toContain("historySectionRef.current?.scrollIntoView");
     expect(dashboardSource).toContain("amountsHidden={areAmountsHidden}");
     expect(dashboardSource).toContain('dailyChangeAmount={dashboardBalance?.dailyChangeAmount ?? "0"}');
     expect(dashboardSource).toContain("hideBalances={areAmountsHidden}");
@@ -207,6 +210,8 @@ describe("dashboard interaction loading", () => {
     expect(summarySource).toContain('aria-label={amountsHidden ? "Показать суммы" : "Скрыть суммы"}');
     expect(summarySource).toContain("dailyChangeAmount: string");
     expect(summarySource).toContain("formatDailyChangeAmount");
+    expect(summarySource).toContain("Изменение за сегодня");
+    expect(summarySource).toContain("onAccountClick(accountId)");
     expect(summarySource).toContain("HIDDEN_AMOUNT");
     expect(summarySource).toContain("actions.map");
     expect(amountsVisibilitySource).toContain('const STORAGE_KEY_PREFIX = "finnn:dashboard-amounts-hidden:v1:"');

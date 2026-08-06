@@ -68,6 +68,7 @@ function createAnalyticsOverviewDto(
         totalInBaseCurrency: "500",
       },
     ],
+    accountCapitalTimeSeries: [],
     incomeCategories: [
       {
         id: "category-income",
@@ -178,10 +179,22 @@ describe("analytics API helpers", () => {
             { date: "2026-03-30", totalInBaseCurrency: "500" },
             { date: "2026-03-31", totalInBaseCurrency: "550" },
           ],
+          accountCapitalTimeSeries: [
+            { accountId: "account-byn", date: "2026-03-30", totalInBaseCurrency: "100" },
+            { accountId: "account-byn", date: "2026-03-31", totalInBaseCurrency: "120" },
+          ],
         },
         dateRange
       )
     ).toEqual({
+      accountChanges: [
+        {
+          accountId: "account-byn",
+          currentBalance: "120",
+          dailyChangeAmount: "20",
+          previousBalance: "100",
+        },
+      ],
       baseCurrency: "BYN",
       currentBalance: "550",
       dailyChangeAmount: "50",
@@ -196,6 +209,7 @@ describe("analytics API helpers", () => {
         {
           baseCurrency: "BYN",
           capitalTimeSeries: [{ date: "2026-03-31", totalInBaseCurrency: "100" }],
+          accountCapitalTimeSeries: [],
         },
         { today: "2026-03-31", previousDay: "2026-03-30" }
       ).percentageChange

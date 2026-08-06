@@ -680,6 +680,15 @@ describe("Analytics API", () => {
         totalInBaseCurrency: "134",
       },
     ]);
+    expect(response.body.accountCapitalTimeSeries).toEqual(
+      expect.arrayContaining([
+        { accountId: "account-byn", date: "2026-04-01", totalInBaseCurrency: "130" },
+        { accountId: "account-byn", date: "2026-04-02", totalInBaseCurrency: "120" },
+        { accountId: "account-byn", date: "2026-04-03", totalInBaseCurrency: "110" },
+        { accountId: "account-usd", date: "2026-04-02", totalInBaseCurrency: "9" },
+        { accountId: "account-usd", date: "2026-04-03", totalInBaseCurrency: "24" },
+      ])
+    );
   });
 
   it("excludes debt transactions when the transaction type filter omits debt but keeps open debt totals", async () => {

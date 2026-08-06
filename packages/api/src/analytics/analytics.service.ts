@@ -860,6 +860,7 @@ function buildCapitalTimeSeries({
   const balancesByAccount = new Map(accounts.map((account) => [account.id, account.balance]));
   const deltas = buildCapitalBalanceDeltas(accountIds, paymentTransactions, transferTransactions, debtTransactions);
   const points: Array<{ date: string; totalInBaseCurrency: string }> = [];
+  const accountPoints: Array<{ accountId: string; date: string; totalInBaseCurrency: string }> = [];
   let deltaIndex = 0;
 
   for (const date of [...dates].reverse()) {
@@ -872,9 +873,9 @@ function buildCapitalTimeSeries({
       deltaIndex += 1;
     }
 
-    const totalInBaseCurrency = accounts.reduce((total, account) => {
+    const accountBalancesInBaseCurrency = accounts.flatMap((account) => {
       if (account.createdAt.getTime() > dayEnd.getTime()) {
-        return total;
+        return [];
       }
 
       const balance = balancesByAccount.get(account.id) ?? "0";
@@ -886,16 +887,31 @@ function buildCapitalTimeSeries({
         rates
       );
 
-      return addMoney(total, convertedBalance);
-    }, "0");
+      return [{ accountId: account.id, totalInBaseCurrency: convertedBalance }];
+    });
+    const totalInBaseCurrency = accountBalancesInBaseCurrency.reduce(
+      (total, accountBalance) => addMoney(total, accountBalance.totalInBaseCurrency),
+      "0"
+    );
+    const dateKey = toDateString(date) ?? "";
+
+    accountPoints.push(
+      ...accountBalancesInBaseCurrency.map((accountBalance) => ({
+        ...accountBalance,
+        date: dateKey,
+      }))
+    );
 
     points.push({
-      date: toDateString(date) ?? "",
+      date: dateKey,
       totalInBaseCurrency,
     });
   }
 
-  return points.reverse();
+  return {
+    accountPoints: accountPoints.reverse(),
+    points: points.reverse(),
+  };
 }
 
 @Injectable()
@@ -1106,7 +1122,7 @@ export class AnalyticsService {
         ];
       })
     );
-    const capitalTimeSeries = buildCapitalTimeSeries({
+    const { accountPoints: accountCapitalTimeSeries, points: capitalTimeSeries } = buildCapitalTimeSeries({
       accounts: capitalAccounts,
       baseCurrency,
       dates: rangeDates,
@@ -1364,6 +1380,7 @@ export class AnalyticsService {
       },
       timeSeries: Array.from(timeSeries.values()),
       capitalTimeSeries,
+      accountCapitalTimeSeries,
       incomeCategories: incomeCategoryRows,
       expenseCategories: expenseCategoryRows,
       debtsByPerson: debtRows,
