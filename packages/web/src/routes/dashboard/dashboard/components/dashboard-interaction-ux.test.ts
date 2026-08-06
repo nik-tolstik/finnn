@@ -193,7 +193,6 @@ describe("dashboard interaction loading", () => {
     );
 
     expect(dashboardSource).toContain("toDashboardBalanceSummary");
-    expect(dashboardSource).toContain("DASHBOARD_BALANCE_PERIOD_DAYS");
     expect(dashboardSource).toContain("dashboardBalanceAccountIds");
     expect(dashboardSource).toContain("<AccountBalanceSummary");
     expect(dashboardSource).toContain('label: "Расход"');
@@ -202,10 +201,7 @@ describe("dashboard interaction loading", () => {
     expect(dashboardSource).toContain('label: "Долг"');
     expect(dashboardSource).toContain("useDashboardAmountsVisibility");
     expect(dashboardSource).toContain("accountChanges={dashboardAccountChanges}");
-    expect(dashboardSource).toContain("balancePeriod={dashboardBalancePeriod}");
-    expect(dashboardSource).toContain("balanceTimeSeries={dashboardBalance?.balanceTimeSeries ?? []}");
     expect(dashboardSource).toContain("onAccountClick={handleBalanceAccountClick}");
-    expect(dashboardSource).toContain("onBalancePeriodChange={handleDashboardBalancePeriodChange}");
     expect(dashboardSource).toContain("historySectionRef.current?.scrollIntoView");
     expect(dashboardSource).toContain("amountsHidden={areAmountsHidden}");
     expect(dashboardSource).toContain('dailyChangeAmount={dashboardBalance?.dailyChangeAmount ?? "0"}');
@@ -222,9 +218,6 @@ describe("dashboard interaction loading", () => {
     expect(summarySource).toContain("HIDDEN_AMOUNT");
     expect(summarySource).toContain("AnimatePresence");
     expect(summarySource).toContain("useReducedMotion");
-    expect(summarySource).toContain("BalanceSparkline");
-    expect(summarySource).toContain("BalancePeriodSelector");
-    expect(summarySource).toContain("График баланса за");
     expect(summarySource).toContain('className="overflow-hidden"');
     expect(summarySource).toContain("focus-visible:ring-2 focus-visible:ring-control-focus/30");
     expect(summarySource).not.toContain("border border-border/70 bg-surface-subtle/30 p-3");

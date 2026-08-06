@@ -16,12 +16,7 @@ import {
 } from "@/modules/accounts/components/accounts-cards/account-display";
 import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog/CreateAccountDialog";
 import { useAccountDisplayPreferences } from "@/modules/accounts/hooks/useAccountDisplayPreferences";
-import {
-  DASHBOARD_BALANCE_PERIOD_DAYS,
-  type DashboardBalancePeriod,
-  getDashboardBalanceDateRange,
-  toDashboardBalanceSummary,
-} from "@/modules/analytics/analytics.api";
+import { getDashboardBalanceDateRange, toDashboardBalanceSummary } from "@/modules/analytics/analytics.api";
 import { CreateDebtDialog } from "@/modules/debts/components/create-debt-dialog";
 import { CombinedTransactionsList } from "@/modules/transactions/components/combined-transactions-list";
 import { TransactionsFilterButton } from "@/modules/transactions/components/transactions-filters/components/TransactionsFilterButton";
@@ -211,12 +206,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
     ]
   );
 
-  const [dashboardBalancePeriod, setDashboardBalancePeriod] = useState<DashboardBalancePeriod>("7d");
-  const [dashboardReferenceDate, setDashboardReferenceDate] = useState(() => new Date());
-  const dashboardBalanceDateRange = useMemo(
-    () => getDashboardBalanceDateRange(dashboardReferenceDate, DASHBOARD_BALANCE_PERIOD_DAYS[dashboardBalancePeriod]),
-    [dashboardBalancePeriod, dashboardReferenceDate]
-  );
+  const [dashboardBalanceDateRange, setDashboardBalanceDateRange] = useState(() => getDashboardBalanceDateRange());
   const dashboardBalanceAccountIds = useMemo(
     () => visibleAccounts.map((account) => account.id).sort(),
     [visibleAccounts]
@@ -224,7 +214,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
   const dashboardBalanceFilters = useMemo(
     () => ({
       accountIds: dashboardBalanceAccountIds,
-      dateFrom: dashboardBalanceDateRange.chartStart,
+      dateFrom: dashboardBalanceDateRange.previousDay,
       dateTo: dashboardBalanceDateRange.today,
     }),
     [dashboardBalanceAccountIds, dashboardBalanceDateRange]
@@ -245,21 +235,13 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      const nextDateRange = getDashboardBalanceDateRange(
-        new Date(),
-        DASHBOARD_BALANCE_PERIOD_DAYS[dashboardBalancePeriod]
+      const nextDateRange = getDashboardBalanceDateRange();
+      setDashboardBalanceDateRange((currentDateRange) =>
+        currentDateRange.today === nextDateRange.today ? currentDateRange : nextDateRange
       );
-
-      if (dashboardBalanceDateRange.today !== nextDateRange.today) {
-        setDashboardReferenceDate(new Date());
-      }
     }, 60_000);
 
     return () => window.clearInterval(intervalId);
-  }, [dashboardBalanceDateRange.today, dashboardBalancePeriod]);
-
-  const handleDashboardBalancePeriodChange = useCallback((period: DashboardBalancePeriod) => {
-    setDashboardBalancePeriod(period);
   }, []);
 
   const dashboardAccountChanges = useMemo(() => {
@@ -498,8 +480,6 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
             actions={quickActions}
             amountsHidden={areAmountsHidden}
             balance={dashboardBalance?.currentBalance ?? "0"}
-            balancePeriod={dashboardBalancePeriod}
-            balanceTimeSeries={dashboardBalance?.balanceTimeSeries ?? []}
             baseCurrency={dashboardBalance?.baseCurrency ?? baseCurrency}
             dailyChangeAmount={dashboardBalance?.dailyChangeAmount ?? "0"}
             dailyChangePercent={dashboardBalance?.percentageChange ?? null}
@@ -507,7 +487,6 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
             isError={isDashboardBalanceError}
             isLoading={isDashboardBalanceLoading}
             onAccountClick={handleBalanceAccountClick}
-            onBalancePeriodChange={handleDashboardBalancePeriodChange}
             onBalanceClick={() => setAreAmountsHidden((current) => !current)}
           />
 
