@@ -18,6 +18,30 @@ Then inspect the narrow module involved in the task.
 
 For framework or library behavior that may have changed, use Context7. Vite, React Router, NestJS, Prisma PostgreSQL, TanStack Query, Orval, and Tailwind changes are good candidates for documentation lookup.
 
+## Task Capture And Refinement Workflow
+
+Treat task capture, clarification, specification, and implementation as separate user authorizations. Do not infer a
+later phase from an earlier command. In particular, a request to create a task is not permission to implement it.
+
+| Conversation phase | Explicit user intent | Agent behavior | Linear state |
+| --- | --- | --- | --- |
+| Capture | “Create a task” | Create or reuse the task, preserve the user's message under `Исходные мысли`, and infer only a short title and required metadata. Do not rewrite the request, add a full specification, ask implementation questions, or edit code. | `Backlog` |
+| Clarification | “Let's discuss it” | Ask questions, surface decisions, and append agreed context to the same task. Keep the original thoughts unchanged. Do not edit code or treat the discussion as implementation approval. | `Backlog` |
+| Specification | “Format the task” | Convert the agreed context into the required Product Change sections, while retaining `Исходные мысли` separately. Resolve acceptance criteria and scope, then move the issue to `Todo` when it is ready. Do not edit code. | `Todo` |
+| Implementation | “Implement the task” | Start implementation only after this explicit authorization, after the task has passed Specification, and after the outcome and acceptance criteria are clear. If the task is still in Capture or Clarification, do not code; ask the user to format it first. Move the issue to `In Progress` when coding starts. | `In Progress` |
+
+The capture phase is intentionally lightweight. A draft Product Change issue may contain only the original user text in
+`Исходные мысли` plus the required owner, type label, team, project, and status metadata. Do not invent missing scope,
+non-goals, acceptance criteria, or technical decisions to make a draft look complete. Fill those sections during the
+specification phase.
+
+When the user sends more thoughts while a task is in Capture or Clarification, preserve the earlier text and add the new
+message as additional context. Never silently replace the original wording. Apply the repository's secret-handling
+rules before storing user text.
+
+If the user's wording is ambiguous between discussing, formatting, and implementing, remain in the current phase and ask
+which phase they want. “Let's discuss” and “format the task” never authorize code changes by themselves.
+
 ## Linear Task Workflow
 
 Planned Finnn work is tracked in the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview)
