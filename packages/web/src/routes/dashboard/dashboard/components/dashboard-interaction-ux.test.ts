@@ -213,6 +213,11 @@ describe("dashboard interaction loading", () => {
     expect(summarySource).toContain("Изменение за сегодня");
     expect(summarySource).toContain("onAccountClick(accountId)");
     expect(summarySource).toContain("HIDDEN_AMOUNT");
+    expect(summarySource).toContain("AnimatePresence");
+    expect(summarySource).toContain("useReducedMotion");
+    expect(summarySource).toContain('className="overflow-hidden"');
+    expect(summarySource).toContain("focus-visible:ring-2 focus-visible:ring-control-focus/30");
+    expect(summarySource).not.toContain("border border-border/70 bg-surface-subtle/30 p-3");
     expect(summarySource).toContain("actions.map");
     expect(amountsVisibilitySource).toContain('const STORAGE_KEY_PREFIX = "finnn:dashboard-amounts-hidden:v1:"');
     expect(amountsVisibilitySource).toContain("window.localStorage.getItem(storageKey)");

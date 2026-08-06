@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 import { Button } from "@/shared/ui/button";
@@ -92,6 +93,7 @@ export function AccountBalanceSummary({
   onBalanceClick,
 }: AccountBalanceSummaryProps) {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
   const showBalanceSkeleton = isLoading;
   const balanceLabel = amountsHidden ? HIDDEN_AMOUNT : isError ? "—" : formatMoney(balance, baseCurrency);
   const changeLabel = amountsHidden
@@ -129,7 +131,7 @@ export function AccountBalanceSummary({
               disabled={!canOpenBreakdown}
               onClick={() => setIsBreakdownOpen((current) => !current)}
               className={cn(
-                "inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:cursor-default",
+                "inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30 disabled:cursor-default",
                 getDailyChangeBadgeClassName(isError ? null : dailyChangePercent, dailyChangeAmount)
               )}
             >
@@ -140,53 +142,65 @@ export function AccountBalanceSummary({
         )}
       </div>
 
-      {isBreakdownOpen && (
-        <div id="account-balance-breakdown" className="rounded-xl border border-border/70 bg-surface-subtle/30 p-3">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <p className="text-sm font-medium">Изменение за сегодня</p>
-            <p className={cn("text-sm font-semibold", getDailyChangeTextClassName(dailyChangeAmount))}>
-              {amountsHidden ? HIDDEN_AMOUNT : formatDailyChangeAmount(dailyChangeAmount, baseCurrency)}
-            </p>
-          </div>
+      <AnimatePresence initial={false}>
+        {isBreakdownOpen && (
+          <motion.div
+            id="account-balance-breakdown"
+            key="account-balance-breakdown"
+            initial={prefersReducedMotion ? { opacity: 1 } : { height: 0, opacity: 0, y: -6 }}
+            animate={{ height: "auto", opacity: 1, y: 0 }}
+            exit={prefersReducedMotion ? { opacity: 1 } : { height: 0, opacity: 0, y: -6 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="rounded-xl bg-surface-subtle/30 p-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-sm font-medium">Изменение за сегодня</p>
+                <p className={cn("text-sm font-semibold", getDailyChangeTextClassName(dailyChangeAmount))}>
+                  {amountsHidden ? HIDDEN_AMOUNT : formatDailyChangeAmount(dailyChangeAmount, baseCurrency)}
+                </p>
+              </div>
 
-          <div className="space-y-1">
-            {accountChanges.map(({ accountColor, accountIcon, accountId, accountName, dailyChangeAmount }) => (
-              <button
-                key={accountId}
-                type="button"
-                className="flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30"
-                onClick={() => {
-                  setIsBreakdownOpen(false);
-                  onAccountClick(accountId);
-                }}
-              >
-                <AccountIcon
-                  accountColor={accountColor}
-                  accountName={accountName}
-                  className="size-4 shrink-0"
-                  iconName={accountIcon}
-                />
-                <span className="min-w-0 flex-1 truncate text-sm">{accountName}</span>
-                <span
-                  className={cn(
-                    "shrink-0 text-sm font-medium",
-                    amountsHidden ? "text-muted-foreground" : getDailyChangeTextClassName(dailyChangeAmount)
-                  )}
-                >
+              <div className="space-y-1">
+                {accountChanges.map(({ accountColor, accountIcon, accountId, accountName, dailyChangeAmount }) => (
+                  <button
+                    key={accountId}
+                    type="button"
+                    className="flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30"
+                    onClick={() => {
+                      setIsBreakdownOpen(false);
+                      onAccountClick(accountId);
+                    }}
+                  >
+                    <AccountIcon
+                      accountColor={accountColor}
+                      accountName={accountName}
+                      className="size-4 shrink-0"
+                      iconName={accountIcon}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm">{accountName}</span>
+                    <span
+                      className={cn(
+                        "shrink-0 text-sm font-medium",
+                        amountsHidden ? "text-muted-foreground" : getDailyChangeTextClassName(dailyChangeAmount)
+                      )}
+                    >
+                      {amountsHidden ? HIDDEN_AMOUNT : formatDailyChangeAmount(dailyChangeAmount, baseCurrency)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-2 flex items-center justify-between border-t border-border/70 px-2 pt-2">
+                <span className="text-sm font-medium">Итого</span>
+                <span className={cn("text-sm font-semibold", getDailyChangeTextClassName(dailyChangeAmount))}>
                   {amountsHidden ? HIDDEN_AMOUNT : formatDailyChangeAmount(dailyChangeAmount, baseCurrency)}
                 </span>
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-2 flex items-center justify-between border-t border-border/70 px-2 pt-2">
-            <span className="text-sm font-medium">Итого</span>
-            <span className={cn("text-sm font-semibold", getDailyChangeTextClassName(dailyChangeAmount))}>
-              {amountsHidden ? HIDDEN_AMOUNT : formatDailyChangeAmount(dailyChangeAmount, baseCurrency)}
-            </span>
-          </div>
-        </div>
-      )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {actions.map(({ icon: Icon, id, label, onClick }) => (
