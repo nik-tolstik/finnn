@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Check, Eye, EyeOff, HandCoins, Plus, X } from "lucide-react";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Check, Eye, EyeOff, HandCoins, X } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -554,25 +554,14 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
         <div>
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-xl font-semibold">История</h2>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                className="hidden md:inline-flex"
-                onClick={() => createTransactionDialog.openDialog(null)}
-              >
-                <Plus className="size-4" />
-                Транзакция
-              </Button>
-              <TransactionsFilterButton
-                appliedFiltersCount={appliedFiltersCount}
-                disabled={isFiltersNavigationPending}
-                onClick={() => {
-                  setIsFiltersDrawerMounted(true);
-                  setIsFiltersDrawerOpen(true);
-                }}
-              />
-            </div>
+            <TransactionsFilterButton
+              appliedFiltersCount={appliedFiltersCount}
+              disabled={isFiltersNavigationPending}
+              onClick={() => {
+                setIsFiltersDrawerMounted(true);
+                setIsFiltersDrawerOpen(true);
+              }}
+            />
           </div>
           <div className="flex flex-col lg:flex-row lg:items-start gap-4">
             <div className="flex-1 min-w-0 order-2 lg:order-1">

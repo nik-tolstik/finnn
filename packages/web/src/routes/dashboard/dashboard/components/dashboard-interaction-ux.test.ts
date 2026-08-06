@@ -170,15 +170,15 @@ describe("dashboard interaction loading", () => {
     expect(scheduledPaymentActionsSource).toContain('tone: "destructive"');
   });
 
-  it("names the dashboard transaction section history and adds its desktop creation entry point", () => {
+  it("keeps the dashboard transaction section focused on history and filters", () => {
     const dashboardSource = readSource("src/routes/dashboard/dashboard/components/DashboardContent.tsx");
 
     expect(dashboardSource).toContain(
       'import("@/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog")'
     );
     expect(dashboardSource).toContain('<h2 className="text-xl font-semibold">История</h2>');
-    expect(dashboardSource).toContain('className="hidden md:inline-flex"');
-    expect(dashboardSource).toContain("createTransactionDialog.openDialog(null)");
+    expect(dashboardSource).toContain("<TransactionsFilterButton");
+    expect(dashboardSource).not.toContain("createTransactionDialog.openDialog(null)");
     expect(dashboardSource).toContain("<CreateTransactionDialog");
   });
 
