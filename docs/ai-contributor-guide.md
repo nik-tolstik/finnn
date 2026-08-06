@@ -111,7 +111,7 @@ or access required. Do not invent product behavior to bypass a blocker.
    implementation starts, use the issue branch, and run scope-appropriate checks.
 6. Open or update a draft pull request that includes the Linear issue identifier, then move the issue to `In Review`.
    Merge only after the user explicitly authorizes that exact merge and after completing the required
-   pre-merge review.
+   scope-appropriate validation.
 7. After the pull request is merged into `develop`, move the issue to `Dev` immediately. Complete or confirm the
    required verification there; if it is pending or fails, keep the issue in `Dev` and add a concise blocker comment.
 8. Add a single handoff comment with the outcome, verification performed, pull request and merge links, known risks,
