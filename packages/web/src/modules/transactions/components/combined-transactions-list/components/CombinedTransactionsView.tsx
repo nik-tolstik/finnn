@@ -24,6 +24,7 @@ function getTransactionKey(item: PreparedCombinedTransaction) {
 
 interface CombinedTransactionsViewProps {
   groups: PreparedCombinedTransactionGroup[];
+  hideAmounts?: boolean;
   workspaceName: string;
   showLoadMore?: boolean;
   onLoadMore?: () => void;
@@ -35,6 +36,7 @@ interface CombinedTransactionsViewProps {
 
 export function CombinedTransactionsView({
   groups,
+  hideAmounts = false,
   workspaceName,
   showLoadMore,
   onLoadMore,
@@ -61,6 +63,7 @@ export function CombinedTransactionsView({
                 className="rounded-xl shadow-[var(--transaction-card-shadow)] [contain-intrinsic-size:auto_96px] [content-visibility:auto] dark:shadow-sm"
               >
                 <CombinedTransactionItem
+                  hideAmounts={hideAmounts}
                   item={item}
                   workspaceName={workspaceName}
                   onTransactionClick={onTransactionClick}

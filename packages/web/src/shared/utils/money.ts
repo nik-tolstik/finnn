@@ -3,6 +3,8 @@ import Big from "big.js";
 import { Currency } from "@/shared/constants/currency";
 import { asMoneyAmount, type MoneyAmount, type MoneyInput } from "@/shared/lib/domain-types";
 
+export const HIDDEN_AMOUNT = "****";
+
 export function formatMoney(amount: MoneyInput, currency: string = Currency.USD): string {
   const bigAmount = new Big(amount);
   const [integer, decimal] = bigAmount.toFixed(2).split(".");

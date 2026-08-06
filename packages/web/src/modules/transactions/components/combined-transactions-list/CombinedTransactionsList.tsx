@@ -6,6 +6,7 @@ import { useGroupedCombinedTransactions } from "./hooks/useGroupedCombinedTransa
 import type { CombinedTransactionsListProps } from "./types";
 
 export function CombinedTransactionsList({
+  hideAmounts = false,
   transactions,
   showLoadMore,
   onLoadMore,
@@ -22,6 +23,7 @@ export function CombinedTransactionsList({
     <>
       <CombinedTransactionsView
         groups={groups}
+        hideAmounts={hideAmounts}
         workspaceName={workspaceName}
         showLoadMore={showLoadMore}
         onLoadMore={onLoadMore}

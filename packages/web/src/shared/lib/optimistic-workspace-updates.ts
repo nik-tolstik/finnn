@@ -9,6 +9,7 @@ import { filterCombinedTransactions } from "@/modules/transactions/utils/combine
 import type { WorkspaceSummary, WorkspaceWithOwner } from "@/modules/workspace/workspace.types";
 import {
   accountKeys,
+  analyticsKeys,
   categoryKeys,
   debtKeys,
   transactionKeys,
@@ -876,6 +877,10 @@ export async function invalidateOptimisticWorkspaceDomains(context: WorkspaceOpt
     const queryKey = toWorkspaceQueryKeys(workspaceId)[domain];
     return queryClient.invalidateQueries({ queryKey });
   });
+
+  if (context.domains.some((domain) => ["accounts", "transactions", "debts"].includes(domain))) {
+    promises.push(queryClient.invalidateQueries({ queryKey: analyticsKeys.all(workspaceId) }));
+  }
 
   await Promise.all(promises);
 }

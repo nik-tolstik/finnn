@@ -7,6 +7,7 @@ import type { CombinedTransaction } from "@/modules/transactions/transaction.typ
 import type { WorkspaceSummary, WorkspaceWithOwner } from "@/modules/workspace/workspace.types";
 import {
   accountKeys,
+  analyticsKeys,
   categoryKeys,
   debtKeys,
   transactionKeys,
@@ -741,8 +742,9 @@ describe("optimistic workspace updates", () => {
 
     await invalidateOptimisticWorkspaceDomains(context);
 
-    expect(invalidateSpy).toHaveBeenCalledTimes(2);
+    expect(invalidateSpy).toHaveBeenCalledTimes(3);
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: accountKeys.all(WORKSPACE_ID) });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: debtKeys.all(WORKSPACE_ID) });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: analyticsKeys.all(WORKSPACE_ID) });
   });
 });

@@ -9067,6 +9067,22 @@
         },
         "required": ["date", "totalInBaseCurrency"]
       },
+      "AnalyticsAccountCapitalTimeSeriesPointDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "totalInBaseCurrency": {
+            "type": "string"
+          }
+        },
+        "required": ["accountId", "date", "totalInBaseCurrency"]
+      },
       "AnalyticsExpenseCategoryDto": {
         "type": "object",
         "properties": {
@@ -9192,6 +9208,12 @@
               "$ref": "#/components/schemas/AnalyticsCapitalTimeSeriesPointDto"
             }
           },
+          "accountCapitalTimeSeries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsAccountCapitalTimeSeriesPointDto"
+            }
+          },
           "incomeCategories": {
             "type": "array",
             "items": {
@@ -9224,6 +9246,7 @@
           "comparison",
           "timeSeries",
           "capitalTimeSeries",
+          "accountCapitalTimeSeries",
           "incomeCategories",
           "expenseCategories",
           "debtsByPerson",

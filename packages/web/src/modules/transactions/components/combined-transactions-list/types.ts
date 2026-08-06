@@ -13,6 +13,7 @@ import type {
 } from "../../transaction.types";
 
 export interface CombinedTransactionsListProps {
+  hideAmounts?: boolean;
   transactions: CombinedTransaction[];
   showLoadMore?: boolean;
   onLoadMore?: () => void;

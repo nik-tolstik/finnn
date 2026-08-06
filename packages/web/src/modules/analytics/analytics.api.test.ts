@@ -4,7 +4,13 @@ import { PaymentTransactionType } from "@/modules/transactions/transaction.const
 import type { AnalyticsOverviewResponseDto } from "@/shared/api/generated/model";
 import { AnalyticsLargestMovementDtoKind } from "@/shared/api/generated/model";
 
-import { toAnalyticsErrorResult, toAnalyticsOverviewParams, toAnalyticsOverviewResult } from "./analytics.api";
+import {
+  getDashboardBalanceDateRange,
+  toAnalyticsErrorResult,
+  toAnalyticsOverviewParams,
+  toAnalyticsOverviewResult,
+  toDashboardBalanceSummary,
+} from "./analytics.api";
 
 function createAnalyticsOverviewDto(
   overrides: Partial<AnalyticsOverviewResponseDto> = {}
@@ -62,6 +68,7 @@ function createAnalyticsOverviewDto(
         totalInBaseCurrency: "500",
       },
     ],
+    accountCapitalTimeSeries: [],
     incomeCategories: [
       {
         id: "category-income",
@@ -158,5 +165,54 @@ describe("analytics API helpers", () => {
 
   it("normalizes API failures into the UI-facing error result", () => {
     expect(toAnalyticsErrorResult(new Error("No access"))).toEqual({ error: "No access" });
+  });
+
+  it("builds a dashboard balance summary from the current and previous day", () => {
+    const dateRange = getDashboardBalanceDateRange(new Date("2026-03-31T20:59:59.999Z"));
+
+    expect(dateRange).toEqual({ today: "2026-03-31", previousDay: "2026-03-30" });
+    expect(
+      toDashboardBalanceSummary(
+        {
+          baseCurrency: "BYN",
+          capitalTimeSeries: [
+            { date: "2026-03-30", totalInBaseCurrency: "500" },
+            { date: "2026-03-31", totalInBaseCurrency: "550" },
+          ],
+          accountCapitalTimeSeries: [
+            { accountId: "account-byn", date: "2026-03-30", totalInBaseCurrency: "100" },
+            { accountId: "account-byn", date: "2026-03-31", totalInBaseCurrency: "120" },
+          ],
+        },
+        dateRange
+      )
+    ).toEqual({
+      accountChanges: [
+        {
+          accountId: "account-byn",
+          currentBalance: "120",
+          dailyChangeAmount: "20",
+          previousBalance: "100",
+        },
+      ],
+      baseCurrency: "BYN",
+      currentBalance: "550",
+      dailyChangeAmount: "50",
+      previousBalance: "500",
+      percentageChange: 10,
+    });
+  });
+
+  it("does not invent a percentage when the previous balance is zero", () => {
+    expect(
+      toDashboardBalanceSummary(
+        {
+          baseCurrency: "BYN",
+          capitalTimeSeries: [{ date: "2026-03-31", totalInBaseCurrency: "100" }],
+          accountCapitalTimeSeries: [],
+        },
+        { today: "2026-03-31", previousDay: "2026-03-30" }
+      ).percentageChange
+    ).toBeNull();
   });
 });
