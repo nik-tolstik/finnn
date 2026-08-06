@@ -39,14 +39,6 @@ Code, configuration, schemas, generated contracts, and provider state are author
 - Do not run screenshot or browser-automation QA unless the user explicitly requests it.
 - When browser QA is explicitly requested, use the project Playwright workflow in `docs/browser-testing.md`.
 
-## External Review
-
-- Follow the active global `AGENTS.md` for the external reviewer, model, invocation, read-only restrictions, and finding-classification procedure. Do not duplicate those details here.
-- Run external review only when the user explicitly requests it or immediately before an agent-performed merge into `develop` or `main`. The pre-merge case is repository-level authorization to run the globally configured reviewer.
-- Do not run external review for ordinary implementation, local validation, or Draft PR updates that are not being merged.
-- Verify every external finding against the source code and tests. Classify it as confirmed, rejected, or uncertain, and explain disagreements before applying fixes.
-- After confirmed fixes, repeat only the focused review needed to validate them. Repeat a full review only when fixes materially change architecture, API contracts, persistence, security, concurrency, or state/data flow.
-
 ## Scope-Appropriate Verification
 
 Start with the smallest relevant checks and broaden only when the changed boundary requires it.
@@ -59,7 +51,7 @@ Start with the smallest relevant checks and broaden only when the changed bounda
 - Backup-service changes: run `pnpm --filter postgres-backup check` and `pnpm --filter postgres-backup test`.
 - Cross-package, dependency, shared configuration, migration, or similarly broad changes: run affected targeted checks first, then one final root-level suite with the relevant commands from `pnpm typecheck`, `pnpm check`, `pnpm test`, and `pnpm build`.
 
-Do not run unrelated API, database, or backup tests for an isolated frontend change. Run Storybook only when stories or a component rendering/API contract changes. When external review is triggered, use this order: implementation, targeted validation, external review, confirmed fixes, one final scope-appropriate validation, then merge or handoff.
+Do not run unrelated API, database, or backup tests for an isolated frontend change. Run Storybook only when stories or a component rendering/API contract changes. Use this order for repository changes: implementation, targeted validation, final scope-appropriate validation, then merge or handoff.
 
 ## Critical Implementation Rules
 
