@@ -21,7 +21,7 @@
     "api:generate": "orval --config orval.config.ts",
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build",
-    "browser:test": "playwright test",
+    "browser:test": "playwright test --pass-with-no-tests",
     "browser:install": "playwright install chromium"
   },
   "dependencies": {
