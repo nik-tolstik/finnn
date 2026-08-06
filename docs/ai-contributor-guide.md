@@ -78,8 +78,7 @@ task-207-fix-scheduled-payment-advance
 
 Use the Linear issue number as the numeric segment, followed by a short descriptive slug in lowercase kebab-case. Do
 not add an agent name, model name, date, or another prefix. Create the branch from `develop` and use one task branch per issue.
-When a compliant branch already exists, reuse it instead of creating a duplicate. Do not rename an existing
-user-created or externally generated branch solely to make it match this convention.
+When a compliant branch already exists, reuse it instead of creating a duplicate.
 
 ### Issue Lifecycle
 
