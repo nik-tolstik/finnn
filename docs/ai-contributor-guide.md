@@ -78,8 +78,7 @@ task-207-fix-scheduled-payment-advance
 
 Use the Linear issue number as the numeric segment, followed by a short descriptive slug in lowercase kebab-case. Do
 not add an agent name, model name, date, or another prefix. Create the branch from `develop` and use one task branch per issue.
-When a compliant branch already exists, reuse it instead of creating a duplicate. Do not rename an existing
-user-created or externally generated branch solely to make it match this convention.
+When a compliant branch already exists, reuse it instead of creating a duplicate.
 
 ### Issue Lifecycle
 
@@ -116,7 +115,8 @@ or access required. Do not invent product behavior to bypass a blocker.
 7. After the pull request is merged into `develop`, move the issue to `Dev` immediately. Complete or confirm the
    required verification there; if it is pending or fails, keep the issue in `Dev` and add a concise blocker comment.
 8. Add a single handoff comment with the outcome, verification performed, pull request and merge links, known risks,
-   and any follow-up work. Do not post command-by-command progress noise.
+   and any follow-up work. The pull request description should explain what changed and why, but does not need to
+   duplicate verification details. Do not post command-by-command progress noise.
 9. Leave the issue in `Dev` until the human accepts it. Do not mark the issue `Done` merely because code, a pull
    request, or a merge exists; move it to `Done` only after explicit human acceptance or instruction.
 
