@@ -218,6 +218,7 @@ describe("dashboard interaction loading", () => {
     expect(summarySource).toContain('className="overflow-hidden"');
     expect(summarySource).toContain("focus-visible:ring-2 focus-visible:ring-control-focus/30");
     expect(summarySource).not.toContain("border border-border/70 bg-surface-subtle/30 p-3");
+    expect(summarySource).not.toContain(">Итого</span>");
     expect(summarySource).toContain("actions.map");
     expect(amountsVisibilitySource).toContain('const STORAGE_KEY_PREFIX = "finnn:dashboard-amounts-hidden:v1:"');
     expect(amountsVisibilitySource).toContain("window.localStorage.getItem(storageKey)");

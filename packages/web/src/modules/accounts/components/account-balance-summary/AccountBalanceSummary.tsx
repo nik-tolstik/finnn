@@ -190,13 +190,6 @@ export function AccountBalanceSummary({
                   </button>
                 ))}
               </div>
-
-              <div className="mt-2 flex items-center justify-between border-t border-border/70 px-2 pt-2">
-                <span className="text-sm font-medium">Итого</span>
-                <span className={cn("text-sm font-semibold", getDailyChangeTextClassName(dailyChangeAmount))}>
-                  {amountsHidden ? HIDDEN_AMOUNT : formatDailyChangeAmount(dailyChangeAmount, baseCurrency)}
-                </span>
-              </div>
             </div>
           </motion.div>
         )}
