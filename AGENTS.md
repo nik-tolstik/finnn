@@ -23,6 +23,7 @@ Code, configuration, schemas, generated contracts, and provider state are author
 
 - Use `pnpm`. Do not use `npm` or `yarn` unless the repository itself requires it.
 - Inspect the current branch, working tree, and narrow task scope before editing. Preserve unrelated user changes and never revert them without an explicit request.
+- Name new agent task branches `task-<issue-number>-<short-kebab-case-slug>` without an additional agent or model prefix; see `docs/ai-contributor-guide.md` for the detailed convention.
 - Work in the current checkout and branch by default. Do not create a worktree or pull request unless the user asks, except for the delegated Linear workflow below. If repository protections or an unusually risky operation require a pull request, explain why and obtain confirmation first.
 - Do not edit on `main` unless the user explicitly requests it. If the current branch is `main`, first confirm the working tree is clean and `develop` is the intended target; otherwise ask before switching branches.
 - When the user requests a worktree, copy `packages/web/.env` and `packages/api/.env` as opaque files without reading or printing their contents.
