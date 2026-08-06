@@ -18,3 +18,14 @@ export function getExchangeRateDateKey(date: Date): string | null {
 
   return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
 }
+
+export function addExchangeRateDateDays(dateKey: string, days: number): string | null {
+  const date = new Date(`${dateKey}T12:00:00.000Z`);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  date.setUTCDate(date.getUTCDate() + days);
+  return getExchangeRateDateKey(date);
+}

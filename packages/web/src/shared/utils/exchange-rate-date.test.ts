@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getExchangeRateDateKey } from "./exchange-rate-date";
+import { addExchangeRateDateDays, getExchangeRateDateKey } from "./exchange-rate-date";
 
 describe("getExchangeRateDateKey", () => {
   it("uses the Minsk calendar date around UTC midnight", () => {
@@ -10,5 +10,10 @@ describe("getExchangeRateDateKey", () => {
 
   it("rejects invalid dates", () => {
     expect(getExchangeRateDateKey(new Date("invalid"))).toBeNull();
+  });
+
+  it("moves calendar dates without relying on the browser timezone", () => {
+    expect(addExchangeRateDateDays("2026-03-31", -1)).toBe("2026-03-30");
+    expect(addExchangeRateDateDays("2026-03-31", 1)).toBe("2026-04-01");
   });
 });

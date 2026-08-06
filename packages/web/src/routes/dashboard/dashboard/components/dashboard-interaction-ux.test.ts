@@ -182,6 +182,22 @@ describe("dashboard interaction loading", () => {
     expect(dashboardSource).toContain("<CreateTransactionDialog");
   });
 
+  it("shows the visible-account balance and ordered quick actions", () => {
+    const dashboardSource = readSource("src/routes/dashboard/dashboard/components/DashboardContent.tsx");
+    const summarySource = readSource(
+      "src/modules/accounts/components/account-balance-summary/AccountBalanceSummary.tsx"
+    );
+
+    expect(dashboardSource).toContain("toDashboardBalanceSummary");
+    expect(dashboardSource).toContain("dashboardBalanceAccountIds");
+    expect(dashboardSource).toContain("<AccountBalanceSummary");
+    expect(dashboardSource).toContain('label: "Расход"');
+    expect(dashboardSource).toContain('label: "Доход"');
+    expect(dashboardSource).toContain('label: "Перевод"');
+    expect(dashboardSource).toContain('label: "Долг"');
+    expect(summarySource).toContain("actions.map");
+  });
+
   it("moves transaction and debt dialog actions into the shared options menu", () => {
     const headerDialogSources = [
       "src/modules/transactions/components/edit-transaction-dialog/EditTransactionDialog.tsx",

@@ -1,11 +1,12 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Eye, EyeOff, Plus, X } from "lucide-react";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Check, Eye, EyeOff, HandCoins, Plus, X } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { getAccounts, updateAccountsOrder } from "@/modules/accounts/account.api";
 import type { Account } from "@/modules/accounts/account.types";
 import { getVisibleAccounts, resolveViewerUserId } from "@/modules/accounts/account-visibility";
+import { AccountBalanceSummary } from "@/modules/accounts/components/account-balance-summary";
 import { AccountsCards } from "@/modules/accounts/components/accounts-cards";
 import {
   type AccountDisplaySort,
@@ -15,14 +16,18 @@ import {
 } from "@/modules/accounts/components/accounts-cards/account-display";
 import { CreateAccountDialog } from "@/modules/accounts/components/create-account-dialog/CreateAccountDialog";
 import { useAccountDisplayPreferences } from "@/modules/accounts/hooks/useAccountDisplayPreferences";
+import { getDashboardBalanceDateRange, toDashboardBalanceSummary } from "@/modules/analytics/analytics.api";
+import { CreateDebtDialog } from "@/modules/debts/components/create-debt-dialog";
 import { CombinedTransactionsList } from "@/modules/transactions/components/combined-transactions-list";
 import { TransactionsFilterButton } from "@/modules/transactions/components/transactions-filters/components/TransactionsFilterButton";
 import { TransactionsFilterDrawer } from "@/modules/transactions/components/transactions-filters/components/TransactionsFilterDrawer";
 import { useTransactionFilters } from "@/modules/transactions/components/transactions-filters/hooks/useTransactionFilters";
 import { TransactionsListSkeleton } from "@/modules/transactions/components/transactions-list-skeleton";
 import { getCombinedTransactions } from "@/modules/transactions/transaction.api";
+import { PaymentTransactionType } from "@/modules/transactions/transaction.constants";
 import type { CombinedTransaction } from "@/modules/transactions/transaction.types";
 import { getWorkspaceMembers, getWorkspaceSummary } from "@/modules/workspace/workspace.api";
+import { getAnalyticsOverview as getApiAnalyticsOverview } from "@/shared/api/generated/analytics/analytics";
 import { getTodayExchangeRates } from "@/shared/api/generated/currency/currency";
 import {
   CURRENCY_OPTIONS,
@@ -33,7 +38,14 @@ import {
 import { useDialogState } from "@/shared/hooks/useDialogState";
 import { useSession } from "@/shared/lib/api-session";
 import { runOptimisticWorkspaceMutation, updateAccountsInCache } from "@/shared/lib/optimistic-workspace-updates";
-import { accountKeys, categoryKeys, exchangeRateKeys, transactionKeys, workspaceKeys } from "@/shared/lib/query-keys";
+import {
+  accountKeys,
+  analyticsKeys,
+  categoryKeys,
+  exchangeRateKeys,
+  transactionKeys,
+  workspaceKeys,
+} from "@/shared/lib/query-keys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Tooltip } from "@/shared/ui/tooltip";
@@ -53,6 +65,12 @@ type AccountWithOwner = Account & {
     email?: string | null;
     image: string | null;
   } | null;
+};
+
+type QuickTransactionDialogData = {
+  defaultMode?: "transfer";
+  defaultType?: PaymentTransactionType.INCOME | PaymentTransactionType.EXPENSE;
+  lockType?: boolean;
 };
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -88,7 +106,8 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
   const [isFiltersDrawerMounted, setIsFiltersDrawerMounted] = useState(false);
   const createAccountDialog = useDialogState();
-  const createTransactionDialog = useDialogState<null>();
+  const createTransactionDialog = useDialogState<QuickTransactionDialogData | null>();
+  const createDebtDialog = useDialogState<null>();
   const { preferences, selectGrouping, selectSort } = useAccountDisplayPreferences(workspaceId);
 
   const {
@@ -129,7 +148,6 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
   const { data: workspaceData, isLoading: isWorkspaceLoading } = useQuery({
     queryKey: workspaceKeys.summary(workspaceId),
     queryFn: () => getWorkspaceSummary(workspaceId),
-    enabled: shouldSortByBalance,
     staleTime: 5000,
   });
   const workspace = workspaceData && "data" in workspaceData ? workspaceData.data : null;
@@ -183,6 +201,44 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
       visibleAccounts,
     ]
   );
+
+  const [dashboardBalanceDateRange, setDashboardBalanceDateRange] = useState(() => getDashboardBalanceDateRange());
+  const dashboardBalanceAccountIds = useMemo(
+    () => visibleAccounts.map((account) => account.id).sort(),
+    [visibleAccounts]
+  );
+  const dashboardBalanceFilters = useMemo(
+    () => ({
+      accountIds: dashboardBalanceAccountIds,
+      dateFrom: dashboardBalanceDateRange.previousDay,
+      dateTo: dashboardBalanceDateRange.today,
+    }),
+    [dashboardBalanceAccountIds, dashboardBalanceDateRange]
+  );
+  const {
+    data: dashboardBalance,
+    isError: isDashboardBalanceQueryError,
+    isLoading: isDashboardBalanceQueryLoading,
+  } = useQuery({
+    queryKey: analyticsKeys.overview(workspaceId, dashboardBalanceFilters),
+    queryFn: async () => {
+      const response = await getApiAnalyticsOverview(workspaceId, dashboardBalanceFilters);
+      return toDashboardBalanceSummary(response, dashboardBalanceDateRange);
+    },
+    enabled: !isLoadingAccounts && dashboardBalanceAccountIds.length > 0 && !hasActionError(accountsData),
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      const nextDateRange = getDashboardBalanceDateRange();
+      setDashboardBalanceDateRange((currentDateRange) =>
+        currentDateRange.today === nextDateRange.today ? currentDateRange : nextDateRange
+      );
+    }, 60_000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const balanceSortStatus: BalanceSortStatus = useMemo(() => {
     if (!shouldSortByBalance) {
@@ -340,6 +396,53 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
     }
   }, [availableAccounts, handleCancelReorder, isReorderDirty, isReorderSaving, queryClient, reorderDraft, workspaceId]);
 
+  const quickActions = useMemo(
+    () => [
+      {
+        id: "expense",
+        label: "Расход",
+        icon: ArrowDownLeft,
+        onClick: () =>
+          createTransactionDialog.openDialog({
+            defaultType: PaymentTransactionType.EXPENSE,
+            lockType: true,
+          }),
+      },
+      {
+        id: "income",
+        label: "Доход",
+        icon: ArrowUpRight,
+        onClick: () =>
+          createTransactionDialog.openDialog({
+            defaultType: PaymentTransactionType.INCOME,
+            lockType: true,
+          }),
+      },
+      {
+        id: "transfer",
+        label: "Перевод",
+        icon: ArrowLeftRight,
+        onClick: () =>
+          createTransactionDialog.openDialog({
+            defaultMode: "transfer",
+            lockType: true,
+          }),
+      },
+      {
+        id: "debt",
+        label: "Долг",
+        icon: HandCoins,
+        onClick: () => createDebtDialog.openDialog(null),
+      },
+    ],
+    [createDebtDialog.openDialog, createTransactionDialog.openDialog]
+  );
+
+  const isDashboardBalanceLoading =
+    isLoadingAccounts || (dashboardBalanceAccountIds.length > 0 && isDashboardBalanceQueryLoading);
+  const isDashboardBalanceError =
+    hasActionError(accountsData) || (dashboardBalanceAccountIds.length > 0 && isDashboardBalanceQueryError);
+
   return (
     <div className="w-full max-w-[1024px] mx-auto">
       <div className="space-y-8">
@@ -413,6 +516,16 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
               </div>
             )}
           </div>
+
+          <AccountBalanceSummary
+            actions={quickActions}
+            balance={dashboardBalance?.currentBalance ?? "0"}
+            baseCurrency={dashboardBalance?.baseCurrency ?? baseCurrency}
+            dailyChangePercent={dashboardBalance?.percentageChange ?? null}
+            hasAccounts={dashboardBalanceAccountIds.length > 0}
+            isError={isDashboardBalanceError}
+            isLoading={isDashboardBalanceLoading}
+          />
 
           <AccountsCards
             groups={accountDisplayModel.groups}
@@ -505,8 +618,19 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
             open={createTransactionDialog.open}
             onOpenChange={createTransactionDialog.closeDialog}
             onCloseComplete={createTransactionDialog.unmountDialog}
+            defaultMode={createTransactionDialog.data?.defaultMode}
+            defaultType={createTransactionDialog.data?.defaultType}
+            lockType={createTransactionDialog.data?.lockType}
           />
         </Suspense>
+      ) : null}
+      {createDebtDialog.mounted ? (
+        <CreateDebtDialog
+          workspaceId={workspaceId}
+          open={createDebtDialog.open}
+          onOpenChange={createDebtDialog.closeDialog}
+          onCloseComplete={createDebtDialog.unmountDialog}
+        />
       ) : null}
     </div>
   );
