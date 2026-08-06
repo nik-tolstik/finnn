@@ -17,4 +17,5 @@ Finnn is a personal and shared finance tracker. Use this index to find the canon
   rehearsals.
 - [AI Contributor Guide](./ai-contributor-guide.md) — Linear task workflow and implementation checklists for coding
   agents.
+- [Browser Testing](./browser-testing.md) — Playwright and Chromium setup, smoke-test commands, and visual QA workflow.
 - [Reusable Solutions](./solutions/README.md) — durable, evidence-based engineering lessons.

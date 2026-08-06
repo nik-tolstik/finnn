@@ -36,6 +36,7 @@ Code, configuration, schemas, generated contracts, and provider state are author
 - Explicit delegation of a Finnn Linear issue authorizes the agent to create or use its issue branch and open or update its draft pull request. It does not authorize a worktree, production change, destructive action, or infrastructure mutation. An agent may merge only when the user explicitly authorizes that exact merge separately.
 - Keep code comments and documentation in English.
 - Do not run screenshot or browser-automation QA unless the user explicitly requests it.
+- When browser QA is explicitly requested, use the project Playwright workflow in `docs/browser-testing.md`.
 
 ## External Review
 
