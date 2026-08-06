@@ -1,9 +1,12 @@
 import type { LucideIcon } from "lucide-react";
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
+import type { DashboardBalancePeriod, DashboardBalanceTimeSeriesPoint } from "@/modules/analytics/analytics.api";
+import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { Button } from "@/shared/ui/button";
+import { Popover } from "@/shared/ui/popover";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
@@ -30,12 +33,15 @@ interface AccountBalanceSummaryProps {
   amountsHidden: boolean;
   baseCurrency: string;
   balance: string;
+  balancePeriod: DashboardBalancePeriod;
+  balanceTimeSeries: DashboardBalanceTimeSeriesPoint[];
   dailyChangeAmount: string;
   dailyChangePercent: number | null;
   hasAccounts: boolean;
   isError?: boolean;
   isLoading?: boolean;
   onAccountClick: (accountId: string) => void;
+  onBalancePeriodChange: (value: DashboardBalancePeriod) => void;
   onBalanceClick: () => void;
 }
 
@@ -78,11 +84,137 @@ function getDailyChangeTextClassName(value: string) {
   return comparison > 0 ? "text-success" : "text-destructive";
 }
 
+const BALANCE_PERIOD_OPTIONS: Array<{
+  compactLabel: string;
+  label: string;
+  value: DashboardBalancePeriod;
+}> = [
+  { compactLabel: "7 дн.", label: "7 дней", value: "7d" },
+  { compactLabel: "30 дн.", label: "30 дней", value: "30d" },
+];
+
+function BalancePeriodSelector({
+  disabled,
+  onChange,
+  value,
+}: {
+  disabled: boolean;
+  onChange: (value: DashboardBalancePeriod) => void;
+  value: DashboardBalancePeriod;
+}) {
+  const selectedOption = BALANCE_PERIOD_OPTIONS.find((option) => option.value === value) ?? BALANCE_PERIOD_OPTIONS[0];
+
+  return (
+    <Popover
+      className="w-44 p-1"
+      placement="bottom-end"
+      trigger={({ ref, ...triggerProps }) => (
+        <Button
+          ref={ref}
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
+          aria-label="Период графика"
+          disabled={disabled}
+          {...triggerProps}
+        >
+          <span className="sm:hidden">{selectedOption.compactLabel}</span>
+          <span className="hidden sm:inline">{selectedOption.label}</span>
+          <ChevronDown className="size-3" />
+        </Button>
+      )}
+    >
+      {({ close }) => (
+        <div role="menu" aria-label="Период графика" className="space-y-0.5">
+          {BALANCE_PERIOD_OPTIONS.map((option) => {
+            const isSelected = option.value === value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="menuitemradio"
+                aria-checked={isSelected}
+                className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30"
+                onClick={() => {
+                  onChange(option.value);
+                  close();
+                }}
+              >
+                <span>{option.label}</span>
+                {isSelected ? <Check className="size-4 text-primary" /> : null}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </Popover>
+  );
+}
+
+function BalanceSparkline({
+  amountsHidden,
+  isError,
+  period,
+  points,
+}: {
+  amountsHidden: boolean;
+  isError: boolean;
+  period: DashboardBalancePeriod;
+  points: DashboardBalanceTimeSeriesPoint[];
+}) {
+  const { isMobile } = useBreakpoints();
+  const firstPoint = points[0];
+  const lastPoint = points.at(-1);
+  const trend = firstPoint && lastPoint ? compareMoney(lastPoint.balance, firstPoint.balance) : 0;
+  const chartColor = trend > 0 ? "#16a34a" : trend < 0 ? "#ef4444" : "#737373";
+  const periodLabel = period === "7d" ? "7 дней" : "30 дней";
+  const values = points.map((point) => Number(point.balance));
+  const finiteValues = values.filter((value) => Number.isFinite(value));
+  const normalizedValues = finiteValues.length > 0 ? finiteValues : [0];
+  const minValue = Math.min(...normalizedValues);
+  const maxValue = Math.max(...normalizedValues);
+  const valueRange = maxValue - minValue || 1;
+  const linePoints = points
+    .map((point, index) => {
+      const value = Number(point.balance);
+      const x = points.length === 1 ? 48 : (index / (points.length - 1)) * 96;
+      const y = Number.isFinite(value) ? 28 - ((value - minValue) / valueRange) * 22 : 28;
+
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  if (isMobile || amountsHidden || isError || points.length < 2) {
+    return null;
+  }
+
+  return (
+    <div className="h-8 w-20 shrink-0 select-none sm:w-24" role="img" aria-label={`График баланса за ${periodLabel}`}>
+      <svg viewBox="0 0 96 32" className="size-full overflow-visible" aria-hidden="true">
+        <polygon points={`0,32 ${linePoints} 96,32`} fill={chartColor} fillOpacity={0.1} />
+        <polyline
+          points={linePoints}
+          fill="none"
+          stroke={chartColor}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </div>
+  );
+}
+
 export function AccountBalanceSummary({
   accountChanges,
   actions,
   amountsHidden,
   balance,
+  balancePeriod,
+  balanceTimeSeries,
   baseCurrency,
   dailyChangeAmount,
   dailyChangePercent,
@@ -90,6 +222,7 @@ export function AccountBalanceSummary({
   isError = false,
   isLoading = false,
   onAccountClick,
+  onBalancePeriodChange,
   onBalanceClick,
 }: AccountBalanceSummaryProps) {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
@@ -141,6 +274,19 @@ export function AccountBalanceSummary({
               {changeLabel}
               <ChevronDown className={cn("size-3 transition-transform", isBreakdownOpen && "rotate-180")} />
             </button>
+            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+              <BalanceSparkline
+                amountsHidden={amountsHidden}
+                isError={isError}
+                period={balancePeriod}
+                points={balanceTimeSeries}
+              />
+              <BalancePeriodSelector
+                disabled={isError || isLoading || balanceTimeSeries.length === 0}
+                onChange={onBalancePeriodChange}
+                value={balancePeriod}
+              />
+            </div>
           </>
         )}
       </div>

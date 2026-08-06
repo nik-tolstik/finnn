@@ -12,17 +12,31 @@ import type { TransactionViewFilters } from "../transactions/components/transact
 import type { AnalyticsOverviewResult, AnalyticsSummaryMetric } from "./analytics.types";
 
 export interface DashboardBalanceDateRange {
+  chartStart: string;
   today: string;
   previousDay: string;
 }
 
+export type DashboardBalancePeriod = "7d" | "30d";
+
+export const DASHBOARD_BALANCE_PERIOD_DAYS: Record<DashboardBalancePeriod, number> = {
+  "7d": 7,
+  "30d": 30,
+};
+
 export interface DashboardBalanceSummary {
   accountChanges: DashboardAccountBalanceChange[];
   baseCurrency: string;
+  balanceTimeSeries: DashboardBalanceTimeSeriesPoint[];
   currentBalance: string;
   dailyChangeAmount: string;
   previousBalance: string;
   percentageChange: number | null;
+}
+
+export interface DashboardBalanceTimeSeriesPoint {
+  balance: string;
+  date: string;
 }
 
 export interface DashboardAccountBalanceChange {
@@ -32,13 +46,26 @@ export interface DashboardAccountBalanceChange {
   previousBalance: string;
 }
 
-export function getDashboardBalanceDateRange(referenceDate = new Date()): DashboardBalanceDateRange {
+export function getDashboardBalanceDateRange(referenceDate = new Date(), periodDays = 7): DashboardBalanceDateRange {
   const today = getExchangeRateDateKey(referenceDate) ?? "";
 
   return {
+    chartStart: addExchangeRateDateDays(today, 1 - periodDays) ?? today,
     today,
     previousDay: addExchangeRateDateDays(today, -1) ?? today,
   };
+}
+
+function getDashboardBalanceTimeSeries(
+  points: AnalyticsOverviewResponseDto["capitalTimeSeries"],
+  dateRange: DashboardBalanceDateRange
+): DashboardBalanceTimeSeriesPoint[] {
+  return points
+    .filter((point) => point.date >= dateRange.chartStart && point.date <= dateRange.today)
+    .map((point) => ({
+      balance: point.totalInBaseCurrency,
+      date: point.date,
+    }));
 }
 
 function getPercentageChange(current: string, previous: string): number | null {
@@ -84,6 +111,7 @@ export function toDashboardBalanceSummary(
   return {
     accountChanges: getDashboardAccountBalanceChanges(response.accountCapitalTimeSeries, dateRange),
     baseCurrency: response.baseCurrency,
+    balanceTimeSeries: getDashboardBalanceTimeSeries(response.capitalTimeSeries, dateRange),
     currentBalance,
     dailyChangeAmount: subtractMoney(currentBalance, previousBalance),
     previousBalance,

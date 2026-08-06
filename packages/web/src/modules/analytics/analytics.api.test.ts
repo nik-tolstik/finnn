@@ -170,12 +170,14 @@ describe("analytics API helpers", () => {
   it("builds a dashboard balance summary from the current and previous day", () => {
     const dateRange = getDashboardBalanceDateRange(new Date("2026-03-31T20:59:59.999Z"));
 
-    expect(dateRange).toEqual({ today: "2026-03-31", previousDay: "2026-03-30" });
+    expect(dateRange).toEqual({ chartStart: "2026-03-25", today: "2026-03-31", previousDay: "2026-03-30" });
+    expect(getDashboardBalanceDateRange(new Date("2026-03-31T20:59:59.999Z"), 30).chartStart).toBe("2026-03-02");
     expect(
       toDashboardBalanceSummary(
         {
           baseCurrency: "BYN",
           capitalTimeSeries: [
+            { date: "2026-03-24", totalInBaseCurrency: "450" },
             { date: "2026-03-30", totalInBaseCurrency: "500" },
             { date: "2026-03-31", totalInBaseCurrency: "550" },
           ],
@@ -196,6 +198,10 @@ describe("analytics API helpers", () => {
         },
       ],
       baseCurrency: "BYN",
+      balanceTimeSeries: [
+        { balance: "500", date: "2026-03-30" },
+        { balance: "550", date: "2026-03-31" },
+      ],
       currentBalance: "550",
       dailyChangeAmount: "50",
       previousBalance: "500",
@@ -211,7 +217,7 @@ describe("analytics API helpers", () => {
           capitalTimeSeries: [{ date: "2026-03-31", totalInBaseCurrency: "100" }],
           accountCapitalTimeSeries: [],
         },
-        { today: "2026-03-31", previousDay: "2026-03-30" }
+        { chartStart: "2026-03-25", today: "2026-03-31", previousDay: "2026-03-30" }
       ).percentageChange
     ).toBeNull();
   });
