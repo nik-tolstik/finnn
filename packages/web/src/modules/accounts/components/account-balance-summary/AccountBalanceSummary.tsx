@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { Card, CardContent, CardDescription, CardTitle } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/utils/cn";
 import { formatMoney } from "@/shared/utils/money";
@@ -31,12 +31,12 @@ function formatDailyChange(value: number | null) {
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 }
 
-function getDailyChangeClassName(value: number | null) {
+function getDailyChangeBadgeClassName(value: number | null) {
   if (value === null || value === 0) {
-    return "text-muted-foreground";
+    return "bg-surface-subtle text-muted-foreground";
   }
 
-  return value > 0 ? "text-success" : "text-destructive";
+  return value > 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive";
 }
 
 export function AccountBalanceSummary({
@@ -53,45 +53,37 @@ export function AccountBalanceSummary({
   const changeLabel = isError || !hasAccounts ? "—" : formatDailyChange(dailyChangePercent);
 
   return (
-    <Card className="mb-4 gap-4 p-4 sm:p-5">
-      <CardContent className="flex items-start justify-between gap-4 p-0">
-        <div className="min-w-0 space-y-1">
-          <CardDescription>Общий баланс</CardDescription>
-          {showBalanceSkeleton ? (
-            <Skeleton className="h-8 w-36" />
-          ) : (
-            <CardTitle className="truncate text-2xl sm:text-3xl">{balanceLabel}</CardTitle>
-          )}
-        </div>
-        <div className="shrink-0 space-y-1 text-right">
-          <CardDescription>Сегодня</CardDescription>
-          {showBalanceSkeleton ? (
-            <Skeleton className="ml-auto h-5 w-16" />
-          ) : (
-            <p className={cn("text-sm font-medium", getDailyChangeClassName(isError ? null : dailyChangePercent))}>
+    <div className="mb-5 space-y-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        {showBalanceSkeleton ? (
+          <>
+            <Skeleton className="h-8 w-36 sm:h-9" />
+            <Skeleton className="h-6 w-14" />
+          </>
+        ) : (
+          <>
+            <p className="truncate text-2xl font-semibold sm:text-3xl">{balanceLabel}</p>
+            <Badge className={cn("shrink-0", getDailyChangeBadgeClassName(isError ? null : dailyChangePercent))}>
               {changeLabel}
-            </p>
-          )}
-        </div>
-      </CardContent>
-
-      <div className="space-y-2">
-        <p className="text-sm font-medium">Быстрые действия</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {actions.map(({ icon: Icon, id, label, onClick }) => (
-            <Button
-              className="h-auto min-h-14 flex-col gap-1.5 px-3 py-2.5"
-              key={id}
-              onClick={onClick}
-              type="button"
-              variant="secondary"
-            >
-              <Icon className="size-5" />
-              <span>{label}</span>
-            </Button>
-          ))}
-        </div>
+            </Badge>
+          </>
+        )}
       </div>
-    </Card>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {actions.map(({ icon: Icon, id, label, onClick }) => (
+          <Button
+            className="h-auto min-h-14 flex-col gap-1.5 px-3 py-2.5"
+            key={id}
+            onClick={onClick}
+            type="button"
+            variant="secondary"
+          >
+            <Icon className="size-5" />
+            <span>{label}</span>
+          </Button>
+        ))}
+      </div>
+    </div>
   );
 }
