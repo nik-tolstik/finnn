@@ -31,7 +31,7 @@ source of truth for stable engineering, domain, setup, and operational rules.
 - Keep a human as the issue assignee and owner of the result. Use the agent delegate for implementation work.
 - A user request to implement a planned code or repository-documentation change is explicit delegation. It authorizes
   the agent to create or update the corresponding Product Change issue, use its task branch, and open or update a draft
-  pull request. The branch must start from `develop` and include the Linear issue identifier.
+  pull request. The branch must start from `develop` and include the Linear issue number.
 - Delegation alone does not authorize the agent to merge its pull request, change product scope or priority, mutate
   shared infrastructure, deploy to production, or perform destructive operations. An agent may merge only when the
   user explicitly authorizes that exact merge separately.
@@ -52,8 +52,8 @@ task-142-add-account-archive
 task-207-fix-scheduled-payment-advance
 ```
 
-Use the Linear issue number in lowercase, followed by a short descriptive slug in lowercase kebab-case. Do not add an
-agent name, model name, date, or another prefix. Create the branch from `develop` and use one task branch per issue.
+Use the Linear issue number as the numeric segment, followed by a short descriptive slug in lowercase kebab-case. Do
+not add an agent name, model name, date, or another prefix. Create the branch from `develop` and use one task branch per issue.
 When a compliant branch already exists, reuse it instead of creating a duplicate. Do not rename an existing
 user-created or externally generated branch solely to make it match this convention.
 
