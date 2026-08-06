@@ -195,6 +195,12 @@ describe("dashboard interaction loading", () => {
     expect(dashboardSource).toContain('label: "Доход"');
     expect(dashboardSource).toContain('label: "Перевод"');
     expect(dashboardSource).toContain('label: "Долг"');
+    expect(dashboardSource).toContain("const [areAmountsHidden, setAreAmountsHidden] = useState(false)");
+    expect(dashboardSource).toContain("amountsHidden={areAmountsHidden}");
+    expect(dashboardSource).toContain("hideBalances={areAmountsHidden}");
+    expect(dashboardSource).toContain("hideAmounts={areAmountsHidden}");
+    expect(summarySource).toContain('aria-label={amountsHidden ? "Показать суммы" : "Скрыть суммы"}');
+    expect(summarySource).toContain("HIDDEN_AMOUNT");
     expect(summarySource).toContain("actions.map");
 
     const balancePosition = dashboardSource.indexOf("<AccountBalanceSummary");

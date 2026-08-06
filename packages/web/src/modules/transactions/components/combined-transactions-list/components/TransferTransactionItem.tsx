@@ -6,12 +6,13 @@ import { Card } from "@/shared/ui/card";
 import { AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { hexToRgba } from "@/shared/utils/color-utils";
-import { formatMoney } from "@/shared/utils/money";
+import { formatMoney, HIDDEN_AMOUNT } from "@/shared/utils/money";
 
 import type { TransferTransactionWithRelations } from "../../../transaction.types";
 import { AiCreatedBadge } from "./AiCreatedBadge";
 
 interface TransferTransactionItemProps {
+  hideAmounts?: boolean;
   transaction: TransferTransactionWithRelations;
   onClick: (transaction: TransferTransactionWithRelations) => void;
 }
@@ -40,7 +41,7 @@ function TransferAccountChip({ color, icon, label }: TransferAccountChipProps) {
   );
 }
 
-export function TransferTransactionItem({ transaction, onClick }: TransferTransactionItemProps) {
+export function TransferTransactionItem({ hideAmounts = false, transaction, onClick }: TransferTransactionItemProps) {
   const description = transaction.description?.trim();
 
   return (
@@ -57,7 +58,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
             {transaction.createdByAi ? <AiCreatedBadge className="size-5" /> : null}
           </span>
           <span className="text-right text-sm font-medium leading-relaxed text-amber-600 dark:text-amber-400">
-            {formatMoney(transaction.amount, transaction.fromAccount.currency)}
+            {hideAmounts ? HIDDEN_AMOUNT : formatMoney(transaction.amount, transaction.fromAccount.currency)}
           </span>
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3">
@@ -89,7 +90,7 @@ export function TransferTransactionItem({ transaction, onClick }: TransferTransa
             />
           </div>
           <span className="text-right text-sm font-medium leading-relaxed text-foreground">
-            {formatMoney(transaction.toAmount, transaction.toAccount.currency)}
+            {hideAmounts ? HIDDEN_AMOUNT : formatMoney(transaction.toAmount, transaction.toAccount.currency)}
           </span>
         </div>
         {transaction.createdBy ? (

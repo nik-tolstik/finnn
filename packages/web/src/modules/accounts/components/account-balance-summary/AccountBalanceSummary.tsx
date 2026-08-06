@@ -4,7 +4,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/utils/cn";
-import { formatMoney } from "@/shared/utils/money";
+import { formatMoney, HIDDEN_AMOUNT } from "@/shared/utils/money";
 
 export interface AccountBalanceQuickAction {
   icon: LucideIcon;
@@ -15,12 +15,14 @@ export interface AccountBalanceQuickAction {
 
 interface AccountBalanceSummaryProps {
   actions: AccountBalanceQuickAction[];
+  amountsHidden: boolean;
   baseCurrency: string;
   balance: string;
   dailyChangePercent: number | null;
   hasAccounts: boolean;
   isError?: boolean;
   isLoading?: boolean;
+  onBalanceClick: () => void;
 }
 
 function formatDailyChange(value: number | null) {
@@ -41,16 +43,22 @@ function getDailyChangeBadgeClassName(value: number | null) {
 
 export function AccountBalanceSummary({
   actions,
+  amountsHidden,
   balance,
   baseCurrency,
   dailyChangePercent,
   hasAccounts,
   isError = false,
   isLoading = false,
+  onBalanceClick,
 }: AccountBalanceSummaryProps) {
   const showBalanceSkeleton = isLoading;
-  const balanceLabel = isError ? "—" : formatMoney(balance, baseCurrency);
-  const changeLabel = isError || !hasAccounts ? "—" : formatDailyChange(dailyChangePercent);
+  const balanceLabel = amountsHidden ? HIDDEN_AMOUNT : isError ? "—" : formatMoney(balance, baseCurrency);
+  const changeLabel = amountsHidden
+    ? HIDDEN_AMOUNT
+    : isError || !hasAccounts
+      ? "—"
+      : formatDailyChange(dailyChangePercent);
 
   return (
     <div className="mb-5 space-y-4">
@@ -62,7 +70,15 @@ export function AccountBalanceSummary({
           </>
         ) : (
           <>
-            <p className="truncate text-2xl font-semibold sm:text-3xl">{balanceLabel}</p>
+            <button
+              type="button"
+              className="min-w-0 cursor-pointer truncate text-left text-2xl font-semibold outline-none transition-opacity hover:opacity-75 focus-visible:ring-2 focus-visible:ring-control-focus/30 sm:text-3xl"
+              aria-label={amountsHidden ? "Показать суммы" : "Скрыть суммы"}
+              aria-pressed={amountsHidden}
+              onClick={onBalanceClick}
+            >
+              {balanceLabel}
+            </button>
             <Badge className={cn("shrink-0", getDailyChangeBadgeClassName(isError ? null : dailyChangePercent))}>
               {changeLabel}
             </Badge>

@@ -102,6 +102,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
   const [isReorderSaving, setIsReorderSaving] = useState(false);
   const [reorderDraft, setReorderDraft] = useState<AccountWithOwner[] | null>(null);
   const [isReorderDirty, setIsReorderDirty] = useState(false);
+  const [areAmountsHidden, setAreAmountsHidden] = useState(false);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
   const [isFiltersDrawerMounted, setIsFiltersDrawerMounted] = useState(false);
@@ -449,12 +450,14 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
         <div>
           <AccountBalanceSummary
             actions={quickActions}
+            amountsHidden={areAmountsHidden}
             balance={dashboardBalance?.currentBalance ?? "0"}
             baseCurrency={dashboardBalance?.baseCurrency ?? baseCurrency}
             dailyChangePercent={dashboardBalance?.percentageChange ?? null}
             hasAccounts={dashboardBalanceAccountIds.length > 0}
             isError={isDashboardBalanceError}
             isLoading={isDashboardBalanceLoading}
+            onBalanceClick={() => setAreAmountsHidden((current) => !current)}
           />
 
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -530,6 +533,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
           <AccountsCards
             groups={accountDisplayModel.groups}
             grouping={preferences.grouping}
+            hideBalances={areAmountsHidden}
             isLoading={isAccountsLoading}
             isReorderSaving={isReorderSaving}
             reorderAccounts={reorderDraft}
@@ -569,6 +573,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
                 <TransactionsListSkeleton count={8} />
               ) : displayedTransactions && displayedTransactions.length > 0 ? (
                 <CombinedTransactionsList
+                  hideAmounts={areAmountsHidden}
                   transactions={displayedTransactions}
                   showLoadMore={hasMore}
                   onLoadMore={() => {
@@ -594,6 +599,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
           members={membersData?.data || []}
           categories={categoriesData?.data || []}
           accounts={availableAccounts}
+          hideBalances={areAmountsHidden}
           isCategoriesLoading={isCategoriesLoading}
           isMembersLoading={isMembersLoading}
           onApply={handleApplyFilters}

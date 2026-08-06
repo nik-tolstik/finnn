@@ -53,6 +53,7 @@ type AccountWithOwner = Account & {
 interface AccountsCardsProps {
   groups: AccountDisplayGroup<AccountWithOwner>[];
   grouping: AccountDisplayGrouping;
+  hideBalances?: boolean;
   isLoading?: boolean;
   isReorderSaving?: boolean;
   onReorderAccountsChange?: (accounts: AccountWithOwner[]) => void;
@@ -101,6 +102,7 @@ function AccountGroupHeader({ group }: { group: AccountDisplayGroup<AccountWithO
 export function AccountsCards({
   groups,
   grouping,
+  hideBalances = false,
   isLoading,
   isReorderSaving = false,
   onReorderAccountsChange,
@@ -221,6 +223,7 @@ export function AccountsCards({
         <AccountsCardsReorderView
           accounts={reorderAccounts}
           disabled={isReorderSaving}
+          hideBalances={hideBalances}
           onAccountsChange={onReorderAccountsChange}
         />
       </Suspense>
@@ -241,6 +244,7 @@ export function AccountsCards({
                 <AccountCard
                   key={account.id}
                   account={account}
+                  hideBalance={hideBalances}
                   showOwner={shouldShowOwnerOnCard}
                   onClick={(event) => {
                     preloadAccountDetailsDialogs();

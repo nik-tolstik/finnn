@@ -4,16 +4,22 @@ import { AccountIcon } from "@/shared/utils/account-icons";
 
 import { getTransactionDescriptionSegments } from "../../../utils/transactionDescription";
 import { TransactionDescriptionLine } from "../../transaction-description-line/TransactionDescriptionLine";
-import { getDebtTransactionAmountDisplay } from "../utils/transactionAmountDisplay";
+import { concealTransactionAmountDisplay, getDebtTransactionAmountDisplay } from "../utils/transactionAmountDisplay";
 import { TransactionActorAvatar } from "./TransactionActorAvatar";
 
 interface DebtTransactionItemProps {
   debtTransaction: DebtTransactionWithRelations;
+  hideAmounts?: boolean;
   workspaceName: string;
   onClick: (debtTransaction: DebtTransactionWithRelations) => void;
 }
 
-export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }: DebtTransactionItemProps) {
+export function DebtTransactionItem({
+  debtTransaction,
+  hideAmounts = false,
+  workspaceName,
+  onClick,
+}: DebtTransactionItemProps) {
   const { segments } = getTransactionDescriptionSegments(
     {
       kind: "debtTransaction",
@@ -22,6 +28,7 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
     workspaceName
   );
   const amount = getDebtTransactionAmountDisplay(debtTransaction);
+  const displayedAmount = hideAmounts ? concealTransactionAmountDisplay(amount) : amount;
   const actorAvatar = debtTransaction.account ? (
     <TransactionActorAvatar account={debtTransaction.account} showName workspaceName={workspaceName} />
   ) : (
@@ -49,14 +56,14 @@ export function DebtTransactionItem({ debtTransaction, workspaceName, onClick }:
               },
             ]
           : undefined,
-        trailing: amount.secondaryText
+        trailing: displayedAmount.secondaryText
           ? {
-              text: amount.secondaryText,
-              className: amount.secondaryClassName,
+              text: displayedAmount.secondaryText,
+              className: displayedAmount.secondaryClassName,
             }
           : undefined,
       }}
-      amount={amount}
+      amount={displayedAmount}
       descriptionPlacement="below"
       description={debtTransaction.description?.trim() || undefined}
       onClick={() => {

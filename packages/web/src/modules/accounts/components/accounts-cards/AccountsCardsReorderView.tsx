@@ -26,15 +26,17 @@ type AccountWithOwner = Account & {
 interface AccountsCardsReorderViewProps {
   accounts: AccountWithOwner[];
   disabled?: boolean;
+  hideBalances?: boolean;
   onAccountsChange: (accounts: AccountWithOwner[]) => void;
 }
 
 interface SortableAccountCardProps {
   account: AccountWithOwner;
   disabled?: boolean;
+  hideBalance?: boolean;
 }
 
-function SortableAccountCard({ account, disabled = false }: SortableAccountCardProps) {
+function SortableAccountCard({ account, disabled = false, hideBalance = false }: SortableAccountCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     disabled,
     id: account.id,
@@ -61,7 +63,7 @@ function SortableAccountCard({ account, disabled = false }: SortableAccountCardP
           userSelect: "none",
         }}
       >
-        <AccountCard account={account} showOwner />
+        <AccountCard account={account} hideBalance={hideBalance} showOwner />
       </div>
     </div>
   );
@@ -70,6 +72,7 @@ function SortableAccountCard({ account, disabled = false }: SortableAccountCardP
 export function AccountsCardsReorderView({
   accounts,
   disabled = false,
+  hideBalances = false,
   onAccountsChange,
 }: AccountsCardsReorderViewProps) {
   const sensors = useSensors(
@@ -105,7 +108,7 @@ export function AccountsCardsReorderView({
       <SortableContext items={accounts.map((account) => account.id)}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {accounts.map((account) => (
-            <SortableAccountCard key={account.id} account={account} disabled={disabled} />
+            <SortableAccountCard key={account.id} account={account} disabled={disabled} hideBalance={hideBalances} />
           ))}
         </div>
       </SortableContext>

@@ -1,6 +1,6 @@
 import { DebtTransactionType, DebtType } from "@/modules/debts/debt.constants";
 import type { DebtTransactionWithRelations } from "@/modules/debts/debt.types";
-import { formatMoney } from "@/shared/utils/money";
+import { formatMoney, HIDDEN_AMOUNT } from "@/shared/utils/money";
 
 import { PaymentTransactionType } from "../../../transaction.constants";
 import type { PaymentTransactionWithRelations, TransferTransactionWithRelations } from "../../../transaction.types";
@@ -10,6 +10,14 @@ interface TransactionAmountDisplay {
   className: string;
   secondaryText?: string;
   secondaryClassName?: string;
+}
+
+export function concealTransactionAmountDisplay(amount: TransactionAmountDisplay): TransactionAmountDisplay {
+  return {
+    ...amount,
+    text: HIDDEN_AMOUNT,
+    secondaryText: amount.secondaryText ? HIDDEN_AMOUNT : undefined,
+  };
 }
 
 const TRANSFER_AMOUNT_CLASS_NAME = "text-amber-600 dark:text-amber-400";
