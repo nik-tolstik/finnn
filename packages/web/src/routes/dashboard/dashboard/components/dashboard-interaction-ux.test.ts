@@ -210,6 +210,9 @@ describe("dashboard interaction loading", () => {
     expect(summarySource).toContain('aria-label={amountsHidden ? "Показать суммы" : "Скрыть суммы"}');
     expect(summarySource).toContain("dailyChangeAmount: string");
     expect(summarySource).toContain("formatDailyChangeAmount");
+    expect(summarySource).toContain("accountChanges.filter(");
+    expect(summarySource).toContain('compareMoney(dailyChangeAmount, "0") !== 0');
+    expect(summarySource).toContain("changedAccountChanges.map");
     expect(summarySource).toContain("Изменение за сегодня");
     expect(summarySource).toContain("onAccountClick(accountId)");
     expect(summarySource).toContain("HIDDEN_AMOUNT");

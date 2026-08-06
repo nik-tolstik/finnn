@@ -102,7 +102,10 @@ export function AccountBalanceSummary({
       ? "—"
       : `${formatDailyChangeAmount(dailyChangeAmount, baseCurrency)} (${formatDailyChange(dailyChangePercent)})`;
 
-  const canOpenBreakdown = !isError && hasAccounts && accountChanges.length > 0;
+  const changedAccountChanges = accountChanges.filter(
+    ({ dailyChangeAmount }) => compareMoney(dailyChangeAmount, "0") !== 0
+  );
+  const canOpenBreakdown = !isError && hasAccounts && changedAccountChanges.length > 0;
 
   return (
     <div className="mb-5 space-y-4">
@@ -162,33 +165,35 @@ export function AccountBalanceSummary({
               </div>
 
               <div className="space-y-1">
-                {accountChanges.map(({ accountColor, accountIcon, accountId, accountName, dailyChangeAmount }) => (
-                  <button
-                    key={accountId}
-                    type="button"
-                    className="flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30"
-                    onClick={() => {
-                      setIsBreakdownOpen(false);
-                      onAccountClick(accountId);
-                    }}
-                  >
-                    <AccountIcon
-                      accountColor={accountColor}
-                      accountName={accountName}
-                      className="size-4 shrink-0"
-                      iconName={accountIcon}
-                    />
-                    <span className="min-w-0 flex-1 truncate text-sm">{accountName}</span>
-                    <span
-                      className={cn(
-                        "shrink-0 text-sm font-medium",
-                        amountsHidden ? "text-muted-foreground" : getDailyChangeTextClassName(dailyChangeAmount)
-                      )}
+                {changedAccountChanges.map(
+                  ({ accountColor, accountIcon, accountId, accountName, dailyChangeAmount }) => (
+                    <button
+                      key={accountId}
+                      type="button"
+                      className="flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-control-focus/30"
+                      onClick={() => {
+                        setIsBreakdownOpen(false);
+                        onAccountClick(accountId);
+                      }}
                     >
-                      {amountsHidden ? HIDDEN_AMOUNT : formatDailyChangeAmount(dailyChangeAmount, baseCurrency)}
-                    </span>
-                  </button>
-                ))}
+                      <AccountIcon
+                        accountColor={accountColor}
+                        accountName={accountName}
+                        className="size-4 shrink-0"
+                        iconName={accountIcon}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-sm">{accountName}</span>
+                      <span
+                        className={cn(
+                          "shrink-0 text-sm font-medium",
+                          amountsHidden ? "text-muted-foreground" : getDailyChangeTextClassName(dailyChangeAmount)
+                        )}
+                      >
+                        {amountsHidden ? HIDDEN_AMOUNT : formatDailyChangeAmount(dailyChangeAmount, baseCurrency)}
+                      </span>
+                    </button>
+                  )
+                )}
               </div>
             </div>
           </motion.div>
