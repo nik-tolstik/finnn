@@ -28,7 +28,7 @@ later phase from an earlier command. In particular, a request to create a task i
 | Capture | “Create a task” | Create or reuse the task, preserve the user's message under `Исходные мысли`, and infer only a short title and required metadata. Do not rewrite the request, add a full specification, ask implementation questions, or edit code. | `Backlog` |
 | Clarification | “Let's discuss it” | Ask questions, surface decisions, and append agreed context to the same task. Keep the original thoughts unchanged. Do not edit code or treat the discussion as implementation approval. | `Backlog` |
 | Specification | “Format the task” | Convert the agreed context into the required Product Change sections, while retaining `Исходные мысли` separately. Resolve acceptance criteria and scope, then move the issue to `Todo` when it is ready. Do not edit code. | `Todo` |
-| Implementation | “Implement the task” | Start implementation only after this explicit authorization and after the outcome and acceptance criteria are clear. Move the issue to `In Progress` when coding starts. | `In Progress` |
+| Implementation | “Implement the task” | Start implementation only after this explicit authorization, after the task has passed Specification, and after the outcome and acceptance criteria are clear. If the task is still in Capture or Clarification, do not code; ask the user to format it first. Move the issue to `In Progress` when coding starts. | `In Progress` |
 
 The capture phase is intentionally lightweight. A draft Product Change issue may contain only the original user text in
 `Исходные мысли` plus the required owner, type label, team, project, and status metadata. Do not invent missing scope,
