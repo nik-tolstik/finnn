@@ -23,6 +23,8 @@
     "typecheck": "pnpm --filter api typecheck && pnpm --filter web typecheck",
     "storybook": "pnpm --filter web storybook",
     "build:storybook": "pnpm --filter web build:storybook",
+    "browser:test": "pnpm --filter web browser:test",
+    "browser:install": "pnpm --filter web browser:install",
     "api:generate": "pnpm --filter api openapi:generate && pnpm --filter web api:generate",
     "api:check-generated": "node scripts/check-api-generated.mjs",
     "db:generate": "pnpm --filter api db:generate",

@@ -270,6 +270,10 @@ pnpm test
 pnpm build
 ```
 
+For explicit browser or visual QA requests, use the repository Playwright workflow described in
+[`docs/browser-testing.md`](./browser-testing.md). Do not rely on a globally installed browser runner or search for
+an environment-specific Playwright path.
+
 ## Documentation Style
 
 Good project docs for this repo should include:
