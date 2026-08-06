@@ -18,6 +18,7 @@ export interface DashboardBalanceDateRange {
 export interface DashboardBalanceSummary {
   baseCurrency: string;
   currentBalance: string;
+  dailyChangeAmount: string;
   previousBalance: string;
   percentageChange: number | null;
 }
@@ -52,6 +53,7 @@ export function toDashboardBalanceSummary(
   return {
     baseCurrency: response.baseCurrency,
     currentBalance,
+    dailyChangeAmount: subtractMoney(currentBalance, previousBalance),
     previousBalance,
     percentageChange: getPercentageChange(currentBalance, previousBalance),
   };

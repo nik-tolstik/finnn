@@ -184,6 +184,7 @@ describe("analytics API helpers", () => {
     ).toEqual({
       baseCurrency: "BYN",
       currentBalance: "550",
+      dailyChangeAmount: "50",
       previousBalance: "500",
       percentageChange: 10,
     });

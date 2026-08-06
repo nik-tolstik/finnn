@@ -187,6 +187,7 @@ describe("dashboard interaction loading", () => {
     const summarySource = readSource(
       "src/modules/accounts/components/account-balance-summary/AccountBalanceSummary.tsx"
     );
+    const amountsVisibilitySource = readSource("src/routes/dashboard/dashboard/hooks/useDashboardAmountsVisibility.ts");
     const transactionDialogSource = readSource(
       "src/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog.tsx"
     );
@@ -198,13 +199,19 @@ describe("dashboard interaction loading", () => {
     expect(dashboardSource).toContain('label: "Доход"');
     expect(dashboardSource).toContain('label: "Перевод"');
     expect(dashboardSource).toContain('label: "Долг"');
-    expect(dashboardSource).toContain("const [areAmountsHidden, setAreAmountsHidden] = useState(false)");
+    expect(dashboardSource).toContain("useDashboardAmountsVisibility");
     expect(dashboardSource).toContain("amountsHidden={areAmountsHidden}");
+    expect(dashboardSource).toContain('dailyChangeAmount={dashboardBalance?.dailyChangeAmount ?? "0"}');
     expect(dashboardSource).toContain("hideBalances={areAmountsHidden}");
     expect(dashboardSource).toContain("hideAmounts={areAmountsHidden}");
     expect(summarySource).toContain('aria-label={amountsHidden ? "Показать суммы" : "Скрыть суммы"}');
+    expect(summarySource).toContain("dailyChangeAmount: string");
+    expect(summarySource).toContain("formatDailyChangeAmount");
     expect(summarySource).toContain("HIDDEN_AMOUNT");
     expect(summarySource).toContain("actions.map");
+    expect(amountsVisibilitySource).toContain('const STORAGE_KEY_PREFIX = "finnn:dashboard-amounts-hidden:v1:"');
+    expect(amountsVisibilitySource).toContain("window.localStorage.getItem(storageKey)");
+    expect(amountsVisibilitySource).toContain("window.localStorage.setItem(storageKey, String(amountsHidden))");
     expect(transactionDialogSource).toContain('return "Новый перевод"');
     expect(transactionDialogSource).toContain('"Новый доход"');
     expect(transactionDialogSource).toContain('"Новый расход"');

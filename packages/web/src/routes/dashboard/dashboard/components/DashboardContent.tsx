@@ -50,6 +50,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Tooltip } from "@/shared/ui/tooltip";
 
+import { useDashboardAmountsVisibility } from "../hooks/useDashboardAmountsVisibility";
 import { AccountDisplayControls, type BalanceSortStatus } from "./AccountDisplayControls";
 import { AccountsMenu } from "./AccountsMenu";
 
@@ -102,13 +103,14 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
   const [isReorderSaving, setIsReorderSaving] = useState(false);
   const [reorderDraft, setReorderDraft] = useState<AccountWithOwner[] | null>(null);
   const [isReorderDirty, setIsReorderDirty] = useState(false);
-  const [areAmountsHidden, setAreAmountsHidden] = useState(false);
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
   const [isFiltersDrawerMounted, setIsFiltersDrawerMounted] = useState(false);
   const createAccountDialog = useDialogState();
   const createTransactionDialog = useDialogState<QuickTransactionDialogData | null>();
   const createDebtDialog = useDialogState<null>();
+  const { amountsHidden: areAmountsHidden, setAmountsHidden: setAreAmountsHidden } =
+    useDashboardAmountsVisibility(workspaceId);
   const { preferences, selectGrouping, selectSort } = useAccountDisplayPreferences(workspaceId);
 
   const {
@@ -453,6 +455,7 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
             amountsHidden={areAmountsHidden}
             balance={dashboardBalance?.currentBalance ?? "0"}
             baseCurrency={dashboardBalance?.baseCurrency ?? baseCurrency}
+            dailyChangeAmount={dashboardBalance?.dailyChangeAmount ?? "0"}
             dailyChangePercent={dashboardBalance?.percentageChange ?? null}
             hasAccounts={dashboardBalanceAccountIds.length > 0}
             isError={isDashboardBalanceError}

@@ -4,7 +4,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/utils/cn";
-import { formatMoney, HIDDEN_AMOUNT } from "@/shared/utils/money";
+import { compareMoney, formatMoney, HIDDEN_AMOUNT } from "@/shared/utils/money";
 
 export interface AccountBalanceQuickAction {
   icon: LucideIcon;
@@ -18,6 +18,7 @@ interface AccountBalanceSummaryProps {
   amountsHidden: boolean;
   baseCurrency: string;
   balance: string;
+  dailyChangeAmount: string;
   dailyChangePercent: number | null;
   hasAccounts: boolean;
   isError?: boolean;
@@ -30,11 +31,24 @@ function formatDailyChange(value: number | null) {
     return "—";
   }
 
-  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+  const formattedValue = new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 1,
+  }).format(value);
+
+  return `${value > 0 ? "+" : ""}${formattedValue}%`;
 }
 
-function getDailyChangeBadgeClassName(value: number | null) {
-  if (value === null || value === 0) {
+function formatDailyChangeAmount(value: string, currency: string) {
+  const formattedValue = formatMoney(value, currency);
+
+  return compareMoney(value, "0") > 0 ? `+${formattedValue}` : formattedValue;
+}
+
+function getDailyChangeBadgeClassName(percent: number | null, amount: string) {
+  const value = percent ?? compareMoney(amount, "0");
+
+  if (value === 0) {
     return "bg-surface-subtle text-muted-foreground";
   }
 
@@ -46,6 +60,7 @@ export function AccountBalanceSummary({
   amountsHidden,
   balance,
   baseCurrency,
+  dailyChangeAmount,
   dailyChangePercent,
   hasAccounts,
   isError = false,
@@ -58,7 +73,7 @@ export function AccountBalanceSummary({
     ? HIDDEN_AMOUNT
     : isError || !hasAccounts
       ? "—"
-      : formatDailyChange(dailyChangePercent);
+      : `${formatDailyChangeAmount(dailyChangeAmount, baseCurrency)} (${formatDailyChange(dailyChangePercent)})`;
 
   return (
     <div className="mb-5 space-y-4">
@@ -79,7 +94,12 @@ export function AccountBalanceSummary({
             >
               {balanceLabel}
             </button>
-            <Badge className={cn("shrink-0", getDailyChangeBadgeClassName(isError ? null : dailyChangePercent))}>
+            <Badge
+              className={cn(
+                "shrink-0",
+                getDailyChangeBadgeClassName(isError ? null : dailyChangePercent, dailyChangeAmount)
+              )}
+            >
               {changeLabel}
             </Badge>
           </>
