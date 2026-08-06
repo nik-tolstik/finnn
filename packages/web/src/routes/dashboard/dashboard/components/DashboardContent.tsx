@@ -447,6 +447,16 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
     <div className="w-full max-w-[1024px] mx-auto">
       <div className="space-y-8">
         <div>
+          <AccountBalanceSummary
+            actions={quickActions}
+            balance={dashboardBalance?.currentBalance ?? "0"}
+            baseCurrency={dashboardBalance?.baseCurrency ?? baseCurrency}
+            dailyChangePercent={dashboardBalance?.percentageChange ?? null}
+            hasAccounts={dashboardBalanceAccountIds.length > 0}
+            isError={isDashboardBalanceError}
+            isLoading={isDashboardBalanceLoading}
+          />
+
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
               <h2 className="truncate text-xl font-semibold">{showAllAccounts ? "Все счета" : "Ваши счета"}</h2>
@@ -516,16 +526,6 @@ export function DashboardContent({ initialCurrentUserId, workspaceId }: Dashboar
               </div>
             )}
           </div>
-
-          <AccountBalanceSummary
-            actions={quickActions}
-            balance={dashboardBalance?.currentBalance ?? "0"}
-            baseCurrency={dashboardBalance?.baseCurrency ?? baseCurrency}
-            dailyChangePercent={dashboardBalance?.percentageChange ?? null}
-            hasAccounts={dashboardBalanceAccountIds.length > 0}
-            isError={isDashboardBalanceError}
-            isLoading={isDashboardBalanceLoading}
-          />
 
           <AccountsCards
             groups={accountDisplayModel.groups}

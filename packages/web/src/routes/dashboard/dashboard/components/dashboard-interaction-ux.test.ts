@@ -196,6 +196,13 @@ describe("dashboard interaction loading", () => {
     expect(dashboardSource).toContain('label: "Перевод"');
     expect(dashboardSource).toContain('label: "Долг"');
     expect(summarySource).toContain("actions.map");
+
+    const balancePosition = dashboardSource.indexOf("<AccountBalanceSummary");
+    const accountsHeaderPosition = dashboardSource.indexOf('<h2 className="truncate text-xl font-semibold">');
+    const accountsCardsPosition = dashboardSource.indexOf("<AccountsCards");
+    expect(balancePosition).toBeGreaterThanOrEqual(0);
+    expect(accountsHeaderPosition).toBeGreaterThan(balancePosition);
+    expect(accountsCardsPosition).toBeGreaterThan(accountsHeaderPosition);
   });
 
   it("moves transaction and debt dialog actions into the shared options menu", () => {
