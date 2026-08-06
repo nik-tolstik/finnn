@@ -187,6 +187,9 @@ describe("dashboard interaction loading", () => {
     const summarySource = readSource(
       "src/modules/accounts/components/account-balance-summary/AccountBalanceSummary.tsx"
     );
+    const transactionDialogSource = readSource(
+      "src/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog.tsx"
+    );
 
     expect(dashboardSource).toContain("toDashboardBalanceSummary");
     expect(dashboardSource).toContain("dashboardBalanceAccountIds");
@@ -202,6 +205,10 @@ describe("dashboard interaction loading", () => {
     expect(summarySource).toContain('aria-label={amountsHidden ? "Показать суммы" : "Скрыть суммы"}');
     expect(summarySource).toContain("HIDDEN_AMOUNT");
     expect(summarySource).toContain("actions.map");
+    expect(transactionDialogSource).toContain('return "Новый перевод"');
+    expect(transactionDialogSource).toContain('"Новый доход"');
+    expect(transactionDialogSource).toContain('"Новый расход"');
+    expect(transactionDialogSource).toContain("<DialogTitle>{dialogTitle}</DialogTitle>");
 
     const balancePosition = dashboardSource.indexOf("<AccountBalanceSummary");
     const accountsHeaderPosition = dashboardSource.indexOf('<h2 className="truncate text-xl font-semibold">');
