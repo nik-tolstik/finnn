@@ -110,6 +110,14 @@ function toTransactionAccount(account: Account | undefined): TransactionAccountW
   };
 }
 
+function getTransactionDialogTitle(mode: CreateTransactionMode) {
+  if (mode === TRANSFER_TRANSACTION_MODE) {
+    return "Новый перевод";
+  }
+
+  return mode === PaymentTransactionType.INCOME ? "Новый доход" : "Новый расход";
+}
+
 export function CreateTransactionDialog({
   account: accountProp,
   workspaceId,
@@ -176,6 +184,7 @@ export function CreateTransactionDialog({
   const amount = useWatch({ control, name: "amount" });
   const categoryModal = useDialogState();
   const isTransferMode = transactionMode === TRANSFER_TRANSACTION_MODE;
+  const dialogTitle = getTransactionDialogTitle(transactionMode);
 
   const selectedAccount = useMemo(
     () => resolveSelectedAccount({ accountProp, accounts: accountsData?.data, accountId, fallbackAccount: account }),
@@ -505,7 +514,7 @@ export function CreateTransactionDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogWindow onCloseComplete={onCloseComplete}>
           <DialogHeader>
-            <DialogTitle>{isTransferMode ? "Новый перевод" : "Новая транзакция"}</DialogTitle>
+            <DialogTitle>{dialogTitle}</DialogTitle>
           </DialogHeader>
           <DialogContent>
             <div className="space-y-4">

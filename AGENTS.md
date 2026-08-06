@@ -23,6 +23,7 @@ Code, configuration, schemas, generated contracts, and provider state are author
 
 - Use `pnpm`. Do not use `npm` or `yarn` unless the repository itself requires it.
 - Inspect the current branch, working tree, and narrow task scope before editing. Preserve unrelated user changes and never revert them without an explicit request.
+- Name new agent task branches `task-<issue-number>-<short-kebab-case-slug>` without an additional agent or model prefix; see `docs/ai-contributor-guide.md` for the detailed convention.
 - Work in the current checkout and branch by default. Do not create a worktree or pull request unless the user asks, except for the delegated Linear workflow below. If repository protections or an unusually risky operation require a pull request, explain why and obtain confirmation first.
 - Do not edit on `main` unless the user explicitly requests it. If the current branch is `main`, first confirm the working tree is clean and `develop` is the intended target; otherwise ask before switching branches.
 - When the user requests a worktree, copy `packages/web/.env` and `packages/api/.env` as opaque files without reading or printing their contents.
@@ -36,14 +37,7 @@ Code, configuration, schemas, generated contracts, and provider state are author
 - Explicit delegation of a Finnn Linear issue authorizes the agent to create or use its issue branch and open or update its draft pull request. It does not authorize a worktree, production change, destructive action, or infrastructure mutation. An agent may merge only when the user explicitly authorizes that exact merge separately.
 - Keep code comments and documentation in English.
 - Do not run screenshot or browser-automation QA unless the user explicitly requests it.
-
-## External Review
-
-- Follow the active global `AGENTS.md` for the external reviewer, model, invocation, read-only restrictions, and finding-classification procedure. Do not duplicate those details here.
-- Run external review only when the user explicitly requests it or immediately before an agent-performed merge into `develop` or `main`. The pre-merge case is repository-level authorization to run the globally configured reviewer.
-- Do not run external review for ordinary implementation, local validation, or Draft PR updates that are not being merged.
-- Verify every external finding against the source code and tests. Classify it as confirmed, rejected, or uncertain, and explain disagreements before applying fixes.
-- After confirmed fixes, repeat only the focused review needed to validate them. Repeat a full review only when fixes materially change architecture, API contracts, persistence, security, concurrency, or state/data flow.
+- When browser QA is explicitly requested, use the project Playwright workflow in `docs/browser-testing.md`.
 
 ## Scope-Appropriate Verification
 
@@ -57,7 +51,7 @@ Start with the smallest relevant checks and broaden only when the changed bounda
 - Backup-service changes: run `pnpm --filter postgres-backup check` and `pnpm --filter postgres-backup test`.
 - Cross-package, dependency, shared configuration, migration, or similarly broad changes: run affected targeted checks first, then one final root-level suite with the relevant commands from `pnpm typecheck`, `pnpm check`, `pnpm test`, and `pnpm build`.
 
-Do not run unrelated API, database, or backup tests for an isolated frontend change. Run Storybook only when stories or a component rendering/API contract changes. When external review is triggered, use this order: implementation, targeted validation, external review, confirmed fixes, one final scope-appropriate validation, then merge or handoff.
+Do not run unrelated API, database, or backup tests for an isolated frontend change. Run Storybook only when stories or a component rendering/API contract changes. Use this order for repository changes: implementation, targeted validation, final scope-appropriate validation, then merge or handoff.
 
 ## Critical Implementation Rules
 

@@ -4,7 +4,7 @@ import type { Account } from "@/modules/accounts/account.types";
 import { AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
 import { hexToRgba } from "@/shared/utils/color-utils";
-import { formatMoney } from "@/shared/utils/money";
+import { formatMoney, HIDDEN_AMOUNT } from "@/shared/utils/money";
 
 interface AccountCardProps {
   account: Account & {
@@ -16,11 +16,19 @@ interface AccountCardProps {
   };
   className?: string;
   contentClassName?: string;
+  hideBalance?: boolean;
   onClick?: MouseEventHandler<HTMLButtonElement>;
   showOwner?: boolean;
 }
 
-export function AccountCard({ account, className, contentClassName, onClick, showOwner = true }: AccountCardProps) {
+export function AccountCard({
+  account,
+  className,
+  contentClassName,
+  hideBalance = false,
+  onClick,
+  showOwner = true,
+}: AccountCardProps) {
   const accountColor = account.color ?? "";
   const accountTint = hexToRgba(accountColor, 0.1) ?? "var(--surface-subtle)";
   const accountTintHover = hexToRgba(accountColor, 0.16) ?? "var(--surface-hover)";
@@ -50,7 +58,7 @@ export function AccountCard({ account, className, contentClassName, onClick, sho
           )}
         </div>
         <p className="max-w-[58%] shrink-0 truncate text-right text-sm font-semibold leading-5 tracking-[-0.01em] text-foreground">
-          {formatMoney(account.balance, account.currency)}
+          {hideBalance ? HIDDEN_AMOUNT : formatMoney(account.balance, account.currency)}
         </p>
       </div>
     </>

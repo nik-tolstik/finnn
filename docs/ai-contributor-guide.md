@@ -18,6 +18,30 @@ Then inspect the narrow module involved in the task.
 
 For framework or library behavior that may have changed, use Context7. Vite, React Router, NestJS, Prisma PostgreSQL, TanStack Query, Orval, and Tailwind changes are good candidates for documentation lookup.
 
+## Task Capture And Refinement Workflow
+
+Treat task capture, clarification, specification, and implementation as separate user authorizations. Do not infer a
+later phase from an earlier command. In particular, a request to create a task is not permission to implement it.
+
+| Conversation phase | Explicit user intent | Agent behavior | Linear state |
+| --- | --- | --- | --- |
+| Capture | “Create a task” | Create or reuse the task, preserve the user's message under `Исходные мысли`, and infer only a short title and required metadata. Do not rewrite the request, add a full specification, ask implementation questions, or edit code. | `Backlog` |
+| Clarification | “Let's discuss it” | Ask questions, surface decisions, and append agreed context to the same task. Keep the original thoughts unchanged. Do not edit code or treat the discussion as implementation approval. | `Backlog` |
+| Specification | “Format the task” | Convert the agreed context into the required Product Change sections, while retaining `Исходные мысли` separately. Resolve acceptance criteria and scope, then move the issue to `Todo` when it is ready. Do not edit code. | `Todo` |
+| Implementation | “Implement the task” | Start implementation only after this explicit authorization, after the task has passed Specification, and after the outcome and acceptance criteria are clear. If the task is still in Capture or Clarification, do not code; ask the user to format it first. Move the issue to `In Progress` when coding starts. | `In Progress` |
+
+The capture phase is intentionally lightweight. A draft Product Change issue may contain only the original user text in
+`Исходные мысли` plus the required owner, type label, team, project, and status metadata. Do not invent missing scope,
+non-goals, acceptance criteria, or technical decisions to make a draft look complete. Fill those sections during the
+specification phase.
+
+When the user sends more thoughts while a task is in Capture or Clarification, preserve the earlier text and add the new
+message as additional context. Never silently replace the original wording. Apply the repository's secret-handling
+rules before storing user text.
+
+If the user's wording is ambiguous between discussing, formatting, and implementing, remain in the current phase and ask
+which phase they want. “Let's discuss” and “format the task” never authorize code changes by themselves.
+
 ## Linear Task Workflow
 
 Planned Finnn work is tracked in the [Finnn Linear project](https://linear.app/nikita-tolstik/project/finnn-4d0360836e89/overview)
@@ -30,12 +54,31 @@ source of truth for stable engineering, domain, setup, and operational rules.
 
 - Keep a human as the issue assignee and owner of the result. Use the agent delegate for implementation work.
 - A user request to implement a planned code or repository-documentation change is explicit delegation. It authorizes
-  the agent to create or update the corresponding Product Change issue, use its Linear-generated branch, and open or
-  update a draft pull request. The branch must start from `develop` and include the Linear issue identifier.
+  the agent to create or update the corresponding Product Change issue, use its task branch, and open or update a draft
+  pull request. The branch must start from `develop` and include the Linear issue number.
 - Delegation alone does not authorize the agent to merge its pull request, change product scope or priority, mutate
   shared infrastructure, deploy to production, or perform destructive operations. An agent may merge only when the
   user explicitly authorizes that exact merge separately.
 - The human reviews the result, makes product decisions, and accepts the work.
+
+### Agent Branch Naming
+
+New agent task branches use the following format:
+
+```text
+task-<issue-number>-<short-kebab-case-slug>
+```
+
+For example:
+
+```text
+task-142-add-account-archive
+task-207-fix-scheduled-payment-advance
+```
+
+Use the Linear issue number as the numeric segment, followed by a short descriptive slug in lowercase kebab-case. Do
+not add an agent name, model name, date, or another prefix. Create the branch from `develop` and use one task branch per issue.
+When a compliant branch already exists, reuse it instead of creating a duplicate.
 
 ### Issue Lifecycle
 
@@ -68,11 +111,12 @@ or access required. Do not invent product behavior to bypass a blocker.
    implementation starts, use the issue branch, and run scope-appropriate checks.
 6. Open or update a draft pull request that includes the Linear issue identifier, then move the issue to `In Review`.
    Merge only after the user explicitly authorizes that exact merge and after completing the required
-   pre-merge review.
+   scope-appropriate validation.
 7. After the pull request is merged into `develop`, move the issue to `Dev` immediately. Complete or confirm the
    required verification there; if it is pending or fails, keep the issue in `Dev` and add a concise blocker comment.
 8. Add a single handoff comment with the outcome, verification performed, pull request and merge links, known risks,
-   and any follow-up work. Do not post command-by-command progress noise.
+   and any follow-up work. The pull request description should explain what changed and why, but does not need to
+   duplicate verification details. Do not post command-by-command progress noise.
 9. Leave the issue in `Dev` until the human accepts it. Do not mark the issue `Done` merely because code, a pull
    request, or a merge exists; move it to `Done` only after explicit human acceptance or instruction.
 
@@ -225,6 +269,10 @@ pnpm check
 pnpm test
 pnpm build
 ```
+
+For explicit browser or visual QA requests, use the repository Playwright workflow described in
+[`docs/browser-testing.md`](./browser-testing.md). Do not rely on a globally installed browser runner or search for
+an environment-specific Playwright path.
 
 ## Documentation Style
 

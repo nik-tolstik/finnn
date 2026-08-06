@@ -7,6 +7,7 @@ import { RegularTransactionItem } from "./RegularTransactionItem";
 import { TransferTransactionItem } from "./TransferTransactionItem";
 
 interface CombinedTransactionItemProps {
+  hideAmounts?: boolean;
   item: PreparedCombinedTransaction;
   workspaceName: string;
   onTransactionClick: (transaction: ActionableCombinedTransaction) => void;
@@ -14,6 +15,7 @@ interface CombinedTransactionItemProps {
 }
 
 export function CombinedTransactionItem({
+  hideAmounts = false,
   item,
   workspaceName,
   onTransactionClick,
@@ -21,7 +23,12 @@ export function CombinedTransactionItem({
 }: CombinedTransactionItemProps) {
   if (item.kind === "debtTransaction") {
     return (
-      <DebtTransactionItem debtTransaction={item.data} workspaceName={workspaceName} onClick={onDebtTransactionClick} />
+      <DebtTransactionItem
+        debtTransaction={item.data}
+        hideAmounts={hideAmounts}
+        workspaceName={workspaceName}
+        onClick={onDebtTransactionClick}
+      />
     );
   }
 
@@ -29,6 +36,7 @@ export function CombinedTransactionItem({
     return (
       <TransferTransactionItem
         transaction={item.data}
+        hideAmounts={hideAmounts}
         onClick={(transaction: TransferTransactionWithRelations) => {
           onTransactionClick({
             kind: "transferTransaction",
@@ -42,6 +50,7 @@ export function CombinedTransactionItem({
   return (
     <RegularTransactionItem
       transaction={item.data}
+      hideAmounts={hideAmounts}
       workspaceName={workspaceName}
       onClick={(transaction: PaymentTransactionWithRelations) => {
         onTransactionClick({

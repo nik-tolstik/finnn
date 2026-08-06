@@ -170,16 +170,73 @@ describe("dashboard interaction loading", () => {
     expect(scheduledPaymentActionsSource).toContain('tone: "destructive"');
   });
 
-  it("names the dashboard transaction section history and adds its desktop creation entry point", () => {
+  it("keeps the dashboard transaction section focused on history and filters", () => {
     const dashboardSource = readSource("src/routes/dashboard/dashboard/components/DashboardContent.tsx");
 
     expect(dashboardSource).toContain(
       'import("@/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog")'
     );
     expect(dashboardSource).toContain('<h2 className="text-xl font-semibold">История</h2>');
-    expect(dashboardSource).toContain('className="hidden md:inline-flex"');
-    expect(dashboardSource).toContain("createTransactionDialog.openDialog(null)");
+    expect(dashboardSource).toContain("<TransactionsFilterButton");
+    expect(dashboardSource).not.toContain("createTransactionDialog.openDialog(null)");
     expect(dashboardSource).toContain("<CreateTransactionDialog");
+  });
+
+  it("shows the visible-account balance and ordered quick actions", () => {
+    const dashboardSource = readSource("src/routes/dashboard/dashboard/components/DashboardContent.tsx");
+    const summarySource = readSource(
+      "src/modules/accounts/components/account-balance-summary/AccountBalanceSummary.tsx"
+    );
+    const amountsVisibilitySource = readSource("src/routes/dashboard/dashboard/hooks/useDashboardAmountsVisibility.ts");
+    const transactionDialogSource = readSource(
+      "src/modules/transactions/components/create-transaction-dialog/CreateTransactionDialog.tsx"
+    );
+
+    expect(dashboardSource).toContain("toDashboardBalanceSummary");
+    expect(dashboardSource).toContain("dashboardBalanceAccountIds");
+    expect(dashboardSource).toContain("<AccountBalanceSummary");
+    expect(dashboardSource).toContain('label: "Расход"');
+    expect(dashboardSource).toContain('label: "Доход"');
+    expect(dashboardSource).toContain('label: "Перевод"');
+    expect(dashboardSource).toContain('label: "Долг"');
+    expect(dashboardSource).toContain("useDashboardAmountsVisibility");
+    expect(dashboardSource).toContain("accountChanges={dashboardAccountChanges}");
+    expect(dashboardSource).toContain("onAccountClick={handleBalanceAccountClick}");
+    expect(dashboardSource).toContain("historySectionRef.current?.scrollIntoView");
+    expect(dashboardSource).toContain("amountsHidden={areAmountsHidden}");
+    expect(dashboardSource).toContain('dailyChangeAmount={dashboardBalance?.dailyChangeAmount ?? "0"}');
+    expect(dashboardSource).toContain("hideBalances={areAmountsHidden}");
+    expect(dashboardSource).toContain("hideAmounts={areAmountsHidden}");
+    expect(summarySource).toContain('aria-label={amountsHidden ? "Показать суммы" : "Скрыть суммы"}');
+    expect(summarySource).toContain("dailyChangeAmount: string");
+    expect(summarySource).toContain("formatDailyChangeAmount");
+    expect(summarySource).toContain("accountChanges.filter(");
+    expect(summarySource).toContain('compareMoney(dailyChangeAmount, "0") !== 0');
+    expect(summarySource).toContain("changedAccountChanges.map");
+    expect(summarySource).toContain("Изменение за сегодня");
+    expect(summarySource).toContain("onAccountClick(accountId)");
+    expect(summarySource).toContain("HIDDEN_AMOUNT");
+    expect(summarySource).toContain("AnimatePresence");
+    expect(summarySource).toContain("useReducedMotion");
+    expect(summarySource).toContain('className="overflow-hidden"');
+    expect(summarySource).toContain("focus-visible:ring-2 focus-visible:ring-control-focus/30");
+    expect(summarySource).not.toContain("border border-border/70 bg-surface-subtle/30 p-3");
+    expect(summarySource).not.toContain(">Итого</span>");
+    expect(summarySource).toContain("actions.map");
+    expect(amountsVisibilitySource).toContain('const STORAGE_KEY_PREFIX = "finnn:dashboard-amounts-hidden:v1:"');
+    expect(amountsVisibilitySource).toContain("window.localStorage.getItem(storageKey)");
+    expect(amountsVisibilitySource).toContain("window.localStorage.setItem(storageKey, String(amountsHidden))");
+    expect(transactionDialogSource).toContain('return "Новый перевод"');
+    expect(transactionDialogSource).toContain('"Новый доход"');
+    expect(transactionDialogSource).toContain('"Новый расход"');
+    expect(transactionDialogSource).toContain("<DialogTitle>{dialogTitle}</DialogTitle>");
+
+    const balancePosition = dashboardSource.indexOf("<AccountBalanceSummary");
+    const accountsHeaderPosition = dashboardSource.indexOf('<h2 className="truncate text-xl font-semibold">');
+    const accountsCardsPosition = dashboardSource.indexOf("<AccountsCards");
+    expect(balancePosition).toBeGreaterThanOrEqual(0);
+    expect(accountsHeaderPosition).toBeGreaterThan(balancePosition);
+    expect(accountsCardsPosition).toBeGreaterThan(accountsHeaderPosition);
   });
 
   it("moves transaction and debt dialog actions into the shared options menu", () => {

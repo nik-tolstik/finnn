@@ -12,7 +12,7 @@ import { Select } from "@/shared/ui/select";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import { AccountIcon } from "@/shared/utils/account-icons";
 import { cn } from "@/shared/utils/cn";
-import { formatMoney } from "@/shared/utils/money";
+import { formatMoney, HIDDEN_AMOUNT } from "@/shared/utils/money";
 
 import type {
   TransactionFilterAccount,
@@ -36,6 +36,7 @@ interface TransactionsFilterDrawerProps {
   members: TransactionFilterMember[];
   categories: TransactionFilterCategory[];
   accounts: TransactionFilterAccount[];
+  hideBalances?: boolean;
   isCategoriesLoading?: boolean;
   isMembersLoading?: boolean;
   onApply: (filters: TransactionViewFilters) => void;
@@ -49,6 +50,7 @@ export function TransactionsFilterDrawer({
   members,
   categories,
   accounts,
+  hideBalances = false,
   isCategoriesLoading = false,
   isMembersLoading = false,
   onApply,
@@ -265,7 +267,7 @@ export function TransactionsFilterDrawer({
                     </span>
                     {account && !isTrigger && (
                       <span className="shrink-0 text-xs text-muted-foreground">
-                        {formatMoney(account.balance, account.currency)}
+                        {hideBalances ? HIDDEN_AMOUNT : formatMoney(account.balance, account.currency)}
                       </span>
                     )}
                     {selected && !isTrigger && <Check className="size-4 shrink-0 text-primary" />}

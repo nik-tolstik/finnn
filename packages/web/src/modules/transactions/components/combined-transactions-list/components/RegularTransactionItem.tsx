@@ -4,17 +4,23 @@ import { AccountIcon } from "@/shared/utils/account-icons";
 import type { PaymentTransactionWithRelations } from "../../../transaction.types";
 import { getTransactionDescriptionSegments } from "../../../utils/transactionDescription";
 import { TransactionDescriptionLine } from "../../transaction-description-line/TransactionDescriptionLine";
-import { getPaymentTransactionAmountDisplay } from "../utils/transactionAmountDisplay";
+import { concealTransactionAmountDisplay, getPaymentTransactionAmountDisplay } from "../utils/transactionAmountDisplay";
 import { AiCreatedBadge } from "./AiCreatedBadge";
 import { TransactionActorAvatar } from "./TransactionActorAvatar";
 
 interface RegularTransactionItemProps {
+  hideAmounts?: boolean;
   transaction: PaymentTransactionWithRelations;
   workspaceName: string;
   onClick: (transaction: PaymentTransactionWithRelations) => void;
 }
 
-export function RegularTransactionItem({ transaction, workspaceName, onClick }: RegularTransactionItemProps) {
+export function RegularTransactionItem({
+  hideAmounts = false,
+  transaction,
+  workspaceName,
+  onClick,
+}: RegularTransactionItemProps) {
   const { segments } = getTransactionDescriptionSegments(
     {
       kind: "paymentTransaction",
@@ -23,6 +29,7 @@ export function RegularTransactionItem({ transaction, workspaceName, onClick }: 
     workspaceName
   );
   const amount = getPaymentTransactionAmountDisplay(transaction);
+  const displayedAmount = hideAmounts ? concealTransactionAmountDisplay(amount) : amount;
 
   return (
     <TransactionDescriptionLine
@@ -54,7 +61,7 @@ export function RegularTransactionItem({ transaction, workspaceName, onClick }: 
           },
         ],
       }}
-      amount={amount}
+      amount={displayedAmount}
       descriptionPlacement="below"
       description={transaction.description?.trim() || undefined}
       onClick={() => {
